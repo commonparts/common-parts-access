@@ -1,0 +1,171 @@
+"use client";
+
+import * as React from "react";
+import { Input } from "./input";
+import { Label } from "./label";
+
+export interface ComboboxOption {
+  id: string;
+  name: string;
+}
+
+interface ComboboxProps<T extends ComboboxOption> {
+  id?: string;
+  label?: string;
+  placeholder?: string;
+  options: T[];
+  value?: string;
+  searchTerm: string;
+  onSearchChange: (value: string) => void;
+  onSelect: (option: T) => void;
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  className?: string;
+  disabled?: boolean;
+  emptyMessage?: string;
+}
+
+export function Combobox<T extends ComboboxOption>({
+  id,
+  label,
+  placeholder = "Type to search...",
+  options,
+  value,
+  searchTerm,
+  onSearchChange,
+  onSelect,
+  isOpen,
+  onOpenChange,
+  className,
+  disabled = false,
+  emptyMessage = "No options found",
+}: ComboboxProps<T>) {
+  const [selectedIndex, setSelectedIndex] = React.useState(-1);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Filter options based on search term
+  const filteredOptions = options.filter((option) =>
+    option.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle click outside to close dropdown
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        onOpenChange(false);
+        setSelectedIndex(-1);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isOpen, onOpenChange]);
+
+  // Handle keyboard navigation
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!isOpen || filteredOptions.length === 0) {
+      if (e.key === "ArrowDown" && !isOpen) {
+        onOpenChange(true);
+        setSelectedIndex(0);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev < filteredOptions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setSelectedIndex((prev) =>
+          prev > 0 ? prev - 1 : filteredOptions.length - 1
+        );
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
+          handleSelect(filteredOptions[selectedIndex]);
+        }
+        break;
+      case "Escape":
+        e.preventDefault();
+        onOpenChange(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
+
+  // Handle option selection
+  const handleSelect = (option: T) => {
+    onSelect(option);
+    onOpenChange(false);
+    setSelectedIndex(-1);
+  };
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    onSearchChange(newValue);
+    onOpenChange(true);
+    setSelectedIndex(-1);
+  };
+
+  // Handle input focus
+  const handleFocus = () => {
+    onOpenChange(true);
+  };
+
+  return (
+    <div className={`space-y-2 ${className}`}>
+      {label && (
+        <Label htmlFor={id} className="text-foreground font-medium">
+          {label}
+        </Label>
+      )}
+      <div className="relative" ref={dropdownRef}>
+        <Input
+          id={id}
+          type="text"
+          value={searchTerm}
+          onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          placeholder={placeholder}
+          disabled={disabled}
+          className="w-full placeholder:text-foreground/50"
+        />
+        {isOpen && (
+          <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
+            {filteredOptions.length > 0 ? (
+              filteredOptions.map((option, index) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => handleSelect(option)}
+                  className={`w-full px-3 py-2 text-left transition-colors cursor-pointer border-b border-muted/20 last:border-b-0 text-sm ${
+                    index === selectedIndex
+                      ? "bg-accent text-accent-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <div className="font-medium">{option.name}</div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3 py-2 text-sm text-muted-foreground">
+                {emptyMessage}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
