@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { HarborMark } from "@/components/hero";
+import { HarborMark } from "@/components/layout/hero";
 import { Anchor, CheckCircle } from "lucide-react";
 import Link from "next/link";
 

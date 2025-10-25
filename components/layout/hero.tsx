@@ -103,12 +103,12 @@ export const Hero: FC = () => {
 
         <div className="mt-6 flex flex-col sm:flex-row gap-3 items-start">
           <Button asChild size="lg">
-            <a href="#request">
+            <a href="/upload">
               Dock a model
             </a>
           </Button>
           <Button asChild variant="outline" size="lg" className="border-white/25 text-white/90 bg-white/10 hover:bg-white/13 hover:text-white hover:border-white/40">
-            <a href="#library">
+            <a href="/browse">
               Browse parts
             </a>
           </Button>
