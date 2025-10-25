@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
 import { LogoutButton } from "@/components/auth/logout-button";
 import Link from "next/link";
-import { BrowseModelsMenu } from "@/components/browse/browse-models-menu";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth/auth-button";
 import { HarborMark } from "@/components/layout/hero";
