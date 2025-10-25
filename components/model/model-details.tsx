@@ -381,12 +381,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <Link 
-                      href={`/user/${model.author.username}`}
-                      className="font-medium hover:text-primary transition-colors"
-                    >
+                    <span className="font-medium">
                       {model.author.displayName || model.author.username}
-                    </Link>
+                    </span>
                     {model.author.verifiedMaker && (
                       <Badge variant="secondary" className="text-xs">
                         Verified Maker
@@ -485,12 +482,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             {model.category && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
                 <span className="text-muted-foreground font-medium">Category</span>
-                <Link 
-                  href={`/browse?category=${model.category.slug}`}
-                  className="font-medium text-primary hover:underline"
-                >
+                <span className="font-medium">
                   {model.category.name}
-                </Link>
+                </span>
               </div>
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
@@ -579,12 +573,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <Link 
-                    href={`/product/${model.product.slug}`}
-                    className="font-medium hover:text-primary transition-colors line-clamp-2 block"
-                  >
+                  <div className="font-medium line-clamp-2">
                     {model.product.name}
-                  </Link>
+                  </div>
                   {model.product.modelNumber && (
                     <p className="text-sm text-muted-foreground mt-1">
                       Model: <span className="font-mono">{model.product.modelNumber}</span>
@@ -592,12 +583,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                   )}
                   {model.product.brand && (
                     <div className="flex items-center gap-2 mt-2">
-                      <Link 
-                        href={`/brand/${model.product.brand.slug}`}
-                        className="text-sm text-primary hover:underline"
-                      >
+                      <span className="text-sm font-medium">
                         {model.product.brand.name}
-                      </Link>
+                      </span>
                       {model.product.brand.verified && (
                         <Badge variant="secondary" className="text-xs">
                           ✓ Verified
