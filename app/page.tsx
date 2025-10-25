@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CategoriesPreview } from "@/components/model/categories-preview";
 import { Hero } from "@/components/layout/hero";
-import { ThemeSwitcher } from "@/components/layout/theme-switcher";
 import { FeaturedModels } from "@/components/model/featured-models";
 
 export default function Home() {
