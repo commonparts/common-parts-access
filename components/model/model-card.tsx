@@ -159,7 +159,7 @@ export function ModelCard({
 
         {/* Author */}
         {showAuthor && (
-          <Link href={`/user/${model.author.username}`} className="flex items-center space-x-2 hover:text-primary transition-colors">
+          <div className="flex items-center space-x-2">
             <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
               {model.author.avatar ? (
                 <img src={model.author.avatar} alt={model.author.username} className="w-full h-full object-cover" />
@@ -170,7 +170,7 @@ export function ModelCard({
               )}
             </div>
             <span className="text-sm font-medium">@{model.author.username}</span>
-          </Link>
+          </div>
         )}
       </CardContent>
 
