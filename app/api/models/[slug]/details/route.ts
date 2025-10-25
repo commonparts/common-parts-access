@@ -4,10 +4,11 @@ import { createClient } from '@/lib/supabase/server'
 // GET /api/models/[slug]/details - Get detailed model information by slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const supabase = await createClient()
+    const { slug } = await params
     
     // Get model details with all related data
     const { data: model, error } = await supabase
@@ -85,7 +86,7 @@ export async function GET(
           verified
         )
       `)
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('status', 'published')
       .single()
 
