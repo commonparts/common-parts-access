@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
-import { CurrentUserAvatar } from "@/components/current-user-profile";
+import { CurrentUserAvatar } from "@/components/user/current-user-profile";
 import { LogoutButton } from "@/components/auth/logout-button";
 import Link from "next/link";
-import { BrowseModelsMenu } from "@/components/browse-models-menu";
+import { BrowseModelsMenu } from "@/components/browse/browse-models-menu";
 import { createClient } from "@/lib/supabase/server";
 import { AuthButton } from "@/components/auth/auth-button";
-import { HarborMark } from "@/components/hero";
+import { HarborMark } from "@/components/layout/hero";
 import { SearchBar } from "@/components/layout/search-bar";
 
 export default async function Navbar() {
@@ -22,7 +22,7 @@ export default async function Navbar() {
           </Link>
         </div>
         
-        <div className="flex-1 max-w-md">
+        <div className="flex-1 max-w-md hidden">
           <SearchBar />
         </div>
         
