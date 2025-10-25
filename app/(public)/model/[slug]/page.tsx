@@ -4,14 +4,15 @@ import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
 
 interface ModelPageProps {
-  params: {
+  params: Promise<{
     slug: string
-  }
+  }>
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({ params }: ModelPageProps): Promise<Metadata> {
   try {
+    const { slug } = await params
     const supabase = await createClient()
     
     // Fetch basic model info for metadata
@@ -24,7 +25,7 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
         user_profiles!inner(username, display_name),
         tags
       `)
-      .eq('slug', params.slug)
+      .eq('slug', slug)
       .eq('status', 'published')
       .single()
 
@@ -91,8 +92,10 @@ async function validateModel(slug: string) {
 }
 
 export default async function ModelPage({ params }: ModelPageProps) {
+  const { slug } = await params
+  
   // Validate the model exists before rendering
-  const { exists } = await validateModel(params.slug)
+  const { exists } = await validateModel(slug)
   
   if (!exists) {
     notFound()
@@ -119,7 +122,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
         </nav>
 
         {/* Model Details Component */}
-        <ModelDetails slug={params.slug} />
+        <ModelDetails slug={slug} />
 
         {/* Back to Browse Button */}
         <div className="mt-12 text-center">
