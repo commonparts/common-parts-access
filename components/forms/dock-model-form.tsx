@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import { getCurrentUser } from "@/lib/supabase/queries/auth.client";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
@@ -212,7 +213,7 @@ export function DockModelForm({ className, ...props }: DockModelFormProps) {
 
     try {
       // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      const { data: { user }, error: userError } = await getCurrentUser();
       if (userError || !user) {
         throw new Error("You must be logged in to dock a model");
       }

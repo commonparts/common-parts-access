@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
 import { headers } from 'next/headers'
 
 interface DownloadTrackingData {
@@ -25,7 +26,7 @@ export async function POST(
     const clientIp = forwardedFor?.split(',')[0] || headersList.get('x-real-ip') || 'unknown'
 
     // Get current user if authenticated
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await getCurrentUser()
 
     // Find the model by slug
     const { data: model, error: modelError } = await supabase

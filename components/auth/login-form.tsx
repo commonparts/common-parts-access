@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
+import { signInWithPassword } from "@/lib/supabase/queries/auth.client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,16 +34,12 @@ export function LoginForm({
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    const supabase = createClient();
     setIsLoading(true);
     setError(null);
 
     try {
       console.log("[LoginForm] Attempting login for:", email);
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { data, error } = await signInWithPassword(email, password);
       console.log("[LoginForm] Login result:", { data, error });
       if (error) throw error;
       // Redirect to the originally requested page if present
