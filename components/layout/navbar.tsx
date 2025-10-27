@@ -2,14 +2,13 @@ import { Button } from "@/components/ui/button";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
 import { LogoutButton } from "@/components/auth/logout-button";
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { AuthButton } from "@/components/auth/auth-button";
 import { HarborMark } from "@/components/layout/hero";
 import { SearchBar } from "@/components/layout/search-bar";
 
 export default async function Navbar() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await getCurrentUser();
 
   return (
     <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
