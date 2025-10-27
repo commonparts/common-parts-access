@@ -21,6 +21,7 @@ export function SignUpForm({
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [repeatPassword, setRepeatPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -38,8 +39,27 @@ export function SignUpForm({
       return;
     }
 
+    if (!username.trim()) {
+      setError("Username is required");
+      setIsLoading(false);
+      return;
+    }
+
+    // Basic username validation
+    if (username.length < 3) {
+      setError("Username must be at least 3 characters long");
+      setIsLoading(false);
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
+      setError("Username can only contain letters, numbers, underscores, and hyphens");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await signUp(email, password, `${window.location.origin}/`);
+      const { error } = await signUp(email, password, username, `${window.location.origin}/`);
       if (error) throw error;
       router.push("/sign-up-success");
     } catch (error: unknown) {
@@ -68,6 +88,19 @@ export function SignUpForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  minLength={3}
+                  pattern="[a-zA-Z0-9_-]+"
+                  title="Username can only contain letters, numbers, underscores, and hyphens"
                 />
               </div>
               <div className="grid gap-2">
