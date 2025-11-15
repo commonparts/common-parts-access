@@ -12,11 +12,12 @@ interface DownloadTrackingData {
 // POST /api/models/[slug]/download - Track model download
 export async function POST(
   request: NextRequest,
-  { params }: { params: { slug: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
     const body: DownloadTrackingData = await request.json()
     const { fileId, filename, fileCategory } = body
+    const { slug } = await params
     const supabase = await createClient()
     
     // Get client IP and user agent for analytics
@@ -31,40 +32,43 @@ export async function POST(
     // Find the model by slug
     const { data: model, error: modelError } = await supabase
       .from('models')
-      .select('id, name')
-      .eq('slug', params.slug)
+      .select('id, name, download_count')
+      .eq('slug', slug)
       .eq('status', 'published')
       .single()
 
     if (modelError || !model) {
+      console.error('Model not found:', modelError)
       return NextResponse.json(
         { error: 'Model not found' },
         { status: 404 }
       )
     }
 
-    // Insert download tracking record
-    const { error: trackingError } = await supabase
-      .from('model_downloads')
-      .insert({
-        model_id: model.id,
-        file_id: fileId,
-        user_id: user?.id || null,
-        ip_address: clientIp,
-        user_agent: userAgent,
-        filename: filename,
-        file_category: fileCategory,
-        downloaded_at: new Date().toISOString()
-      })
-
-    if (trackingError) {
-      console.error('Failed to track download:', trackingError)
-      // Don't fail the request if tracking fails
+    // Try to insert download tracking record (table might not exist yet)
+    try {
+      await supabase
+        .from('model_downloads')
+        .insert({
+          model_id: model.id,
+          file_id: fileId,
+          user_id: user?.id || null,
+          ip_address: clientIp,
+          user_agent: userAgent,
+          filename: filename,
+          file_category: fileCategory,
+          downloaded_at: new Date().toISOString()
+        })
+    } catch (trackingError) {
+      console.warn('Download tracking table might not exist:', trackingError)
     }
 
-    // Update model download count
+    // Update model download count directly
+    const newDownloadCount = (model.download_count || 0) + 1
     const { error: updateError } = await supabase
-      .rpc('increment_model_downloads', { model_id: model.id })
+      .from('models')
+      .update({ download_count: newDownloadCount })
+      .eq('id', model.id)
 
     if (updateError) {
       console.error('Failed to update download count:', updateError)
@@ -79,12 +83,10 @@ export async function POST(
 
   } catch (error) {
     console.error('Download tracking error:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to track download',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    // Return success even if tracking fails - don't block the download
+    return NextResponse.json({
+      success: true,
+      message: 'Download initiated (tracking unavailable)'
+    })
   }
 }

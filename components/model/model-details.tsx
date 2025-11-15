@@ -336,8 +336,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 try {
                   const result = await downloadAllModelFiles(model.files, model.slug)
                   if (!result.success) {
-                    console.error('Download failed:', result.error)
-                    alert(`Download failed: ${result.error}`)
+                    // Don't show error if it's just a redirect to login
+                    if (!result.requiresAuth) {
+                      console.error('Download failed:', result.error)
+                      alert(`Download failed: ${result.error}`)
+                    }
                   }
                 } catch (error) {
                   console.error('Download error:', error)
@@ -611,9 +614,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             try {
               const result = await downloadFile(file, model.slug)
               if (!result.success) {
-                // You could show a toast notification here
-                console.error('Download failed:', result.error)
-                alert(`Download failed: ${result.error}`)
+                // Don't show error if it's just a redirect to login
+                if (!result.requiresAuth) {
+                  console.error('Download failed:', result.error)
+                  alert(`Download failed: ${result.error}`)
+                }
               }
             } catch (error) {
               console.error('Download error:', error)
