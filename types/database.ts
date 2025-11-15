@@ -1,16 +1,189 @@
-export interface EnhancedModel {
+// ============================================================================
+// Core Database Types - Matches Supabase schema exactly
+// ============================================================================
+
+export interface UserProfile {
+  id: string;
+  username: string;
+  display_name?: string | null;
+  bio?: string | null;
+  avatar_url?: string | null;
+  website_url?: string | null;
+  location?: string | null;
+  reputation_score?: number;
+  verified_maker?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Brand {
   id: string;
   name: string;
   slug: string;
-  description: string;
-  user_id: string;
-  // ... existing fields
-  // New fields (optional for backward compatibility)
-  part_name?: string;
-  part_number?: string;
-  print_settings?: Record<string, any>;
-  tags?: string[];
+  description?: string | null;
+  logo_url?: string | null;
+  website_url?: string | null;
+  founded_year?: number | null;
+  country?: string | null; // ISO country code
+  verified?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
-// Keep existing types, extend gradually
-export type Model = EnhancedModel; // Alias for compatibility
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  icon?: string | null; // Lucide icon name
+  parent_id?: string | null;
+  level?: number;
+  path?: string | null; // Materialized path: /electronics/phones/
+  created_at?: string;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  brand_id?: string | null;
+  category_id?: string | null;
+  model_number?: string | null;
+  description?: string | null;
+  release_year?: number | null;
+  discontinued?: boolean;
+  image_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Model {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  user_id: string;
+  product_id?: string | null;
+  brand_id?: string | null;
+  category_id?: string | null;
+  
+  // Part details
+  part_name?: string | null;
+  part_number?: string | null;
+  material?: string | null;
+  color?: string | null;
+  dimensions?: Record<string, any> | null; // {length: 50, width: 30, height: 10, unit: "mm"}
+  
+  // 3D Print settings
+  print_settings?: Record<string, any> | null; // {layer_height: 0.2, infill: 20, supports: true}
+  estimated_print_time?: number | null; // minutes
+  estimated_material_usage?: number | null; // grams (stored as DECIMAL)
+  
+  // Files and media
+  thumbnail_url?: string | null;
+  images?: Record<string, any> | null; // Array of image URLs (JSONB)
+  
+  // Status and metrics
+  status?: string; // draft, published, archived
+  download_count?: number;
+  view_count?: number;
+  like_count?: number;
+  
+  // Metadata
+  tags?: string[] | null;
+  license?: string | null;
+  instructions?: string | null;
+  notes?: string | null;
+  
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface ModelFile {
+  id: string;
+  model_id: string;
+  filename: string; // max 255 chars
+  original_filename: string; // max 255 chars
+  file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
+  file_size: number; // bytes (BIGINT)
+  file_url: string;
+  file_category: string; // model, documentation, image (max 20 chars)
+  upload_path: string; // Storage path
+  checksum?: string | null; // File integrity (max 64 chars)
+  created_at?: string;
+}
+
+export interface ModelLike {
+  id: string;
+  user_id: string;
+  model_id: string;
+  created_at?: string;
+}
+
+export interface ModelDownload {
+  id: string;
+  user_id?: string | null;
+  model_id: string;
+  file_id?: string | null;
+  ip_address?: string | null; // INET
+  user_agent?: string | null;
+  created_at?: string;
+}
+
+export interface ModelComment {
+  id: string;
+  model_id: string;
+  user_id: string;
+  parent_id?: string | null; // For nested comments
+  content: string;
+  rating?: number | null; // 1-5
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Collection {
+  id: string;
+  name: string; // max 200 chars
+  description?: string | null;
+  user_id: string;
+  is_public?: boolean;
+  thumbnail_url?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CollectionModel {
+  collection_id: string;
+  model_id: string;
+  added_at?: string;
+}
+
+// ============================================================================
+// Enhanced Types with Relations - Used in queries and API responses
+// ============================================================================
+
+export interface ModelWithRelations extends Model {
+  user_profiles?: UserProfile | UserProfile[];
+  brands?: Brand | Brand[];
+  categories?: Category | Category[];
+  products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
+}
+
+export interface EnhancedModel extends Model {
+  // Alias for backward compatibility
+}
+
+// ============================================================================
+// Database Filter Types
+// ============================================================================
+
+export type ModelStatus = 'draft' | 'published' | 'archived';
+
+export interface ModelFilters {
+  category_id?: string;
+  brand_id?: string;
+  product_id?: string;
+  status?: ModelStatus;
+  user_id?: string;
+  tags?: string[];
+}
