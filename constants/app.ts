@@ -5,8 +5,12 @@ export const FILE_TYPES = {
 } as const;
 
 export const STORAGE_BUCKETS = {
-  MODEL_FILES: 'models-files',
-  MODEL_THUMBNAILS: 'models-thumbnails',
-  USER_AVATARS: 'user-avatars', // Future
-  BRAND_ASSETS: 'brand-assets', // Future
+  MODEL_FILES: 'model-files',
+  MODEL_THUMBNAILS: 'model-thumbnails',
+  USER_AVATARS: 'user-avatars',
+  BRAND_ASSETS: 'brand-assets',
+  CATEGORY_ICONS: 'category-icons',
+  PRODUCT_IMAGES: 'product-images',
+  PRODUCT_THUMBNAILS: 'product-thumbnails',
+  BRAND_LOGOS: 'brand-logos',
 } as const;
