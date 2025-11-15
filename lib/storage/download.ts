@@ -17,15 +17,47 @@ interface DownloadResult {
   success: boolean
   error?: string
   downloadUrl?: string
+  requiresAuth?: boolean
 }
 
 /**
  * Download a single file
  */
 export async function downloadFile(file: ModelFile, modelSlug: string): Promise<DownloadResult> {
+  // Check if user is authenticated
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+  
+  if (!session) {
+    // Store the current URL to redirect back after login
+    const currentUrl = window.location.pathname
+    sessionStorage.setItem('redirectAfterLogin', currentUrl)
+    
+    // Redirect to login
+    window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+    
+    return {
+      success: false,
+      requiresAuth: true,
+      error: 'Authentication required'
+    }
+  }
   try {
-    // Track the download
-    const trackingResponse = await fetch(`/api/models/${modelSlug}/download`, {
+    // Get a signed download URL from the API
+    const urlResponse = await fetch(`/api/models/${modelSlug}/files/${file.id}/download-url`)
+    
+    if (!urlResponse.ok) {
+      const errorData = await urlResponse.json().catch(() => ({ error: 'Failed to get download URL' }))
+      return {
+        success: false,
+        error: errorData.error || 'Failed to get download URL'
+      }
+    }
+
+    const { downloadUrl, filename } = await urlResponse.json()
+
+    // Track the download (non-blocking)
+    fetch(`/api/models/${modelSlug}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -35,41 +67,24 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
         filename: file.original_filename,
         fileCategory: file.file_category
       })
+    }).catch(err => {
+      console.warn('Failed to track download:', err)
     })
 
-    if (!trackingResponse.ok) {
-      console.warn('Failed to track download, but continuing with download')
-    }
-
-    // Get the file URL - this could be a direct URL or a signed URL from Supabase
-    let downloadUrl = file.file_url
-
-    // If the URL is a Supabase storage URL, create a signed URL for secure download
-    if (file.file_url.includes('supabase')) {
-      const supabase = createClient()
-      const { data, error } = await supabase.storage
-        .from('model-files')
-        .createSignedUrl(file.filename, 60) // 60 seconds expiry
-
-      if (error) {
-        console.error('Failed to create signed URL:', error)
-        // Fall back to direct URL
-      } else if (data) {
-        downloadUrl = data.signedUrl
-      }
-    }
-
-    // Trigger the download
+    // Trigger the download by creating a temporary link
     const link = document.createElement('a')
     link.href = downloadUrl
-    link.download = file.original_filename
+    link.download = filename || file.original_filename
     link.target = '_blank'
     link.rel = 'noopener noreferrer'
     
-    // Append to body, click, and remove
     document.body.appendChild(link)
     link.click()
-    document.body.removeChild(link)
+    
+    // Clean up after a short delay
+    setTimeout(() => {
+      document.body.removeChild(link)
+    }, 100)
 
     return {
       success: true,
@@ -94,6 +109,19 @@ export async function downloadMultipleFiles(files: ModelFile[], modelSlug: strin
     const results = await Promise.allSettled(
       files.map(file => downloadFile(file, modelSlug))
     )
+
+    // Check if any result requires auth (user was redirected)
+    const authRequired = results.find(result => 
+      result.status === 'fulfilled' && result.value.requiresAuth
+    )
+    
+    if (authRequired) {
+      return {
+        success: false,
+        requiresAuth: true,
+        error: 'Authentication required'
+      }
+    }
 
     const failures = results.filter(result => 
       result.status === 'rejected' || 
