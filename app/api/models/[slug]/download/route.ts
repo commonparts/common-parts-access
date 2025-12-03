@@ -6,7 +6,6 @@ import { headers } from 'next/headers'
 interface DownloadTrackingData {
   fileId: string
   filename: string
-  fileCategory: string
 }
 
 // POST /api/models/[slug]/download - Track model download
@@ -16,7 +15,7 @@ export async function POST(
 ) {
   try {
     const body: DownloadTrackingData = await request.json()
-    const { fileId, filename, fileCategory } = body
+    const { fileId, filename } = body
     const { slug } = await params
     const supabase = await createClient()
     
@@ -60,17 +59,6 @@ export async function POST(
 
     if (trackingError) {
       console.error('Failed to record download:', trackingError)
-    }
-
-    // Update model download count directly
-    const newDownloadCount = (model.download_count || 0) + 1
-    const { error: updateError } = await supabase
-      .from('models')
-      .update({ download_count: newDownloadCount })
-      .eq('id', model.id)
-
-    if (updateError) {
-      console.error('Failed to update download count:', updateError)
     }
 
     return NextResponse.json({
