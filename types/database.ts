@@ -127,7 +127,7 @@ export interface ModelDownload {
   file_id?: string | null;
   ip_address?: string | null; // INET
   user_agent?: string | null;
-  created_at?: string;
+  downloaded_at?: string;
 }
 
 export interface ModelComment {
