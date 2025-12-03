@@ -45,22 +45,21 @@ export async function POST(
       )
     }
 
-    // Try to insert download tracking record (table might not exist yet)
-    try {
-      await supabase
-        .from('model_downloads')
-        .insert({
-          model_id: model.id,
-          file_id: fileId,
-          user_id: user?.id || null,
-          ip_address: clientIp,
-          user_agent: userAgent,
-          filename: filename,
-          file_category: fileCategory,
-          downloaded_at: new Date().toISOString()
-        })
-    } catch (trackingError) {
-      console.warn('Download tracking table might not exist:', trackingError)
+    const downloadRecord = {
+      model_id: model.id,
+      file_id: fileId,
+      user_id: user?.id || null,
+      ip_address: clientIp,
+      user_agent: userAgent,
+      downloaded_at: new Date().toISOString()
+    }
+
+    const { error: trackingError } = await supabase
+      .from('model_downloads')
+      .insert(downloadRecord)
+
+    if (trackingError) {
+      console.error('Failed to record download:', trackingError)
     }
 
     // Update model download count directly
