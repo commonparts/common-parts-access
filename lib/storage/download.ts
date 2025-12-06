@@ -101,54 +101,6 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
 }
 
 /**
- * Download multiple files as a ZIP
- */
-export async function downloadMultipleFiles(files: ModelFile[], modelSlug: string): Promise<DownloadResult> {
-  try {
-    // For now, we'll download files individually
-    // In the future, this could create a ZIP file on the server
-    const results = await Promise.allSettled(
-      files.map(file => downloadFile(file, modelSlug))
-    )
-
-    // Check if any result requires auth (user was redirected)
-    const authRequired = results.find(result => 
-      result.status === 'fulfilled' && result.value.requiresAuth
-    )
-    
-    if (authRequired) {
-      return {
-        success: false,
-        requiresAuth: true,
-        error: 'Authentication required'
-      }
-    }
-
-    const failures = results.filter(result => 
-      result.status === 'rejected' || 
-      (result.status === 'fulfilled' && !result.value.success)
-    )
-
-    if (failures.length > 0) {
-      return {
-        success: false,
-        error: `Failed to download ${failures.length} of ${files.length} files`
-      }
-    }
-
-    return {
-      success: true
-    }
-  } catch (error) {
-    console.error('Bulk download failed:', error)
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Bulk download failed'
-    }
-  }
-}
-
-/**
  * Download all model files
  */
 export async function downloadAllModelFiles(files: ModelFile[], modelSlug: string, modelName?: string): Promise<DownloadResult> {
