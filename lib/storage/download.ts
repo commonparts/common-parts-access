@@ -1,6 +1,7 @@
 'use client'
 
 import { createClient } from '@/lib/supabase/client'
+import { toZipSafeName } from '@/lib/storage/path-utils'
 
 interface ModelFile {
   id: string
@@ -150,17 +151,76 @@ export async function downloadMultipleFiles(files: ModelFile[], modelSlug: strin
 /**
  * Download all model files
  */
-export async function downloadAllModelFiles(files: ModelFile[], modelSlug: string): Promise<DownloadResult> {
-  const modelFiles = files.filter(file => file.file_category === 'model')
-  
-  if (modelFiles.length === 0) {
+export async function downloadAllModelFiles(files: ModelFile[], modelSlug: string, modelName?: string): Promise<DownloadResult> {
+  if (!files || files.length === 0) {
     return {
       success: false,
-      error: 'No 3D model files available for download'
+      error: 'No files available for download'
     }
   }
 
-  return downloadMultipleFiles(modelFiles, modelSlug)
+  const supabase = createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (!session) {
+    const currentUrl = window.location.pathname
+    sessionStorage.setItem('redirectAfterLogin', currentUrl)
+    window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+
+    return {
+      success: false,
+      requiresAuth: true,
+      error: 'Authentication required'
+    }
+  }
+
+  try {
+    const response = await fetch(`/api/models/${modelSlug}/files/archive`)
+
+    if (response.status === 401) {
+      const currentUrl = window.location.pathname
+      sessionStorage.setItem('redirectAfterLogin', currentUrl)
+      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
+
+      return {
+        success: false,
+        requiresAuth: true,
+        error: 'Authentication required'
+      }
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to download archive' }))
+      return {
+        success: false,
+        error: errorData.error || 'Failed to download archive'
+      }
+    }
+
+    const blob = await response.blob()
+    const archiveName = `${toZipSafeName(modelName || modelSlug, modelSlug)}.zip`
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = archiveName
+    link.target = '_blank'
+    link.rel = 'noopener noreferrer'
+
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    return {
+      success: true
+    }
+  } catch (error) {
+    console.error('Archive download failed:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to download archive'
+    }
+  }
 }
 
 /**

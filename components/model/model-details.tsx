@@ -407,7 +407,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 const { downloadAllModelFiles } = await import('@/lib/storage/download')
                 
                 try {
-                  const result = await downloadAllModelFiles(model.files, model.slug)
+                  const result = await downloadAllModelFiles(model.files, model.slug, model.name)
                   if (!result.success) {
                     // Don't show error if it's just a redirect to login
                     if (!result.requiresAuth) {
