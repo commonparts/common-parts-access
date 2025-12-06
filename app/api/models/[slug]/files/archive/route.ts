@@ -3,7 +3,7 @@ import { headers } from 'next/headers'
 import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
-import { extractModelStoragePath, toZipSafeName } from '@/lib/storage/path-utils'
+import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 
 export const runtime = 'nodejs'
 
@@ -71,8 +71,14 @@ export async function GET(
       }
 
       const arrayBuffer = await blob.arrayBuffer()
-      const fileName = file.original_filename || file.filename || `file-${addedFiles + 1}`
-      folder.file(fileName, Buffer.from(arrayBuffer))
+      const fallbackName = file.original_filename || file.filename || `file-${addedFiles + 1}`
+      const zipPath = buildZipEntryPath({
+        storagePath,
+        fallbackName,
+        modelId: model.id
+      })
+
+      folder.file(zipPath, Buffer.from(arrayBuffer))
       addedFiles += 1
     }
 
