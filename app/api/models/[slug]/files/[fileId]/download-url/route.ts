@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
-
-/**
- * Extracts the storage path from a Supabase storage URL (signed or public)
- * Handles both signed URLs with tokens and public URLs
- * @param url - The full Supabase storage URL
- * @returns The extracted path after /model-files/ or null if not found
- */
-function extractStoragePath(url: string | null): string | null {
-  if (!url || !url.includes('/model-files/')) {
-    return null
-  }
-  
-  const match = url.match(/\/model-files\/(.+?)(\?|$)/)
-  return match ? match[1] : null
-}
+import { extractModelStoragePath } from '@/lib/storage/path-utils'
 
 /**
  * Constructs a public storage URL for a file in Supabase Storage
@@ -68,9 +54,9 @@ export async function GET(
 
     // Extract the storage path from the stored URL
     // Try upload_path first (more likely to have full path), then fallback to file_url
-    const storagePath = extractStoragePath(file.upload_path) || 
-                       extractStoragePath(file.file_url) || 
-                       file.filename
+    const storagePath = extractModelStoragePath(file.upload_path) || 
+               extractModelStoragePath(file.file_url) || 
+               file.filename
 
     // Construct public URL for the file
     const publicUrl = getPublicStorageUrl(storagePath)

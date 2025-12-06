@@ -17,8 +17,8 @@ This document describes the implementation of authenticated file downloads for 3
 
 #### Client-Side: `lib/storage/download.ts`
 - `downloadFile()` - Downloads a single file with authentication check
-- `downloadMultipleFiles()` - Downloads multiple files individually
-- `downloadAllModelFiles()` - Downloads all model files (filters by category)
+- `downloadMultipleFiles()` - (Legacy) downloads multiple files individually
+- `downloadAllModelFiles()` - Requests the zipped archive for the entire model folder
 
 #### API Endpoints
 
@@ -27,6 +27,12 @@ This document describes the implementation of authenticated file downloads for 3
 - Validates model exists and is published
 - Extracts storage path from database URLs
 - Returns public storage URL
+
+**`/api/models/[slug]/files/archive`** (GET)
+- Requires authentication
+- Streams a `.zip` archive containing every asset stored for the model
+- Folder name inside the archive (and the downloaded file name) matches the model name
+- Records a single entry in `model_downloads` with `file_id = null`
 
 **`/api/models/[slug]/download`** (POST)
 - Tracks download events
