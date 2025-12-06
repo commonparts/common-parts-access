@@ -17,7 +17,6 @@ This document describes the implementation of authenticated file downloads for 3
 
 #### Client-Side: `lib/storage/download.ts`
 - `downloadFile()` - Downloads a single file with authentication check
-- `downloadMultipleFiles()` - (Legacy) downloads multiple files individually
 - `downloadAllModelFiles()` - Requests the zipped archive for the entire model folder
 
 #### API Endpoints
