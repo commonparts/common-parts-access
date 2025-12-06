@@ -32,6 +32,7 @@ This document describes the implementation of authenticated file downloads for 3
 - Requires authentication
 - Streams a `.zip` archive containing every asset stored for the model
 - Folder name inside the archive (and the downloaded file name) matches the model name
+- Nested folders from Supabase storage (`upload_path`) are preserved inside the archive
 - Records a single entry in `model_downloads` with `file_id = null`
 
 **`/api/models/[slug]/download`** (POST)
