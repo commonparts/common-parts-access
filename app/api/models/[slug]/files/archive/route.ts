@@ -91,6 +91,7 @@ export async function GET(
       compression: 'DEFLATE',
       streamFiles: true
     })
+    const zipBytes = new Uint8Array(zipBuffer)
 
     try {
       const headersList = await headers()
@@ -111,8 +112,7 @@ export async function GET(
     } catch (trackingError) {
       console.error('Failed to log archive download:', trackingError)
     }
-
-    return new NextResponse(zipBuffer, {
+    return new NextResponse(zipBytes, {
       status: 200,
       headers: {
         'Content-Type': 'application/zip',
