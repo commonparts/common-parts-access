@@ -8,6 +8,7 @@ export async function GET(
 ) {
   try {
     const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
     const { slug } = await params
     
     // Get model details with all related data
@@ -140,6 +141,22 @@ export async function GET(
       console.error('Error fetching comments:', commentsError)
     }
 
+    let viewerHasLiked = false
+    if (user) {
+      const { data: likeRow, error: likeError } = await supabase
+        .from('model_likes')
+        .select('id')
+        .eq('model_id', model.id)
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      if (likeError && likeError.code !== 'PGRST116') {
+        console.error('Error checking like status:', likeError)
+      }
+
+      viewerHasLiked = Boolean(likeRow)
+    }
+
     // Transform the data
     const userProfile = Array.isArray(model.user_profiles) ? model.user_profiles[0] : model.user_profiles
     const product = Array.isArray(model.products) ? model.products[0] : model.products
@@ -168,6 +185,7 @@ export async function GET(
         likes: model.like_count || 0,
         views: model.view_count || 0
       },
+      viewerHasLiked,
       tags: model.tags || [],
       license: model.license,
       instructions: model.instructions,
