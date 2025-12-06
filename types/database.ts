@@ -117,7 +117,7 @@ export interface ModelLike {
   id: string;
   user_id: string;
   model_id: string;
-  created_at?: string;
+  liked_at?: string;
 }
 
 export interface ModelDownload {

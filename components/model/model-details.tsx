@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -63,6 +63,7 @@ interface ModelData {
     likes: number
     views: number
   }
+  viewerHasLiked?: boolean
   tags: string[]
   license: string
   instructions?: string
@@ -126,6 +127,35 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [likePending, setLikePending] = useState(false)
+
+  const adjustLikes = useCallback((liked: boolean, delta: number) => {
+    setModel(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        viewerHasLiked: liked,
+        stats: {
+          ...prev.stats,
+          likes: Math.max(0, prev.stats.likes + delta)
+        }
+      }
+    })
+  }, [])
+
+  const syncLikes = useCallback((liked: boolean, likes?: number) => {
+    setModel(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        viewerHasLiked: liked,
+        stats: {
+          ...prev.stats,
+          likes: typeof likes === 'number' ? Math.max(0, likes) : prev.stats.likes
+        }
+      }
+    })
+  }, [])
 
   useEffect(() => {
     async function fetchModel() {
@@ -143,7 +173,10 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         }
         
         const data = await response.json()
-        setModel(data.model)
+        const normalizedModel = data?.model
+          ? { ...data.model, viewerHasLiked: Boolean(data.model.viewerHasLiked) }
+          : null
+        setModel(normalizedModel)
       } catch (err) {
         console.error('Error fetching model:', err)
         setError(err instanceof Error ? err.message : 'Failed to load model')
@@ -156,6 +189,46 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
       fetchModel()
     }
   }, [slug])
+
+  const handleLikeToggle = useCallback(async () => {
+    if (!model || likePending) {
+      return
+    }
+
+    const nextLiked = !(model.viewerHasLiked ?? false)
+    const targetSlug = model.slug
+
+    adjustLikes(nextLiked, nextLiked ? 1 : -1)
+    setLikePending(true)
+
+    try {
+      const response = await fetch(`/api/models/${targetSlug}/likes`, {
+        method: nextLiked ? 'POST' : 'DELETE'
+      })
+
+      if (response.status === 401) {
+        adjustLikes(!nextLiked, nextLiked ? -1 : 1)
+        if (typeof window !== 'undefined') {
+          const redirectTarget = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          window.location.href = redirectTarget
+        }
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update like status')
+      }
+
+      const payload = await response.json()
+      syncLikes(payload.liked ?? nextLiked, payload.likes)
+    } catch (err) {
+      console.error('Like toggle failed:', err)
+      adjustLikes(!nextLiked, nextLiked ? -1 : 1)
+      alert('Unable to update like. Please try again.')
+    } finally {
+      setLikePending(false)
+    }
+  }, [model, likePending, adjustLikes, syncLikes])
 
   const formatFileSize = (bytes: number) => {
     const sizes = ['Bytes', 'KB', 'MB', 'GB']
@@ -353,11 +426,29 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               </svg>
               Download Files
             </Button>
-            <Button variant="outline" size="lg" className="flex items-center gap-2">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-              Like
+            <Button
+              variant="outline"
+              size="lg"
+              className="flex items-center gap-2"
+              onClick={handleLikeToggle}
+              disabled={likePending}
+              aria-pressed={model.viewerHasLiked}
+            >
+              {likePending ? (
+                <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              ) : (
+                <svg
+                  className="w-5 h-5"
+                  fill={model.viewerHasLiked ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                </svg>
+              )}
+              {model.viewerHasLiked ? 'Liked' : 'Like'}
             </Button>
             <Button variant="outline" size="lg">
               Share
