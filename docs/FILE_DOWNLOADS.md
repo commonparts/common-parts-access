@@ -1,88 +1,78 @@
 # File Download Implementation
 
 ## Overview
-This document describes the implementation of authenticated file downloads for 3D model files in PartHarbor.
+Authenticated file downloads support single-file and bulk ZIP flows. Files live in the public `model-files` bucket; requests log to `model_downloads`, and triggers should maintain `models.download_count`.
 
-## Architecture
+## Flow
+1. User clicks a download action on the model page.
+2. Client checks authentication (redirects to `/login?redirect=...` if unauthenticated).
+3. **Single file:** client calls `/api/models/[slug]/files/[fileId]/download-url`, then triggers the browser download and posts `/api/models/[slug]/download` to log it.
+4. **Bulk archive:** client calls `/api/models/[slug]/files/archive`; server streams a ZIP that preserves nested folders and logs one row to `model_downloads` with `file_id = null`.
+5. DB trigger increments `models.download_count` on each insert into `model_downloads` (single or archive) to avoid double-counting.
 
-### Flow
-1. User clicks download button on model page
-2. Client checks authentication (redirects to login if not authenticated)
-3. Client requests download URL from API endpoint
-4. Server validates model/file access and generates public storage URL
-5. Client tracks download event (non-blocking)
-6. Browser initiates file download
+## Key Components
 
-### Key Components
+### Client-Side: `lib/storage/download.ts`
+- `downloadFile()` — Auth check, fetches per-file download URL, fires tracking POST, triggers browser download.
+- `downloadAllModelFiles()` — Auth check, fetches archive ZIP, names it with `toZipSafeName(modelName|slug)`, triggers browser download.
 
-#### Client-Side: `lib/storage/download.ts`
-- `downloadFile()` - Downloads a single file with authentication check
-- `downloadAllModelFiles()` - Requests the zipped archive for the entire model folder
-
-#### API Endpoints
+### API Endpoints
 
 **`/api/models/[slug]/files/[fileId]/download-url`** (GET)
-- Generates download URL for a specific file
-- Validates model exists and is published
-- Extracts storage path from database URLs
-- Returns public storage URL
+- Validates model is published, resolves storage path, and returns a public URL plus filename.
 
-**`/api/models/[slug]/files/archive`** (GET)
-- Requires authentication
-- Streams a `.zip` archive containing every asset stored for the model
-- Folder name inside the archive (and the downloaded file name) matches the model name
-- Nested folders from Supabase storage (`upload_path`) are preserved inside the archive
-- Records a single entry in `model_downloads` with `file_id = null`
+**`/api/models/[slug]/files/archive`** (GET, Node runtime)
+- Requires authentication.
+- Streams a ZIP containing every asset for the model.
+- Folder name inside the archive (and the downloaded filename) matches the model name; nested folders from `upload_path` are preserved via `buildZipEntryPath()`.
+- Inserts one `model_downloads` row (`file_id = null`) for analytics/triggered counts.
 
 **`/api/models/[slug]/download`** (POST)
-- Tracks download events
-- Records user, IP, file details
-- Increments model download count
-- Non-blocking (doesn't prevent downloads if tracking fails)
+- Tracks single-file downloads; records user (if any), IP, user agent, file metadata.
+- Should have an AFTER INSERT trigger to increment `models.download_count`.
+- Non-blocking: returns success even if tracking fails.
 
-### Storage Strategy
+## Storage Strategy
 
 **Public Bucket Approach**
-- `model-files` bucket is set to public access
-- Files accessed via public URLs (no signed tokens required)
-- Format: `https://{project}.supabase.co/storage/v1/object/public/model-files/{path}`
+- Bucket: `model-files` (public).
+- URL format: `https://{project}.supabase.co/storage/v1/object/public/model-files/{path}`
 
 **Path Structure**
-- Pattern: `user-{userId}/model-{modelId}/{filename}.{ext}`
-- Example: `user-d126b874/model-bae07178/12mm_hole.stl`
+- Pattern: `user-{userId}/model-{modelId}/.../filename.ext`
+- Nested paths are kept; `buildZipEntryPath()` strips the user/model prefix but retains deeper folders in the ZIP.
 
-### Database Fields
+## Database Fields
 
 **`model_files` table:**
-- `upload_path` - Should store the **relative storage path** within the bucket
-  - Correct format: `user-{id}/model-{id}/filename.ext`
-  - Example: `d126b874-b56d-44a0-8e32-43530b830402/bae07178-7d51-44a1-923a-e7b1a2a4cff4/12mm_hole.stl`
-- `file_url` - Can store full public URL or be generated on-demand
-- `filename` - Just the filename without path or extension (for display)
-- `original_filename` - Full filename with extension (as uploaded)
+- `upload_path` — Relative storage path (source of truth)
+- `file_url` — Optional public URL; avoid storing signed URLs
+- `filename` — Display-safe name
+- `original_filename` — Uploader-provided name
+
+**`model_downloads` table:**
+- Columns: `model_id`, `file_id` (nullable for archive), `user_id` (nullable), `ip_hash`, `user_agent`, `downloaded_at`.
+- `ip_hash` is SHA-256 of `ip` + `user-agent`; raw IPs are not stored.
+- Trigger: AFTER INSERT increments `models.download_count` (one row per archive to prevent overcounting).
+- Suggested indexes: `(model_id, downloaded_at desc)`, `(file_id)`, `(user_id)`.
 
 ## Authentication
-- Required: Users must be logged in to download files
-- Seamless redirect: Unauthenticated users redirected to `/login?redirect={currentPage}`
-- Return flow: Users redirected back to model page after login
+- Required for archive downloads and per-file downloads (client enforces redirect to login).
+- Redirect preserves the original path via `redirect` query param.
 
 ## Error Handling
-- Authentication errors: Silent redirect to login
-- File not found: 404 response
-- Server errors: 500 response with details
-- Tracking failures: Logged but don't block downloads
+- 401: Redirect to login for client calls.
+- 404: Model missing/unpublished or no files.
+- 503/500: Upstream storage or server failures; logged server-side.
+- Tracking failures are logged and non-blocking.
 
 ## Reusable Functions
-
-### `extractStoragePath(url: string): string | null`
-Extracts the storage path from any Supabase storage URL (signed or public).
-
-### `getPublicStorageUrl(storagePath: string): string`
-Constructs a public storage URL from a relative path.
+- `extractStoragePath(url: string): string | null` — Pulls bucket-relative paths from Supabase URLs.
+- `getPublicStorageUrl(storagePath: string): string` — Builds a public URL from a relative path.
+- `buildZipEntryPath()` — Normalizes storage paths and preserves nested folders inside the ZIP.
 
 ## Future Enhancements
-- [ ] ZIP file generation for bulk downloads (currently downloads individually)
 - [ ] Download quotas/rate limiting
 - [ ] Resume support for large files
-- [ ] Download progress tracking
+- [ ] Download progress tracking for archives
 - [ ] Analytics dashboard for download metrics
