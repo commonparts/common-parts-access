@@ -450,9 +450,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               )}
               {model.viewerHasLiked ? 'Liked' : 'Like'}
             </Button>
-            <Button variant="outline" size="lg">
-              Share
-            </Button>
           </div>
 
           {/* Author Info */}
