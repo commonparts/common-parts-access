@@ -1,7 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { headers } from 'next/headers'
+import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
-import { headers } from 'next/headers'
+
+export const runtime = 'nodejs'
+
+function hashFingerprint(ip: string, userAgent: string) {
+  return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
+}
 
 interface DownloadTrackingData {
   fileId: string
@@ -23,7 +30,8 @@ export async function POST(
     const headersList = await headers()
     const userAgent = headersList.get('user-agent') || ''
     const forwardedFor = headersList.get('x-forwarded-for')
-    const clientIp = forwardedFor?.split(',')[0] || headersList.get('x-real-ip') || 'unknown'
+    const clientIp = forwardedFor?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown'
+    const ipHash = hashFingerprint(clientIp, userAgent)
 
     // Get current user if authenticated
     const { data: { user } } = await getCurrentUser()
@@ -48,7 +56,7 @@ export async function POST(
       model_id: model.id,
       file_id: fileId,
       user_id: user?.id || null,
-      ip_address: clientIp,
+      ip_hash: ipHash,
       user_agent: userAgent,
       downloaded_at: new Date().toISOString()
     }

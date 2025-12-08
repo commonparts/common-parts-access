@@ -125,7 +125,7 @@ export interface ModelDownload {
   user_id?: string | null;
   model_id: string;
   file_id?: string | null;
-  ip_address?: string | null; // INET
+  ip_hash?: string | null; // SHA-256 of IP + UA
   user_agent?: string | null;
   downloaded_at?: string;
 }
