@@ -1,6 +1,4 @@
 import Navbar from "@/components/layout/navbar";
-import Link from "next/link";
-import { CategoriesPreview } from "@/components/model/categories-preview";
 import { Hero } from "@/components/layout/hero";
 import { FeaturedModels } from "@/components/model/featured-models";
 
