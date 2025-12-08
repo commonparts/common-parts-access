@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from "react"
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -128,6 +128,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
   const [error, setError] = useState<string | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [likePending, setLikePending] = useState(false)
+  const viewTrackedRef = useRef(false)
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setModel(prev => {
@@ -189,6 +190,31 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
       fetchModel()
     }
   }, [slug])
+
+  useEffect(() => {
+    if (!model || viewTrackedRef.current) return
+
+    viewTrackedRef.current = true
+    const controller = new AbortController()
+
+    const trackView = async () => {
+      try {
+        await fetch(`/api/models/${model.slug}/view`, {
+          method: 'POST',
+          signal: controller.signal,
+        })
+      } catch (err) {
+        if ((err as any)?.name === 'AbortError') return
+        console.error('View tracking failed:', err)
+      }
+    }
+
+    trackView()
+
+    return () => {
+      controller.abort()
+    }
+  }, [model])
 
   const handleLikeToggle = useCallback(async () => {
     if (!model || likePending) {
