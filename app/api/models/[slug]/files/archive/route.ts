@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import crypto from 'crypto'
 import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
 import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 
 export const runtime = 'nodejs'
+
+function hashFingerprint(ip: string, userAgent: string) {
+  return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
+}
 
 export async function GET(
   _request: Request,
@@ -98,6 +103,7 @@ export async function GET(
       const userAgent = headersList.get('user-agent') || ''
       const forwardedFor = headersList.get('x-forwarded-for')
       const clientIp = forwardedFor?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown'
+      const ipHash = hashFingerprint(clientIp, userAgent)
 
       await supabase
         .from('model_downloads')
@@ -105,7 +111,7 @@ export async function GET(
           model_id: model.id,
           file_id: null,
           user_id: user.id,
-          ip_address: clientIp,
+          ip_hash: ipHash,
           user_agent: userAgent,
           downloaded_at: new Date().toISOString()
         })
