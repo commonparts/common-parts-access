@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import crypto from 'crypto'
-import { createClient } from '@/lib/supabase/server'
 import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
+import { recordModelDownload } from '@/lib/supabase/queries/model-metrics'
 
 export const runtime = 'nodejs'
 
@@ -24,7 +24,6 @@ export async function POST(
     const body: DownloadTrackingData = await request.json()
     const { fileId, filename } = body
     const { slug } = await params
-    const supabase = await createClient()
     
     // Get client IP and user agent for analytics
     const headersList = await headers()
@@ -36,47 +35,28 @@ export async function POST(
     // Get current user if authenticated
     const { data: { user } } = await getCurrentUser()
 
-    // Find the model by slug
-    const { data: model, error: modelError } = await supabase
-      .from('models')
-      .select('id, name, download_count')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single()
+    const download = await recordModelDownload({
+      slug,
+      fileId,
+      userId: user?.id,
+      ipHash,
+      userAgent,
+    })
 
-    if (modelError || !model) {
-      console.error('Model not found:', modelError)
+    return NextResponse.json({
+      success: true,
+      message: 'Download tracked successfully',
+      modelName: download.modelName,
+      filename: filename
+    })
+
+  } catch (error) {
+    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
       return NextResponse.json(
         { error: 'Model not found' },
         { status: 404 }
       )
     }
-
-    const downloadRecord = {
-      model_id: model.id,
-      file_id: fileId,
-      user_id: user?.id || null,
-      ip_hash: ipHash,
-      user_agent: userAgent,
-      downloaded_at: new Date().toISOString()
-    }
-
-    const { error: trackingError } = await supabase
-      .from('model_downloads')
-      .insert(downloadRecord)
-
-    if (trackingError) {
-      console.error('Failed to record download:', trackingError)
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: 'Download tracked successfully',
-      modelName: model.name,
-      filename: filename
-    })
-
-  } catch (error) {
     console.error('Download tracking error:', error)
     // Return success even if tracking fails - don't block the download
     return NextResponse.json({
