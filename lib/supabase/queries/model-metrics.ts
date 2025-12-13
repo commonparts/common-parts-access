@@ -12,13 +12,16 @@ async function getPublishedModel(slug: string, columns: string, supabase: Supaba
 		.eq('status', 'published')
 		.single();
 
-	if (error || !data) {
+	const hasEmbeddedError =
+		data && typeof data === 'object' && 'error' in data;
+
+	if (error || !data || hasEmbeddedError) {
 		const err = new Error('MODEL_NOT_FOUND') as Error & { code?: string };
 		err.code = 'MODEL_NOT_FOUND';
 		throw err;
 	}
 
-	return data as PublishedModelSlice;
+	return data as unknown as PublishedModelSlice;
 }
 
 export interface RecordViewInput {

@@ -87,7 +87,7 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
 
   let query = supabase
     .from('models')
-    .select<ModelCardRow>(MODEL_SELECT, { count: 'exact' });
+    .select(MODEL_SELECT, { count: 'exact' });
 
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
@@ -108,7 +108,7 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
     throw error;
   }
 
-  const models = (data ?? []).map(mapModelRowToCard);
+  const models = ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
   const total = count || 0;
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -131,7 +131,7 @@ export async function fetchFeaturedModelCards(limit = 8) {
 
   const { data, error } = await supabase
     .from('models')
-    .select<ModelCardRow>(MODEL_SELECT)
+    .select(MODEL_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
     .limit(limit);
@@ -140,5 +140,5 @@ export async function fetchFeaturedModelCards(limit = 8) {
     throw error;
   }
 
-  return (data ?? []).map(mapModelRowToCard);
+  return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
 }
