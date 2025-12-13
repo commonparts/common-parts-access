@@ -1,5 +1,5 @@
 export const FILE_TYPES = {
-  MODEL_FILES: ['.stl', '.obj', '.3mf', '.step', '.iges'] as const,
+  MODEL_FILES: ['.stl', '.obj', '.3mf', '.step', '.stp', '.iges', '.fbx', '.dae', '.3ds', '.ply', '.gltf', '.glb'] as const,
   IMAGE_FILES: ['.jpg', '.jpeg', '.png', '.webp'] as const,
   DOC_FILES: ['.pdf', '.txt', '.md'] as const,
 } as const;
