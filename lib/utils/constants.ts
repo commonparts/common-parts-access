@@ -16,22 +16,10 @@ export const FILE_UPLOAD = {
   ALLOWED_IMAGE_EXTENSIONS: ['.jpg', '.jpeg', '.png', '.gif', '.webp'],
   ALLOWED_MIME_TYPES: {
     models: [
-      'application/octet-stream',
-      'model/obj',
-      'model/fbx',
-      'model/dae',
-      'model/3ds',
-      'model/blend',
-      'model/stl',
-      'model/ply',
-      'model/gltf+json',
-      'model/gltf-binary'
+      'model/stl'
     ],
     images: [
-      'image/jpeg',
-      'image/png',
-      'image/gif',
-      'image/webp'
+      'image/jpeg'
     ]
   }
 } as const
