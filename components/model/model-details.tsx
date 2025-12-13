@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
-import Link from "next/link"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -331,7 +331,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         <div className="space-y-4">
           <div className="aspect-video relative overflow-hidden rounded-lg border">
             {allImages.length > 0 ? (
-              <img 
+              <Image 
                 src={allImages[selectedImageIndex]} 
                 alt={model.name}
                 className="w-full h-full object-cover"
@@ -359,7 +359,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       : "hover:opacity-75"
                   )}
                 >
-                  <img 
+                  <Image 
                     src={image} 
                     alt={`${model.name} ${index + 1}`}
                     className="w-full h-full object-cover"
@@ -485,7 +485,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                   {model.author.avatar ? (
-                    <img 
+                    <Image 
                       src={model.author.avatar} 
                       alt={model.author.username}
                       className="w-full h-full object-cover"
@@ -682,7 +682,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               <div className="flex items-start gap-3">
                 {model.product.image && (
                   <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                    <img 
+                    <Image 
                       src={model.product.image} 
                       alt={model.product.name}
                       className="w-full h-full object-cover"
