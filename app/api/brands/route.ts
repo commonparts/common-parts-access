@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/brands - List all brands
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // TODO: Implement brand listing
   return NextResponse.json({ message: 'Brands API endpoint', brands: [] })
 }

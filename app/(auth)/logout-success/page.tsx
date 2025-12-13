@@ -22,7 +22,7 @@ export default function LogoutSuccessPage() {
           </h1>
           
           <p className="text-muted-foreground mb-8 leading-relaxed">
-            You've successfully set sail from PartHarbor. Your session has ended safely and all your data remains secure in our harbor.
+            You&apos;ve successfully set sail from PartHarbor. Your session has ended safely and all your data remains secure in our harbor.
           </p>
 
           {/* Action buttons */}
@@ -44,7 +44,7 @@ export default function LogoutSuccessPage() {
 
           {/* Additional helpful text */}
           <p className="text-xs text-muted-foreground mt-6">
-            Thank you for being part of the PartHarbor community. We're here whenever you need to find or share spare parts.
+            Thank you for being part of the PartHarbor community. We&apos;re here whenever you need to find or share spare parts.
           </p>
         </div>
       </div>

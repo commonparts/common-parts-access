@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import type { Model } from '@/types/database';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
+type PublishedModelSlice = Pick<Model, 'id' | 'view_count' | 'name' | 'like_count'>;
 
-async function getPublishedModel<T extends string>(slug: string, columns: T, supabase: SupabaseServerClient) {
+async function getPublishedModel(slug: string, columns: string, supabase: SupabaseServerClient): Promise<PublishedModelSlice> {
 	const { data, error } = await supabase
 		.from('models')
 		.select(columns)
@@ -11,12 +13,12 @@ async function getPublishedModel<T extends string>(slug: string, columns: T, sup
 		.single();
 
 	if (error || !data) {
-		const err = new Error('MODEL_NOT_FOUND');
-		(err as any).code = 'MODEL_NOT_FOUND';
+		const err = new Error('MODEL_NOT_FOUND') as Error & { code?: string };
+		err.code = 'MODEL_NOT_FOUND';
 		throw err;
 	}
 
-	return data as any;
+	return data as PublishedModelSlice;
 }
 
 export interface RecordViewInput {

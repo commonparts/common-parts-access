@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
@@ -106,15 +107,15 @@ export default async function ModelPage({ params }: ModelPageProps) {
       <main className="container mx-auto px-6 py-8">
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
-          <a href="/" className="hover:text-foreground transition-colors">
+          <Link href="/" className="hover:text-foreground transition-colors">
             Home
-          </a>
+          </Link>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
-          <a href="/browse" className="hover:text-foreground transition-colors">
+          <Link href="/browse" className="hover:text-foreground transition-colors">
             Browse
-          </a>
+          </Link>
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -126,7 +127,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
 
         {/* Back to Browse Button */}
         <div className="mt-12 text-center">
-          <a 
+          <Link 
             href="/browse"
             className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
           >
@@ -134,7 +135,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
             </svg>
             Browse More Models
-          </a>
+          </Link>
         </div>
       </main>
     </div>

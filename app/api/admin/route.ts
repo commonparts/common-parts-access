@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/admin - Admin dashboard data
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // TODO: Add authentication check for admin role
   // TODO: Implement admin dashboard data
   return NextResponse.json({ 

@@ -11,7 +11,7 @@ export default function UserProfilePage({ params }: { params: { username: string
           </div>
         </div>
         <div className="lg:col-span-2">
-          <p className="text-gray-600">User's models and activity will be displayed here</p>
+          <p className="text-gray-600">User&apos;s models and activity will be displayed here</p>
         </div>
       </div>
     </div>

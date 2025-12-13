@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/categories - List all categories
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // TODO: Implement category listing
   return NextResponse.json({ message: 'Categories API endpoint', categories: [] })
 }
