@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { fetchModelCards } from '@/lib/supabase/queries/model'
+import type { ModelListOptions } from '@/types/models'
 
 // GET /api/models - List all models with pagination, sorting, and search
 export async function GET(request: NextRequest) {
@@ -7,14 +8,18 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
-    const sortBy = searchParams.get('sortBy') || 'created_at'
+    const sortByParam = searchParams.get('sortBy') || 'created_at'
+    const allowedSort: ModelListOptions['sortBy'][] = ['popularity', 'likes', 'views', 'newest', 'created_at']
+    const sortBy = allowedSort.includes(sortByParam as ModelListOptions['sortBy'])
+      ? (sortByParam as ModelListOptions['sortBy'])
+      : 'created_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const search = searchParams.get('search') || ''
 
     const { models, pagination } = await fetchModelCards({
       page,
       limit,
-      sortBy: sortBy as any,
+      sortBy,
       sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
       search,
       status: 'published',

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/collections - List collections
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // TODO: Implement collection listing
   return NextResponse.json({ message: 'Collections API endpoint', collections: [] })
 }

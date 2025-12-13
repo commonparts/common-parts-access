@@ -169,10 +169,6 @@ export interface ModelWithRelations extends Model {
   products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
 }
 
-export interface EnhancedModel extends Model {
-  // Alias for backward compatibility
-}
-
 // ============================================================================
 // Database Filter Types
 // ============================================================================

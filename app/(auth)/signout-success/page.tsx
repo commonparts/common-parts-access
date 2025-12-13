@@ -22,7 +22,7 @@ export default function SignOutPage() {
           </h1>
           
           <p className="text-muted-foreground mb-8 leading-relaxed">
-            You've successfully departed the harbor. Your session has been cleared and your data is secure.
+            You&apos;ve successfully departed the harbor. Your session has been cleared and your data is secure.
           </p>
 
           {/* Return to harbor button */}

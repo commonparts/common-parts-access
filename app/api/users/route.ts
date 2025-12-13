@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/users - List users (admin only)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   // TODO: Implement user listing (admin only)
   return NextResponse.json({ message: 'Users API endpoint' })
 }

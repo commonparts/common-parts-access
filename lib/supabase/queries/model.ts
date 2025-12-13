@@ -1,36 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
-
-export interface ModelCardData {
-  id: string;
-  slug: string;
-  title: string;
-  description?: string | null;
-  thumbnailUrl?: string | null;
-  author: {
-    username: string;
-    avatar?: string | null;
-  };
-  stats: {
-    downloads: number;
-    likes: number;
-    views: number;
-  };
-  tags: string[];
-  category: string;
-  createdAt: Date;
-  isPremium?: boolean;
-}
-
-export interface ModelListOptions {
-  page?: number;
-  limit?: number;
-  sortBy?: 'popularity' | 'likes' | 'views' | 'newest' | 'created_at';
-  sortOrder?: 'asc' | 'desc';
-  search?: string;
-  status?: string;
-  category?: string;
-  brand?: string;
-}
+import type {
+  ModelCardData,
+  ModelCardRow,
+  ModelListOptions,
+  ModelListResult,
+} from '@/types/models';
 
 const MODEL_SELECT = `
   id,
@@ -57,7 +31,7 @@ const MODEL_SELECT = `
   )
 `;
 
-function mapModelRowToCard(model: any): ModelCardData {
+function mapModelRowToCard(model: ModelCardRow): ModelCardData {
   const userProfile = Array.isArray(model.user_profiles)
     ? model.user_profiles[0]
     : model.user_profiles;
@@ -80,7 +54,7 @@ function mapModelRowToCard(model: any): ModelCardData {
       likes: model.like_count || 0,
       views: model.view_count || 0,
     },
-    tags: model.tags || [],
+    tags: Array.isArray(model.tags) ? model.tags : [],
     category: category?.name || 'Uncategorized',
     createdAt: model.created_at ? new Date(model.created_at) : new Date(),
     isPremium: false,
@@ -103,7 +77,7 @@ function resolveOrderColumn(sortBy?: ModelListOptions['sortBy']) {
 }
 
 // Paged list with optional filters/search/sorting for browse screens.
-export async function fetchModelCards(options: ModelListOptions = {}) {
+export async function fetchModelCards(options: ModelListOptions = {}): Promise<ModelListResult> {
   const page = Math.max(1, options.page || 1);
   const limit = Math.max(1, options.limit || 20);
   const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -113,7 +87,7 @@ export async function fetchModelCards(options: ModelListOptions = {}) {
 
   let query = supabase
     .from('models')
-    .select(MODEL_SELECT, { count: 'exact' });
+    .select<ModelCardRow>(MODEL_SELECT, { count: 'exact' });
 
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
@@ -134,7 +108,7 @@ export async function fetchModelCards(options: ModelListOptions = {}) {
     throw error;
   }
 
-  const models = (data || []).map(mapModelRowToCard);
+  const models = (data ?? []).map(mapModelRowToCard);
   const total = count || 0;
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -157,7 +131,7 @@ export async function fetchFeaturedModelCards(limit = 8) {
 
   const { data, error } = await supabase
     .from('models')
-    .select(MODEL_SELECT)
+    .select<ModelCardRow>(MODEL_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
     .limit(limit);
@@ -166,5 +140,5 @@ export async function fetchFeaturedModelCards(limit = 8) {
     throw error;
   }
 
-  return (data || []).map(mapModelRowToCard);
+  return (data ?? []).map(mapModelRowToCard);
 }

@@ -216,7 +216,7 @@ export default function BrowsePage() {
         {currentSearch && (
           <div className="mb-6 flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg">
             <span className="text-sm">
-              Showing results for <strong>"{currentSearch}"</strong>
+              Showing results for <strong>&quot;{currentSearch}&quot;</strong>
             </span>
             <Button 
               variant="ghost" 
@@ -235,7 +235,7 @@ export default function BrowsePage() {
         {!loading && (
           <div className="mb-6 text-sm text-muted-foreground">
             {pagination.total} models found
-            {currentSearch && ` for "${currentSearch}"`}
+            {currentSearch && ` for “${currentSearch}”`}
           </div>
         )}
 
