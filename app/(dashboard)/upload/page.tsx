@@ -25,11 +25,11 @@ export default function UploadPage() {
     const body = new FormData()
     body.append('title', payload.title)
     body.append('description', payload.description || '')
-    body.append('category', payload.category)
+    body.append('category', payload.categoryId)
     body.append('license', payload.license || '')
     body.append('isPublic', String(Boolean(payload.isPublic)))
-    if (payload.brand) body.append('brand', payload.brand)
-    if (payload.product) body.append('product', payload.product)
+    if (payload.brandId) body.append('brand', payload.brandId)
+    if (payload.productId) body.append('product', payload.productId)
     for (const tag of payload.tags || []) {
       body.append('tags', tag)
     }
