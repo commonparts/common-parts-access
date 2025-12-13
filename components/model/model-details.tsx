@@ -331,10 +331,13 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         <div className="space-y-4">
           <div className="aspect-video relative overflow-hidden rounded-lg border">
             {allImages.length > 0 ? (
-              <Image 
-                src={allImages[selectedImageIndex]} 
+              <Image
+                src={allImages[selectedImageIndex]}
                 alt={model.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                priority
               />
             ) : (
               <div className="w-full h-full bg-muted flex items-center justify-center">
@@ -359,9 +362,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       : "hover:opacity-75"
                   )}
                 >
-                  <Image 
-                    src={image} 
+                  <Image
+                    src={image}
                     alt={`${model.name} ${index + 1}`}
+                    width={64}
+                    height={64}
                     className="w-full h-full object-cover"
                   />
                 </button>
@@ -485,9 +490,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
                   {model.author.avatar ? (
-                    <Image 
-                      src={model.author.avatar} 
+                    <Image
+                      src={model.author.avatar}
                       alt={model.author.username}
+                      width={48}
+                      height={48}
                       className="w-full h-full object-cover"
                     />
                   ) : (
@@ -682,9 +689,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               <div className="flex items-start gap-3">
                 {model.product.image && (
                   <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                    <Image 
-                      src={model.product.image} 
+                    <Image
+                      src={model.product.image}
                       alt={model.product.name}
+                      width={64}
+                      height={64}
                       className="w-full h-full object-cover"
                     />
                   </div>
