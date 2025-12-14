@@ -24,6 +24,20 @@ function uniqueFilename(originalName: string) {
 	return `${name}-${suffix}${extension}`
 }
 
+function resolveModelContentType(extension: string): string {
+	switch (extension.toLowerCase()) {
+		case '.stl':
+			return 'model/stl'
+		case '.obj':
+			return 'text/plain'
+		case '.stp':
+		case '.step':
+			return 'model/step'
+		default:
+			return 'application/octet-stream'
+	}
+}
+
 function buildStoragePath(input: BuildPathInput) {
 	const prefix = `user-${input.userId}/model-${input.modelId}`
 	const folder = input.kind === 'thumbnail' ? 'thumbnails' : 'files'
@@ -46,11 +60,19 @@ async function uploadSingle(params: {
 	})
 
 	const bucket = params.kind === 'thumbnail' ? STORAGE_BUCKETS.MODEL_THUMBNAILS : STORAGE_BUCKETS.MODEL_FILES
-	const contentType = params.file.file.type || (params.kind === 'thumbnail' ? inferImageContentType(params.file.extension) : undefined)
+
+	// Strict content types: enforce mapped types per allowed extensions
+	const contentType = params.kind === 'thumbnail'
+		? (inferImageContentType(params.file.extension) || 'image/jpeg')
+		: resolveModelContentType(params.file.extension)
+
+	const uploadBody = params.file.file.type === contentType
+		? params.file.file
+		: new File([params.file.file], params.file.file.name || params.file.originalName, { type: contentType })
 
 	const { error } = await params.supabase.storage
 		.from(bucket)
-		.upload(path, params.file.file, {
+		.upload(path, uploadBody, {
 			upsert: false,
 			contentType,
 		})

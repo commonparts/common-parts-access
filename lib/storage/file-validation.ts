@@ -1,12 +1,8 @@
 import { FILE_TYPES } from '@/constants/app'
 import type { UploadValidationIssue, ValidatedUploadFile } from '@/types/storage'
 
-const MODEL_EXTENSIONS = new Set(
-	[...FILE_TYPES.MODEL_FILES].map((ext) => ext.toLowerCase()),
-)
-const IMAGE_EXTENSIONS = new Set(
-	[...FILE_TYPES.IMAGE_FILES].map((ext) => ext.toLowerCase()),
-)
+const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
+const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
 
 export const MODEL_UPLOAD_LIMITS = {
 	maxModelFiles: 10,
