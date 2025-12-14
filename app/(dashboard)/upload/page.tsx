@@ -55,7 +55,8 @@ export default function UploadPage() {
 
       setSuccess('Model uploaded successfully')
       if (data?.slug) {
-        router.push(`/model/${data.slug}`)
+        const params = new URLSearchParams({ slug: data.slug })
+        router.push(`/upload/success?${params.toString()}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed')
