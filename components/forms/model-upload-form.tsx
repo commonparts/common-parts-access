@@ -10,6 +10,7 @@ interface CategoryOption {
   id: string
   name: string
   slug: string
+  parent_id?: string | null
   level?: number | null
 }
 
@@ -66,6 +67,49 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [products, setProducts] = React.useState<ProductOption[]>([])
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
+  const [categoryPath, setCategoryPath] = React.useState<string[]>([])
+
+  const categoryTreeByParent = React.useMemo(() => {
+    const map = new Map<string | null, CategoryOption[]>()
+    categories.forEach(cat => {
+      const parentKey = cat.parent_id ?? null
+      const siblings = map.get(parentKey) ?? []
+      siblings.push(cat)
+      map.set(parentKey, siblings)
+    })
+    return map
+  }, [categories])
+
+  const categoryLevels = React.useMemo(() => {
+    const levels: { parentId: string | null; options: CategoryOption[] }[] = []
+    let currentParent: string | null = null
+    let depth = 0
+
+    while (true) {
+      const options = categoryTreeByParent.get(currentParent) ?? []
+      if (options.length === 0 && depth > 0) break
+      levels.push({ parentId: currentParent, options })
+
+      const selectedAtLevel = categoryPath[depth]
+      if (!selectedAtLevel) break
+
+      const hasChildren = (categoryTreeByParent.get(selectedAtLevel) ?? []).length > 0
+      if (!hasChildren) break
+
+      currentParent = selectedAtLevel
+      depth += 1
+      if (depth > 12) break // safety guard for unexpected deep trees
+    }
+
+    return levels
+  }, [categoryPath, categoryTreeByParent])
+
+  const effectiveCategoryId = React.useMemo(() => {
+    for (let i = categoryPath.length - 1; i >= 0; i -= 1) {
+      if (categoryPath[i]) return categoryPath[i]
+    }
+    return ''
+  }, [categoryPath])
 
   React.useEffect(() => {
     let cancelled = false
@@ -131,6 +175,22 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
     loadProducts()
   }, [formData.brandId, formData.categoryId])
+
+  React.useEffect(() => {
+    setFormData(prev => {
+      if (prev.categoryId === effectiveCategoryId) return prev
+      return { ...prev, categoryId: effectiveCategoryId, productId: '' }
+    })
+  }, [effectiveCategoryId])
+
+  const handleCategorySelect = (level: number, value: string) => {
+    setCategoryPath(prev => {
+      const next = [...prev]
+      next[level] = value
+      return next.slice(0, level + 1)
+    })
+    setFormData(prev => ({ ...prev, productId: '' }))
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -202,23 +262,33 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="category">Category *</Label>
-              <select
-                id="category"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                value={formData.categoryId}
-                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value, productId: '' }))}
-                required
-                disabled={loadingMeta}
-              >
-                <option value="">{loadingMeta ? 'Loading categories...' : 'Select a category'}</option>
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {`${'  '.repeat(cat.level ?? 0)}${cat.name}`}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col gap-3">
+                {categoryLevels.map((level, idx) => {
+                  const placeholder = idx === 0 ? 'Select a category' : 'Keep parent category'
+                  const value = categoryPath[idx] ?? ''
+                  const disabled = loadingMeta || (idx > 0 && !categoryPath[idx - 1])
+
+                  return (
+                    <select
+                      key={level.parentId ?? `root-${idx}`}
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      value={value}
+                      onChange={(e) => handleCategorySelect(idx, e.target.value)}
+                      required={idx === 0}
+                      disabled={disabled}
+                    >
+                      <option value="">{loadingMeta ? 'Loading categories...' : placeholder}</option>
+                      {level.options.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </select>
+                  )
+                })}
+              </div>
             </div>
 
             <div className="space-y-2">
