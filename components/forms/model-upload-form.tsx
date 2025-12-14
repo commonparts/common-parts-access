@@ -346,6 +346,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>3D Model Files *</Label>
+            <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
             <FileUploader
               accept=".stl,.obj,.stp,.step"
               onFilesSelect={handleFilesSelect}
@@ -361,6 +362,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
           <div className="space-y-2">
             <Label>Thumbnail Images (Optional)</Label>
+            <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
             <FileUploader
               accept=".jpg,.jpeg,.png,.webp"
               onFilesSelect={handleThumbnailsSelect}
