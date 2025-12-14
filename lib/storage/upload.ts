@@ -39,7 +39,7 @@ function resolveModelContentType(extension: string): string {
 }
 
 function buildStoragePath(input: BuildPathInput) {
-	const prefix = `user-${input.userId}/model-${input.modelId}`
+	const prefix = `${input.userId}/${input.modelId}`
 	const folder = input.kind === 'thumbnail' ? 'thumbnails' : 'files'
 	return `${prefix}/${folder}/${input.filename}`
 }
