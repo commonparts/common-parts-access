@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileUploader } from "@/components/ui/file-uploader"
+import { Combobox } from "@/components/ui/combobox"
 
 interface CategoryOption {
   id: string
@@ -68,6 +69,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
   const [categoryPath, setCategoryPath] = React.useState<string[]>([])
+  const [brandSearch, setBrandSearch] = React.useState("")
+  const [productSearch, setProductSearch] = React.useState("")
+  const [brandOpen, setBrandOpen] = React.useState(false)
+  const [productOpen, setProductOpen] = React.useState(false)
 
   const categoryTreeByParent = React.useMemo(() => {
     const map = new Map<string | null, CategoryOption[]>()
@@ -182,6 +187,24 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       return { ...prev, categoryId: effectiveCategoryId, productId: '' }
     })
   }, [effectiveCategoryId])
+
+  React.useEffect(() => {
+    if (!formData.brandId) {
+      setBrandSearch("")
+      return
+    }
+    const match = brands.find(b => b.id === formData.brandId)
+    if (match) setBrandSearch(match.name)
+  }, [formData.brandId, brands])
+
+  React.useEffect(() => {
+    if (!formData.productId) {
+      setProductSearch("")
+      return
+    }
+    const match = products.find(p => p.id === formData.productId)
+    if (match) setProductSearch(match.model_number ? `${match.name} (${match.model_number})` : match.name)
+  }, [formData.productId, products])
 
   const handleCategorySelect = (level: number, value: string) => {
     setCategoryPath(prev => {
@@ -311,46 +334,49 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="brand">Brand (Optional)</Label>
-              <select
+              <Combobox
                 id="brand"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder={loadingMeta ? 'Loading brands...' : 'Search or select a brand'}
+                options={brands.map((b) => ({ id: b.id, name: b.name }))}
                 value={formData.brandId}
-                onChange={(e) => setFormData(prev => ({ ...prev, brandId: e.target.value, productId: '' }))}
+                searchTerm={brandSearch}
+                onSearchChange={setBrandSearch}
+                onSelect={(option) => {
+                  setFormData(prev => ({ ...prev, brandId: option.id, productId: '' }))
+                  setBrandSearch(option.name)
+                }}
+                isOpen={brandOpen}
+                onOpenChange={setBrandOpen}
                 disabled={loadingMeta}
-              >
-                <option value="">{loadingMeta ? 'Loading brands...' : 'Select a brand (optional)'}</option>
-                {brands.map((brand) => (
-                  <option key={brand.id} value={brand.id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
+                emptyMessage={brandSearch ? 'No matching brands' : 'No brands found'}
+              />
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="product">Product (Optional)</Label>
-              <select
+              <Combobox
                 id="product"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                placeholder={loadingProducts
+                  ? 'Loading products...'
+                  : (!formData.brandId && !formData.categoryId)
+                    ? 'Select brand/category to filter products'
+                    : 'Search or select a product'}
+                options={products.map((p) => ({
+                  id: p.id,
+                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name
+                }))}
                 value={formData.productId}
-                onChange={(e) => setFormData(prev => ({ ...prev, productId: e.target.value }))}
+                searchTerm={productSearch}
+                onSearchChange={setProductSearch}
+                onSelect={(option) => {
+                  setFormData(prev => ({ ...prev, productId: option.id }))
+                  setProductSearch(option.name)
+                }}
+                isOpen={productOpen}
+                onOpenChange={setProductOpen}
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
-              >
-                <option value="">
-                  {loadingProducts
-                    ? 'Loading products...'
-                    : (!formData.brandId && !formData.categoryId)
-                      ? 'Select brand/category to filter products'
-                      : products.length === 0
-                        ? 'No products found'
-                        : 'Select a product (optional)'}
-                </option>
-                {products.map((product) => (
-                  <option key={product.id} value={product.id}>
-                    {product.model_number ? `${product.name} (${product.model_number})` : product.name}
-                  </option>
-                ))}
-              </select>
+                emptyMessage={productSearch ? 'No matching products' : 'No products found'}
+              />
             </div>
           </div>
         </CardContent>
