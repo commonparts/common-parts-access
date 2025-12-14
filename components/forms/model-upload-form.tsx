@@ -98,7 +98,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
       currentParent = selectedAtLevel
       depth += 1
-      if (depth > 12) break // safety guard for unexpected deep trees
+      if (depth > 5) break // safety guard for unexpected deep trees
     }
 
     return levels
