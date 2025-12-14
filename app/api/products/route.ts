@@ -7,10 +7,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const brandId = searchParams.get('brandId') || undefined
     const categoryId = searchParams.get('categoryId') || undefined
+    const includeDescendants = searchParams.get('includeDescendants') === 'true'
     const search = searchParams.get('search') || undefined
     const limit = Number.parseInt(searchParams.get('limit') || '100', 10) || 100
 
-    const products = await fetchProducts({ brandId, categoryId, search, limit })
+    const products = await fetchProducts({ brandId, categoryId, includeDescendants, search, limit })
     return NextResponse.json({ products })
   } catch (error) {
     console.error('Failed to fetch products', error)
