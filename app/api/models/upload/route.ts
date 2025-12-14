@@ -81,51 +81,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', issues: validation.issues }, { status: 400 })
     }
 
-    if (!categoryId) {
-      return NextResponse.json({ error: 'Category is required' }, { status: 400 })
-    }
-
-    if (productId && !brandId) {
-      return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
-    }
-
-    const [categoryRow, brandRow, productRow] = await Promise.all([
-      supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
-      brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      productId
-        ? supabase
-          .from('products')
-          .select('id, brand_id, category_id')
-          .eq('id', productId)
-          .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-    ])
-
-    if (categoryRow.error || !categoryRow.data) {
-      return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
-    }
-
-    if (brandId) {
-      const brandResult = brandRow as any
-      if (brandResult?.error || !brandResult?.data) {
-        return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
-      }
-    }
-
-    if (productId) {
-      if ((productRow as any)?.error || !(productRow as any)?.data) {
-        return NextResponse.json({ error: 'Invalid product selected' }, { status: 400 })
-      }
-
-      const prod = (productRow as any).data as { brand_id?: string | null; category_id?: string | null }
-      if (brandId && prod.brand_id && prod.brand_id !== brandId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected brand' }, { status: 400 })
-      }
-      if (prod.category_id && prod.category_id !== categoryId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected category' }, { status: 400 })
-      }
-    }
-
     const slug = await ensureUniqueSlug(name, supabase)
     const status = isPublic ? 'published' : 'draft'
 
@@ -216,9 +171,7 @@ export async function POST(request: NextRequest) {
       images: uploads.imageUrls,
     }, { status: 201 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error while uploading model'
-    const isUnsupported = message.toLowerCase().includes('unsupported content type') || message.toLowerCase().includes('mime type')
     console.error('Model upload failed', error)
-    return NextResponse.json({ error: message }, { status: isUnsupported ? 400 : 500 })
+    return NextResponse.json({ error: 'Unexpected error while uploading model' }, { status: 500 })
   }
 }

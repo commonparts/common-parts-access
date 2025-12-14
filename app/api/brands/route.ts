@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchBrands } from '@/lib/supabase/queries/brands'
 
-// GET /api/brands - List brands ordered by name
+// GET /api/brands - List all brands
 export async function GET(_request: NextRequest) {
-  try {
-    const brands = await fetchBrands()
-    return NextResponse.json({ brands })
-  } catch (error) {
-    console.error('Failed to fetch brands', error)
-    return NextResponse.json({ error: 'Failed to fetch brands' }, { status: 500 })
-  }
+  // TODO: Implement brand listing
+  return NextResponse.json({ message: 'Brands API endpoint', brands: [] })
+}
+
+// POST /api/brands - Create brand
+export async function POST(request: NextRequest) {
+  // TODO: Implement brand creation
+  const body = await request.json()
+  return NextResponse.json({ message: 'Brand created', brand: body }, { status: 201 })
 }
