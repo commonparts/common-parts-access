@@ -6,13 +6,35 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { FileUploader } from "@/components/ui/file-uploader"
 
+interface CategoryOption {
+  id: string
+  name: string
+  slug: string
+  level?: number | null
+}
+
+interface BrandOption {
+  id: string
+  name: string
+  slug: string
+}
+
+interface ProductOption {
+  id: string
+  name: string
+  slug: string
+  model_number?: string | null
+  brand_id?: string | null
+  category_id?: string | null
+}
+
 interface ModelFormData {
   title: string
   description: string
-  category: string
+  categoryId: string
   tags: string[]
-  brand?: string
-  product?: string
+  brandId?: string
+  productId?: string
   files: File[]
   thumbnails: File[]
   isPublic: boolean
@@ -29,16 +51,86 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [formData, setFormData] = React.useState<ModelFormData>({
     title: "",
     description: "",
-    category: "",
+    categoryId: "",
     tags: [],
-    brand: "",
-    product: "",
+    brandId: "",
+    productId: "",
     files: [],
     thumbnails: [],
     isPublic: true,
     license: "cc-by-4.0"
   })
   const [tagInput, setTagInput] = React.useState("")
+  const [categories, setCategories] = React.useState<CategoryOption[]>([])
+  const [brands, setBrands] = React.useState<BrandOption[]>([])
+  const [products, setProducts] = React.useState<ProductOption[]>([])
+  const [loadingProducts, setLoadingProducts] = React.useState(false)
+  const [loadingMeta, setLoadingMeta] = React.useState(true)
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadMetadata() {
+      setLoadingMeta(true)
+      try {
+        const [catRes, brandRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/brands')
+        ])
+
+        const catJson = await catRes.json().catch(() => ({ categories: [] }))
+        const brandJson = await brandRes.json().catch(() => ({ brands: [] }))
+
+        if (!cancelled) {
+          setCategories(Array.isArray(catJson.categories) ? catJson.categories : [])
+          setBrands(Array.isArray(brandJson.brands) ? brandJson.brands : [])
+        }
+      } catch (error) {
+        console.error('Failed to load categories/brands', error)
+        if (!cancelled) {
+          setCategories([])
+          setBrands([])
+        }
+      } finally {
+        if (!cancelled) setLoadingMeta(false)
+      }
+    }
+
+    loadMetadata()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadProducts() {
+      if (!formData.brandId && !formData.categoryId) {
+        setProducts([])
+        return
+      }
+
+      setLoadingProducts(true)
+      try {
+        const params = new URLSearchParams()
+        if (formData.brandId) params.append('brandId', formData.brandId)
+        if (formData.categoryId) params.append('categoryId', formData.categoryId)
+        const res = await fetch(`/api/products?${params.toString()}`)
+        const json = await res.json().catch(() => ({ products: [] }))
+        if (!cancelled) {
+          setProducts(Array.isArray(json.products) ? json.products : [])
+        }
+      } catch (error) {
+        console.error('Failed to load products', error)
+        if (!cancelled) setProducts([])
+      } finally {
+        if (!cancelled) setLoadingProducts(false)
+      }
+    }
+
+    loadProducts()
+  }, [formData.brandId, formData.categoryId])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -115,18 +207,17 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               <select
                 id="category"
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                value={formData.category}
-                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                value={formData.categoryId}
+                onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value, productId: '' }))}
                 required
+                disabled={loadingMeta}
               >
-                <option value="">Select a category</option>
-                <option value="automotive">Automotive</option>
-                <option value="mechanical">Mechanical</option>
-                <option value="electronics">Electronics</option>
-                <option value="aerospace">Aerospace</option>
-                <option value="architecture">Architecture</option>
-                <option value="consumer-goods">Consumer Goods</option>
-                <option value="other">Other</option>
+                <option value="">{loadingMeta ? 'Loading categories...' : 'Select a category'}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {`${'  '.repeat(cat.level ?? 0)}${cat.name}`}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -150,24 +241,46 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="brand">Brand (Optional)</Label>
-              <Input
+              <select
                 id="brand"
-                type="text"
-                placeholder="e.g., Toyota, Apple, etc."
-                value={formData.brand}
-                onChange={(e) => setFormData(prev => ({ ...prev, brand: e.target.value }))}
-              />
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={formData.brandId}
+                onChange={(e) => setFormData(prev => ({ ...prev, brandId: e.target.value, productId: '' }))}
+                disabled={loadingMeta}
+              >
+                <option value="">{loadingMeta ? 'Loading brands...' : 'Select a brand (optional)'}</option>
+                {brands.map((brand) => (
+                  <option key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="product">Product (Optional)</Label>
-              <Input
+              <select
                 id="product"
-                type="text"
-                placeholder="e.g., Camry, iPhone, etc."
-                value={formData.product}
-                onChange={(e) => setFormData(prev => ({ ...prev, product: e.target.value }))}
-              />
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={formData.productId}
+                onChange={(e) => setFormData(prev => ({ ...prev, productId: e.target.value }))}
+                disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
+              >
+                <option value="">
+                  {loadingProducts
+                    ? 'Loading products...'
+                    : (!formData.brandId && !formData.categoryId)
+                      ? 'Select brand/category to filter products'
+                      : products.length === 0
+                        ? 'No products found'
+                        : 'Select a product (optional)'}
+                </option>
+                {products.map((product) => (
+                  <option key={product.id} value={product.id}>
+                    {product.model_number ? `${product.name} (${product.model_number})` : product.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </CardContent>
@@ -234,7 +347,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <div className="space-y-2">
             <Label>3D Model Files *</Label>
             <FileUploader
-              accept=".stl,.obj,.fbx,.dae,.3ds,.ply,.gltf,.glb"
+              accept=".stl,.obj,.stp,.step"
               onFilesSelect={handleFilesSelect}
               multiple={true}
               maxSize={50 * 1024 * 1024} // 50MB
@@ -287,7 +400,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <Button type="button" variant="outline">
           Save as Draft
         </Button>
-        <Button type="submit" disabled={loading || !formData.title || !formData.category || formData.files.length === 0}>
+        <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || formData.files.length === 0}>
           {loading ? "Uploading..." : "Upload Model"}
         </Button>
       </div>
