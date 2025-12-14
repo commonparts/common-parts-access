@@ -8,6 +8,12 @@ const nextConfig: NextConfig = {
         hostname: 'pyzttrqnxvirpkuxtjxl.supabase.co',
         port: '',
         pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'pyzttrqnxvirpkuxtjxl.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/sign/**',
       }
     ]
   }
