@@ -74,6 +74,16 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [brandOpen, setBrandOpen] = React.useState(false)
   const [productOpen, setProductOpen] = React.useState(false)
 
+  const categoryParentMap = React.useMemo(() => {
+    const map = new Map<string, string | null>()
+    categories.forEach(cat => {
+      if (cat.id) {
+        map.set(cat.id, cat.parent_id ?? null)
+      }
+    })
+    return map
+  }, [categories])
+
   const categoryTreeByParent = React.useMemo(() => {
     const map = new Map<string | null, CategoryOption[]>()
     categories.forEach(cat => {
@@ -165,6 +175,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         const params = new URLSearchParams()
         if (formData.brandId) params.append('brandId', formData.brandId)
         if (formData.categoryId) params.append('categoryId', formData.categoryId)
+        params.append('includeDescendants', 'true')
         const res = await fetch(`/api/products?${params.toString()}`)
         const json = await res.json().catch(() => ({ products: [] }))
         if (!cancelled) {
@@ -213,6 +224,20 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       return next.slice(0, level + 1)
     })
     setFormData(prev => ({ ...prev, productId: '' }))
+  }
+
+  const setCategoryPathFromCategoryId = (categoryId?: string | null) => {
+    if (!categoryId) return
+    const path: string[] = []
+    let current: string | null | undefined = categoryId
+    let safety = 0
+    while (current) {
+      path.push(current)
+      current = categoryParentMap.get(current) ?? null
+      safety += 1
+      if (safety > 50) break
+    }
+    setCategoryPath(path.reverse())
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -363,7 +388,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                     : 'Search or select a product'}
                 options={products.map((p) => ({
                   id: p.id,
-                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name
+                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                  categoryId: p.category_id ?? ''
                 }))}
                 value={formData.productId}
                 searchTerm={productSearch}
@@ -371,6 +397,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 onSelect={(option) => {
                   setFormData(prev => ({ ...prev, productId: option.id }))
                   setProductSearch(option.name)
+                  setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
                 }}
                 isOpen={productOpen}
                 onOpenChange={setProductOpen}
