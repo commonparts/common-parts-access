@@ -30,6 +30,17 @@ interface ProductOption {
   category_id?: string | null
 }
 
+interface CreateProductFormData {
+  name: string
+  brandId: string
+  categoryId: string
+  modelNumber?: string
+  description?: string
+  releaseYear?: string
+  imageUrl?: string
+  discontinued?: boolean
+}
+
 interface ModelFormData {
   title: string
   description: string
@@ -75,6 +86,18 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [productOpen, setProductOpen] = React.useState(false)
   const [showCreateProduct, setShowCreateProduct] = React.useState(false)
   const [pendingProductName, setPendingProductName] = React.useState("")
+  const [createProductData, setCreateProductData] = React.useState<CreateProductFormData>({
+    name: "",
+    brandId: "",
+    categoryId: "",
+    modelNumber: "",
+    description: "",
+    releaseYear: "",
+    imageUrl: "",
+    discontinued: false
+  })
+  const [createProductError, setCreateProductError] = React.useState<string | null>(null)
+  const [creatingProduct, setCreatingProduct] = React.useState(false)
 
   const categoryParentMap = React.useMemo(() => {
     const map = new Map<string, string | null>()
@@ -120,6 +143,13 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
     return levels
   }, [categoryPath, categoryTreeByParent])
+
+  const flatCategories = React.useMemo(() => {
+    return categories.map((cat) => ({
+      id: cat.id,
+      label: `${" ".repeat(Math.max(0, (cat.level ?? 0) * 2))}${cat.name}`
+    }))
+  }, [categories])
 
   const effectiveCategoryId = React.useMemo(() => {
     for (let i = categoryPath.length - 1; i >= 0; i -= 1) {
@@ -202,6 +232,19 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   }, [effectiveCategoryId])
 
   React.useEffect(() => {
+    if (showCreateProduct) {
+      setCreateProductData(prev => ({
+        ...prev,
+        name: pendingProductName || prev.name,
+        brandId: formData.brandId || prev.brandId,
+        categoryId: effectiveCategoryId || prev.categoryId,
+      }))
+      setCreateProductError(null)
+      setCreatingProduct(false)
+    }
+  }, [showCreateProduct, pendingProductName, formData.brandId, effectiveCategoryId])
+
+  React.useEffect(() => {
     if (!formData.brandId) {
       setBrandSearch("")
       return
@@ -239,6 +282,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setShowCreateProduct(true)
   }
 
+  const closeCreateProduct = () => {
+    setShowCreateProduct(false)
+    setCreateProductError(null)
+  }
+
   const setCategoryPathFromCategoryId = (categoryId?: string | null) => {
     if (!categoryId) return
     const path: string[] = []
@@ -256,6 +304,18 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     onSubmit(formData)
+  }
+
+  const handleCreateProductSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault()
+    // API integration will be added in the next step.
+    setCreatingProduct(true)
+    setCreateProductError('Product creation will be wired next.')
+    setTimeout(() => setCreatingProduct(false), 300)
+  }
+
+  const updateCreateField = (field: keyof CreateProductFormData, value: any) => {
+    setCreateProductData(prev => ({ ...prev, [field]: value }))
   }
 
   const handleFilesSelect = (files: File[]) => {
@@ -293,8 +353,148 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   return (
     <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
       {showCreateProduct && (
-        <div className="rounded-md border border-muted bg-muted/30 p-3 text-sm shadow-lg">
-          Creating product: {pendingProductName || 'New product'} (creation form will appear here next).
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-background/70 backdrop-blur-sm">
+          <div className="mt-10 w-full max-w-3xl px-4">
+            <Card className="shadow-2xl border-muted">
+              <CardHeader className="flex flex-row items-start justify-between space-y-0">
+                <div className="space-y-1">
+                  <CardTitle>Create new product</CardTitle>
+                  <p className="text-sm text-muted-foreground">Prefilled from your current brand and category selections.</p>
+                </div>
+                <Button variant="ghost" size="sm" onClick={closeCreateProduct}>
+                  Cancel
+                </Button>
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                {createProductError && (
+                  <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                    {createProductError}
+                  </div>
+                )}
+
+                <div className="space-y-4" role="form" aria-label="Create product">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-name">Product name *</Label>
+                      <Input
+                        id="create-name"
+                        value={createProductData.name}
+                        onChange={(e) => updateCreateField('name', e.target.value)}
+                        placeholder="Enter product name"
+                        required
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="create-model">Model number</Label>
+                      <Input
+                        id="create-model"
+                        value={createProductData.modelNumber || ''}
+                        onChange={(e) => updateCreateField('modelNumber', e.target.value)}
+                        placeholder="e.g., XR-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-brand">Brand *</Label>
+                      <select
+                        id="create-brand"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        value={createProductData.brandId}
+                        onChange={(e) => updateCreateField('brandId', e.target.value)}
+                        required
+                      >
+                        <option value="">Select brand</option>
+                        {brands.map((b) => (
+                          <option key={b.id} value={b.id}>{b.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="create-category">Category *</Label>
+                      <select
+                        id="create-category"
+                        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        value={createProductData.categoryId}
+                        onChange={(e) => updateCreateField('categoryId', e.target.value)}
+                        required
+                      >
+                        <option value="">Select category</option>
+                        {flatCategories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="create-description">Description</Label>
+                    <textarea
+                      id="create-description"
+                      rows={3}
+                      className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                      value={createProductData.description || ''}
+                      onChange={(e) => updateCreateField('description', e.target.value)}
+                      placeholder="Briefly describe the product"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-year">Release year</Label>
+                      <Input
+                        id="create-year"
+                        type="number"
+                        inputMode="numeric"
+                        value={createProductData.releaseYear || ''}
+                        onChange={(e) => updateCreateField('releaseYear', e.target.value)}
+                        placeholder="e.g., 2023"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="create-image">Image URL</Label>
+                      <Input
+                        id="create-image"
+                        type="url"
+                        value={createProductData.imageUrl || ''}
+                        onChange={(e) => updateCreateField('imageUrl', e.target.value)}
+                        placeholder="https://..."
+                      />
+                    </div>
+
+                    <div className="flex items-center space-x-2 pt-6">
+                      <input
+                        id="create-discontinued"
+                        type="checkbox"
+                        checked={Boolean(createProductData.discontinued)}
+                        onChange={(e) => updateCreateField('discontinued', e.target.checked)}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                      <Label htmlFor="create-discontinued">Discontinued</Label>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-2">
+                    <Button type="button" variant="outline" onClick={closeCreateProduct}>
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      onClick={() => handleCreateProductSubmit()}
+                      disabled={creatingProduct || !createProductData.name || !createProductData.brandId || !createProductData.categoryId}
+                    >
+                      {creatingProduct ? 'Creating...' : 'Create product'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 
