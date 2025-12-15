@@ -73,6 +73,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   const [productSearch, setProductSearch] = React.useState("")
   const [brandOpen, setBrandOpen] = React.useState(false)
   const [productOpen, setProductOpen] = React.useState(false)
+  const [showCreateProduct, setShowCreateProduct] = React.useState(false)
+  const [pendingProductName, setPendingProductName] = React.useState("")
 
   const categoryParentMap = React.useMemo(() => {
     const map = new Map<string, string | null>()
@@ -217,6 +219,12 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     if (match) setProductSearch(match.model_number ? `${match.name} (${match.model_number})` : match.name)
   }, [formData.productId, products])
 
+  React.useEffect(() => {
+    if (showCreateProduct) {
+      setProductOpen(false)
+    }
+  }, [showCreateProduct])
+
   const handleCategorySelect = (level: number, value: string) => {
     setCategoryPath(prev => {
       const next = [...prev]
@@ -224,6 +232,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       return next.slice(0, level + 1)
     })
     setFormData(prev => ({ ...prev, productId: '' }))
+  }
+
+  const handleOpenCreateProduct = (name: string) => {
+    setPendingProductName(name)
+    setShowCreateProduct(true)
   }
 
   const setCategoryPathFromCategoryId = (categoryId?: string | null) => {
@@ -279,6 +292,12 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
   return (
     <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
+      {showCreateProduct && (
+        <div className="rounded-md border border-muted bg-muted/30 p-3 text-sm shadow-lg">
+          Creating product: {pendingProductName || 'New product'} (creation form will appear here next).
+        </div>
+      )}
+
       {/* Basic Information */}
       <Card>
         <CardHeader>
@@ -399,6 +418,9 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   setProductSearch(option.name)
                   setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
                 }}
+                allowCreate={true}
+                onCreate={handleOpenCreateProduct}
+                createLabel={(value) => `Create product: ${value}`}
                 isOpen={productOpen}
                 onOpenChange={setProductOpen}
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
