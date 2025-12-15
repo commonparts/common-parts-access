@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Product } from '@/types/database'
+import { generateUniqueSlug, slugify } from '@/lib/utils/slug'
 
 export interface FetchProductsParams {
   brandId?: string
@@ -7,6 +8,17 @@ export interface FetchProductsParams {
   includeDescendants?: boolean
   search?: string
   limit?: number
+}
+
+export interface CreateProductInput {
+  name: string
+  brandId: string
+  categoryId: string
+  modelNumber?: string
+  description?: string
+  releaseYear?: number | null
+  imageUrl?: string
+  discontinued?: boolean
 }
 
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
@@ -73,4 +85,52 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   }
 
   return (data ?? []) as Product[]
+}
+
+export async function createProduct(input: CreateProductInput): Promise<Product> {
+  const supabase = await createClient()
+
+  const name = input.name?.trim()
+  if (!name) {
+    throw new Error('Name is required')
+  }
+
+  if (!input.brandId) {
+    throw new Error('Brand is required')
+  }
+
+  if (!input.categoryId) {
+    throw new Error('Category is required')
+  }
+
+  const base = slugify(name) || 'product'
+  const { data: existingSlugs } = await supabase
+    .from('products')
+    .select('slug')
+    .ilike('slug', `${base}%`)
+
+  const slug = generateUniqueSlug(name, (existingSlugs ?? []).map((p) => p.slug))
+
+  const { data, error } = await supabase
+    .from('products')
+    .insert({
+      name,
+      slug,
+      brand_id: input.brandId,
+      category_id: input.categoryId,
+      model_number: input.modelNumber?.trim() || null,
+      description: input.description?.trim() || null,
+      release_year: input.releaseYear ?? null,
+      image_url: input.imageUrl?.trim() || null,
+      discontinued: Boolean(input.discontinued),
+    })
+    .select('id, name, slug, brand_id, category_id, model_number')
+    .single()
+
+  if (error) {
+    console.error('createProduct: insert failed', error)
+    throw new Error(error.message || 'Failed to create product')
+  }
+
+  return data as Product
 }

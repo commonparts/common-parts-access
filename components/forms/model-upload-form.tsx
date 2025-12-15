@@ -308,10 +308,77 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
   const handleCreateProductSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault()
-    // API integration will be added in the next step.
+    setCreateProductError(null)
     setCreatingProduct(true)
-    setCreateProductError('Product creation will be wired next.')
-    setTimeout(() => setCreatingProduct(false), 300)
+
+    const payload = {
+      name: createProductData.name.trim(),
+      brandId: createProductData.brandId,
+      categoryId: createProductData.categoryId,
+      modelNumber: createProductData.modelNumber?.trim() || undefined,
+      description: createProductData.description?.trim() || undefined,
+      releaseYear: createProductData.releaseYear ? Number(createProductData.releaseYear) : undefined,
+      imageUrl: createProductData.imageUrl?.trim() || undefined,
+      discontinued: createProductData.discontinued,
+    }
+
+    try {
+      const res = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      const json = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setCreateProductError(json?.error || 'Failed to create product')
+        return
+      }
+
+      const product = json?.product as ProductOption | undefined
+      if (product?.id) {
+        const displayName = product.model_number ? `${product.name} (${product.model_number})` : product.name
+
+        setProducts(prev => {
+          const next = [...prev.filter((p) => p.id !== product.id), {
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            model_number: product.model_number ?? null,
+            brand_id: product.brand_id ?? null,
+            category_id: product.category_id ?? null,
+          }]
+          return next.sort((a, b) => a.name.localeCompare(b.name))
+        })
+
+        setFormData(prev => ({
+          ...prev,
+          brandId: product.brand_id ?? prev.brandId,
+          categoryId: product.category_id ?? prev.categoryId,
+          productId: product.id,
+        }))
+
+        setProductSearch(displayName)
+        setCategoryPathFromCategoryId(product.category_id)
+        setShowCreateProduct(false)
+        setPendingProductName('')
+        setCreateProductData({
+          name: '',
+          brandId: '',
+          categoryId: '',
+          modelNumber: '',
+          description: '',
+          releaseYear: '',
+          imageUrl: '',
+          discontinued: false,
+        })
+      }
+    } catch (err) {
+      setCreateProductError(err instanceof Error ? err.message : 'Failed to create product')
+    } finally {
+      setCreatingProduct(false)
+    }
   }
 
   const updateCreateField = (field: keyof CreateProductFormData, value: any) => {
