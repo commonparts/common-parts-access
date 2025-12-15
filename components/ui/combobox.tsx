@@ -18,6 +18,9 @@ interface ComboboxProps<T extends ComboboxOption> {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSelect: (option: T) => void;
+  allowCreate?: boolean;
+  onCreate?: (value: string) => void;
+  createLabel?: (value: string) => string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   className?: string;
@@ -34,6 +37,9 @@ export function Combobox<T extends ComboboxOption>({
   searchTerm,
   onSearchChange,
   onSelect,
+  allowCreate = false,
+  onCreate,
+  createLabel,
   isOpen,
   onOpenChange,
   className,
@@ -43,10 +49,18 @@ export function Combobox<T extends ComboboxOption>({
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
+  const trimmedSearch = searchTerm.trim();
+
   // Filter options based on search term
   const filteredOptions = options.filter((option) =>
     option.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const hasExactMatch = filteredOptions.some(
+    (option) => option.name.toLowerCase() === trimmedSearch.toLowerCase()
+  );
+  const showCreate = allowCreate && !!trimmedSearch && !hasExactMatch;
+  const totalRows = filteredOptions.length + (showCreate ? 1 : 0);
 
   // Handle click outside to close dropdown
   React.useEffect(() => {
@@ -67,10 +81,10 @@ export function Combobox<T extends ComboboxOption>({
 
   // Handle keyboard navigation
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || filteredOptions.length === 0) {
+    if (!isOpen || totalRows === 0) {
       if (e.key === "ArrowDown" && !isOpen) {
         onOpenChange(true);
-        setSelectedIndex(0);
+        setSelectedIndex(totalRows > 0 ? 0 : -1);
       }
       return;
     }
@@ -79,19 +93,21 @@ export function Combobox<T extends ComboboxOption>({
       case "ArrowDown":
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev < filteredOptions.length - 1 ? prev + 1 : 0
+          prev < totalRows - 1 ? prev + 1 : 0
         );
         break;
       case "ArrowUp":
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : filteredOptions.length - 1
+          prev > 0 ? prev - 1 : totalRows - 1
         );
         break;
       case "Enter":
         e.preventDefault();
         if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
           handleSelect(filteredOptions[selectedIndex]);
+        } else if (showCreate && selectedIndex === filteredOptions.length) {
+          handleCreate();
         }
         break;
       case "Escape":
@@ -107,6 +123,14 @@ export function Combobox<T extends ComboboxOption>({
     onSelect(option);
     onOpenChange(false);
     setSelectedIndex(-1);
+  };
+
+  const handleCreate = () => {
+    if (onCreate && trimmedSearch) {
+      onCreate(trimmedSearch);
+      onOpenChange(false);
+      setSelectedIndex(-1);
+    }
   };
 
   // Handle input changes
@@ -162,6 +186,19 @@ export function Combobox<T extends ComboboxOption>({
               <div className="px-3 py-2 text-sm text-muted-foreground">
                 {emptyMessage}
               </div>
+            )}
+            {showCreate && (
+              <button
+                type="button"
+                onClick={handleCreate}
+                className={`w-full px-3 py-2 text-left transition-colors cursor-pointer border-t border-muted/20 text-sm ${
+                  selectedIndex === filteredOptions.length
+                    ? "bg-accent text-accent-foreground"
+                    : "hover:bg-muted"
+                }`}
+              >
+                <div className="font-medium">{createLabel ? createLabel(trimmedSearch) : `Create product: ${trimmedSearch}`}</div>
+              </button>
             )}
           </div>
         )}
