@@ -33,7 +33,6 @@ export interface CreateProductFormData {
   description?: string
   releaseYear?: string
   imageFile?: File | null
-  discontinued?: boolean
 }
 
 export interface ModelFormData {
@@ -57,7 +56,6 @@ const emptyCreateProduct: CreateProductFormData = {
   description: "",
   releaseYear: "",
   imageFile: null,
-  discontinued: false,
 }
 
 export function useModelUploadFormState() {
@@ -313,14 +311,20 @@ export function useModelUploadFormState() {
 
         const { error: uploadError } = await supabase.storage
           .from(STORAGE_BUCKETS.PRODUCT_THUMBNAILS)
-          .upload(path, file, { contentType: file.type || undefined, upsert: false })
+          .upload(path, file, { contentType: file.type || "image/jpeg", upsert: false })
 
         if (uploadError) throw uploadError
 
         const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.PRODUCT_THUMBNAILS).getPublicUrl(path)
         imageUrl = publicData.publicUrl
       } catch (uploadErr) {
-        const message = uploadErr instanceof Error ? uploadErr.message : "Failed to upload image"
+        const fallback = "Failed to upload image"
+        const message = uploadErr instanceof Error
+          ? uploadErr.message
+          : (typeof uploadErr === "object" && uploadErr !== null && "message" in uploadErr
+            ? String((uploadErr as any).message)
+            : fallback)
+        console.error("Product image upload failed", uploadErr)
         setCreateProductError(message)
         setCreatingProduct(false)
         return
@@ -334,7 +338,6 @@ export function useModelUploadFormState() {
       modelNumber: createProductData.modelNumber?.trim() || undefined,
       description: createProductData.description?.trim() || undefined,
       releaseYear: createProductData.releaseYear ? Number(createProductData.releaseYear) : undefined,
-      discontinued: createProductData.discontinued,
       imageUrl,
     }
 
