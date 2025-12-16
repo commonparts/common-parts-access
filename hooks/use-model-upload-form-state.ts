@@ -1,0 +1,427 @@
+import * as React from "react"
+
+export interface CategoryOption {
+  id: string
+  name: string
+  slug: string
+  parent_id?: string | null
+  level?: number | null
+}
+
+export interface BrandOption {
+  id: string
+  name: string
+  slug: string
+}
+
+export interface ProductOption {
+  id: string
+  name: string
+  slug: string
+  model_number?: string | null
+  brand_id?: string | null
+  category_id?: string | null
+}
+
+export interface CreateProductFormData {
+  name: string
+  brandId: string
+  categoryId: string
+  modelNumber?: string
+  description?: string
+  releaseYear?: string
+  imageUrl?: string
+  discontinued?: boolean
+}
+
+export interface ModelFormData {
+  title: string
+  description: string
+  categoryId: string
+  tags: string[]
+  brandId?: string
+  productId?: string
+  files: File[]
+  thumbnails: File[]
+  isPublic: boolean
+  license: string
+}
+
+const emptyCreateProduct: CreateProductFormData = {
+  name: "",
+  brandId: "",
+  categoryId: "",
+  modelNumber: "",
+  description: "",
+  releaseYear: "",
+  imageUrl: "",
+  discontinued: false,
+}
+
+export function useModelUploadFormState() {
+  const [formData, setFormData] = React.useState<ModelFormData>({
+    title: "",
+    description: "",
+    categoryId: "",
+    tags: [],
+    brandId: "",
+    productId: "",
+    files: [],
+    thumbnails: [],
+    isPublic: true,
+    license: "cc-by-4.0",
+  })
+  const [tagInput, setTagInput] = React.useState("")
+  const [categories, setCategories] = React.useState<CategoryOption[]>([])
+  const [brands, setBrands] = React.useState<BrandOption[]>([])
+  const [products, setProducts] = React.useState<ProductOption[]>([])
+  const [loadingProducts, setLoadingProducts] = React.useState(false)
+  const [loadingMeta, setLoadingMeta] = React.useState(true)
+  const [categoryPath, setCategoryPath] = React.useState<string[]>([])
+  const [brandSearch, setBrandSearch] = React.useState("")
+  const [productSearch, setProductSearch] = React.useState("")
+  const [brandOpen, setBrandOpen] = React.useState(false)
+  const [productOpen, setProductOpen] = React.useState(false)
+  const [showCreateProduct, setShowCreateProduct] = React.useState(false)
+  const [pendingProductName, setPendingProductName] = React.useState("")
+  const [createProductData, setCreateProductData] = React.useState<CreateProductFormData>(emptyCreateProduct)
+  const [createProductError, setCreateProductError] = React.useState<string | null>(null)
+  const [creatingProduct, setCreatingProduct] = React.useState(false)
+
+  const categoryParentMap = React.useMemo(() => {
+    const map = new Map<string, string | null>()
+    categories.forEach(cat => {
+      if (cat.id) {
+        map.set(cat.id, cat.parent_id ?? null)
+      }
+    })
+    return map
+  }, [categories])
+
+  const categoryTreeByParent = React.useMemo(() => {
+    const map = new Map<string | null, CategoryOption[]>()
+    categories.forEach(cat => {
+      const parentKey = cat.parent_id ?? null
+      const siblings = map.get(parentKey) ?? []
+      siblings.push(cat)
+      map.set(parentKey, siblings)
+    })
+    return map
+  }, [categories])
+
+  const categoryLevels = React.useMemo(() => {
+    const levels: { parentId: string | null; options: CategoryOption[] }[] = []
+    let currentParent: string | null = null
+    let depth = 0
+
+    while (true) {
+      const options = categoryTreeByParent.get(currentParent) ?? []
+      if (options.length === 0 && depth > 0) break
+      levels.push({ parentId: currentParent, options })
+
+      const selectedAtLevel = categoryPath[depth]
+      if (!selectedAtLevel) break
+
+      const hasChildren = (categoryTreeByParent.get(selectedAtLevel) ?? []).length > 0
+      if (!hasChildren) break
+
+      currentParent = selectedAtLevel
+      depth += 1
+      if (depth > 5) break
+    }
+
+    return levels
+  }, [categoryPath, categoryTreeByParent])
+
+  const flatCategories = React.useMemo(() => {
+    return categories.map((cat) => ({
+      id: cat.id,
+      label: `${" ".repeat(Math.max(0, (cat.level ?? 0) * 2))}${cat.name}`,
+    }))
+  }, [categories])
+
+  const effectiveCategoryId = React.useMemo(() => {
+    for (let i = categoryPath.length - 1; i >= 0; i -= 1) {
+      if (categoryPath[i]) return categoryPath[i]
+    }
+    return ""
+  }, [categoryPath])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadMetadata() {
+      setLoadingMeta(true)
+      try {
+        const [catRes, brandRes] = await Promise.all([
+          fetch("/api/categories"),
+          fetch("/api/brands"),
+        ])
+
+        const catJson = await catRes.json().catch(() => ({ categories: [] }))
+        const brandJson = await brandRes.json().catch(() => ({ brands: [] }))
+
+        if (!cancelled) {
+          setCategories(Array.isArray(catJson.categories) ? catJson.categories : [])
+          setBrands(Array.isArray(brandJson.brands) ? brandJson.brands : [])
+        }
+      } catch (error) {
+        console.error("Failed to load categories/brands", error)
+        if (!cancelled) {
+          setCategories([])
+          setBrands([])
+        }
+      } finally {
+        if (!cancelled) setLoadingMeta(false)
+      }
+    }
+
+    loadMetadata()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  React.useEffect(() => {
+    let cancelled = false
+
+    async function loadProducts() {
+      if (!formData.brandId && !formData.categoryId) {
+        setProducts([])
+        return
+      }
+
+      setLoadingProducts(true)
+      try {
+        const params = new URLSearchParams()
+        if (formData.brandId) params.append("brandId", formData.brandId)
+        if (formData.categoryId) params.append("categoryId", formData.categoryId)
+        params.append("includeDescendants", "true")
+        const res = await fetch(`/api/products?${params.toString()}`)
+        const json = await res.json().catch(() => ({ products: [] }))
+        if (!cancelled) {
+          setProducts(Array.isArray(json.products) ? json.products : [])
+        }
+      } catch (error) {
+        console.error("Failed to load products", error)
+        if (!cancelled) setProducts([])
+      } finally {
+        if (!cancelled) setLoadingProducts(false)
+      }
+    }
+
+    loadProducts()
+  }, [formData.brandId, formData.categoryId])
+
+  React.useEffect(() => {
+    setFormData(prev => {
+      if (prev.categoryId === effectiveCategoryId) return prev
+      return { ...prev, categoryId: effectiveCategoryId, productId: "" }
+    })
+  }, [effectiveCategoryId])
+
+  React.useEffect(() => {
+    if (showCreateProduct) {
+      setCreateProductData(prev => ({
+        ...prev,
+        name: pendingProductName || prev.name,
+        brandId: formData.brandId || prev.brandId,
+        categoryId: effectiveCategoryId || prev.categoryId,
+      }))
+      setCreateProductError(null)
+      setCreatingProduct(false)
+    }
+  }, [showCreateProduct, pendingProductName, formData.brandId, effectiveCategoryId])
+
+  React.useEffect(() => {
+    if (!formData.brandId) {
+      setBrandSearch("")
+      return
+    }
+    const match = brands.find(b => b.id === formData.brandId)
+    if (match) setBrandSearch(match.name)
+  }, [formData.brandId, brands])
+
+  React.useEffect(() => {
+    if (!formData.productId) {
+      setProductSearch("")
+      return
+    }
+    const match = products.find(p => p.id === formData.productId)
+    if (match) setProductSearch(match.model_number ? `${match.name} (${match.model_number})` : match.name)
+  }, [formData.productId, products])
+
+  React.useEffect(() => {
+    if (showCreateProduct) {
+      setProductOpen(false)
+    }
+  }, [showCreateProduct])
+
+  const handleCategorySelect = (level: number, value: string) => {
+    setCategoryPath(prev => {
+      const next = [...prev]
+      next[level] = value
+      return next.slice(0, level + 1)
+    })
+    setFormData(prev => ({ ...prev, productId: "" }))
+  }
+
+  const handleOpenCreateProduct = (name: string) => {
+    setPendingProductName(name)
+    setShowCreateProduct(true)
+  }
+
+  const closeCreateProduct = () => {
+    setShowCreateProduct(false)
+    setCreateProductError(null)
+  }
+
+  const setCategoryPathFromCategoryId = (categoryId?: string | null) => {
+    if (!categoryId) return
+    const path: string[] = []
+    let current: string | null | undefined = categoryId
+    let safety = 0
+    while (current) {
+      path.push(current)
+      current = categoryParentMap.get(current) ?? null
+      safety += 1
+      if (safety > 50) break
+    }
+    setCategoryPath(path.reverse())
+  }
+
+  const handleCreateProductSubmit = async () => {
+    setCreateProductError(null)
+    setCreatingProduct(true)
+
+    const payload = {
+      name: createProductData.name.trim(),
+      brandId: createProductData.brandId,
+      categoryId: createProductData.categoryId,
+      modelNumber: createProductData.modelNumber?.trim() || undefined,
+      description: createProductData.description?.trim() || undefined,
+      releaseYear: createProductData.releaseYear ? Number(createProductData.releaseYear) : undefined,
+      imageUrl: createProductData.imageUrl?.trim() || undefined,
+      discontinued: createProductData.discontinued,
+    }
+
+    try {
+      const res = await fetch("/api/products", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      })
+
+      const json = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        setCreateProductError(json?.error || "Failed to create product")
+        return
+      }
+
+      const product = json?.product as ProductOption | undefined
+      if (product?.id) {
+        const displayName = product.model_number ? `${product.name} (${product.model_number})` : product.name
+
+        setProducts(prev => {
+          const next = [
+            ...prev.filter((p) => p.id !== product.id),
+            {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              model_number: product.model_number ?? null,
+              brand_id: product.brand_id ?? null,
+              category_id: product.category_id ?? null,
+            },
+          ]
+          return next.sort((a, b) => a.name.localeCompare(b.name))
+        })
+
+        setFormData(prev => ({
+          ...prev,
+          brandId: product.brand_id ?? prev.brandId,
+          categoryId: product.category_id ?? prev.categoryId,
+          productId: product.id,
+        }))
+
+        setProductSearch(displayName)
+        setCategoryPathFromCategoryId(product.category_id)
+        setShowCreateProduct(false)
+        setPendingProductName("")
+        setCreateProductData(emptyCreateProduct)
+      }
+    } catch (err) {
+      setCreateProductError(err instanceof Error ? err.message : "Failed to create product")
+    } finally {
+      setCreatingProduct(false)
+    }
+  }
+
+  const updateCreateField = (field: keyof CreateProductFormData, value: any) => {
+    setCreateProductData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleFilesSelect = (files: File[]) => {
+    setFormData(prev => ({ ...prev, files }))
+  }
+
+  const handleThumbnailsSelect = (thumbnails: File[]) => {
+    setFormData(prev => ({ ...prev, thumbnails }))
+  }
+
+  const addTag = (tag: string) => {
+    if (tag.trim() && !formData.tags.includes(tag.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, tag.trim()],
+      }))
+    }
+    setTagInput("")
+  }
+
+  const removeTag = (tagToRemove: string) => {
+    setFormData(prev => ({
+      ...prev,
+      tags: prev.tags.filter(tag => tag !== tagToRemove),
+    }))
+  }
+
+  return {
+    formData,
+    setFormData,
+    tagInput,
+    setTagInput,
+    categories,
+    brands,
+    products,
+    loadingProducts,
+    loadingMeta,
+    categoryLevels,
+    categoryPath,
+    handleCategorySelect,
+    flatCategories,
+    brandSearch,
+    setBrandSearch,
+    productSearch,
+    setProductSearch,
+    brandOpen,
+    setBrandOpen,
+    productOpen,
+    setProductOpen,
+    showCreateProduct,
+    handleOpenCreateProduct,
+    closeCreateProduct,
+    pendingProductName,
+    createProductData,
+    updateCreateField,
+    handleCreateProductSubmit,
+    createProductError,
+    creatingProduct,
+    setCategoryPathFromCategoryId,
+    handleFilesSelect,
+    handleThumbnailsSelect,
+    addTag,
+    removeTag,
+  }
+}
