@@ -1,6 +1,7 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { FileUploader } from "@/components/ui/file-uploader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import type { BrandOption, CreateProductFormData } from "@/hooks/use-model-upload-form-state"
@@ -140,14 +141,16 @@ export function CreateProductModal({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="create-image">Image URL</Label>
-                  <Input
-                    id="create-image"
-                    type="url"
-                    value={data.imageUrl || ""}
-                    onChange={(e) => onChange("imageUrl", e.target.value)}
-                    placeholder="https://..."
+                  <Label>Product image (optional)</Label>
+                  <FileUploader
+                    accept=".jpg,.jpeg,.png,.webp"
+                    multiple={false}
+                    maxSize={5 * 1024 * 1024}
+                    onFilesSelect={(files) => onChange("imageFile", files[0] ?? null)}
                   />
+                  {data.imageFile && (
+                    <p className="text-sm text-muted-foreground">Selected: {data.imageFile.name}</p>
+                  )}
                 </div>
 
                 <div className="flex items-center space-x-2 pt-6">

@@ -10,7 +10,6 @@ export const STORAGE_BUCKETS = {
   USER_AVATARS: 'user-avatars',
   BRAND_ASSETS: 'brand-assets',
   CATEGORY_ICONS: 'category-icons',
-  PRODUCT_IMAGES: 'product-images',
   PRODUCT_THUMBNAILS: 'product-thumbnails',
   BRAND_LOGOS: 'brand-logos',
 } as const;

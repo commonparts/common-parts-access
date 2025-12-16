@@ -1,4 +1,6 @@
 import * as React from "react"
+import { STORAGE_BUCKETS } from "@/constants/app"
+import { createClient } from "@/lib/supabase/client"
 
 export interface CategoryOption {
   id: string
@@ -30,7 +32,7 @@ export interface CreateProductFormData {
   modelNumber?: string
   description?: string
   releaseYear?: string
-  imageUrl?: string
+  imageFile?: File | null
   discontinued?: boolean
 }
 
@@ -54,7 +56,7 @@ const emptyCreateProduct: CreateProductFormData = {
   modelNumber: "",
   description: "",
   releaseYear: "",
-  imageUrl: "",
+  imageFile: null,
   discontinued: false,
 }
 
@@ -294,6 +296,37 @@ export function useModelUploadFormState() {
     setCreateProductError(null)
     setCreatingProduct(true)
 
+    let imageUrl: string | undefined
+
+    if (createProductData.imageFile) {
+      try {
+        const supabase = await createClient()
+        const { data: userData, error: userError } = await supabase.auth.getUser()
+        if (userError || !userData?.user?.id) {
+          throw new Error("You must be logged in to upload images")
+        }
+
+        const userId = userData.user.id
+        const file = createProductData.imageFile
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_") || "product-image"
+        const path = `${userId}/product-${Date.now()}-${safeName}`
+
+        const { error: uploadError } = await supabase.storage
+          .from(STORAGE_BUCKETS.PRODUCT_THUMBNAILS)
+          .upload(path, file, { contentType: file.type || undefined, upsert: false })
+
+        if (uploadError) throw uploadError
+
+        const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.PRODUCT_THUMBNAILS).getPublicUrl(path)
+        imageUrl = publicData.publicUrl
+      } catch (uploadErr) {
+        const message = uploadErr instanceof Error ? uploadErr.message : "Failed to upload image"
+        setCreateProductError(message)
+        setCreatingProduct(false)
+        return
+      }
+    }
+
     const payload = {
       name: createProductData.name.trim(),
       brandId: createProductData.brandId,
@@ -301,8 +334,8 @@ export function useModelUploadFormState() {
       modelNumber: createProductData.modelNumber?.trim() || undefined,
       description: createProductData.description?.trim() || undefined,
       releaseYear: createProductData.releaseYear ? Number(createProductData.releaseYear) : undefined,
-      imageUrl: createProductData.imageUrl?.trim() || undefined,
       discontinued: createProductData.discontinued,
+      imageUrl,
     }
 
     try {
