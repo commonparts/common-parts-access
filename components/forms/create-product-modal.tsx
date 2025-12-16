@@ -127,7 +127,7 @@ export function CreateProductModal({
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="create-year">Release year</Label>
                   <Input
@@ -146,22 +146,12 @@ export function CreateProductModal({
                     accept=".jpg,.jpeg,.png,.webp"
                     multiple={false}
                     maxSize={5 * 1024 * 1024}
+                    className="w-full"
                     onFilesSelect={(files) => onChange("imageFile", files[0] ?? null)}
                   />
                   {data.imageFile && (
                     <p className="text-sm text-muted-foreground">Selected: {data.imageFile.name}</p>
                   )}
-                </div>
-
-                <div className="flex items-center space-x-2 pt-6">
-                  <input
-                    id="create-discontinued"
-                    type="checkbox"
-                    checked={Boolean(data.discontinued)}
-                    onChange={(e) => onChange("discontinued", e.target.checked)}
-                    className="h-4 w-4 rounded border-border"
-                  />
-                  <Label htmlFor="create-discontinued">Discontinued</Label>
                 </div>
               </div>
 
