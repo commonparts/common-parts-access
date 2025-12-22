@@ -206,10 +206,10 @@ export const Hero: React.FC = () => {
               <HarborMark width={36} height={36} />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
-              <Button asChild size="sm" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
+              <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
                 <a href="/upload">Start upload</a>
               </Button>
-              <Button asChild size="sm" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10">
+              <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10">
                 <a href="/dashboard/upload">Go to dashboard</a>
               </Button>
             </div>
@@ -307,11 +307,11 @@ export const Hero: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Button type="button" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10" onClick={resetFilters}>
+                <Button type="button" size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10" onClick={resetFilters}>
                   Reset
                 </Button>
                 <div className="flex gap-2">
-                  <Button type="submit" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent" disabled={!formData.productId}>
+                  <Button type="submit" size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent" disabled={!formData.productId}>
                     Find parts
                   </Button>
                 </div>
