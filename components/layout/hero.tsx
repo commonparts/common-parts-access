@@ -169,7 +169,7 @@ export const Hero: React.FC = () => {
                 <UploadCloud className="h-5 w-5" /> Dock a model
               </a>
             </Button>
-            <Button asChild variant="outline" size="lg" className="border-white/25 bg-white/5 text-white/90 shadow-lg shadow-foreground/10 hover:border-white/40 hover:bg-white/10">
+            <Button asChild variant="outline" size="lg" className="border-white/25 bg-white/5 text-white/90 shadow-lg shadow-foreground/10 hover:border-white/40 hover:bg-white/10 hover:text-white">
               <a href="/browse" className="flex items-center gap-2">
                 <Search className="h-5 w-5" /> Browse parts
               </a>
@@ -209,7 +209,7 @@ export const Hero: React.FC = () => {
               <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
                 <a href="/upload">Start upload</a>
               </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10">
+              <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10 hover:text-white">
                 <a href="/dashboard/upload">Go to dashboard</a>
               </Button>
             </div>
@@ -307,7 +307,7 @@ export const Hero: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between gap-3">
-                <Button type="button" size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10" onClick={resetFilters}>
+                <Button type="button" size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10 hover:text-white" onClick={resetFilters}>
                   Reset
                 </Button>
                 <div className="flex gap-2">
