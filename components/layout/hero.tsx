@@ -163,19 +163,6 @@ export const Hero: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-lg shadow-orange-500/25 hover:bg-[#ff9d5c] border-transparent">
-              <a href="/upload" className="flex items-center gap-2">
-                <UploadCloud className="h-5 w-5" /> Dock a model
-              </a>
-            </Button>
-            <Button asChild variant="outline" size="lg" className="border-white/25 bg-white/5 text-white/90 shadow-lg shadow-foreground/10 hover:border-white/40 hover:bg-white/10 hover:text-white">
-              <a href="/browse" className="flex items-center gap-2">
-                <Search className="h-5 w-5" /> Browse parts
-              </a>
-            </Button>
-          </div>
-
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Feature icon={<ShieldCheck className="h-5 w-5" />} title="Verified fits" desc="Material notes, tolerances, and community checks." />
             <Feature icon={<Printer className="h-5 w-5" />} title="Print near you" desc="Route jobs to local makers or fab labs." />
