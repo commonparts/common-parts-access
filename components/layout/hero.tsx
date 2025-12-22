@@ -171,16 +171,14 @@ export const Hero: React.FC = () => {
           </div>
 
           <div className="w-full max-w-xl">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-foreground/10 backdrop-blur">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.16em] text-white/60">Upload lane</p>
-                  <h3 className="mt-1 text-xl font-semibold text-white">Shortcut to your model</h3>
-                  <p className="mt-2 text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
-                </div>
-                <UploadCloud className="h-5 w-5 text-white/70" />
+            <div className="relative rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-foreground/10 backdrop-blur">
+              <UploadCloud className="h-5 w-5 text-white/70 absolute right-4 top-4" />
+              <div className="text-center space-y-2">
+                <p className="text-xs uppercase tracking-[0.16em] text-white/60">Upload lane</p>
+                <h3 className="text-xl font-semibold text-white">Shortcut to your model</h3>
+                <p className="text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
               </div>
-              <div className="mt-4 flex flex-wrap justify-end gap-3">
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
                 <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
                   <a href="/upload">Dock a model</a>
                 </Button>
@@ -190,14 +188,12 @@ export const Hero: React.FC = () => {
         </div>
 
         <div className="relative grid gap-4 w-full max-w-xl mx-auto">
-          <div className="rounded-2xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-cyan-500/10 backdrop-blur">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.14em] text-white/60">Find parts</p>
-                <h3 className="mt-1 text-xl font-semibold text-white">Search by product</h3>
-                <p className="mt-2 text-sm text-white/75">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
-              </div>
-              <Search className="h-5 w-5 text-white/70" />
+          <div className="relative rounded-2xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-cyan-500/10 backdrop-blur">
+            <Search className="h-5 w-5 text-white/70 absolute right-4 top-4" />
+            <div className="text-center space-y-2">
+              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Find parts</p>
+              <h3 className="text-xl font-semibold text-white">Search by product</h3>
+              <p className="text-sm text-white/75">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
             </div>
 
             <form className="mt-5 space-y-4" onSubmit={handleSearch}>
