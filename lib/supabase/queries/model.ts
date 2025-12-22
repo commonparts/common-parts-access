@@ -92,6 +92,7 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
   if (options.brand) query = query.eq('brand_id', options.brand);
+  if (options.product) query = query.eq('product_id', options.product);
   if (search) query = query.ilike('name', `%${search}%`);
 
   query = query.order(resolveOrderColumn(options.sortBy), {

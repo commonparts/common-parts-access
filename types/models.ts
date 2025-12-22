@@ -49,6 +49,7 @@ export interface ModelListOptions {
 	status?: string;
 	category?: string;
 	brand?: string;
+	product?: string;
 }
 
 export interface ModelListResult {

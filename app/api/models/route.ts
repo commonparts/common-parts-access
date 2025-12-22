@@ -15,6 +15,9 @@ export async function GET(request: NextRequest) {
       : 'created_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const search = searchParams.get('search') || ''
+    const productId = searchParams.get('productId') || undefined
+    const brandId = searchParams.get('brandId') || undefined
+    const categoryId = searchParams.get('categoryId') || undefined
 
     const { models, pagination } = await fetchModelCards({
       page,
@@ -22,6 +25,9 @@ export async function GET(request: NextRequest) {
       sortBy,
       sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
       search,
+      product: productId,
+      brand: brandId,
+      category: categoryId,
       status: 'published',
     })
 

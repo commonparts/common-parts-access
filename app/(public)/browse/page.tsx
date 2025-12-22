@@ -64,6 +64,7 @@ export default function BrowsePage() {
   const currentPage = parseInt(searchParams.get('page') || '1')
   const currentSort = searchParams.get('sortBy') || 'popularity'
   const currentSearch = searchParams.get('search') || ''
+  const currentProduct = searchParams.get('productId') || ''
 
   // Update URL without page reload
   const updateURL = useCallback((params: Record<string, string>) => {
@@ -102,6 +103,8 @@ export default function BrowsePage() {
         params.set('search', currentSearch)
       }
 
+      if (currentProduct) params.set('productId', currentProduct)
+
       const response = await fetch(`/api/models?${params.toString()}`)
       
       if (!response.ok) {
@@ -124,7 +127,7 @@ export default function BrowsePage() {
     } finally {
       setLoading(false)
     }
-  }, [currentPage, currentSort, currentSearch])
+  }, [currentPage, currentSort, currentSearch, currentProduct])
 
   // Effect to fetch data when parameters change
   useEffect(() => {
