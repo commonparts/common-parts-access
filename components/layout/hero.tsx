@@ -147,13 +147,8 @@ export const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-[linear-gradient(120deg,_rgba(255,255,255,0.05)_1px,_transparent_1px),linear-gradient(240deg,_rgba(255,255,255,0.05)_1px,_transparent_1px)] bg-[length:40px_40px] opacity-40" />
       </div>
 
-      <div className="relative mx-auto flex max-w-6xl flex-col gap-12 lg:grid lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-        <div className="space-y-8 text-white">
-          <div className="inline-flex items-center gap-3 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-white/80">
-            <HarborMark width={28} height={28} />
-            Repair-first marketplace for spare parts
-          </div>
-
+      <div className="relative mx-auto flex max-w-7xl flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-center lg:gap-20">
+        <div className="space-y-8 text-white w-full max-w-3xl mx-auto flex flex-col items-center text-center">
           <div className="space-y-4">
             <h1 className="text-3xl font-heading font-black leading-tight sm:text-4xl md:text-5xl">
               Upload fast. Find the exact part faster.
@@ -163,13 +158,7 @@ export const Hero: React.FC = () => {
             </p>
           </div>
 
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Feature icon={<ShieldCheck className="h-5 w-5" />} title="Verified fits" desc="Material notes, tolerances, and community checks." />
-            <Feature icon={<Printer className="h-5 w-5" />} title="Print near you" desc="Route jobs to local makers or fab labs." />
-            <Feature icon={<MapPin className="h-5 w-5" />} title="Global-local" desc="Repair communities linked across regions." />
-          </ul>
-
-          <div className="flex flex-wrap items-center gap-3 text-sm text-white/80">
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/80">
             <Badge>
               <Anchor className="h-4 w-4" /> Right-to-repair friendly
             </Badge>
@@ -180,25 +169,27 @@ export const Hero: React.FC = () => {
               <ShieldCheck className="h-4 w-4" /> Open formats only
             </Badge>
           </div>
-        </div>
 
-        <div className="relative grid gap-4">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-foreground/10 backdrop-blur">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-white/60">Upload lane</p>
-                <h3 className="mt-1 text-xl font-semibold text-white">Shortcut to your model</h3>
-                <p className="mt-2 text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
+          <div className="w-full max-w-xl">
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-foreground/10 backdrop-blur">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.16em] text-white/60">Upload lane</p>
+                  <h3 className="mt-1 text-xl font-semibold text-white">Shortcut to your model</h3>
+                  <p className="mt-2 text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
+                </div>
+                <UploadCloud className="h-5 w-5 text-white/70" />
               </div>
-              <UploadCloud className="h-5 w-5 text-white/70" />
-            </div>
-            <div className="mt-4 flex flex-wrap justify-end gap-3">
-              <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
-                <a href="/upload">Dock a model</a>
-              </Button>
+              <div className="mt-4 flex flex-wrap justify-end gap-3">
+                <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
+                  <a href="/upload">Dock a model</a>
+                </Button>
+              </div>
             </div>
           </div>
+        </div>
 
+        <div className="relative grid gap-4 w-full max-w-xl mx-auto">
           <div className="rounded-2xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-cyan-500/10 backdrop-blur">
             <div className="flex items-start justify-between gap-3">
               <div>
