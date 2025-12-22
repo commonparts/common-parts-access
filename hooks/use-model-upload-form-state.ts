@@ -216,7 +216,7 @@ export function useModelUploadFormState() {
   React.useEffect(() => {
     setFormData(prev => {
       if (prev.categoryId === effectiveCategoryId) return prev
-      return { ...prev, categoryId: effectiveCategoryId, productId: "" }
+      return { ...prev, categoryId: effectiveCategoryId }
     })
   }, [effectiveCategoryId])
 
