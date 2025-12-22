@@ -205,12 +205,9 @@ export const Hero: React.FC = () => {
               </div>
               <UploadCloud className="h-5 w-5 text-white/70" />
             </div>
-            <div className="mt-4 flex flex-wrap gap-3">
+            <div className="mt-4 flex flex-wrap justify-end gap-3">
               <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
-                <a href="/upload">Start upload</a>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10 hover:text-white">
-                <a href="/dashboard/upload">Go to dashboard</a>
+                <a href="/upload">Dock a model</a>
               </Button>
             </div>
           </div>
@@ -243,6 +240,7 @@ export const Hero: React.FC = () => {
                   onOpenChange={setBrandOpen}
                   disabled={loadingMeta}
                   emptyMessage={brandSearch ? "No matching brands" : "No brands found"}
+                  inputClassName="text-white placeholder:text-white/60 bg-white/5 border-white/20 focus-visible:ring-white/60 focus-visible:border-white/60"
                 />
               </div>
 
@@ -303,6 +301,7 @@ export const Hero: React.FC = () => {
                   onOpenChange={setProductOpen}
                   disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                   emptyMessage={productSearch ? "No matching products" : "No products found"}
+                  inputClassName="text-white placeholder:text-white/60 bg-white/5 border-white/20 focus-visible:ring-white/60 focus-visible:border-white/60"
                 />
               </div>
 

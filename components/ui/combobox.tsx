@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Input } from "./input";
 import { Label } from "./label";
+import { cn } from "@/lib/utils";
 
 export interface ComboboxOption {
   id: string;
@@ -26,6 +27,7 @@ interface ComboboxProps<T extends ComboboxOption> {
   className?: string;
   disabled?: boolean;
   emptyMessage?: string;
+  inputClassName?: string;
 }
 
 export function Combobox<T extends ComboboxOption>({
@@ -45,6 +47,7 @@ export function Combobox<T extends ComboboxOption>({
   className,
   disabled = false,
   emptyMessage = "No options found",
+  inputClassName,
 }: ComboboxProps<T>) {
   const [selectedIndex, setSelectedIndex] = React.useState(-1);
   const dropdownRef = React.useRef<HTMLDivElement>(null);
@@ -163,7 +166,7 @@ export function Combobox<T extends ComboboxOption>({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className="w-full placeholder:text-foreground/50"
+          className={cn("w-full placeholder:text-foreground/50", inputClassName)}
         />
         {isOpen && (
           <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
