@@ -203,7 +203,7 @@ export const Hero: React.FC = () => {
                 <h3 className="mt-1 text-xl font-semibold text-white">Shortcut to your model</h3>
                 <p className="mt-2 text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
               </div>
-              <HarborMark width={36} height={36} />
+              <UploadCloud className="h-5 w-5 text-white/70" />
             </div>
             <div className="mt-4 flex flex-wrap gap-3">
               <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
