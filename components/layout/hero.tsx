@@ -140,7 +140,7 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-[#0c182f] via-[#0a1224] to-[#050915] px-6 py-12 sm:px-8 sm:py-16">
+    <section className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-[#0c182f] via-[#0a1224] to-[#050915] px-6 py-12 sm:px-8 sm:py-16">
       <div className="absolute inset-0 -z-10 opacity-40" aria-hidden>
         <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, rgba(125, 255, 196, 0.2), transparent 35%), radial-gradient(circle at 80% 0%, rgba(255, 168, 76, 0.18), transparent 30%), radial-gradient(circle at 50% 80%, rgba(80, 163, 255, 0.15), transparent 40%)" }} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.06),_transparent_45%)]" />
