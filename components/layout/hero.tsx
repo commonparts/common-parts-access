@@ -66,9 +66,9 @@ interface FeatureProps {
 }
 
 const Feature: React.FC<FeatureProps> = ({ icon, title, desc }) => (
-  <li className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur shadow-lg shadow-foreground/10 transition-transform hover:-translate-y-0.5 hover:shadow-xl">
-    <div className="flex items-start gap-3 text-text-primary">
-      <div className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 shadow-inner text-text-primary">
+  <li className="rounded-2xl border border-white/10 bg-white/5 p-md backdrop-blur shadow-lg shadow-foreground/10 transition-transform hover:-translate-y-0.5 hover:shadow-xl">
+    <div className="flex items-start gap-sm text-text-primary">
+      <div className="mt-xs inline-flex size-xl items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 shadow-inner text-text-primary">
         {icon}
       </div>
       <div>
@@ -80,7 +80,7 @@ const Feature: React.FC<FeatureProps> = ({ icon, title, desc }) => (
 );
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-bg-surface px-3 py-1 text-xs font-semibold tracking-tight text-text-primary shadow-surface">
+  <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-semibold tracking-tight text-text-primary shadow-surface">
     {children}
   </span>
 );
