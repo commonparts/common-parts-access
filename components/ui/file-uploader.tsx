@@ -1,6 +1,5 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
-import { Button } from "./button"
 
 interface FileUploaderProps {
   onFilesSelect: (files: File[]) => void
@@ -62,10 +61,10 @@ export function FileUploader({
   return (
     <div
       className={cn(
-        "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
-        isDragOver 
-          ? "border-primary bg-primary/5" 
-          : "border-muted-foreground/25 hover:border-primary/50",
+        "cursor-pointer rounded-lg border border-dashed border-border-subtle bg-bg-surface p-xl text-center shadow-surface transition-colors",
+        isDragOver
+          ? "border-action-primary bg-action-primary/5"
+          : "hover:border-action-primary/60 hover:bg-bg-hover",
         className
       )}
       onDragOver={handleDragOver}
@@ -83,18 +82,18 @@ export function FileUploader({
       />
       
       {children || (
-        <div className="space-y-4">
-          <div className="mx-auto w-12 h-12 bg-muted rounded-full flex items-center justify-center">
-            <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="space-y-md">
+          <div className="mx-auto flex size-2xl items-center justify-center rounded-full bg-bg-subtle text-text-secondary">
+            <svg className="size-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
           </div>
           <div>
-            <p className="text-sm text-muted-foreground mb-2">
+            <p className="mb-sm text-sm text-text-secondary">
               Drag and drop your files here, or{" "}
-              <span className="text-primary font-medium">browse</span>
+              <span className="font-medium text-action-primary">browse</span>
             </p>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-text-secondary">
               Max file size: {Math.round(maxSize / (1024 * 1024))}MB
             </p>
           </div>
