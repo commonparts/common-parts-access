@@ -104,7 +104,7 @@ export function FeaturedModels() {
 
         {!loading && models.length > 0 && (
           <div className="text-center">
-            <Button asChild size="lg" variant="outline">
+            <Button asChild variant="outline">
               <Link href="/browse">
                 View More Models
               </Link>
