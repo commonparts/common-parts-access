@@ -2,69 +2,30 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* Marine + Maker color scheme */
-    --background: 210 33% 98%; /* Off-white: #F7F9FB */
-    --foreground: 203 72% 14%; /* Deep harbor: #0B2D3F */
-    --card: 0 0% 100%;
-    --card-foreground: 203 72% 14%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 203 72% 14%;
-    --primary: 25 100% 62%; /* Buoy orange: #FF8A3D */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 206 17% 35%; /* Steel: #4A5B66 */
-    --secondary-foreground: 0 0% 100%;
-    --muted: 206 17% 35%;
-    --muted-foreground: 206 25% 50%; /* Harbor mist: #5C7A8A */
-    --accent: 157 77% 84%; /* Mint foam: #B9F5D0 */
-    --accent-foreground: 203 72% 14%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 33% 98%;
-    --border: 206 17% 35%; /* Steel: #4A5B66 */
-    --input: 206 17% 35%;
-    --ring: 25 100% 62%;
-    --success: 157 77% 84%; /* Mint foam for success states */
-    --chart-1: 203 72% 14%; /* Deep harbor */
-    --chart-2: 206 17% 35%; /* Steel */
-    --chart-3: 25 100% 62%; /* Buoy orange */
-    --chart-4: 157 77% 84%; /* Mint foam */
-    --chart-5: 210 33% 98%; /* Off-white */
-    --radius: 0.5rem;
+@layer components {
+  .text-body {
+    font-size: 16px;
+    line-height: 1.5;
+    color: var(--color-text-primary);
   }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-  }
-}
 
-@layer base {
-  * {
-    @apply border-border;
+  .text-caption {
+    font-size: 14px;
+    color: var(--color-text-secondary);
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .text-heading-sm {
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .text-heading-md {
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .text-heading-lg {
+    font-size: 30px;
+    font-weight: 700;
   }
 }

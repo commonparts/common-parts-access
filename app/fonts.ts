@@ -1,22 +1,21 @@
 import { Inter, Outfit, JetBrains_Mono } from 'next/font/google'
 
-// Outfit for headings - friendly, geometric
-export const headingFont = Outfit({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-outfit',
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
+  display: "swap",
 })
 
-// Inter for body and UI text
-export const bodyFont = Inter({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-inter',
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap",
 })
 
-// JetBrains Mono for numeric values and specifications
-export const monoFont = JetBrains_Mono({
-  subsets: ['latin'],
-  display: 'swap',
-  variable: '--font-jetbrains-mono',
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
 })
+
+export { inter, outfit, jetbrainsMono }
