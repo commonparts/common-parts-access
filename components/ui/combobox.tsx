@@ -150,7 +150,7 @@ export function Combobox<T extends ComboboxOption>({
   };
 
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn("space-y-sm", className)}>
       {label && (
         <Label htmlFor={id} className="text-text-secondary font-medium">
           {label}
@@ -169,7 +169,7 @@ export function Combobox<T extends ComboboxOption>({
           className={cn("w-full", inputClassName)}
         />
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-2 max-h-60 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
+          <div className="absolute top-full left-0 right-0 z-50 mt-sm overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <button
@@ -177,7 +177,7 @@ export function Combobox<T extends ComboboxOption>({
                   type="button"
                   onClick={() => handleSelect(option)}
                   className={cn(
-                    "w-full cursor-pointer border-b border-border-subtle/60 px-3 py-2 text-left text-sm text-text-primary transition-colors last:border-b-0",
+                    "w-full cursor-pointer border-b border-border-subtle px-sm py-sm text-left text-sm text-text-primary transition-colors last:border-b-0",
                     index === selectedIndex
                       ? "bg-action-primary/10"
                       : "hover:bg-bg-hover",
@@ -187,7 +187,7 @@ export function Combobox<T extends ComboboxOption>({
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2 text-sm text-text-secondary">
+              <div className="px-sm py-sm text-sm text-text-secondary">
                 {emptyMessage}
               </div>
             )}
@@ -196,7 +196,7 @@ export function Combobox<T extends ComboboxOption>({
                 type="button"
                 onClick={handleCreate}
                 className={cn(
-                  "w-full cursor-pointer border-t border-border-subtle/60 px-3 py-2 text-left text-sm text-text-primary transition-colors",
+                  "w-full cursor-pointer border-t border-border-subtle px-sm py-sm text-left text-sm text-text-primary transition-colors",
                   selectedIndex === filteredOptions.length
                     ? "bg-action-primary/10"
                     : "hover:bg-bg-hover",
