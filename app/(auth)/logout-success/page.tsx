@@ -27,14 +27,14 @@ export default function LogoutSuccessPage() {
 
           {/* Action buttons */}
           <div className="space-y-3">
-            <Button asChild size="lg" className="w-full">
+            <Button asChild className="w-full">
               <Link href="/">
                 <Anchor className="w-4 h-4" />
                 Return to harbor
               </Link>
             </Button>
             
-            <Button asChild variant="outline" size="lg" className="w-full">
+            <Button asChild variant="outline" className="w-full">
               <Link href="/login">
                 <Waves className="w-4 h-4" />
                 Sign in again

@@ -26,7 +26,7 @@ export default function SignOutPage() {
           </p>
 
           {/* Return to harbor button */}
-          <Button asChild size="lg" className="w-full">
+          <Button asChild className="w-full">
             <Link href="/">
               <Anchor className="w-4 h-4" />
               Return to harbor
