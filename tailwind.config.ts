@@ -83,6 +83,12 @@ const config: Config = {
         in: "var(--motion-easing-in)",
         out: "var(--motion-easing-out)",
       },
+
+      fontFamily: {
+        body: "var(--font-body)",
+        heading: "var(--font-heading)",
+        mono: "var(--font-mono)",
+      },
     },
   },
 

@@ -2,30 +2,47 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --font-body: var(--typography-font-body);
+  --font-heading: var(--typography-font-heading);
+  --font-mono: var(--typography-font-mono);
+}
+
 @layer components {
   .text-body {
-    font-size: 16px;
-    line-height: 1.5;
+    font-family: var(--font-body);
+    font-size: var(--typography-size-body);
+    line-height: var(--typography-lineHeight-body);
     color: var(--color-text-primary);
   }
 
   .text-caption {
-    font-size: 14px;
+    font-family: var(--font-body);
+    font-size: var(--typography-size-caption);
     color: var(--color-text-secondary);
   }
 
   .text-heading-sm {
-    font-size: 20px;
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-size: var(--typography-size-headingSm);
+    font-weight: var(--typography-weight-semibold);
+    line-height: var(--typography-lineHeight-heading);
   }
 
   .text-heading-md {
-    font-size: 24px;
-    font-weight: 600;
+    font-family: var(--font-heading);
+    font-size: var(--typography-size-headingMd);
+    font-weight: var(--typography-weight-semibold);
   }
 
   .text-heading-lg {
-    font-size: 30px;
-    font-weight: 700;
+    font-family: var(--font-heading);
+    font-size: var(--typography-size-headingLg);
+    font-weight: var(--typography-weight-bold);
+  }
+
+  .text-mono {
+    font-family: var(--font-mono);
+    font-size: var(--typography-size-sm);
   }
 }
