@@ -11,7 +11,7 @@ export default function Home() {
         <div className="flex-1 flex flex-col w-full">
           <main className="min-h-screen flex flex-col items-center">
             <div className="flex-1 flex flex-col items-center text-center w-full px-6 gap-10 mt-6">
-              <div className="bg-card rounded-2xl shadow-lg border border-border/50 backdrop-blur-sm w-full overflow-hidden">
+              <div className="bg-card rounded-xl shadow-lg border border-border/50 backdrop-blur-sm w-full overflow-hidden">
                 <Hero />
               </div>
               
