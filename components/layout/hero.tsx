@@ -140,46 +140,45 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section className="relative overflow-hidden border border-white/10 bg-gradient-to-br from-[#0c182f] via-[#0a1224] to-[#050915] px-6 py-12 sm:px-8 sm:py-16">
+    <section className="relative overflow-hidden border border-border-subtle bg-[radial-gradient(circle_at_20%_20%,_rgba(89,199,155,0.16),_transparent_35%),radial-gradient(circle_at_80%_0%,_rgba(249,115,22,0.16),_transparent_32%),radial-gradient(circle_at_50%_80%,_rgba(59,130,246,0.14),_transparent_42%)] px-lg py-xl sm:px-xl sm:py-2xl">
       <div className="absolute inset-0 -z-10 opacity-40" aria-hidden>
-        <div className="absolute inset-0" style={{ backgroundImage: "radial-gradient(circle at 20% 20%, rgba(125, 255, 196, 0.2), transparent 35%), radial-gradient(circle at 80% 0%, rgba(255, 168, 76, 0.18), transparent 30%), radial-gradient(circle at 50% 80%, rgba(80, 163, 255, 0.15), transparent 40%)" }} />
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.06),_transparent_45%)]" />
         <div className="absolute inset-0 bg-[linear-gradient(120deg,_rgba(255,255,255,0.05)_1px,_transparent_1px),linear-gradient(240deg,_rgba(255,255,255,0.05)_1px,_transparent_1px)] bg-[length:40px_40px] opacity-40" />
       </div>
 
-      <div className="relative mx-auto flex max-w-7xl flex-col gap-14 lg:grid lg:grid-cols-2 lg:items-center lg:gap-20">
-        <div className="space-y-8 text-white w-full max-w-3xl mx-auto flex flex-col items-center text-center">
-          <div className="space-y-4">
-            <h1 className="text-3xl font-heading font-black leading-tight sm:text-4xl md:text-5xl">
+      <div className="relative mx-auto flex max-w-screen-xl flex-col gap-xl lg:grid lg:grid-cols-2 lg:items-center lg:gap-2xl">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-inverse space-y-lg">
+          <div className="space-y-sm">
+            <h1 className="text-heading-lg font-heading leading-tight">
               Upload fast. Find the exact part faster.
             </h1>
-            <p className="max-w-3xl text-base text-white/85 sm:text-lg">
+            <p className="text-body text-text-inverse/80">
               PartHarbor connects makers who upload printable fixes with people searching by brand, category, or product. Drop a model or zero in on the device you need to repair.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-3 text-sm text-white/80">
+          <div className="flex flex-wrap items-center justify-center gap-sm text-caption text-text-inverse/80">
             <Badge>
-              <Anchor className="h-4 w-4" /> Right-to-repair friendly
+              <Anchor className="size-sm" /> Right-to-repair friendly
             </Badge>
             <Badge>
-              <Compass className="h-4 w-4" /> Curated by makers
+              <Compass className="size-sm" /> Curated by makers
             </Badge>
             <Badge>
-              <ShieldCheck className="h-4 w-4" /> Open formats only
+              <ShieldCheck className="size-sm" /> Open formats only
             </Badge>
           </div>
 
           <div className="w-full max-w-xl">
-            <div className="relative rounded-2xl border border-white/10 bg-white/5 p-6 shadow-xl shadow-foreground/10 backdrop-blur">
-              <UploadCloud className="h-5 w-5 text-white/70 absolute right-4 top-4" />
-              <div className="text-center space-y-2">
-                <p className="text-xs uppercase tracking-[0.16em] text-white/60">Upload lane</p>
-                <h3 className="text-xl font-semibold text-white">Shortcut to your model</h3>
-                <p className="text-sm text-white/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
+            <div className="relative rounded-lg border border-border-subtle bg-bg-surface/40 p-lg shadow-overlay backdrop-blur">
+              <UploadCloud className="absolute right-sm top-sm size-md text-text-inverse/70" />
+              <div className="text-center space-y-xs">
+                <p className="text-caption uppercase tracking-wide text-text-inverse/60">Upload lane</p>
+                <h3 className="text-heading-sm font-semibold text-text-inverse">Shortcut to your model</h3>
+                <p className="text-caption text-text-inverse/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
               </div>
-              <div className="mt-6 flex flex-wrap justify-center gap-3">
-                <Button asChild size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent">
+              <div className="mt-md flex flex-wrap justify-center gap-sm">
+                <Button asChild size="lg" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
                   <a href="/upload">Dock a model</a>
                 </Button>
               </div>
@@ -187,18 +186,18 @@ export const Hero: React.FC = () => {
           </div>
         </div>
 
-        <div className="relative grid gap-4 w-full max-w-xl mx-auto">
-          <div className="relative rounded-2xl border border-white/10 bg-white/10 p-6 shadow-2xl shadow-cyan-500/10 backdrop-blur">
-            <Search className="h-5 w-5 text-white/70 absolute right-4 top-4" />
-            <div className="text-center space-y-2">
-              <p className="text-xs uppercase tracking-[0.14em] text-white/60">Find parts</p>
-              <h3 className="text-xl font-semibold text-white">Search by product</h3>
-              <p className="text-sm text-white/75">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
+        <div className="relative mx-auto grid w-full max-w-xl gap-sm">
+          <div className="relative rounded-lg border border-border-subtle bg-bg-surface/30 p-lg shadow-overlay backdrop-blur">
+            <Search className="absolute right-sm top-sm size-md text-text-inverse/70" />
+            <div className="text-center space-y-xs">
+              <p className="text-caption uppercase tracking-wide text-text-inverse/60">Find parts</p>
+              <h3 className="text-heading-sm font-semibold text-text-inverse">Search by product</h3>
+              <p className="text-caption text-text-inverse/75">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
             </div>
 
-            <form className="mt-5 space-y-4" onSubmit={handleSearch}>
-              <div className="space-y-2">
-                <Label htmlFor="hero-brand" className="text-white">Brand</Label>
+            <form className="mt-sm space-y-sm" onSubmit={handleSearch}>
+              <div className="space-y-xs">
+                <Label htmlFor="hero-brand" className="text-text-inverse">Brand</Label>
                 <Combobox
                   id="hero-brand"
                   placeholder={loadingMeta ? "Loading brands..." : "Search or select a brand"}
@@ -214,13 +213,13 @@ export const Hero: React.FC = () => {
                   onOpenChange={setBrandOpen}
                   disabled={loadingMeta}
                   emptyMessage={brandSearch ? "No matching brands" : "No brands found"}
-                  inputClassName="text-white placeholder:text-white/60 bg-white/5 border-white/20 focus-visible:ring-white/60 focus-visible:border-white/60"
+                  inputClassName="text-text-inverse placeholder:text-text-inverse/60 bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-white">Category</Label>
-                <div className="flex flex-col gap-2">
+              <div className="space-y-xs">
+                <Label className="text-text-inverse">Category</Label>
+                <div className="flex flex-col gap-xs">
                   {categoryLevels.map((level, idx) => {
                     const placeholder = idx === 0 ? "Select a category" : "Keep parent category";
                     const value = categoryPath[idx] ?? "";
@@ -229,7 +228,7 @@ export const Hero: React.FC = () => {
                     return (
                       <select
                         key={level.parentId ?? `root-${idx}`}
-                        className="flex h-10 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-white shadow-sm outline-none transition-colors focus:border-emerald-300 focus:ring-2 focus:ring-emerald-200/30 disabled:cursor-not-allowed"
+                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-sm py-xs text-body text-text-inverse shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed"
                         value={value}
                         onChange={(e) => handleCategorySelect(idx, e.target.value)}
                         disabled={disabled}
@@ -246,8 +245,8 @@ export const Hero: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="hero-product" className="text-white">Product</Label>
+              <div className="space-y-xs">
+                <Label htmlFor="hero-product" className="text-text-inverse">Product</Label>
                 <Combobox
                   id="hero-product"
                   placeholder={
@@ -275,16 +274,16 @@ export const Hero: React.FC = () => {
                   onOpenChange={setProductOpen}
                   disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                   emptyMessage={productSearch ? "No matching products" : "No products found"}
-                  inputClassName="text-white placeholder:text-white/60 bg-white/5 border-white/20 focus-visible:ring-white/60 focus-visible:border-white/60"
+                  inputClassName="text-text-inverse placeholder:text-text-inverse/60 bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <Button type="button" size="lg" variant="outline" className="border-white/25 bg-white/5 text-white hover:border-white/40 hover:bg-white/10 hover:text-white" onClick={resetFilters}>
+              <div className="flex items-center justify-between gap-sm">
+                <Button type="button" size="lg" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-inverse hover:border-border-default hover:bg-bg-hover/40 hover:text-text-inverse" onClick={resetFilters}>
                   Reset
                 </Button>
-                <div className="flex gap-2">
-                  <Button type="submit" size="lg" className="bg-[#ff8a3d] text-foreground shadow-md shadow-orange-500/20 hover:bg-[#ff9d5c] border-transparent" disabled={!formData.productId}>
+                <div className="flex gap-sm">
+                  <Button type="submit" size="lg" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
                     Find parts
                   </Button>
                 </div>
