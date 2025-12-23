@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
-import { ThemeProvider } from "next-themes";
-import { bodyFont, headingFont, monoFont } from "./fonts";
+import { inter, outfit, jetbrainsMono } from "./fonts";
 import "./globals.css";
+import { lightTheme, themeToCSSVars } from "@/design-tokens";
+
+const lightThemeCSSVars = themeToCSSVars(lightTheme);
 
 const defaultUrl = process.env.VERCEL_URL
   ? `https://${process.env.VERCEL_URL}`
@@ -20,18 +22,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${bodyFont.variable} ${headingFont.variable} ${monoFont.variable} font-body antialiased`}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          forcedTheme="light"
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
-      </body>
+    <html lang="en" className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
+      <body style={lightThemeCSSVars}>{children}</body>
     </html>
   );
 }
