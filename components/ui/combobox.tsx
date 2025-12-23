@@ -26,7 +26,6 @@ interface ComboboxProps<T extends ComboboxOption> {
   onOpenChange: (open: boolean) => void;
   className?: string;
   disabled?: boolean;
-  emptyMessage?: string;
   inputClassName?: string;
 }
 
@@ -177,7 +176,7 @@ export function Combobox<T extends ComboboxOption>({
                   type="button"
                   onClick={() => handleSelect(option)}
                   className={cn(
-                    "w-full cursor-pointer border-b border-border-subtle px-sm py-sm text-left text-sm text-text-primary transition-colors last:border-b-0",
+                    "w-full cursor-pointer border-b border-border-subtle px-md py-sm text-left text-sm text-text-primary transition-colors last:border-b-0",
                     index === selectedIndex
                       ? "bg-action-primary/10"
                       : "hover:bg-bg-hover",
@@ -187,7 +186,7 @@ export function Combobox<T extends ComboboxOption>({
                 </button>
               ))
             ) : (
-              <div className="px-sm py-sm text-sm text-text-secondary">
+              <div className="px-md py-sm text-sm text-text-secondary">
                 {emptyMessage}
               </div>
             )}
@@ -196,7 +195,7 @@ export function Combobox<T extends ComboboxOption>({
                 type="button"
                 onClick={handleCreate}
                 className={cn(
-                  "w-full cursor-pointer border-t border-border-subtle px-sm py-sm text-left text-sm text-text-primary transition-colors",
+                  "w-full cursor-pointer border-t border-border-subtle px-md py-sm text-left text-sm text-text-primary transition-colors",
                   selectedIndex === filteredOptions.length
                     ? "bg-action-primary/10"
                     : "hover:bg-bg-hover",

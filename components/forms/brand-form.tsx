@@ -74,7 +74,7 @@ export function BrandForm({ initialData, onSubmit, loading = false, className }:
               value={formData.description}
               onChange={(e) => updateField('description', e.target.value)}
               placeholder="Describe the brand..."
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface placeholder:text-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
             />
           </div>
 
@@ -96,7 +96,7 @@ export function BrandForm({ initialData, onSubmit, loading = false, className }:
                 id="industry"
                 value={formData.industry}
                 onChange={(e) => updateField('industry', e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                 required
               >
                 <option value="">Select industry</option>
@@ -141,7 +141,7 @@ export function BrandForm({ initialData, onSubmit, loading = false, className }:
               type="file"
               accept="image/*"
               onChange={handleLogoChange}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-foreground file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors file:border-0 file:bg-transparent file:text-[var(--typography-size-body)] file:font-medium file:text-text-primary placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
             />
           </div>
         </CardContent>
