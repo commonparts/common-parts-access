@@ -70,7 +70,7 @@ export function SearchBar({
             </button>
           )}
           <div className="absolute inset-y-0 right-0 flex items-center">
-            <Button type="submit" size="sm" className="rounded-l-none">
+            <Button type="submit" className="h-full rounded-l-none">
               Search
             </Button>
           </div>

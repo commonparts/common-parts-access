@@ -178,7 +178,7 @@ export const Hero: React.FC = () => {
                 <p className="text-caption text-text-inverse/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
               </div>
               <div className="mt-md flex flex-wrap justify-center gap-sm">
-                <Button asChild size="lg" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
+                <Button asChild className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
                   <a href="/upload">Dock a model</a>
                 </Button>
               </div>
@@ -228,7 +228,7 @@ export const Hero: React.FC = () => {
                     return (
                       <select
                         key={level.parentId ?? `root-${idx}`}
-                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-sm py-xs text-body text-text-inverse shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed"
+                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-md py-sm text-sm text-text-inverse shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                         value={value}
                         onChange={(e) => handleCategorySelect(idx, e.target.value)}
                         disabled={disabled}
@@ -279,11 +279,11 @@ export const Hero: React.FC = () => {
               </div>
 
               <div className="flex items-center justify-between gap-sm">
-                <Button type="button" size="lg" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-inverse hover:border-border-default hover:bg-bg-hover/40 hover:text-text-inverse" onClick={resetFilters}>
+                <Button type="button" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-inverse hover:border-border-default hover:bg-bg-hover/40 hover:text-text-inverse" onClick={resetFilters}>
                   Reset
                 </Button>
                 <div className="flex gap-sm">
-                  <Button type="submit" size="lg" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
+                  <Button type="submit" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
                     Find parts
                   </Button>
                 </div>
