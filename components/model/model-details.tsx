@@ -430,8 +430,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap gap-3">
-            <Button 
-              size="lg" 
+            <Button
               className="flex items-center gap-2"
               onClick={async () => {
                 // Import download function dynamically to avoid SSR issues
@@ -459,7 +458,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </Button>
             <Button
               variant="outline"
-              size="lg"
               className="flex items-center gap-2"
               onClick={handleLikeToggle}
               disabled={likePending}
