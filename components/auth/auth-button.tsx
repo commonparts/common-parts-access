@@ -9,12 +9,12 @@ export async function AuthButton() {
   } = await getCurrentUser();
 
   return user ? (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-md">
       Hey, {user.email}!
       <LogoutButton />
     </div>
   ) : (
-    <div className="flex gap-2">
+    <div className="flex gap-sm">
       <Button asChild size="sm" variant={"outline"}>
         <Link href="/login">Sign in</Link>
       </Button>
