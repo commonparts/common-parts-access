@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
@@ -127,15 +128,14 @@ export default async function ModelPage({ params }: ModelPageProps) {
 
         {/* Back to Browse Button */}
         <div className="mt-12 text-center">
-          <Link 
-            href="/browse"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-            </svg>
-            Browse More Models
-          </Link>
+          <Button asChild variant="outline" className="inline-flex items-center gap-2">
+            <Link href="/browse">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+              </svg>
+              Browse More Models
+            </Link>
+          </Button>
         </div>
       </main>
     </div>
