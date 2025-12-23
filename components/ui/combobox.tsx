@@ -150,9 +150,9 @@ export function Combobox<T extends ComboboxOption>({
   };
 
   return (
-    <div className={`space-y-2 ${className}`}>
+    <div className={cn("space-y-2", className)}>
       {label && (
-        <Label htmlFor={id} className="text-foreground font-medium">
+        <Label htmlFor={id} className="text-text-secondary font-medium">
           {label}
         </Label>
       )}
@@ -166,27 +166,28 @@ export function Combobox<T extends ComboboxOption>({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className={cn("w-full placeholder:text-foreground/50", inputClassName)}
+          className={cn("w-full", inputClassName)}
         />
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border border-input rounded-md shadow-lg max-h-48 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 z-50 mt-2 max-h-60 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <button
                   key={option.id}
                   type="button"
                   onClick={() => handleSelect(option)}
-                  className={`w-full px-3 py-2 text-left transition-colors cursor-pointer border-b border-muted/20 last:border-b-0 text-sm ${
+                  className={cn(
+                    "w-full cursor-pointer border-b border-border-subtle/60 px-3 py-2 text-left text-sm text-text-primary transition-colors last:border-b-0",
                     index === selectedIndex
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-muted"
-                  }`}
+                      ? "bg-action-primary/10"
+                      : "hover:bg-bg-hover",
+                  )}
                 >
                   <div className="font-medium">{option.name}</div>
                 </button>
               ))
             ) : (
-              <div className="px-3 py-2 text-sm text-muted-foreground">
+              <div className="px-3 py-2 text-sm text-text-secondary">
                 {emptyMessage}
               </div>
             )}
@@ -194,11 +195,12 @@ export function Combobox<T extends ComboboxOption>({
               <button
                 type="button"
                 onClick={handleCreate}
-                className={`w-full px-3 py-2 text-left transition-colors cursor-pointer border-t border-muted/20 text-sm ${
+                className={cn(
+                  "w-full cursor-pointer border-t border-border-subtle/60 px-3 py-2 text-left text-sm text-text-primary transition-colors",
                   selectedIndex === filteredOptions.length
-                    ? "bg-accent text-accent-foreground"
-                    : "hover:bg-muted"
-                }`}
+                    ? "bg-action-primary/10"
+                    : "hover:bg-bg-hover",
+                )}
               >
                 <div className="font-medium">{createLabel ? createLabel(trimmedSearch) : `Create product: ${trimmedSearch}`}</div>
               </button>

@@ -5,20 +5,18 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg border border-transparent text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:pointer-events-none disabled:opacity-60 shadow-raised [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
   {
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 hover:bg-primary/95",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-lg shadow-destructive/20 hover:shadow-xl hover:shadow-destructive/25 hover:bg-destructive/95",
-        outline:
-          "border border-input bg-background shadow-lg hover:bg-accent/5 hover:text-accent-foreground hover:shadow-xl hover:border-accent/20",
+          "bg-action-primary text-text-inverse hover:bg-action-primaryHover active:bg-action-primaryActive",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-lg shadow-secondary/10 hover:shadow-xl hover:shadow-secondary/20 hover:bg-secondary/95",
-        ghost: "hover:bg-accent/5 hover:text-accent-foreground transition-colors",
-        link: "text-primary hover:text-primary/90 underline-offset-4 hover:underline",
+          "bg-bg-subtle text-text-primary border-border-subtle hover:bg-bg-hover",
+        outline:
+          "border-border-default bg-transparent text-text-primary hover:bg-bg-hover",
+        ghost: "text-text-primary hover:bg-bg-hover",
+        link: "text-text-link underline underline-offset-4 hover:text-text-link",
       },
       size: {
         default: "h-10 px-4",
