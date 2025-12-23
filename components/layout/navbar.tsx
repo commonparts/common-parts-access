@@ -27,7 +27,7 @@ export default async function Navbar() {
         <div className="flex items-center gap-sm">
           {user ? (
             <>
-              <Button asChild size="sm" variant={"default"}>
+              <Button asChild variant={"default"}>
                 <Link href="/upload">Dock a model</Link>
               </Button>
               <LogoutButton />
