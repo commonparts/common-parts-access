@@ -112,7 +112,6 @@ const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDow
       </div>
     </div>
     <Button
-      size="sm"
       variant="ghost"
       className="opacity-0 group-hover:opacity-100 transition-opacity"
       onClick={() => onDownload(file)}
