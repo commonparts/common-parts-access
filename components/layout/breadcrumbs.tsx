@@ -15,12 +15,12 @@ interface BreadcrumbsProps {
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav aria-label="Breadcrumb" className={cn("flex", className)}>
-      <ol className="flex items-center space-x-2">
+      <ol className="flex items-center gap-sm">
         {items.map((item, index) => (
           <li key={index} className="flex items-center">
             {index > 0 && (
               <svg
-                className="flex-shrink-0 w-4 h-4 text-muted-foreground mx-2"
+                className="mx-sm flex-shrink-0 size-sm text-text-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -31,12 +31,12 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
             {item.href && index < items.length - 1 ? (
               <Link
                 href={item.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="text-caption font-medium text-text-secondary transition-colors hover:text-text-primary"
               >
                 {item.label}
               </Link>
             ) : (
-              <span className="text-sm font-medium text-foreground">
+              <span className="text-caption font-medium text-text-primary">
                 {item.label}
               </span>
             )}

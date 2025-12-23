@@ -11,20 +11,20 @@ export default async function Navbar() {
   const { data: { user } } = await getCurrentUser();
 
   return (
-    <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-      <div className="w-full flex justify-between items-center p-3 px-6 text-sm gap-6">
-        <div className="flex items-center gap-4 font-heading font-bold text-lg">
-          <Link href={"/"} className="flex items-center gap-2">
+    <nav className="flex w-full justify-center border-b border-border-subtle bg-bg-surface backdrop-blur">
+      <div className="flex w-full max-w-screen-xl items-center justify-between gap-md px-lg py-sm text-body">
+        <div className="flex items-center gap-sm font-heading font-bold text-heading-sm text-text-primary">
+          <Link href={"/"} className="flex items-center gap-xs text-text-primary">
             <HarborMark width={24} height={24} />
             PartHarbor
           </Link>
         </div>
         
-        <div className="flex-1 max-w-md hidden">
+        <div className="hidden flex-1">
           <SearchBar />
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-sm">
           {user ? (
             <>
               <Button asChild size="sm" variant={"default"}>
