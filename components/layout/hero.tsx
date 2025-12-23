@@ -67,20 +67,20 @@ interface FeatureProps {
 
 const Feature: React.FC<FeatureProps> = ({ icon, title, desc }) => (
   <li className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur shadow-lg shadow-foreground/10 transition-transform hover:-translate-y-0.5 hover:shadow-xl">
-    <div className="flex items-start gap-3">
-      <div className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 shadow-inner">
+    <div className="flex items-start gap-3 text-text-primary">
+      <div className="mt-1 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 shadow-inner text-text-primary">
         {icon}
       </div>
       <div>
-        <h3 className="text-sm font-semibold font-body text-white">{title}</h3>
-        <p className="mt-1 text-xs text-white/80 leading-relaxed">{desc}</p>
+        <h3 className="text-sm font-semibold font-body text-text-primary">{title}</h3>
+        <p className="mt-1 text-body leading-relaxed text-text-secondary">{desc}</p>
       </div>
     </div>
   </li>
 );
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-tight text-white/90 ring-1 ring-white/15">
+  <span className="inline-flex items-center gap-2 rounded-full border border-border-subtle bg-bg-surface px-3 py-1 text-xs font-semibold tracking-tight text-text-primary shadow-surface">
     {children}
   </span>
 );
@@ -147,35 +147,35 @@ export const Hero: React.FC = () => {
       </div>
 
       <div className="relative mx-auto flex max-w-screen-xl flex-col gap-xl lg:grid lg:grid-cols-2 lg:items-center lg:gap-2xl">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-inverse space-y-lg">
+        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
           <div className="space-y-sm">
             <h1 className="text-heading-lg font-heading leading-tight">
               Upload fast. Find the exact part faster.
             </h1>
-            <p className="text-body text-text-inverse/80">
+            <p className="text-body text-text-secondary">
               PartHarbor connects makers who upload printable fixes with people searching by brand, category, or product. Drop a model or zero in on the device you need to repair.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-sm text-caption text-text-inverse/80">
+          <div className="flex flex-wrap items-center justify-center gap-sm text-caption text-text-secondary">
             <Badge>
-              <Anchor className="size-sm" /> Right-to-repair friendly
+              <Anchor className="size-md" /> Right-to-repair friendly
             </Badge>
             <Badge>
-              <Compass className="size-sm" /> Curated by makers
+              <Compass className="size-md" /> Curated by makers
             </Badge>
             <Badge>
-              <ShieldCheck className="size-sm" /> Open formats only
+              <ShieldCheck className="size-md" /> Open formats only
             </Badge>
           </div>
 
           <div className="w-full max-w-xl">
             <div className="relative rounded-lg border border-border-subtle bg-bg-surface/40 p-lg shadow-overlay backdrop-blur">
-              <UploadCloud className="absolute right-sm top-sm size-md text-text-inverse/70" />
-              <div className="text-center space-y-xs">
-                <p className="text-caption uppercase tracking-wide text-text-inverse/60">Upload lane</p>
-                <h3 className="text-heading-sm font-semibold text-text-inverse">Shortcut to your model</h3>
-                <p className="text-caption text-text-inverse/75">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
+              <UploadCloud className="absolute right-sm top-sm size-md text-text-secondary" />
+              <div className="text-center space-y-xs text-text-primary">
+                <p className="text-caption uppercase tracking-wide text-text-secondary">Upload lane</p>
+                <h3 className="text-heading-sm font-semibold text-text-primary">Shortcut to your model</h3>
+                <p className="text-caption text-text-secondary">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
               </div>
               <div className="mt-md flex flex-wrap justify-center gap-sm">
                 <Button asChild className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
@@ -188,16 +188,16 @@ export const Hero: React.FC = () => {
 
         <div className="relative mx-auto grid w-full max-w-xl gap-sm">
           <div className="relative rounded-lg border border-border-subtle bg-bg-surface/30 p-lg shadow-overlay backdrop-blur">
-            <Search className="absolute right-sm top-sm size-md text-text-inverse/70" />
-            <div className="text-center space-y-xs">
-              <p className="text-caption uppercase tracking-wide text-text-inverse/60">Find parts</p>
-              <h3 className="text-heading-sm font-semibold text-text-inverse">Search by product</h3>
-              <p className="text-caption text-text-inverse/75">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
+            <Search className="absolute right-sm top-sm size-md text-text-secondary" />
+            <div className="text-center space-y-xs text-text-primary">
+              <p className="text-caption uppercase tracking-wide text-text-secondary">Find parts</p>
+              <h3 className="text-heading-sm font-semibold text-text-primary">Search by product</h3>
+              <p className="text-caption text-text-secondary">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
             </div>
 
             <form className="mt-sm space-y-sm" onSubmit={handleSearch}>
               <div className="space-y-xs">
-                <Label htmlFor="hero-brand" className="text-text-inverse">Brand</Label>
+                <Label htmlFor="hero-brand" className="text-text-primary">Brand</Label>
                 <Combobox
                   id="hero-brand"
                   placeholder={loadingMeta ? "Loading brands..." : "Search or select a brand"}
@@ -213,12 +213,12 @@ export const Hero: React.FC = () => {
                   onOpenChange={setBrandOpen}
                   disabled={loadingMeta}
                   emptyMessage={brandSearch ? "No matching brands" : "No brands found"}
-                  inputClassName="text-text-inverse placeholder:text-text-inverse/60 bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                  inputClassName="text-text-primary placeholder:text-text-secondary bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
               <div className="space-y-xs">
-                <Label className="text-text-inverse">Category</Label>
+                <Label className="text-text-primary">Category</Label>
                 <div className="flex flex-col gap-xs">
                   {categoryLevels.map((level, idx) => {
                     const placeholder = idx === 0 ? "Select a category" : "Keep parent category";
@@ -228,7 +228,7 @@ export const Hero: React.FC = () => {
                     return (
                       <select
                         key={level.parentId ?? `root-${idx}`}
-                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-md py-sm text-sm text-text-inverse shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
+                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-md py-sm text-sm text-text-primary shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                         value={value}
                         onChange={(e) => handleCategorySelect(idx, e.target.value)}
                         disabled={disabled}
@@ -246,7 +246,7 @@ export const Hero: React.FC = () => {
               </div>
 
               <div className="space-y-xs">
-                <Label htmlFor="hero-product" className="text-text-inverse">Product</Label>
+                <Label htmlFor="hero-product" className="text-text-primary">Product</Label>
                 <Combobox
                   id="hero-product"
                   placeholder={
@@ -274,16 +274,16 @@ export const Hero: React.FC = () => {
                   onOpenChange={setProductOpen}
                   disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                   emptyMessage={productSearch ? "No matching products" : "No products found"}
-                  inputClassName="text-text-inverse placeholder:text-text-inverse/60 bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                  inputClassName="text-text-primary placeholder:text-text-secondary bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-sm">
-                <Button type="button" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-inverse hover:border-border-default hover:bg-bg-hover/40 hover:text-text-inverse" onClick={resetFilters}>
+                <Button type="button" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-primary hover:border-border-default hover:bg-bg-hover/40 hover:text-text-primary" onClick={resetFilters}>
                   Reset
                 </Button>
                 <div className="flex gap-sm">
-                  <Button type="submit" className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
+                  <Button type="submit" className="bg-action-primary text-text-primary shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
                     Find parts
                   </Button>
                 </div>
