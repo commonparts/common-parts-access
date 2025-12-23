@@ -27,6 +27,7 @@ interface ComboboxProps<T extends ComboboxOption> {
   className?: string;
   disabled?: boolean;
   inputClassName?: string;
+  emptyMessage?: string;
 }
 
 export function Combobox<T extends ComboboxOption>({
