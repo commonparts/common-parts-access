@@ -86,7 +86,7 @@ export function CreateProductModal({
                   <Label htmlFor="create-brand">Brand *</Label>
                   <select
                     id="create-brand"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                     value={data.brandId}
                     onChange={(e) => onChange("brandId", e.target.value)}
                     required
@@ -102,7 +102,7 @@ export function CreateProductModal({
                   <Label htmlFor="create-category">Category *</Label>
                   <select
                     id="create-category"
-                    className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                     value={data.categoryId}
                     onChange={(e) => onChange("categoryId", e.target.value)}
                     required
@@ -120,7 +120,7 @@ export function CreateProductModal({
                 <textarea
                   id="create-description"
                   rows={3}
-                  className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface placeholder:text-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                   value={data.description || ""}
                   onChange={(e) => onChange("description", e.target.value)}
                   placeholder="Briefly describe the product"

@@ -102,7 +102,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               id="description"
               rows={4}
               placeholder="Describe your 3D model..."
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface placeholder:text-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
@@ -120,7 +120,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   return (
                     <select
                       key={level.parentId ?? `root-${idx}`}
-                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                       value={value}
                       onChange={(e) => handleCategorySelect(idx, e.target.value)}
                       required={idx === 0}
@@ -142,7 +142,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               <Label htmlFor="license">License</Label>
               <select
                 id="license"
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                 value={formData.license}
                 onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
               >
