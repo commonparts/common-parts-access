@@ -27,18 +27,16 @@ export default function UploadSuccessPage({ searchParams }: SuccessPageProps) {
         </div>
 
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center sm:gap-4">
-          <Link
-            href={viewHref}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow hover:bg-primary/90"
-          >
-            View model
-          </Link>
-          <Link
-            href="/upload"
-            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted"
-          >
-            Upload another
-          </Link>
+          <Button asChild className="w-full sm:w-auto">
+            <Link href={viewHref}>
+              View model
+            </Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full sm:w-auto">
+            <Link href="/upload">
+              Upload another
+            </Link>
+          </Button>
         </div>
       </div>
     </div>
