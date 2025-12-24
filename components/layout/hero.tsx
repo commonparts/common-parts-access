@@ -2,32 +2,12 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Anchor, Compass, MapPin, Printer, Search, ShieldCheck, UploadCloud } from "lucide-react";
+import { Anchor, Compass, Search, ShieldCheck, UploadCloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
-
-// ---- Feature Card ----
-interface FeatureProps {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-}
-
-const Feature: React.FC<FeatureProps> = ({ icon, title, desc }) => (
-  <li className="rounded-2xl border border-white/10 bg-white/5 p-md backdrop-blur shadow-lg shadow-foreground/10 transition-transform hover:-translate-y-0.5 hover:shadow-xl">
-    <div className="flex items-start gap-sm text-text-primary">
-      <div className="mt-xs inline-flex size-xl items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/20 shadow-inner text-text-primary">
-        {icon}
-      </div>
-      <div>
-        <h3 className="text-sm font-semibold font-body text-text-primary">{title}</h3>
-        <p className="mt-1 text-body leading-relaxed text-text-secondary">{desc}</p>
-      </div>
-    </div>
-  </li>
-);
+import { Container } from "@/components/layout/container";
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-semibold tracking-tight text-text-primary shadow-surface">
@@ -60,17 +40,6 @@ export const Hero: React.FC = () => {
     setCategoryPathFromCategoryId,
   } = useModelUploadFormState();
 
-  const selectedBrandName = React.useMemo(
-    () => brands.find((b) => b.id === formData.brandId)?.name ?? "",
-    [brands, formData.brandId]
-  );
-
-  const selectedProductName = React.useMemo(() => {
-    const match = products.find((p) => p.id === formData.productId);
-    if (!match) return "";
-    return match.model_number ? `${match.name} (${match.model_number})` : match.name;
-  }, [products, formData.productId]);
-
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
     if (!formData.productId) return;
@@ -96,7 +65,7 @@ export const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-[linear-gradient(120deg,_rgba(255,255,255,0.05)_1px,_transparent_1px),linear-gradient(240deg,_rgba(255,255,255,0.05)_1px,_transparent_1px)] bg-[length:40px_40px] opacity-40" />
       </div>
 
-      <div className="relative mx-auto flex max-w-screen-xl flex-col gap-xl lg:grid lg:grid-cols-2 lg:items-center lg:gap-2xl">
+      <Container size="xl" className="relative flex flex-col gap-xl lg:grid lg:grid-cols-2 lg:items-center lg:gap-2xl">
         <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
           <div className="space-y-sm">
             <h1 className="text-heading-lg font-heading leading-tight">
@@ -241,7 +210,7 @@ export const Hero: React.FC = () => {
             </form>
           </div>
         </div>
-      </div>
+      </Container>
     </section>
   );
 };
