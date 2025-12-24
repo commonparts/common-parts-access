@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ModelUploadForm } from '@/components/forms/model-upload-form'
+import { DashboardShell } from '@/components/layout/dashboard-shell'
+import { Grid } from '@/components/layout/grid'
 
 interface UploadIssue {
   field?: string
@@ -66,32 +68,34 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-4 p-4">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-semibold">Upload a new model</h1>
-        <p className="text-sm text-muted-foreground">Share verified, printable parts with the community.</p>
-      </div>
-
-      {error && (
-        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-          {error}
-          {issues.length > 0 && (
-            <ul className="mt-2 list-disc space-y-1 pl-4">
-              {issues.map((issue, idx) => (
-                <li key={`${issue.field}-${idx}`}>{issue.message || 'Invalid field'}</li>
-              ))}
-            </ul>
+    <DashboardShell
+      title="Upload a new model"
+      description="Share verified, printable parts with the community."
+    >
+      <Grid columns={12}>
+        <div className="col-span-12 space-y-md">
+          {error && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-md text-sm text-destructive">
+              {error}
+              {issues.length > 0 && (
+                <ul className="mt-xs list-disc space-y-1 pl-md">
+                  {issues.map((issue, idx) => (
+                    <li key={`${issue.field}-${idx}`}>{issue.message || 'Invalid field'}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
           )}
-        </div>
-      )}
 
-      {success && (
-        <div className="rounded-md border border-emerald-400/50 bg-emerald-50 p-3 text-sm text-emerald-800">
-          {success}
-        </div>
-      )}
+          {success && (
+            <div className="rounded-lg border border-emerald-400/50 bg-emerald-50 p-md text-sm text-emerald-800">
+              {success}
+            </div>
+          )}
 
-      <ModelUploadForm onSubmit={handleSubmit} loading={loading} />
-    </div>
+          <ModelUploadForm onSubmit={handleSubmit} loading={loading} />
+        </div>
+      </Grid>
+    </DashboardShell>
   )
 }

@@ -8,6 +8,7 @@ import { FileUploader } from "@/components/ui/file-uploader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Grid } from "@/components/layout/grid"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -65,7 +66,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
   }
 
   return (
-    <form onSubmit={handleSubmit} className={cn("space-y-6", className)}>
+    <form onSubmit={handleSubmit} className={cn("space-y-lg", className)}>
       <CreateProductModal
         open={showCreateProduct}
         onClose={closeCreateProduct}
@@ -83,8 +84,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <CardHeader>
           <CardTitle>Basic Information</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        <CardContent className="space-y-md">
+          <div className="space-y-sm">
             <Label htmlFor="title">Model Title *</Label>
             <Input
               id="title"
@@ -96,7 +97,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-sm">
             <Label htmlFor="description">Description</Label>
             <textarea
               id="description"
@@ -108,10 +109,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="category">Category *</Label>
-              <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-sm">
                 {categoryLevels.map((level, idx) => {
                   const placeholder = idx === 0 ? 'Select a category' : 'Keep parent category'
                   const value = categoryPath[idx] ?? ''
@@ -138,7 +139,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="license">License</Label>
               <select
                 id="license"
@@ -153,10 +154,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 <option value="proprietary">Proprietary</option>
               </select>
             </div>
-          </div>
+          </Grid>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="brand">Brand (Optional)</Label>
               <Combobox
                 id="brand"
@@ -176,7 +177,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="product">Product (Optional)</Label>
               <Combobox
                 id="product"
@@ -207,7 +208,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 emptyMessage={productSearch ? 'No matching products' : 'No products found'}
               />
             </div>
-          </div>
+          </Grid>
         </CardContent>
       </Card>
 
@@ -216,10 +217,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <CardHeader>
           <CardTitle>Tags</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        <CardContent className="space-y-md">
+          <div className="space-y-sm">
             <Label htmlFor="tags">Add tags to help others find your model</Label>
-            <div className="flex space-x-2">
+            <div className="flex gap-sm">
               <Input
                 id="tags"
                 type="text"
@@ -240,7 +241,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
 
           {formData.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-sm">
               {formData.tags.map((tag) => (
                 <span
                   key={tag}
@@ -268,8 +269,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <CardHeader>
           <CardTitle>Model Files</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
+        <CardContent className="space-y-md">
+          <div className="space-y-sm">
             <Label>3D Model Files *</Label>
             <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
             <FileUploader
@@ -285,7 +286,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-sm">
             <Label>Thumbnail Images (Optional)</Label>
             <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
             <FileUploader
@@ -309,7 +310,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <CardTitle>Privacy & Publishing</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-sm">
             <input
               id="isPublic"
               type="checkbox"
@@ -323,7 +324,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       </Card>
 
       {/* Submit */}
-      <div className="flex justify-end space-x-2">
+      <div className="flex justify-end gap-sm">
         <Button type="button" variant="outline">
           Save as Draft
         </Button>
