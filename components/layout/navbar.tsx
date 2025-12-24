@@ -4,7 +4,6 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { AuthButton } from "@/components/auth/auth-button";
-import { HarborMark } from "@/components/layout/hero";
 import { SearchBar } from "@/components/layout/search-bar";
 
 export default async function Navbar() {
@@ -15,7 +14,6 @@ export default async function Navbar() {
       <div className="flex w-full max-w-screen-xl items-center justify-between gap-md px-lg py-sm text-body">
         <div className="flex items-center gap-sm font-heading font-bold text-heading-sm text-text-primary">
           <Link href={"/"} className="flex items-center gap-xs text-text-primary">
-            <HarborMark width={24} height={24} />
             PartHarbor
           </Link>
         </div>
