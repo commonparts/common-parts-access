@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -282,15 +283,18 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
   if (loading) {
     return (
       <div className={cn("w-full", className)}>
-        <div className="animate-pulse space-y-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="aspect-video bg-muted rounded-lg"></div>
-            <div className="space-y-4">
-              <div className="h-8 bg-muted rounded w-3/4"></div>
-              <div className="h-4 bg-muted rounded w-full"></div>
-              <div className="h-4 bg-muted rounded w-2/3"></div>
+        <div className="animate-pulse space-y-lg">
+          <Grid columns={12} className="items-start">
+            <div className="col-span-12 lg:col-span-7">
+              <div className="aspect-video rounded-lg border border-border-subtle bg-muted" />
             </div>
-          </div>
+            <div className="col-span-12 lg:col-span-5 space-y-sm">
+              <div className="h-8 w-3/4 rounded bg-muted" />
+              <div className="h-4 w-full rounded bg-muted" />
+              <div className="h-4 w-2/3 rounded bg-muted" />
+              <div className="h-10 w-40 rounded bg-muted" />
+            </div>
+          </Grid>
         </div>
       </div>
     )
@@ -318,18 +322,16 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
   const allImages = [
     ...(model.thumbnailUrl ? [model.thumbnailUrl] : []),
-    ...model.images
+    ...model.images,
   ].filter(Boolean)
 
   // File filtering is now handled by ModelFileList component
 
   return (
-    <div className={cn("w-full space-y-8", className)}>
-      {/* Header Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Image Gallery */}
-        <div className="space-y-4">
-          <div className="aspect-video relative overflow-hidden rounded-lg border">
+    <div className={cn("w-full space-y-lg", className)}>
+      <Grid columns={12} className="items-start">
+        <div className="col-span-12 lg:col-span-7 space-y-sm">
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle bg-muted">
             {allImages.length > 0 ? (
               <Image
                 src={allImages[selectedImageIndex]}
@@ -340,26 +342,26 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 priority
               />
             ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <svg className="w-16 h-16 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex h-full w-full items-center justify-center text-text-secondary">
+                <svg className="h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
             )}
           </div>
-          
-          {/* Thumbnail Navigation */}
+
           {allImages.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-sm overflow-x-auto pb-2">
               {allImages.map((image, index) => (
                 <button
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
                   className={cn(
-                    "flex-shrink-0 w-16 h-16 rounded border overflow-hidden",
-                    index === selectedImageIndex 
-                      ? "ring-2 ring-primary border-primary" 
-                      : "hover:opacity-75"
+                    "flex-shrink-0 overflow-hidden rounded border",
+                    "h-16 w-16",
+                    index === selectedImageIndex
+                      ? "border-primary ring-2 ring-primary"
+                      : "hover:opacity-80",
                   )}
                 >
                   <Image
@@ -367,7 +369,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                     alt={`${model.name} ${index + 1}`}
                     width={64}
                     height={64}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
                 </button>
               ))}
@@ -375,75 +377,63 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           )}
         </div>
 
-        {/* Model Info */}
-        <div className="space-y-6">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">{model.name}</h1>
+        <div className="col-span-12 lg:col-span-5 space-y-md">
+          <div className="space-y-xs">
+            <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{model.name}</h1>
             {model.partDetails.partName && (
-              <p className="text-lg text-muted-foreground mb-4">
-                Part: {model.partDetails.partName}
-              </p>
+              <p className="text-body text-text-secondary">Part: {model.partDetails.partName}</p>
             )}
             {model.description && (
-              <p className="text-muted-foreground leading-relaxed">
-                {model.description}
-              </p>
+              <p className="text-body text-text-secondary leading-relaxed">{model.description}</p>
             )}
           </div>
 
-          {/* Stats */}
-          <div className="flex items-center gap-6 text-sm">
+          <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
             <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              <span className="font-medium">{model.stats.downloads}</span>
-              <span className="text-muted-foreground">downloads</span>
+              <span className="font-semibold text-text-primary">{model.stats.downloads}</span>
+              <span>downloads</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
               </svg>
-              <span className="font-medium">{model.stats.likes}</span>
-              <span className="text-muted-foreground">likes</span>
+              <span className="font-semibold text-text-primary">{model.stats.likes}</span>
+              <span>likes</span>
             </div>
             <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
               </svg>
-              <span className="font-medium">{model.stats.views}</span>
-              <span className="text-muted-foreground">views</span>
+              <span className="font-semibold text-text-primary">{model.stats.views}</span>
+              <span>views</span>
             </div>
           </div>
 
-          {/* Tags */}
           {model.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-xs">
               {model.tags.map((tag) => (
-                <Badge key={tag} variant="outline">
+                <Badge key={tag} variant="outline" className="text-xs uppercase tracking-wide">
                   #{tag}
                 </Badge>
               ))}
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-sm">
             <Button
-              className="flex items-center gap-2"
+              className="inline-flex items-center gap-xs"
               onClick={async () => {
-                // Import download function dynamically to avoid SSR issues
                 const { downloadAllModelFiles } = await import('@/lib/storage/download')
-                
+
                 try {
                   const result = await downloadAllModelFiles(model.files, model.slug, model.name)
-                  if (!result.success) {
-                    // Don't show error if it's just a redirect to login
-                    if (!result.requiresAuth) {
-                      console.error('Download failed:', result.error)
-                      alert(`Download failed: ${result.error}`)
-                    }
+                  if (!result.success && !result.requiresAuth) {
+                    console.error('Download failed:', result.error)
+                    alert(`Download failed: ${result.error}`)
                   }
                 } catch (error) {
                   console.error('Download error:', error)
@@ -451,25 +441,25 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 }
               }}
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               Download Files
             </Button>
             <Button
               variant="outline"
-              className="flex items-center gap-2"
+              className="inline-flex items-center gap-xs"
               onClick={handleLikeToggle}
               disabled={likePending}
               aria-pressed={model.viewerHasLiked}
             >
               {likePending ? (
-                <svg className="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               ) : (
                 <svg
-                  className="w-5 h-5"
+                  className="h-5 w-5"
                   fill={model.viewerHasLiked ? "currentColor" : "none"}
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -481,29 +471,30 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </Button>
           </div>
 
-          {/* Author Info */}
           {model.author && (
-            <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-3">Created by</h3>
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+            <Card className="border-border-subtle">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">Created by</CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-sm">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted">
                   {model.author.avatar ? (
                     <Image
                       src={model.author.avatar}
                       alt={model.author.username}
                       width={48}
                       height={48}
-                      className="w-full h-full object-cover"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
-                    <svg className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-6 w-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                   )}
                 </div>
-                <div className="flex-1">
+                <div className="flex-1 space-y-1">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium">
+                    <span className="text-body font-semibold text-text-primary">
                       {model.author.displayName || model.author.username}
                     </span>
                     {model.author.verifiedMaker && (
@@ -512,25 +503,19 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">
-                    @{model.author.username}
-                  </p>
+                  <p className="text-sm text-text-secondary">@{model.author.username}</p>
                   {model.author.location && (
-                    <p className="text-sm text-muted-foreground">
-                      📍 {model.author.location}
-                    </p>
+                    <p className="text-sm text-text-secondary">📍 {model.author.location}</p>
                   )}
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
         </div>
-      </div>
+      </Grid>
 
-      {/* Content Grid - Organic Layout */}
-      <div className="columns-1 md:columns-2 lg:columns-3 xl:columns-4 gap-6 space-y-6">
-        {/* Part Details */}
-        <Card className="break-inside-avoid mb-6">
+      <Grid columns={12} className="gap-lg items-start">
+        <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -622,7 +607,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         {/* Print Settings */}
         {(model.printSettings || model.estimatedPrintTime || model.estimatedMaterialUsage) && (
-          <Card className="break-inside-avoid mb-6">
+          <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -674,7 +659,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         {/* Compatible Product */}
         {model.product && (
-          <Card className="break-inside-avoid mb-6">
+          <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -724,33 +709,30 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         )}
 
         {/* Files */}
-        <ModelFileList 
-          files={model.files}
-          showCard={true}
-          modelSlug={model.slug}
-          onFileDownload={async (file: ModelFile) => {
-            // Import download function dynamically to avoid SSR issues
-            const { downloadFile } = await import('@/lib/storage/download')
-            
-            try {
-              const result = await downloadFile(file, model.slug)
-              if (!result.success) {
-                // Don't show error if it's just a redirect to login
-                if (!result.requiresAuth) {
+        <div className="col-span-12 lg:col-span-6 xl:col-span-8">
+          <ModelFileList 
+            files={model.files}
+            showCard={true}
+            modelSlug={model.slug}
+            onFileDownload={async (file: ModelFile) => {
+              const { downloadFile } = await import('@/lib/storage/download')
+
+              try {
+                const result = await downloadFile(file, model.slug)
+                if (!result.success && !result.requiresAuth) {
                   console.error('Download failed:', result.error)
                   alert(`Download failed: ${result.error}`)
                 }
+              } catch (error) {
+                console.error('Download error:', error)
+                alert('Download failed. Please try again.')
               }
-            } catch (error) {
-              console.error('Download error:', error)
-              alert('Download failed. Please try again.')
-            }
-          }}
-        />
+            }}
+          />
+        </div>
 
-        {/* Instructions */}
         {model.instructions && (
-          <Card className="break-inside-avoid mb-6">
+          <Card className="col-span-12 lg:col-span-6 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -769,7 +751,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         {/* Notes */}
         {model.notes && (
-          <Card className="break-inside-avoid mb-6">
+          <Card className="col-span-12 lg:col-span-6 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -785,7 +767,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </CardContent>
           </Card>
         )}
-      </div>
+      </Grid>
 
       {/* Comments Section - Hidden for MVP */}
       {/* Comments functionality will be added in a future release */}

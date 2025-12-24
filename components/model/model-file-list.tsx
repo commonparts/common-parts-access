@@ -98,22 +98,22 @@ interface FileRowProps {
 }
 
 const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDownload }: FileRowProps) => (
-  <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors group">
-    <div className={cn("w-8 h-8 rounded flex items-center justify-center flex-shrink-0", iconWrapperClass)}>
+  <div className="group flex items-center gap-sm rounded-lg border border-border-subtle p-sm transition-colors hover:bg-muted/50">
+    <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded", iconWrapperClass)}>
       {icon}
     </div>
-    <div className="flex-1 min-w-0">
-      <p className="font-medium text-sm truncate">{file.original_filename}</p>
-      <div className="flex items-center gap-2 mt-1">
-        <Badge variant="outline" className="text-xs">
+    <div className="min-w-0 flex-1">
+      <p className="truncate text-sm font-semibold text-text-primary">{file.original_filename}</p>
+      <div className="mt-1 flex items-center gap-2">
+        <Badge variant="outline" className="text-xs uppercase">
           {file.file_type.toUpperCase()}
         </Badge>
-        <span className="text-xs text-muted-foreground">{formatFileSize(file.file_size)}</span>
+        <span className="text-xs text-text-secondary">{formatFileSize(file.file_size)}</span>
       </div>
     </div>
     <Button
       variant="ghost"
-      className="opacity-0 group-hover:opacity-100 transition-opacity"
+      className="opacity-0 transition-opacity group-hover:opacity-100"
       onClick={() => onDownload(file)}
       disabled={isDownloading}
       aria-label={`Download ${file.original_filename}`}
@@ -192,19 +192,19 @@ export function ModelFileList({
   }, [files])
 
   const content = (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn("space-y-sm", className)}>
       {sections.length === 0 ? (
-        <div className="text-center py-6">
-          <svg className="w-12 h-12 text-muted-foreground mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="py-md text-center">
+          <svg className="mx-auto mb-2 h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <p className="text-sm text-muted-foreground">No files available</p>
+          <p className="text-sm text-text-secondary">No files available</p>
         </div>
       ) : (
         sections.map((section) => (
           <div key={section.category}>
-            <h4 className="font-medium mb-3 text-sm text-muted-foreground">{section.label}</h4>
-            <div className="space-y-2">
+            <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-secondary">{section.label}</h4>
+            <div className="space-y-xs">
               {section.files.map((file) => (
                 <FileRow
                   key={file.id}
@@ -224,10 +224,10 @@ export function ModelFileList({
 
   if (showCard) {
     return (
-      <Card className="break-inside-avoid mb-6">
+      <Card className="break-inside-avoid border-border-subtle">
         <CardHeader className="pb-3">
-          <CardTitle className="text-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <CardTitle className="flex items-center gap-2 text-heading-sm font-semibold text-text-primary">
+            <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             Download Files
