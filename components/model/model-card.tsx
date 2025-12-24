@@ -54,45 +54,45 @@ export function ModelCard({
 
   if (variant === "compact") {
     return (
-      <Card className={cn("group hover:shadow-lg transition-all duration-200", className)}>
+      <Card className={cn("group transition-all duration-200 hover:shadow-lg", className)}>
         <Link href={`/model/${model.slug}`}>
-          <div className="aspect-square relative overflow-hidden rounded-t-lg">
+          <div className="relative aspect-square overflow-hidden rounded-t-lg">
             {model.thumbnailUrl ? (
               <Image
                 src={model.thumbnailUrl}
                 alt={model.title}
                 fill
                 sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                className="object-cover group-hover:scale-105 transition-transform duration-200"
+                className="object-cover transition-transform duration-200 group-hover:scale-105"
               />
             ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <svg className="w-12 h-12 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex h-full w-full items-center justify-center bg-muted">
+                <svg className="h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
               </div>
             )}
             {model.isPremium && (
-              <Badge className="absolute top-2 right-2 bg-yellow-500">Premium</Badge>
+              <Badge className="absolute right-2 top-2 bg-yellow-500">Premium</Badge>
             )}
           </div>
         </Link>
-        <CardContent className="p-3">
+        <CardContent className="space-y-1 p-3">
           <Link href={`/model/${model.slug}`}>
-            <h3 className="font-semibold text-sm line-clamp-2 hover:text-primary transition-colors">
+            <h3 className="line-clamp-2 font-heading text-sm font-semibold text-text-primary transition-colors hover:text-primary">
               {model.title}
             </h3>
           </Link>
           {showStats && (
-            <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
+            <div className="mt-1 flex items-center space-x-3 text-xs text-text-secondary">
               <span className="flex items-center">
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
                 {formatNumber(model.stats.likes)}
               </span>
               <span className="flex items-center">
-                <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mr-1 h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 {formatNumber(model.stats.downloads)}
@@ -105,20 +105,20 @@ export function ModelCard({
   }
 
   return (
-    <Card className={cn("group hover:shadow-lg transition-all duration-200", className)}>
+    <Card className={cn("group transition-all duration-200 hover:shadow-lg", className)}>
       <Link href={`/model/${model.slug}`}>
-        <div className="aspect-video relative overflow-hidden rounded-t-lg">
+        <div className="relative aspect-video overflow-hidden rounded-t-lg">
           {model.thumbnailUrl ? (
             <Image
               src={model.thumbnailUrl}
               alt={model.title}
               fill
               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
-              className="object-cover group-hover:scale-105 transition-transform duration-200"
+              className="object-cover transition-transform duration-200 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
-              <svg className="w-16 h-16 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex h-full w-full items-center justify-center bg-muted">
+              <svg className="h-16 w-16 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
@@ -132,12 +132,12 @@ export function ModelCard({
 
       <CardHeader className="pb-2">
         <Link href={`/model/${model.slug}`}>
-          <h3 className="font-semibold text-lg line-clamp-2 hover:text-primary transition-colors">
+          <h3 className="line-clamp-2 font-heading text-heading-sm font-semibold text-text-primary transition-colors hover:text-primary">
             {model.title}
           </h3>
         </Link>
         {model.description && variant === "detailed" && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+          <p className="mt-1 line-clamp-2 text-body text-text-secondary">
             {model.description}
           </p>
         )}
@@ -145,12 +145,12 @@ export function ModelCard({
 
       <CardContent className="pb-2">
         {/* Tags */}
-        <div className="flex flex-wrap gap-1 mb-2">
-          <Badge variant="secondary" className="text-xs">
+        <div className="mb-2 flex flex-wrap gap-1">
+          <Badge variant="secondary" className="text-xs uppercase">
             {model.category}
           </Badge>
           {model.tags.slice(0, 2).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs">
+            <Badge key={tag} variant="outline" className="text-xs uppercase">
               {tag}
             </Badge>
           ))}
@@ -164,22 +164,22 @@ export function ModelCard({
         {/* Author */}
         {showAuthor && (
           <div className="flex items-center space-x-2">
-            <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+            <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full bg-muted">
               {model.author.avatar ? (
                 <Image
                   src={model.author.avatar}
                   alt={model.author.username}
                   width={24}
                   height={24}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                 />
               ) : (
-                <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="h-4 w-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
             </div>
-            <span className="text-sm font-medium">@{model.author.username}</span>
+            <span className="text-sm font-medium text-text-primary">@{model.author.username}</span>
           </div>
         )}
       </CardContent>
@@ -189,19 +189,19 @@ export function ModelCard({
           <div className="flex items-center justify-between w-full text-sm text-muted-foreground">
             <div className="flex items-center space-x-4">
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
                 {formatNumber(model.stats.likes)}
               </span>
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 {formatNumber(model.stats.downloads)}
               </span>
               <span className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="mr-1 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                 </svg>
