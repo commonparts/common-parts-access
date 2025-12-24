@@ -56,6 +56,13 @@ const config: Config = {
         "2xl": "var(--spacing-2xl)",
       },
 
+      maxWidth: {
+        "container-sm": "640px",
+        "container-md": "768px",
+        "container-lg": "1024px",
+        "container-xl": "1280px",
+      },
+
       borderRadius: {
         none: "var(--radius-none)",
         sm: "var(--radius-sm)",
