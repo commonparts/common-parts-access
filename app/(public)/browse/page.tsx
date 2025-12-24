@@ -1,11 +1,15 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ModelGrid } from '@/components/model/model-grid'
-import { SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
-import { SearchBar } from '@/components/layout/search-bar'
+
 import { Pagination } from '@/components/browse/pagination'
+import { SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
+import { Container } from '@/components/layout/container'
+import { Grid } from '@/components/layout/grid'
+import { SearchBar } from '@/components/layout/search-bar'
+import { Section } from '@/components/layout/section'
+import { ModelGrid } from '@/components/model/model-grid'
 import { Button } from '@/components/ui/button'
 
 interface Model {
@@ -46,8 +50,7 @@ interface ModelsResponse {
 export default function BrowsePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  
-  // State
+
   const [models, setModels] = useState<Model[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -57,36 +60,35 @@ export default function BrowsePage() {
     total: 0,
     totalPages: 0,
     hasNext: false,
-    hasPrev: false
+    hasPrev: false,
   })
 
-  // URL parameters
   const currentPage = parseInt(searchParams.get('page') || '1')
   const currentSort = searchParams.get('sortBy') || 'popularity'
   const currentSearch = searchParams.get('search') || ''
   const currentProduct = searchParams.get('productId') || ''
 
-  // Update URL without page reload
-  const updateURL = useCallback((params: Record<string, string>) => {
-    const newSearchParams = new URLSearchParams(searchParams.toString())
-    
-    Object.entries(params).forEach(([key, value]) => {
-      if (value) {
-        newSearchParams.set(key, value)
-      } else {
-        newSearchParams.delete(key)
+  const updateURL = useCallback(
+    (params: Record<string, string>) => {
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          newSearchParams.set(key, value)
+        } else {
+          newSearchParams.delete(key)
+        }
+      })
+
+      if (params.sortBy || params.search !== undefined) {
+        newSearchParams.set('page', '1')
       }
-    })
 
-    // Reset to page 1 when changing search or sort
-    if (params.sortBy || params.search !== undefined) {
-      newSearchParams.set('page', '1')
-    }
+      router.push(`/browse?${newSearchParams.toString()}`)
+    },
+    [router, searchParams],
+  )
 
-    router.push(`/browse?${newSearchParams.toString()}`)
-  }, [router, searchParams])
-
-  // Fetch models
   const fetchModels = useCallback(async () => {
     try {
       setLoading(true)
@@ -96,7 +98,7 @@ export default function BrowsePage() {
         page: currentPage.toString(),
         limit: '20',
         sortBy: currentSort,
-        sortOrder: 'desc'
+        sortOrder: 'desc',
       })
 
       if (currentSearch) {
@@ -106,19 +108,18 @@ export default function BrowsePage() {
       if (currentProduct) params.set('productId', currentProduct)
 
       const response = await fetch(`/api/models?${params.toString()}`)
-      
+
       if (!response.ok) {
         throw new Error(`Failed to fetch models: ${response.statusText}`)
       }
 
       const data: ModelsResponse = await response.json()
-      
-      // Convert createdAt strings back to Date objects
-      const modelsWithDates = data.models.map(model => ({
+
+      const modelsWithDates = data.models.map((model) => ({
         ...model,
-        createdAt: new Date(model.createdAt)
+        createdAt: new Date(model.createdAt),
       }))
-      
+
       setModels(modelsWithDates)
       setPagination(data.pagination)
     } catch (err) {
@@ -129,142 +130,81 @@ export default function BrowsePage() {
     }
   }, [currentPage, currentSort, currentSearch, currentProduct])
 
-  // Effect to fetch data when parameters change
   useEffect(() => {
     fetchModels()
   }, [fetchModels])
 
-  // Handlers
-  const handleSortChange = (sortBy: string) => {
-    updateURL({ sortBy })
-  }
-
-  const handleSearchChange = (search: string) => {
-    updateURL({ search: search || '' })
-  }
-
-  const handlePageChange = (page: number) => {
-    updateURL({ page: page.toString() })
-  }
-
-  const clearSearch = () => {
-    updateURL({ search: '' })
-  }
+  const handleSortChange = (sortBy: string) => updateURL({ sortBy })
+  const handleSearchChange = (search: string) => updateURL({ search: search || '' })
+  const handlePageChange = (page: number) => updateURL({ page: page.toString() })
+  const clearSearch = () => updateURL({ search: '' })
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <main className="flex-1 container mx-auto px-6 py-8">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold mb-2">Unable to load models</h3>
-            <p className="text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => fetchModels()}>
-              Try Again
-            </Button>
+      <Section>
+        <Container size="lg" className="space-y-md text-center">
+          <div className="mx-auto mb-sm flex size-16 items-center justify-center rounded-full bg-border-subtle">
+            <svg className="size-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           </div>
-        </main>
-      </div>
+          <div className="space-y-xs">
+            <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load models</h3>
+            <p className="text-body text-text-secondary">{error}</p>
+          </div>
+          <Button onClick={() => fetchModels()}>Try again</Button>
+        </Container>
+      </Section>
     )
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-1 container mx-auto px-6 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">
-            Browse 3D Models
-          </h1>
-          <p className="text-lg text-muted-foreground">
+    <Section>
+      <Container size="xl" className="space-y-lg">
+        <div className="space-y-xs">
+          <h1 className="text-heading-md font-heading font-semibold text-text-primary">Browse 3D Models</h1>
+          <p className="text-body text-text-secondary">
             Discover and download 3D models and replacement parts from our community
           </p>
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-8">
-          {/* Sort Options - Left Side */}
-          <div className="flex-1">
-            {/* Desktop: Horizontal buttons */}
+        <Grid columns={12} className="items-start gap-md">
+          <div className="col-span-12 space-y-sm md:col-span-6">
             <div className="hidden md:block">
-              <SortOptions 
-                value={currentSort} 
-                onChange={handleSortChange}
-              />
+              <SortOptions value={currentSort} onChange={handleSortChange} />
             </div>
-            {/* Mobile: Dropdown */}
             <div className="md:hidden">
-              <SortOptionsDropdown 
-                value={currentSort} 
-                onChange={handleSortChange}
-              />
+              <SortOptionsDropdown value={currentSort} onChange={handleSortChange} />
             </div>
           </div>
 
-          {/* Search Bar - Right Side */}
-          <div className="w-full sm:w-auto sm:min-w-[300px]">
+          <div className="col-span-12 md:col-span-6">
             <SearchBar
+              value={currentSearch}
+              onChange={handleSearchChange}
+              onClear={clearSearch}
               placeholder="Search models..."
-              onSearch={handleSearchChange}
-              className="w-full"
             />
           </div>
-        </div>
+        </Grid>
 
-        {/* Active Search Display */}
-        {currentSearch && (
-          <div className="mb-6 flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg">
-            <span className="text-sm">
-              Showing results for <strong>&quot;{currentSearch}&quot;</strong>
-            </span>
-            <Button 
-              variant="ghost"
-              onClick={clearSearch}
-              className="h-full px-md py-sm"
-            >
-              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </Button>
-          </div>
-        )}
+        <ModelGrid
+          models={models}
+          loading={loading}
+          variant="default"
+          showAuthor={true}
+          showStats={true}
+          className="mb-lg"
+        />
 
-        {/* Results Summary */}
-        {!loading && (
-          <div className="mb-6 text-sm text-muted-foreground">
-            {pagination.total} models found
-            {currentSearch && ` for “${currentSearch}”`}
-          </div>
-        )}
-
-        {/* Model Grid */}
-        <div className="mb-8">
-          <ModelGrid 
-            models={models}
-            loading={loading}
-            variant="default"
-            showAuthor={true}
-            showStats={true}
-          />
-        </div>
-
-        {/* Pagination */}
-        {!loading && models.length > 0 && (
-          <Pagination
-            currentPage={pagination.page}
-            totalPages={pagination.totalPages}
-            onPageChange={handlePageChange}
-            showInfo={true}
-            totalItems={pagination.total}
-            itemsPerPage={pagination.limit}
-            className="mt-8"
-          />
-        )}
-      </main>
-    </div>
+        <Pagination
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={handlePageChange}
+          hasNext={pagination.hasNext}
+          hasPrev={pagination.hasPrev}
+        />
+      </Container>
+    </Section>
   )
 }

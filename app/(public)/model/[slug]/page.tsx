@@ -4,6 +4,9 @@ import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
+import { Container } from '@/components/layout/container'
+import { Section } from '@/components/layout/section'
+import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 
 interface ModelPageProps {
   params: Promise<{
@@ -104,41 +107,31 @@ export default async function ModelPage({ params }: ModelPageProps) {
   }
 
   return (
-    <div className="min-h-screen">
-      <main className="container mx-auto px-6 py-8">
-        {/* Breadcrumb Navigation */}
-        <nav className="flex items-center space-x-2 text-sm text-muted-foreground mb-6">
-          <Link href="/" className="hover:text-foreground transition-colors">
-            Home
-          </Link>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-          </svg>
-          <Link href="/browse" className="hover:text-foreground transition-colors">
-            Browse
-          </Link>
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-          </svg>
-          <span className="text-foreground font-medium">Model</span>
-        </nav>
+    <Section>
+      <Container size="xl" className="space-y-lg">
+        <Breadcrumbs
+          items={[
+            { label: 'Home', href: '/' },
+            { label: 'Browse', href: '/browse' },
+            { label: 'Model' },
+          ]}
+          className="text-text-secondary"
+        />
 
-        {/* Model Details Component */}
         <ModelDetails slug={slug} />
 
-        {/* Back to Browse Button */}
-        <div className="mt-12 text-center">
-          <Button asChild variant="outline" className="inline-flex items-center gap-2">
+        <div className="text-center">
+          <Button asChild variant="outline" className="inline-flex items-center gap-sm">
             <Link href="/browse">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Browse More Models
+              Browse more models
             </Link>
           </Button>
         </div>
-      </main>
-    </div>
+      </Container>
+    </Section>
   )
 }
 
