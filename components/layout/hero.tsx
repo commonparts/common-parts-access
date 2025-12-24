@@ -8,56 +8,6 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
 
-// ---- Wordmark as a React component ----
-export const PartHarborWordmark: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
-  return (
-    <svg
-      width={props.width || 220}
-      height={props.height || 36}
-      viewBox="0 0 880 144"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="PartHarbor wordmark"
-      {...props}
-    >
-      <g transform="translate(8,10)">
-        <rect x="0" y="24" width="24" height="80" rx="6" className="fill-foreground" />
-        <rect x="28" y="0" width="24" height="104" rx="6" className="fill-foreground" />
-        <circle cx="40" cy="-2" r="6" className="fill-primary" />
-        <rect x="58" y="62" width="16" height="16" rx="2" className="fill-primary" />
-      </g>
-      <text
-        x="100"
-        y="96"
-        className="font-heading fill-foreground"
-        fontSize="84"
-        fontWeight="700"
-        letterSpacing="0.5"
-      >
-        PartHarbor
-      </text>
-    </svg>
-  );
-};
-
-// ---- Minimal mark-only SVG (for favicons, badges) ----
-export const HarborMark: React.FC<React.SVGProps<SVGSVGElement>> = (props) => {
-  return (
-    <svg
-      width={props.width || 40}
-      height={props.height || 40}
-      viewBox="0 0 64 64"
-      xmlns="http://www.w3.org/2000/svg"
-      aria-label="PartHarbor mark"
-      {...props}
-    >
-      <rect x="8" y="20" width="12" height="36" rx="4" className="fill-foreground" />
-      <rect x="24" y="8" width="12" height="48" rx="4" className="fill-foreground" />
-      <circle cx="30" cy="6" r="4" className="fill-primary" />
-      <rect x="42" y="34" width="10" height="10" rx="2" className="fill-primary" />
-    </svg>
-  );
-};
-
 // ---- Feature Card ----
 interface FeatureProps {
   icon: React.ReactNode;
