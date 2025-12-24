@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { ModelGrid } from '@/components/model/model-grid'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Container } from '@/components/layout/container'
+import { Section } from '@/components/layout/section'
 
 interface Model {
   id: string
@@ -65,30 +67,28 @@ export function FeaturedModels() {
 
   if (error) {
     return (
-      <section className="w-full py-12 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center py-12">
-            <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <Section>
+        <Container size="lg">
+          <div className="text-center py-xl">
+            <div className="mx-auto mb-sm flex size-16 items-center justify-center rounded-full bg-border-subtle">
+              <svg className="size-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold mb-2">Unable to load models</h3>
-            <p className="text-muted-foreground">{error}</p>
+            <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">Unable to load models</h3>
+            <p className="text-body text-text-secondary">{error}</p>
           </div>
-        </div>
-      </section>
+        </Container>
+      </Section>
     )
   }
 
   return (
-    <section className="w-full py-12 px-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold tracking-tight mb-4">
-            Most Downloaded Models
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+    <Section>
+      <Container size="lg" className="space-y-lg">
+        <div className="space-y-xs text-center">
+          <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most Downloaded Models</h2>
+          <p className="text-body text-text-secondary max-w-2xl mx-auto">
             Discover the most popular 3D models and parts shared by our community
           </p>
         </div>
@@ -99,7 +99,7 @@ export function FeaturedModels() {
           variant="default"
           showAuthor={true}
           showStats={true}
-          className="mb-8"
+          className="mb-lg"
         />
 
         {!loading && models.length > 0 && (
@@ -111,7 +111,7 @@ export function FeaturedModels() {
             </Button>
           </div>
         )}
-      </div>
-    </section>
+      </Container>
+    </Section>
   )
 }

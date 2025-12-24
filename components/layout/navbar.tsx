@@ -5,23 +5,24 @@ import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { AuthButton } from "@/components/auth/auth-button";
 import { SearchBar } from "@/components/layout/search-bar";
+import { Container } from "@/components/layout/container";
 
 export default async function Navbar() {
   const { data: { user } } = await getCurrentUser();
 
   return (
-    <nav className="flex w-full justify-center border-b border-border-subtle bg-bg-surface backdrop-blur">
-      <div className="flex w-full max-w-screen-xl items-center justify-between gap-md px-lg py-sm text-body">
-        <div className="flex items-center gap-sm font-heading font-bold text-heading-sm text-text-primary">
+    <nav className="w-full border-b border-border-subtle bg-bg-surface backdrop-blur">
+      <Container size="xl" className="flex items-center justify-between gap-md py-sm text-body">
+        <div className="flex items-center gap-sm font-heading text-heading-sm font-bold text-text-primary">
           <Link href={"/"} className="flex items-center gap-xs text-text-primary">
             PartHarbor
           </Link>
         </div>
-        
+
         <div className="hidden flex-1">
           <SearchBar />
         </div>
-        
+
         <div className="flex items-center gap-sm">
           {user ? (
             <>
@@ -35,7 +36,7 @@ export default async function Navbar() {
             <AuthButton />
           )}
         </div>
-      </div>
+      </Container>
     </nav>
   );
 }
