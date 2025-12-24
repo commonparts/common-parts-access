@@ -1,11 +1,12 @@
 import { UpdatePasswordForm } from "@/components/auth/update-password-form";
+import { AuthShell } from "@/components/layout/auth-shell";
 
 export default function Page() {
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
+    <AuthShell>
+      <div className="mx-auto w-full max-w-sm">
         <UpdatePasswordForm />
       </div>
-    </div>
+    </AuthShell>
   );
 }

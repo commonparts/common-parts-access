@@ -2,52 +2,49 @@ import { Button } from "@/components/ui/button";
 import { HarborMark } from "@/components/layout/hero";
 import { Anchor, CheckCircle, Waves } from "lucide-react";
 import Link from "next/link";
+import { AuthShell } from "@/components/layout/auth-shell";
 
 export default function LogoutSuccessPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-md">
-        <div className="bg-card rounded-2xl shadow-lg border border-border/50 backdrop-blur-sm p-8 text-center">
-          {/* Harbor icon with success indicator */}
-          <div className="flex justify-center mb-6">
+    <AuthShell size="md">
+      <div className="mx-auto w-full max-w-md">
+        <div className="rounded-2xl border border-border/50 bg-card p-8 text-center shadow-lg backdrop-blur-sm">
+          <div className="mb-6 flex justify-center">
             <div className="relative">
-              <HarborMark className="w-16 h-16" />
-              <CheckCircle className="w-6 h-6 text-green-500 absolute -top-1 -right-1 bg-background rounded-full" />
+              <HarborMark className="h-16 w-16" />
+              <CheckCircle className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-background text-green-500" />
             </div>
           </div>
 
-          {/* Success message */}
-          <h1 className="text-2xl font-heading font-bold text-foreground mb-2">
+          <h1 className="mb-2 text-2xl font-heading font-bold text-foreground">
             Anchors aweigh!
           </h1>
-          
-          <p className="text-muted-foreground mb-8 leading-relaxed">
+
+          <p className="mb-8 leading-relaxed text-muted-foreground">
             You&apos;ve successfully set sail from PartHarbor. Your session has ended safely and all your data remains secure in our harbor.
           </p>
 
-          {/* Action buttons */}
           <div className="space-y-3">
             <Button asChild className="w-full">
               <Link href="/">
-                <Anchor className="w-4 h-4" />
+                <Anchor className="h-4 w-4" />
                 Return to harbor
               </Link>
             </Button>
-            
+
             <Button asChild variant="outline" className="w-full">
               <Link href="/login">
-                <Waves className="w-4 h-4" />
+                <Waves className="h-4 w-4" />
                 Sign in again
               </Link>
             </Button>
           </div>
 
-          {/* Additional helpful text */}
-          <p className="text-xs text-muted-foreground mt-6">
+          <p className="mt-6 text-xs text-muted-foreground">
             Thank you for being part of the PartHarbor community. We&apos;re here whenever you need to find or share spare parts.
           </p>
         </div>
       </div>
-    </div>
+    </AuthShell>
   );
 }
