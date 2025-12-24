@@ -1,4 +1,6 @@
 import * as React from "react"
+
+import { Grid } from "@/components/layout/grid"
 import { cn } from "@/lib/utils"
 import { ModelCard } from "./model-card"
 
@@ -27,7 +29,7 @@ interface ModelGridProps {
   models: Model[]
   loading?: boolean
   variant?: "default" | "compact" | "detailed"
-  columns?: number
+  columns?: 12 | 6 | 4
   className?: string
   showAuthor?: boolean
   showStats?: boolean
@@ -42,23 +44,34 @@ export function ModelGrid({
   showAuthor = true,
   showStats = true
 }: ModelGridProps) {
-  const getGridCols = () => {
-    if (columns) return `grid-cols-${columns}`
-    switch (variant) {
-      case "compact":
-        return "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
-      case "detailed":
-        return "grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      default:
-        return "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
+  const gridColumns = columns ?? 12
+
+  const getItemSpans = () => {
+    if (variant === "compact") {
+      if (gridColumns === 4) return "col-span-4 sm:col-span-2"
+      if (gridColumns === 6) return "col-span-6 sm:col-span-3 md:col-span-2"
+      return "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2"
     }
+
+    if (variant === "detailed") {
+      if (gridColumns === 4) return "col-span-4"
+      if (gridColumns === 6) return "col-span-6 sm:col-span-3"
+      return "col-span-12 md:col-span-6 lg:col-span-4"
+    }
+
+    // default
+    if (gridColumns === 4) return "col-span-4 sm:col-span-2"
+    if (gridColumns === 6) return "col-span-6 sm:col-span-3 md:col-span-2"
+    return "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3"
   }
+
+  const itemSpans = getItemSpans()
 
   if (loading) {
     return (
-      <div className={cn("grid gap-md", getGridCols(), className)}>
+      <Grid columns={gridColumns} className={className}>
         {Array.from({ length: 12 }).map((_, i) => (
-          <div key={i} className="animate-pulse">
+          <div key={i} className={cn("animate-pulse", itemSpans)}>
             <div className="mb-sm aspect-video rounded-lg bg-muted"></div>
             <div className="space-y-1">
               <div className="h-4 w-3/4 rounded bg-muted"></div>
@@ -66,7 +79,7 @@ export function ModelGrid({
             </div>
           </div>
         ))}
-      </div>
+      </Grid>
     )
   }
 
@@ -85,16 +98,17 @@ export function ModelGrid({
   }
 
   return (
-    <div className={cn("grid gap-md", getGridCols(), className)}>
+    <Grid columns={gridColumns} className={className}>
       {models.map((model) => (
-        <ModelCard
-          key={model.id}
-          model={model}
-          variant={variant}
-          showAuthor={showAuthor}
-          showStats={showStats}
-        />
+        <div key={model.id} className={itemSpans}>
+          <ModelCard
+            model={model}
+            variant={variant}
+            showAuthor={showAuthor}
+            showStats={showStats}
+          />
+        </div>
       ))}
-    </div>
+    </Grid>
   )
 }

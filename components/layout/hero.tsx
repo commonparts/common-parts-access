@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
 import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
 import { Container } from "@/components/layout/container";
+import { Grid } from "@/components/layout/grid";
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-semibold tracking-tight text-text-primary shadow-surface">
@@ -65,8 +66,9 @@ export const Hero: React.FC = () => {
         <div className="absolute inset-0 bg-[linear-gradient(120deg,_rgba(255,255,255,0.05)_1px,_transparent_1px),linear-gradient(240deg,_rgba(255,255,255,0.05)_1px,_transparent_1px)] bg-[length:40px_40px] opacity-40" />
       </div>
 
-      <Container size="xl" className="relative flex flex-col gap-xl lg:grid lg:grid-cols-2 lg:items-center lg:gap-2xl">
-        <div className="mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
+      <Container size="xl" className="relative">
+        <Grid columns={12} className="items-center gap-2xl">
+          <div className="col-span-12 lg:col-span-6 mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
           <div className="space-y-sm">
             <h1 className="text-heading-lg font-heading leading-tight">
               Upload fast. Find the exact part faster.
@@ -103,9 +105,9 @@ export const Hero: React.FC = () => {
               </div>
             </div>
           </div>
-        </div>
+          </div>
 
-        <div className="relative mx-auto grid w-full max-w-xl gap-sm">
+          <div className="col-span-12 lg:col-span-6 relative mx-auto grid w/full max-w-xl gap-sm">
           <div className="relative rounded-lg border border-border-subtle bg-bg-surface/30 p-lg shadow-overlay backdrop-blur">
             <Search className="absolute right-sm top-sm size-md text-text-secondary" />
             <div className="text-center space-y-xs text-text-primary">
@@ -209,7 +211,8 @@ export const Hero: React.FC = () => {
               </div>
             </form>
           </div>
-        </div>
+          </div>
+        </Grid>
       </Container>
     </section>
   );
