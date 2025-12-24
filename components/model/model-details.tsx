@@ -284,7 +284,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return (
       <div className={cn("w-full", className)}>
         <div className="animate-pulse space-y-lg">
-          <Grid columns={12} className="items-start">
+          <Grid columns={12} className="items-start gap-lg">
             <div className="col-span-12 lg:col-span-7">
               <div className="aspect-video rounded-lg border border-border-subtle bg-muted" />
             </div>
@@ -329,7 +329,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
   return (
     <div className={cn("w-full space-y-lg", className)}>
-      <Grid columns={12} className="items-start">
+      <Grid columns={12} className="items-start gap-lg">
         <div className="col-span-12 lg:col-span-7 space-y-sm">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle bg-muted">
             {allImages.length > 0 ? (
@@ -514,7 +514,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         </div>
       </Grid>
 
-      <Grid columns={12} className="gap-lg items-start">
+      <Grid columns={12} className="items-start gap-lg">
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
