@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { HarborMark } from "@/components/layout/hero";
 import { Anchor, CheckCircle, Waves } from "lucide-react";
 import Link from "next/link";
 import { AuthShell } from "@/components/layout/auth-shell";
@@ -11,7 +10,6 @@ export default function LogoutSuccessPage() {
         <div className="rounded-2xl border border-border/50 bg-card p-8 text-center shadow-lg backdrop-blur-sm">
           <div className="mb-6 flex justify-center">
             <div className="relative">
-              <HarborMark className="h-16 w-16" />
               <CheckCircle className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-background text-green-500" />
             </div>
           </div>
