@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function SignOutPage() {
 	return (
-		<AuthShell size="md">
-			<div className="mx-auto w-full max-w-md">
+		<AuthShell>
+			<div className="mx-auto w-full max-w-sm">
 				<Card className="text-center shadow-overlay">
 					<CardHeader className="items-center gap-sm">
 						<CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">Signing you out</CardTitle>

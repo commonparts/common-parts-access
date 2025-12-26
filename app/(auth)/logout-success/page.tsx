@@ -6,8 +6,8 @@ import { AuthShell } from "@/components/layout/auth-shell";
 
 export default function LogoutSuccessPage() {
   return (
-    <AuthShell size="md">
-      <div className="mx-auto w-full max-w-md">
+    <AuthShell>
+      <div className="mx-auto w-full max-w-sm">
         <Card className="text-center shadow-overlay">
           <CardHeader className="items-center gap-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border-subtle bg-bg-surface/70">
