@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Grid } from "@/components/layout/grid"
+import { DropdownInput } from "@/components/ui/dropdown-input"
+import { Checkbox } from "@/components/ui/checkbox"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -119,13 +121,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   const disabled = loadingMeta || (idx > 0 && !categoryPath[idx - 1])
 
                   return (
-                    <select
+                    <DropdownInput
+                      as="select"
                       key={level.parentId ?? `root-${idx}`}
-                      className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                       value={value}
                       onChange={(e) => handleCategorySelect(idx, e.target.value)}
                       required={idx === 0}
                       disabled={disabled}
+                      className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                     >
                       <option value="">{loadingMeta ? 'Loading categories...' : placeholder}</option>
                       {level.options.map((cat) => (
@@ -133,7 +136,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                           {cat.name}
                         </option>
                       ))}
-                    </select>
+                    </DropdownInput>
                   )
                 })}
               </div>
@@ -141,18 +144,19 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
             <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="license">License</Label>
-              <select
+              <DropdownInput
+                as="select"
                 id="license"
-                className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                 value={formData.license}
                 onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="cc-by-4.0">CC BY 4.0</option>
                 <option value="cc-by-sa-4.0">CC BY-SA 4.0</option>
                 <option value="cc-by-nc-4.0">CC BY-NC 4.0</option>
                 <option value="mit">MIT License</option>
                 <option value="proprietary">Proprietary</option>
-              </select>
+              </DropdownInput>
             </div>
           </Grid>
 
@@ -311,12 +315,13 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-sm">
-            <input
+            <Checkbox
               id="isPublic"
-              type="checkbox"
               checked={formData.isPublic}
-              onChange={(e) => setFormData(prev => ({ ...prev, isPublic: e.target.checked }))}
-              className="h-4 w-4 rounded border-border"
+              onCheckedChange={(checked) =>
+                setFormData(prev => ({ ...prev, isPublic: Boolean(checked) }))
+              }
+              aria-label="Make this model publicly visible"
             />
             <Label htmlFor="isPublic">Make this model publicly visible</Label>
           </div>
