@@ -6,6 +6,7 @@ import { Anchor, Compass, Search, ShieldCheck, UploadCloud } from "lucide-react"
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
 import { Container } from "@/components/layout/container";
 import { Grid } from "@/components/layout/grid";
@@ -69,7 +70,7 @@ export const Hero: React.FC = () => {
       <Container size="xl" className="relative">
         <Grid columns={12} className="items-center gap-2xl">
           <div className="col-span-12 lg:col-span-6 mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
-          <div className="space-y-sm">
+          <div className="space-y-sm w-full max-w-xl">
             <h1 className="text-heading-lg font-heading leading-tight">
               Upload fast. Find the exact part faster.
             </h1>
@@ -91,32 +92,35 @@ export const Hero: React.FC = () => {
           </div>
 
           <div className="w-full max-w-xl">
-            <div className="relative rounded-lg border border-border-subtle bg-bg-surface/40 p-lg shadow-overlay backdrop-blur">
+            <Card className="relative">
               <UploadCloud className="absolute right-sm top-sm size-md text-text-secondary" />
-              <div className="text-center space-y-xs text-text-primary">
+              <CardHeader className="text-center text-text-primary">
                 <p className="text-caption uppercase tracking-wide text-text-secondary">Upload lane</p>
-                <h3 className="text-heading-sm font-semibold text-text-primary">Shortcut to your model</h3>
-                <p className="text-caption text-text-secondary">Jump straight into the upload flow and publish a printable fix with metadata that matters.</p>
-              </div>
-              <div className="mt-md flex flex-wrap justify-center gap-sm">
-                <Button asChild className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
-                  <a href="/upload">Dock a model</a>
-                </Button>
-              </div>
-            </div>
+                <CardTitle className="text-heading-sm font-semibold">Shortcut to your model</CardTitle>
+                <CardDescription className="text-caption">Jump straight into the upload flow and publish a printable fix with metadata that matters.</CardDescription>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="flex flex-wrap justify-center gap-sm">
+                  <Button asChild className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
+                    <a href="/upload">Dock a model</a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           </div>
 
-          <div className="col-span-12 lg:col-span-6 relative mx-auto grid w/full max-w-xl gap-sm">
-          <div className="relative rounded-lg border border-border-subtle bg-bg-surface/30 p-lg shadow-overlay backdrop-blur">
+          <div className="col-span-12 lg:col-span-6 relative mx-auto grid w-full max-w-xl gap-sm">
+          <Card className="relative">
             <Search className="absolute right-sm top-sm size-md text-text-secondary" />
-            <div className="text-center space-y-xs text-text-primary">
+            <CardHeader className="text-center text-text-primary">
               <p className="text-caption uppercase tracking-wide text-text-secondary">Find parts</p>
-              <h3 className="text-heading-sm font-semibold text-text-primary">Search by product</h3>
-              <p className="text-caption text-text-secondary">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</p>
-            </div>
+              <CardTitle className="text-heading-sm font-semibold">Search by product</CardTitle>
+              <CardDescription className="text-caption">Use the same brand, category, and product logic as the upload form to zero in on the right fit.</CardDescription>
+            </CardHeader>
 
-            <form className="mt-sm space-y-sm" onSubmit={handleSearch}>
+            <CardContent className="pt-0">
+            <form className="space-y-sm" onSubmit={handleSearch}>
               <div className="space-y-xs">
                 <Label htmlFor="hero-brand" className="text-text-primary">Brand</Label>
                 <Combobox
@@ -210,7 +214,8 @@ export const Hero: React.FC = () => {
                 </div>
               </div>
             </form>
-          </div>
+            </CardContent>
+          </Card>
           </div>
         </Grid>
       </Container>
