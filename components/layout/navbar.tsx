@@ -1,6 +1,4 @@
-import { Button } from "@/components/ui/button";
-import { CurrentUserAvatar } from "@/components/user/current-user-profile";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { UserProfileMenu } from "@/components/user/user-avatar";
 import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { AuthButton } from "@/components/auth/auth-button";
@@ -30,20 +28,8 @@ export default async function Navbar() {
         </div>
 
         <div className="flex items-center gap-sm">
-          <Link
-            href="/browse"
-            className="hidden rounded-md px-sm py-xs text-body text-text-inverse transition-colors hover:text-action-primary lg:inline-flex"
-          >
-            Browse
-          </Link>
           {user ? (
-            <>
-              <Button asChild variant={"default"}>
-                <Link href="/upload">Dock a model</Link>
-              </Button>
-              <LogoutButton />
-              <CurrentUserAvatar />
-            </>
+            <UserProfileMenu />
           ) : (
             <AuthButton />
           )}
