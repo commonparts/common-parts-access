@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Grid } from "@/components/layout/grid"
 import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Textarea } from "@/components/ui/textarea"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -101,11 +102,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
           <div className="space-y-sm">
             <Label htmlFor="description">Description</Label>
-            <textarea
+            <Textarea
               id="description"
               rows={4}
               placeholder="Describe your 3D model..."
-              className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface placeholder:text-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
