@@ -19,6 +19,8 @@ interface ModelUploadFormProps {
   className?: string
 }
 
+const DESCRIPTION_MAX = 8000
+
 export function ModelUploadForm({ onSubmit, loading = false, className }: ModelUploadFormProps) {
   const {
     formData,
@@ -106,10 +108,13 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               id="description"
               rows={4}
               placeholder="Describe your 3D model..."
-              maxLength={8000}
+              maxLength={DESCRIPTION_MAX}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
+            <div className="flex justify-end text-caption text-text-secondary">
+              <span>{formData.description.length}/{DESCRIPTION_MAX}</span>
+            </div>
           </div>
 
           <Grid columns={12}>
