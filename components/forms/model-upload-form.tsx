@@ -106,6 +106,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               id="description"
               rows={4}
               placeholder="Describe your 3D model..."
+              maxLength={8000}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
