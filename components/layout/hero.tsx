@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
 import { Container } from "@/components/layout/container";
 import { Grid } from "@/components/layout/grid";
+import { DropdownInput } from "@/components/ui/dropdown-input";
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-semibold tracking-tight text-text-primary shadow-surface">
@@ -151,12 +152,13 @@ export const Hero: React.FC = () => {
                     const disabled = loadingMeta || (idx > 0 && !categoryPath[idx - 1]);
 
                     return (
-                      <select
+                      <DropdownInput
+                        as="select"
                         key={level.parentId ?? `root-${idx}`}
-                        className="flex w-full rounded-lg border border-border-subtle bg-bg-surface/30 px-md py-sm text-sm text-text-primary shadow-surface outline-none transition-colors focus:border-border-focus focus:ring-2 focus:ring-border-focus/40 disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                         value={value}
                         onChange={(e) => handleCategorySelect(idx, e.target.value)}
                         disabled={disabled}
+                        className="bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                       >
                         <option value="">{loadingMeta ? "Loading categories..." : placeholder}</option>
                         {level.options.map((cat) => (
@@ -164,7 +166,7 @@ export const Hero: React.FC = () => {
                             {cat.name}
                           </option>
                         ))}
-                      </select>
+                      </DropdownInput>
                     );
                   })}
                 </div>
