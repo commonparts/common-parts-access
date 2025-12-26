@@ -36,12 +36,6 @@ export default async function Navbar() {
           >
             Browse
           </Link>
-          <Link
-            href="/search"
-            className="hidden rounded-md px-sm py-xs text-body text-text-inverse transition-colors hover:text-action-primary xl:inline-flex"
-          >
-            Search
-          </Link>
           {user ? (
             <>
               <Button asChild variant={"default"}>
