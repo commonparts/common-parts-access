@@ -10,34 +10,70 @@ interface SearchBarProps {
   className?: string
   onSearch?: (query: string) => void
   showFilters?: boolean
+  value?: string
+  onChange?: (query: string) => void
+  onClear?: () => void
 }
 
 export function SearchBar({ 
   placeholder = "Search 3D models...", 
   className,
   onSearch,
-  showFilters = false 
+  showFilters = false,
+  value,
+  onChange,
+  onClear,
 }: SearchBarProps) {
   const router = useRouter()
-  const [query, setQuery] = React.useState("")
+  const [internalQuery, setInternalQuery] = React.useState(value ?? "")
   const [isExpanded, setIsExpanded] = React.useState(false)
+
+  React.useEffect(() => {
+    if (value !== undefined) {
+      setInternalQuery(value)
+    }
+  }, [value])
+
+  const currentQuery = value ?? internalQuery
+
+  const updateQuery = (nextValue: string) => {
+    if (onChange) {
+      onChange(nextValue)
+    } else {
+      setInternalQuery(nextValue)
+    }
+  }
+
+  const clearQuery = () => {
+    if (onClear) {
+      onClear()
+    } else {
+      updateQuery("")
+    }
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (query.trim()) {
-      if (onSearch) {
-        onSearch(query.trim())
-      } else {
-        router.push(`/search?q=${encodeURIComponent(query.trim())}`)
-      }
+    const trimmed = currentQuery.trim()
+    if (!trimmed) return
+
+    if (onSearch) {
+      onSearch(trimmed)
+    } else {
+      router.push(`/browse?search=${encodeURIComponent(trimmed)}`)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
-      setQuery("")
+      clearQuery()
       setIsExpanded(false)
     }
+  }
+
+  const handleSuggestionClick = (nextValue: string) => {
+    updateQuery(nextValue)
+    setIsExpanded(true)
   }
 
   return (
@@ -52,16 +88,16 @@ export function SearchBar({
           <Input
             type="search"
             placeholder={placeholder}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            value={currentQuery}
+            onChange={(e) => updateQuery(e.target.value)}
             onFocus={() => setIsExpanded(true)}
             onKeyDown={handleKeyDown}
             className="pl-xl pr-2xl"
           />
-          {query && (
+          {currentQuery && (
             <button
               type="button"
-              onClick={() => setQuery("")}
+              onClick={clearQuery}
               className="absolute inset-y-0 right-xl flex items-center pr-sm"
             >
               <svg className="size-sm text-text-secondary hover:text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -78,14 +114,15 @@ export function SearchBar({
       </form>
 
       {/* Search Suggestions/Results Dropdown */}
-      {isExpanded && query.length > 0 && (
+      {isExpanded && currentQuery.length > 0 && (
         <div className="absolute top-full left-0 right-0 z-50 mt-xs rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
           <div className="p-sm">
             <div className="mb-xs text-caption text-text-secondary">Suggestions</div>
             <div className="space-y-xs">
               <button 
+                type="button"
                 className="flex w-full items-center gap-xs rounded text-left px-sm py-xs text-caption hover:bg-bg-hover"
-                onClick={() => setQuery("car parts")}
+                onClick={() => handleSuggestionClick("car parts")}
               >
                 <svg className="size-sm text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -93,8 +130,9 @@ export function SearchBar({
                 car parts
               </button>
               <button 
+                type="button"
                 className="flex w-full items-center gap-xs rounded text-left px-sm py-xs text-caption hover:bg-bg-hover"
-                onClick={() => setQuery("mechanical components")}
+                onClick={() => handleSuggestionClick("mechanical components")}
               >
                 <svg className="size-sm text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
