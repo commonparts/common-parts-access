@@ -12,6 +12,8 @@ interface PaginationProps {
   showInfo?: boolean
   totalItems?: number
   itemsPerPage?: number
+  hasNext?: boolean
+  hasPrev?: boolean
 }
 
 export function Pagination({ 
@@ -21,7 +23,9 @@ export function Pagination({
   className,
   showInfo = true,
   totalItems,
-  itemsPerPage 
+  itemsPerPage,
+  hasNext,
+  hasPrev
 }: PaginationProps) {
   const getVisiblePages = () => {
     const delta = 2
@@ -54,8 +58,8 @@ export function Pagination({
   }
 
   const visiblePages = getVisiblePages()
-  const hasPrevious = currentPage > 1
-  const hasNext = currentPage < totalPages
+  const hasPrevious = hasPrev ?? currentPage > 1
+  const hasNextPage = hasNext ?? currentPage < totalPages
 
   if (totalPages <= 1) {
     return null
@@ -119,7 +123,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={!hasNext}
+          disabled={!hasNextPage}
           className="flex items-center gap-1"
         >
           Next
@@ -150,7 +154,7 @@ export function Pagination({
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
-          disabled={!hasNext}
+          disabled={!hasNextPage}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
