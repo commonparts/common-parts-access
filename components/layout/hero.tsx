@@ -102,7 +102,7 @@ export const Hero: React.FC = () => {
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex flex-wrap justify-center gap-sm">
-                  <Button asChild className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">
+                  <Button asChild>
                     <a href="/upload">Dock a model</a>
                   </Button>
                 </div>
@@ -139,7 +139,6 @@ export const Hero: React.FC = () => {
                   onOpenChange={setBrandOpen}
                   disabled={loadingMeta}
                   emptyMessage={brandSearch ? "No matching brands" : "No brands found"}
-                  inputClassName="text-text-primary placeholder:text-text-secondary bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
@@ -158,7 +157,6 @@ export const Hero: React.FC = () => {
                         value={value}
                         onChange={(e) => handleCategorySelect(idx, e.target.value)}
                         disabled={disabled}
-                        className="bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                       >
                         <option value="">{loadingMeta ? "Loading categories..." : placeholder}</option>
                         {level.options.map((cat) => (
@@ -201,16 +199,15 @@ export const Hero: React.FC = () => {
                   onOpenChange={setProductOpen}
                   disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                   emptyMessage={productSearch ? "No matching products" : "No products found"}
-                  inputClassName="text-text-primary placeholder:text-text-secondary bg-bg-surface/30 border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
                 />
               </div>
 
               <div className="flex items-center justify-between gap-sm">
-                <Button type="button" variant="outline" className="border-border-subtle bg-bg-surface/30 text-text-primary hover:border-border-default hover:bg-bg-hover/40 hover:text-text-primary" onClick={resetFilters}>
+                <Button type="button" variant="outline" onClick={resetFilters}>
                   Reset
                 </Button>
                 <div className="flex gap-sm">
-                  <Button type="submit" className="bg-action-primary text-text-primary shadow-raised hover:bg-action-primaryHover border-transparent" disabled={!formData.productId}>
+                  <Button type="submit" disabled={!formData.productId}>
                     Find parts
                   </Button>
                 </div>
