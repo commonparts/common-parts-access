@@ -17,7 +17,7 @@ export function UserProfileMenu() {
 	};
 
 	const handleDeleteAccount = () => {
-		router.push("/settings?section=delete-account");
+		router.push("/delete-account");
 	};
 
 	return (
