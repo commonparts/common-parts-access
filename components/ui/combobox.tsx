@@ -169,7 +169,7 @@ export function Combobox<T extends ComboboxOption>({
           className={cn("w-full", inputClassName)}
         />
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-sm overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
+          <div className="absolute top-full left-0 right-0 z-50 mt-sm max-h-64 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option, index) => (
                 <button
