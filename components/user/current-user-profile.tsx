@@ -15,8 +15,11 @@ export const CurrentUserAvatar = () => {
 
   return (
     <Avatar>
-      {profileImage && <AvatarImage src={profileImage} alt={initials} />}
-      <AvatarFallback>{initials}</AvatarFallback>
+      {profileImage ? (
+        <AvatarImage src={profileImage} alt={initials} />
+      ) : (
+        <AvatarFallback>{initials}</AvatarFallback>
+      )}
     </Avatar>
   )
 }

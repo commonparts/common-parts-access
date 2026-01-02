@@ -6,14 +6,41 @@ export const useCurrentUserImage = () => {
 
   useEffect(() => {
     const fetchUserImage = async () => {
-      const { data, error } = await createClient().auth.getSession()
-      if (error) {
-        console.error(error)
+      const supabase = createClient()
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error(sessionError)
+        return
       }
 
-      setImage(data.session?.user.user_metadata.avatar_url ?? null)
+      const user = sessionData.session?.user
+      if (!user) {
+        setImage(null)
+        return
+      }
+
+      const metadataAvatar = user.user_metadata?.avatar_url as string | undefined
+      if (metadataAvatar) {
+        setImage(metadataAvatar)
+        return
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('avatar_url')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error(profileError)
+        setImage(null)
+        return
+      }
+
+      setImage(profile?.avatar_url ?? null)
     }
-    
+
     fetchUserImage()
   }, [])
 
