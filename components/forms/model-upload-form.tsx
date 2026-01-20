@@ -336,9 +336,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
       {/* Submit */}
       <div className="flex justify-end gap-sm">
-        <Button type="button" variant="outline">
-          Save as Draft
-        </Button>
         <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || formData.files.length === 0}>
           {loading ? "Uploading..." : "Upload Model"}
         </Button>
