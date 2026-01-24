@@ -183,7 +183,6 @@ export default function BrowsePage() {
               value={currentSearch}
               onChange={handleSearchChange}
               onClear={clearSearch}
-              placeholder="Search models..."
             />
           </div>
         </Grid>
