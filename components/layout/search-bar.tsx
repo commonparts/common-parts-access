@@ -16,7 +16,7 @@ interface SearchBarProps {
 }
 
 export function SearchBar({ 
-  placeholder = "Search 3D models...", 
+  placeholder = "Search models...", 
   className,
   onSearch,
   showFilters = false,
