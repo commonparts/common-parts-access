@@ -1,7 +1,7 @@
 # Model Likes
 
 ## Overview
-This document covers how PartHarbor tracks model likes via a RESTful endpoint plus database constraints/triggers that keep `models.like_count` in sync.
+This document covers how Common Parts Access tracks model likes via a RESTful endpoint plus database constraints/triggers that keep `models.like_count` in sync.
 
 ## API Contract
 - **Endpoint:** `/api/models/[slug]/likes`

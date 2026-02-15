@@ -7,21 +7,21 @@ export function Footer() {
       <Container size="xl" className="flex flex-col gap-lg py-xl text-caption text-text-secondary">
         <div className="flex flex-col gap-sm sm:flex-row sm:items-center sm:justify-between sm:gap-xl">
           <div className="flex flex-col gap-xs">
-            <span className="font-heading text-heading-sm font-bold text-text-primary">PartHarbor</span>
+            <span className="font-heading text-heading-sm font-bold text-text-primary">Common Parts Access</span>
           </div>
           <div className="flex flex-col gap-xs text-text-primary">
-            <span className="text-caption uppercase tracking-wide text-text-secondary">Reach the crew</span>
+            <span className="text-caption uppercase tracking-wide text-text-secondary">Contact</span>
             <a
-              href="mailto:harbor@partharbor.com"
+              href="mailto:contact@commonparts.org"
               className="text-body font-medium transition-colors hover:text-text-primary"
             >
-              harbor@partharbor.com
+              contact@commonparts.org
             </a>
           </div>
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-sm text-caption uppercase tracking-wide text-text-primary">
-          <span className="rounded-full bg-action-primary px-sm py-xs text-text-inverse">Safe harbor for every repair</span>
+          <span className="rounded-full bg-action-primary px-sm py-xs text-text-inverse">Open access for every repair</span>
         </div>
       </Container>
     </footer>

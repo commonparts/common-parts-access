@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Anchor, Compass, Search, ShieldCheck, UploadCloud } from "lucide-react";
+import { Database, Search, ShieldCheck, UploadCloud, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Combobox } from "@/components/ui/combobox";
@@ -73,19 +73,19 @@ export const Hero: React.FC = () => {
           <div className="col-span-12 lg:col-span-6 mx-auto flex w-full max-w-3xl flex-col items-center text-center text-text-primary space-y-lg">
           <div className="space-y-sm w-full max-w-xl">
             <h1 className="text-heading-lg font-heading leading-tight">
-              Upload fast. Find the exact part faster.
+              Repair starts with access to the right part.
             </h1>
             <p className="text-body text-text-secondary">
-              PartHarbor connects makers who upload printable fixes with people searching by brand, category, or product. Drop a model or zero in on the device you need to repair.
+              Common Parts Access is an open platform for publishing and accessing digital spare parts, built to keep everyday objects in use.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-sm text-caption text-text-secondary">
             <Badge>
-              <Anchor className="size-md" /> Right-to-repair friendly
+              <Wrench className="size-md" /> Right-to-repair friendly
             </Badge>
             <Badge>
-              <Compass className="size-md" /> Curated by makers
+              <Database className="size-md" /> Structured library
             </Badge>
             <Badge>
               <ShieldCheck className="size-md" /> Open formats only
@@ -96,14 +96,14 @@ export const Hero: React.FC = () => {
             <Card className="relative">
               <UploadCloud className="absolute right-sm top-sm size-md text-text-secondary" />
               <CardHeader className="text-center text-text-primary">
-                <p className="text-caption uppercase tracking-wide text-text-secondary">Upload lane</p>
-                <CardTitle className="text-heading-sm font-semibold">Shortcut to your model</CardTitle>
-                <CardDescription className="text-caption">Jump straight into the upload flow and publish a printable fix with metadata that matters.</CardDescription>
+                <p className="text-caption uppercase tracking-wide text-text-secondary">Publish</p>
+                <CardTitle className="text-heading-sm font-semibold">Share a repair part</CardTitle>
+                <CardDescription className="text-caption">Start a new submission and include the details needed to make the part easy to find and print.</CardDescription>
               </CardHeader>
               <CardContent className="pt-0">
                 <div className="flex flex-wrap justify-center gap-sm">
                   <Button asChild>
-                    <a href="/upload">Dock a model</a>
+                    <a href="/upload">Publish a part</a>
                   </Button>
                 </div>
               </CardContent>

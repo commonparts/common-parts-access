@@ -14,7 +14,7 @@ export default function DeleteAccountSuccessPage() {
               Account deleted
             </CardTitle>
             <CardDescription className="text-body text-text-secondary">
-              Your account has been removed. Thanks for being part of PartHarbor.
+              Your account has been removed. Thanks for being part of Common Parts Access.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-sm">
