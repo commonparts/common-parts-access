@@ -11,9 +11,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "PartHarbor - Find the missing piece",
+  title: "Common Parts Access — Open platform for repair parts",
   description:
-    "PartHarbor is the marketplace for 3D-printable spare parts.",
+    "Common Parts Access is an open platform for publishing and accessing digital spare parts for everyday repairs.",
 };
 
 export default function RootLayout({

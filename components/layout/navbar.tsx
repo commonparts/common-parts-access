@@ -19,7 +19,7 @@ export default async function Navbar() {
             href={"/"}
             className="flex items-center gap-xs rounded-md px-sm py-xs transition-colors hover:text-action-primary"
           >
-            PartHarbor
+            Common Parts Access
           </Link>
         </div>
 

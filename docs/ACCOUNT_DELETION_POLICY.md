@@ -1,7 +1,7 @@
 # Account Deletion & Data Retention Policy
 
 ## Overview
-At PartHarbor, we respect your right to control your data. When you delete your account, we follow a clear policy to protect your privacy while maintaining the integrity of the platform and its content.
+At Common Parts Access, we respect your right to control your data. When you delete your account, we follow a clear policy to protect your privacy while maintaining the integrity of the platform and its content.
 
 ## What Happens When You Delete Your Account?
 
@@ -33,4 +33,4 @@ At PartHarbor, we respect your right to control your data. When you delete your 
 - If you wish to have all your models and files removed along with your account, please contact support before deleting your account.
 
 ## Questions?
-Contact us at support@partharbor.com for any questions or special requests regarding your data.
+Contact us at support@commonparts.org for any questions or special requests regarding your data.

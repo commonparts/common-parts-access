@@ -1,4 +1,4 @@
-# PartHarbor Design System Notes
+# Common Parts Access Design System Notes
 
 Use this as a quick-reference for building or updating UI. It captures the current tokens, sizing, and component expectations so new work stays consistent.
 

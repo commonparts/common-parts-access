@@ -3,8 +3,8 @@
  */
 
 // Application metadata
-export const APP_NAME = 'PartHarbor'
-export const APP_DESCRIPTION = 'Discover, share and download high-quality 3D models for all your creative projects'
+export const APP_NAME = 'Common Parts Access'
+export const APP_DESCRIPTION = 'Open platform for publishing and accessing digital spare parts for everyday repairs'
 export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 export const APP_VERSION = '1.0.0'
 
@@ -259,8 +259,8 @@ export const EXTERNAL_URLS = {
   GITHUB: 'https://github.com',
   TWITTER: 'https://twitter.com',
   DISCORD: 'https://discord.gg',
-  DOCUMENTATION: 'https://docs.partharbor.com',
-  SUPPORT: 'https://support.partharbor.com',
+  DOCUMENTATION: 'https://commonparts.org/docs',
+  SUPPORT: 'https://commonparts.org/support',
   PRIVACY_POLICY: '/privacy',
   TERMS_OF_SERVICE: '/terms',
   CONTACT: '/contact'

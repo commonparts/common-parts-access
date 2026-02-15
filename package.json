@@ -1,5 +1,5 @@
 {
-  "name": "partharbor",
+  "name": "common-parts-access",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

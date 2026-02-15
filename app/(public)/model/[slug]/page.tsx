@@ -71,8 +71,8 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
   } catch (error) {
     console.error('Error generating metadata:', error)
     return {
-      title: 'PartHarbor - 3D Models',
-      description: 'Browse and download 3D models and replacement parts.'
+      title: 'Common Parts Access — 3D Models',
+      description: 'Browse and download verified 3D models and repair parts.'
     }
   }
 }

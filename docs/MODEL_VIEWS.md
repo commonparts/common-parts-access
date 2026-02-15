@@ -1,7 +1,7 @@
 # Model View Tracking
 
 ## Overview
-This document explains how PartHarbor tracks model views using a lightweight POST endpoint plus Supabase triggers to increment `models.view_count`.
+This document explains how Common Parts Access tracks model views using a lightweight POST endpoint plus Supabase triggers to increment `models.view_count`.
 
 ## Flow
 1. Model detail page mounts and issues `POST /api/models/[slug]/view` once (guarded on the client).
