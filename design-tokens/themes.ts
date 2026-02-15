@@ -12,38 +12,38 @@ export const darkTheme = {
     ...semanticTokens.color,
 
     text: {
-      primary: colorPrimitives.offWhite[50],
-      secondary: colorPrimitives.offWhite[300],
-      disabled: colorPrimitives.steel[400],
-      inverse: colorPrimitives.deepHarbor[900],
-      link: colorPrimitives.buoyOrange[400],
+      primary: colorPrimitives.neutral[50],
+      secondary: colorPrimitives.neutral[200],
+      disabled: colorPrimitives.charcoal[400],
+      inverse: colorPrimitives.charcoal[900],
+      link: colorPrimitives.accentBlue[400],
     },
 
     background: {
-      page: colorPrimitives.deepHarbor[900],
-      surface: colorPrimitives.deepHarbor[800],
-      subtle: colorPrimitives.deepHarbor[700],
-      hover: colorPrimitives.deepHarbor[700],
-      disabled: colorPrimitives.deepHarbor[800],
+      page: colorPrimitives.charcoal[900],
+      surface: colorPrimitives.charcoal[800],
+      subtle: colorPrimitives.charcoal[700],
+      hover: colorPrimitives.charcoal[700],
+      disabled: colorPrimitives.charcoal[800],
     },
 
     border: {
-      default: colorPrimitives.steel[700],
-      subtle: colorPrimitives.steel[800],
-      strong: colorPrimitives.steel[600],
-      focus: colorPrimitives.buoyOrange[400],
+      default: colorPrimitives.charcoal[600],
+      subtle: colorPrimitives.charcoal[700],
+      strong: colorPrimitives.charcoal[500],
+      focus: colorPrimitives.accentBlue[400],
     },
 
     action: {
-      primary: colorPrimitives.buoyOrange[400],
-      primaryHover: colorPrimitives.buoyOrange[500],
-      primaryActive: colorPrimitives.buoyOrange[600],
-      disabled: colorPrimitives.steel[600],
+      primary: colorPrimitives.accentBlue[400],
+      primaryHover: colorPrimitives.accentBlue[500],
+      primaryActive: colorPrimitives.accentBlue[600],
+      disabled: colorPrimitives.charcoal[500],
     },
 
     status: {
-      success: colorPrimitives.mintFoam[400],
-      successText: colorPrimitives.mintFoam[100],
+      success: colorPrimitives.accentBlue[300],
+      successText: colorPrimitives.accentBlue[100],
     },
   },
 } as const
