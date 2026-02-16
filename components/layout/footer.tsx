@@ -12,10 +12,10 @@ export function Footer() {
           <div className="flex flex-col gap-xs text-text-primary">
             <span className="text-caption uppercase tracking-wide text-text-secondary">Contact</span>
             <a
-              href="mailto:contact@commonparts.org"
+              href="mailto:contact@access.commonparts.org"
               className="text-body font-medium transition-colors hover:text-text-primary"
             >
-              contact@commonparts.org
+              contact@access.commonparts.org
             </a>
           </div>
         </div>
