@@ -8,5 +8,5 @@ export type SectionProps = {
 }
 
 export function Section({ children, className }: SectionProps) {
-  return <section className={cn("py-xl", className)}>{children}</section>
+  return <section className={cn("py-2xl", className)}>{children}</section>
 }

@@ -12,7 +12,7 @@ export default async function Navbar() {
     <nav className="w-full border-b border-border-strong bg-text-primary text-text-inverse shadow-surface">
       <Container
         size="xl"
-        className="flex items-center justify-between gap-md py-sm text-body text-text-inverse"
+        className="flex items-center justify-between gap-md py-md text-body text-text-inverse"
       >
         <div className="flex items-center gap-sm font-heading text-heading-sm font-bold">
           <Link
