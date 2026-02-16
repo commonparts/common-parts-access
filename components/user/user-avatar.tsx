@@ -34,7 +34,7 @@ export function UserProfileMenu() {
 
 			<DropdownMenuContent align="end" className="w-56">
 				<DropdownMenuItem asChild>
-					<Link href="/upload" className="flex w-full items-center gap-sm">
+					<Link href="/upload" className="flex w-full items-center gap-md">
 						<UploadCloud className="h-4 w-4" />
 						<span>Dock a model</span>
 					</Link>

@@ -13,7 +13,7 @@ import { Grid } from "@/components/layout/grid";
 import { DropdownInput } from "@/components/ui/dropdown-input";
 
 const Badge: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-semibold tracking-tight text-text-primary shadow-surface">
+  <span className="inline-flex items-center gap-sm rounded-full border border-border-subtle bg-bg-surface px-md py-sm text-xs font-semibold tracking-tight text-text-primary shadow-surface">
     {children}
   </span>
 );
@@ -82,19 +82,19 @@ export const Hero: React.FC = () => {
 
           <div className="flex flex-wrap items-center justify-center gap-sm text-caption text-text-secondary">
             <Badge>
-              <Wrench className="size-md" /> Right-to-repair friendly
+              <Wrench className="size-lg" /> Right-to-repair friendly
             </Badge>
             <Badge>
-              <Database className="size-md" /> Structured library
+              <Database className="size-lg" /> Structured library
             </Badge>
             <Badge>
-              <ShieldCheck className="size-md" /> Open formats only
+              <ShieldCheck className="size-lg" /> Open formats only
             </Badge>
           </div>
 
           <div className="w-full max-w-xl">
             <Card className="relative">
-              <UploadCloud className="absolute right-sm top-sm size-md text-text-secondary" />
+              <UploadCloud className="absolute right-md top-md size-lg text-text-secondary" />
               <CardHeader className="text-center text-text-primary">
                 <p className="text-caption uppercase tracking-wide text-text-secondary">Publish</p>
                 <CardTitle className="text-heading-sm font-semibold">Share a repair part</CardTitle>
@@ -113,7 +113,7 @@ export const Hero: React.FC = () => {
 
           <div className="col-span-12 lg:col-span-6 relative mx-auto grid w-full max-w-xl gap-sm">
           <Card className="relative">
-            <Search className="absolute right-sm top-sm size-md text-text-secondary" />
+            <Search className="absolute right-md top-md size-lg text-text-secondary" />
             <CardHeader className="text-center text-text-primary">
               <p className="text-caption uppercase tracking-wide text-text-secondary">Find parts</p>
               <CardTitle className="text-heading-sm font-semibold">Search by product</CardTitle>

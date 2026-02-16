@@ -21,7 +21,7 @@ export function Footer() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-sm text-caption uppercase tracking-wide text-text-primary">
-          <span className="rounded-full bg-action-primary px-sm py-xs text-text-inverse">Open access for every repair</span>
+          <span className="rounded-full bg-action-primary px-md py-xs text-text-inverse">Open access for every repair</span>
         </div>
       </Container>
     </footer>
