@@ -1,11 +1,11 @@
 # Control Sizing Guidelines
 
-Use this reference when adding or updating interactive controls so they stay visually aligned across forms, hero, navbar, and search.
+Use this reference when adding or updating interactive controls so they stay visually aligned across forms, hero, navbar, and search. Radii are intentionally modest (6px `rounded-lg` token) to keep surfaces squared-off.
 
 ## Default Control Recipe
 - Container: `flex w-full rounded-lg border border-border-subtle bg-bg-surface` (or contextual surface tint) + `text-sm text-text-primary shadow-surface transition-colors`
 - Padding: **`px-md py-sm`** for inputs, select tags, combobox rows, buttons (default size)
-- Radius: `rounded-lg`
+- Radius: `rounded-lg` (6px token)
 - Gaps: `gap-sm` when aligning icons/labels inside controls; `space-y-sm` for stacked form groups
 - Focus: `focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface` and `focus-visible:border-border-focus`
 

@@ -56,8 +56,8 @@ export const spacingPrimitives = {
 export const radiusPrimitives = {
   none: "0",
   sm: "2px",
-  md: "4px",
-  lg: "8px",
+  md: "3px",
+  lg: "6px",
   full: "9999px",
 } as const
 
