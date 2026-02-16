@@ -52,10 +52,10 @@ export function SortOptions({ value, onChange, className }: SortOptionsProps) {
           size="sm"
           onClick={() => onChange(option.key)}
           className={cn(
-            "text-sm transition-all",
+            "text-sm transition-colors",
             value === option.key 
-              ? "shadow-md" 
-              : "hover:bg-accent/50"
+              ? "border border-border-default"
+              : "hover:bg-bg-hover"
           )}
         >
           {option.label}
@@ -89,8 +89,8 @@ export function SortOptionsDropdown({ value, onChange, className }: SortOptionsP
 
       {isOpen && (
         <>
-          <div className="absolute top-full left-0 mt-1 bg-background border rounded-md shadow-lg z-50 min-w-[200px]">
-            <div className="py-1">
+          <div className="absolute top-full left-0 mt-1 bg-bg-surface border border-border-subtle rounded-lg shadow-none z-50 min-w-56">
+            <div className="py-xs">
               {sortOptions.map((option) => (
                 <button
                   key={option.key}
@@ -99,13 +99,13 @@ export function SortOptionsDropdown({ value, onChange, className }: SortOptionsP
                     setIsOpen(false)
                   }}
                   className={cn(
-                    "w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors",
-                    value === option.key && "bg-accent"
+                    "w-full px-md py-sm text-left text-sm text-text-primary transition-colors hover:bg-bg-hover",
+                    value === option.key && "bg-bg-subtle"
                   )}
                 >
                   <div className="font-medium">{option.label}</div>
                   {option.description && (
-                    <div className="text-xs text-muted-foreground">{option.description}</div>
+                    <div className="text-xs text-text-secondary">{option.description}</div>
                   )}
                 </button>
               ))}
