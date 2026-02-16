@@ -409,3 +409,256 @@ A regulatory body
 A public institution
 
 Messaging must reflect reality while allowing for future evolution.
+
+Modify the design system according to this brand kit. Do it step by step, start with the colors.
+
+BRAND IDENTITY KIT
+COMMON PARTS ACCESS
+Version 1.0
+
+Name
+Never abbreviate in formal contexts.
+
+Brand Attributes
+Common Parts must feel:
+Neutral
+Structural
+Serious
+Durable
+Calm
+Legitimate
+Long-term
+Not:
+Playful
+Trendy
+Startup-like
+Corporate marketing heavy
+
+Brand Personality
+Common Parts is:
+A steward
+A builder of systems
+A neutral organizer
+Not:
+A disruptor
+A rebel
+A lifestyle brand
+
+3. Tone of Voice
+Core Tone
+Neutral, calm, precise.
+
+
+Vocabulary
+Use:
+Framework
+Platform
+Access
+Publish
+Registry
+Specification
+Structured
+Repair
+Manufacturing
+Avoid:
+Revolution
+Disruption
+Gamification
+Community hype language
+
+Logo Characteristics
+Typography must be:
+Clean
+Neutral
+Sans-serif
+No stylization
+No decorative elements
+This is critical.
+
+5. Color System
+Common Parts Access must use a restrained, institutional palette.
+Primary colors:
+Charcoal
+HEX: #1A1A1A
+White
+HEX: #FFFFFF
+Light Gray
+HEX: #F5F5F5
+Secondary accent (choose one):
+Deep Blue
+HEX: #1E3A5F
+Accent must be used sparingly.
+
+Color Philosophy
+Most of the interface should be neutral.
+Accent color is used only for:
+Links
+Buttons
+Focus states
+Never flood the interface with color.
+
+6. Typography
+Primary font category:
+Sans-serif
+Recommended fonts:
+Inter
+Source Sans 3
+IBM Plex Sans
+Helvetica Neue
+Suisse Intl
+Characteristics:
+Neutral
+Highly legible
+Non-decorative
+Avoid:
+Rounded playful fonts
+Futuristic fonts
+Stylized fonts
+
+7. Layout Principles
+Common Parts layouts must feel:
+Structured
+Calm
+Predictable
+Ordered
+Use:
+Grid systems
+Generous whitespace
+Consistent spacing
+Avoid:
+Dense UI
+Decorative shapes
+Visual noise
+
+8. Imagery Style
+Use imagery of:
+Real objects
+Real parts
+Neutral backgrounds
+Documentation-style photos
+Avoid:
+Lifestyle photography
+People celebrating
+Emotional imagery
+Imagery should feel documentary, not promotional.
+
+Name
+Common Parts Access
+Always written fully in formal contexts.
+Acceptable shorthand in UI:
+Access
+Only when Common Parts is clearly present.
+
+Definition
+Common Parts Access is an open platform for publishing and accessing digital spare parts.
+
+Positioning 
+Common Parts Access = practical operational tool
+
+
+10. Logo Structure: Common Parts Access
+Primary form:
+Common Parts
+Access
+Stacked or inline.
+Example:
+Common Parts Access
+or
+COMMON PARTS ACCESS
+Access should not visually dominate.
+
+11. Color Use
+Example usage:
+Buttons
+Links
+Focus states
+But maintain overall neutral interface.
+
+12. UI Tone
+Common Parts Access:
+Functional, usable, clear.
+Calm.
+Never playful.
+
+13. Writing Style Differences
+ example:
+Browse and publish repair parts.
+
+
+14. Component System
+Buttons:
+Flat
+No gradients.
+Example:
+Background: Deep Blue
+Text: White
+Hover: Slight darkening only.
+
+Cards:
+White background
+Subtle border:
+#E5E5E5
+No shadows or very subtle shadows.
+
+15. Iconography
+Icons must be:
+Simple
+Line-based
+Minimal
+Avoid:
+Cartoon icons
+Decorative icons
+Use:
+Upload
+Download
+Search
+Part
+Neutral symbols only.
+
+16. Interaction Principles
+Interactions must feel:
+Predictable
+Calm
+Fast
+Avoid:
+Playful animations
+Surprise interactions
+Confetti
+Achievement feedback
+Feedback should be informational only.
+Example:
+Correct:
+Part published successfully.
+Incorrect:
+🎉 Your part is live!
+
+17. Naming System
+Internal components should follow functional naming:
+Correct:
+Part Registry
+Publish Interface
+Access Portal
+Avoid:
+Creative metaphor names.
+
+18. Brand Expansion Future-Proofing
+Future components should follow same structure:
+Common Parts Registry
+Common Parts Certification
+Common Parts Protocol
+All under Common Parts umbrella.
+
+19. Anti-Patterns (Never Do This)
+Never:
+Use mascots
+Use playful brand voice
+Use bright playful colors
+Gamify contribution
+Use startup clichés
+Use harbor metaphors
+These destroy institutional credibility.
+
+20. One-Sentence Brand Summary
+Common Parts Access:
+The open platform where those parts can be published and accessed.
+
