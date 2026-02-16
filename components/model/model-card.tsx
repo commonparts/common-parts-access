@@ -54,7 +54,7 @@ export function ModelCard({
 
   if (variant === "compact") {
     return (
-      <Card className={cn("group transition-colors duration-200 hover:border-border-default", className)}>
+      <Card className={cn("group transition-all duration-200 hover:shadow-lg", className)}>
         <Link href={`/model/${model.slug}`}>
           <div className="relative aspect-square overflow-hidden rounded-t-lg">
             {model.thumbnailUrl ? (
@@ -105,7 +105,7 @@ export function ModelCard({
   }
 
   return (
-    <Card className={cn("group transition-colors duration-200 hover:border-border-default", className)}>
+    <Card className={cn("group transition-all duration-200 hover:shadow-lg", className)}>
       <Link href={`/model/${model.slug}`}>
         <div className="relative aspect-video overflow-hidden rounded-t-lg">
           {model.thumbnailUrl ? (

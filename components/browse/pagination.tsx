@@ -107,7 +107,10 @@ export function Pagination({
                 variant={currentPage === page ? "default" : "outline"}
                 size="sm"
                 onClick={() => onPageChange(page as number)}
-                className={cn("min-w-[36px]", currentPage === page && "border border-border-default")}
+                className={cn(
+                  "min-w-[36px]",
+                  currentPage === page && "shadow-md"
+                )}
               >
                 {page}
               </Button>
