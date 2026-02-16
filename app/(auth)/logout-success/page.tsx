@@ -8,7 +8,7 @@ export default function LogoutSuccessPage() {
   return (
     <AuthShell>
       <div className="mx-auto w-full max-w-sm">
-        <Card className="text-center shadow-overlay">
+        <Card className="text-center shadow-none">
           <CardHeader className="items-center gap-sm">
             <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border-subtle bg-bg-surface/70">
               <CheckCircle className="h-6 w-6 text-green-500" />

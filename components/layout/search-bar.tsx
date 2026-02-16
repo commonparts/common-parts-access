@@ -115,13 +115,13 @@ export function SearchBar({
 
       {/* Search Suggestions/Results Dropdown */}
       {isExpanded && currentQuery.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-xs rounded-lg border border-border-subtle bg-bg-surface shadow-overlay">
+        <div className="absolute top-full left-0 right-0 z-50 mt-xs rounded-lg border border-border-subtle bg-bg-surface shadow-none">
           <div className="p-sm">
             <div className="mb-xs text-caption text-text-secondary">Suggestions</div>
             <div className="space-y-xs">
               <button 
                 type="button"
-                className="flex w-full items-center gap-xs rounded text-left px-sm py-xs text-caption hover:bg-bg-hover"
+                className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
                 onClick={() => handleSuggestionClick("car parts")}
               >
                 <svg className="size-sm text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@ export function SearchBar({
               </button>
               <button 
                 type="button"
-                className="flex w-full items-center gap-xs rounded text-left px-sm py-xs text-caption hover:bg-bg-hover"
+                className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
                 onClick={() => handleSuggestionClick("mechanical components")}
               >
                 <svg className="size-sm text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -147,13 +147,13 @@ export function SearchBar({
               <div className="border-t border-border-subtle px-sm py-xs">
                 <div className="mb-xs text-caption text-text-secondary">Quick Filters</div>
                 <div className="flex flex-wrap gap-xs">
-                  <button className="rounded bg-bg-subtle px-sm py-xs text-caption hover:bg-bg-hover">
+                  <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
                     Automotive
                   </button>
-                  <button className="rounded bg-bg-subtle px-sm py-xs text-caption hover:bg-bg-hover">
+                  <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
                     Mechanical
                   </button>
-                  <button className="rounded bg-bg-subtle px-sm py-xs text-caption hover:bg-bg-hover">
+                  <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
                     Electronics
                   </button>
                 </div>
