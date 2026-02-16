@@ -61,7 +61,7 @@ export function FileUploader({
   return (
     <div
       className={cn(
-          "cursor-pointer rounded-lg border border-dashed border-border-subtle bg-bg-surface p-lg text-center shadow-surface transition-colors",
+          "cursor-pointer rounded-lg border border-dashed border-border-subtle bg-bg-surface p-lg text-center shadow-none transition-colors",
         isDragOver
           ? "border-action-primary bg-action-primary/5"
           : "hover:border-action-primary/60 hover:bg-bg-hover",
