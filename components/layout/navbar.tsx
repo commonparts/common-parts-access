@@ -1,9 +1,9 @@
 import { UserProfileMenu } from "@/components/user/user-avatar";
-import Link from "next/link";
 import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { AuthButton } from "@/components/auth/auth-button";
 import { SearchBar } from "@/components/layout/search-bar";
 import { Container } from "@/components/layout/container";
+import { Logo } from "@/components/layout/logo";
 
 export default async function Navbar() {
   const { data: { user } } = await getCurrentUser();
@@ -14,13 +14,8 @@ export default async function Navbar() {
         size="xl"
         className="flex items-center justify-between gap-md py-md text-body text-text-inverse"
       >
-        <div className="flex items-center gap-sm font-heading text-heading-sm font-medium">
-          <Link
-            href={"/"}
-            className="flex items-center gap-xs rounded-md px-sm py-xs transition-colors hover:text-action-primary"
-          >
-            Common Parts Access
-          </Link>
+        <div className="flex items-center gap-sm">
+          <Logo asLink />
         </div>
 
         <div className="hidden flex-1 items-center justify-center lg:flex">
