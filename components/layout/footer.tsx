@@ -7,7 +7,7 @@ export function Footer() {
       <Container size="xl" className="flex flex-col gap-lg py-xl text-caption text-text-secondary">
         <div className="flex flex-col gap-sm sm:flex-row sm:items-center sm:justify-between sm:gap-xl">
           <div className="flex flex-col gap-xs">
-            <span className="font-heading text-heading-sm font-bold text-text-primary">Common Parts Access</span>
+            <span className="font-heading text-heading-sm font-medium text-text-primary">Common Parts Access</span>
           </div>
           <div className="flex flex-col gap-xs text-text-primary">
             <span className="text-caption uppercase tracking-wide text-text-secondary">Contact</span>
