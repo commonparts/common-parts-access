@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { inter, outfit, jetbrainsMono } from "./fonts";
+import { sourceSans } from "./fonts";
 import "./globals.css";
 import { lightTheme, themeToCSSVars } from "@/design-tokens";
 
@@ -22,7 +22,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${inter.variable} ${outfit.variable} ${jetbrainsMono.variable}`}>
+    <html lang="en" className={sourceSans.variable}>
       <body style={lightThemeCSSVars}>{children}</body>
     </html>
   );

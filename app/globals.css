@@ -3,15 +3,16 @@
 @tailwind utilities;
 
 :root {
-  --font-body: var(--typography-font-body);
-  --font-heading: var(--typography-font-heading);
-  --font-mono: var(--typography-font-mono);
+  --font-body: var(--font-source-sans);
+  --font-heading: var(--font-source-sans);
+  --font-mono: var(--font-source-sans);
 }
 
 @layer components {
   .text-body {
     font-family: var(--font-body);
     font-size: var(--typography-size-body);
+    font-weight: var(--typography-weight-body);
     line-height: var(--typography-lineHeight-body);
     color: var(--color-text-primary);
   }
@@ -38,7 +39,7 @@
   .text-heading-lg {
     font-family: var(--font-heading);
     font-size: var(--typography-size-headingLg);
-    font-weight: var(--typography-weight-bold);
+    font-weight: var(--typography-weight-semibold);
   }
 
   .text-mono {

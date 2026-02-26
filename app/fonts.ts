@@ -1,21 +1,10 @@
-import { Inter, Outfit, JetBrains_Mono } from 'next/font/google'
+import { Source_Sans_3 } from 'next/font/google'
 
-const inter = Inter({
+const sourceSans = Source_Sans_3({
   subsets: ["latin"],
-  variable: "--font-body",
+  variable: "--font-source-sans",
+  weight: ["400", "500", "600"],
   display: "swap",
 })
 
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-heading",
-  display: "swap",
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  variable: "--font-mono",
-  display: "swap",
-})
-
-export { inter, outfit, jetbrainsMono }
+export { sourceSans }

@@ -88,9 +88,9 @@ export const motionPrimitives = {
 
 export const typographyPrimitives = {
   fontFamily: {
-    body: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-    heading: "'Outfit', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-    mono: "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace",
+    body: "'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    heading: "'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    mono: "'Source Sans 3', ui-monospace, SFMono-Regular, monospace",
   },
 
   fontSize: {
