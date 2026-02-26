@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { APP_NAME } from "@/lib/utils/constants";
 
 type LogoProps = {
   className?: string;
@@ -17,7 +16,7 @@ export function Logo({
 }: LogoProps) {
   const logoText = (
     <span className={cn("font-heading text-heading-sm font-medium", className)}>
-      {APP_NAME}
+      Common Parts <span className="font-normal">Access</span>
     </span>
   );
 
