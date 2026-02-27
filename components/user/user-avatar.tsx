@@ -28,7 +28,7 @@ export function UserProfileMenu() {
 					className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 					aria-label="Open profile menu"
 				>
-					<CurrentUserAvatar />
+					<CurrentUserAvatar className="h-lg w-lg" />
 				</button>
 			</DropdownMenuTrigger>
 
