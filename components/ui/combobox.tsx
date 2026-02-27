@@ -166,7 +166,7 @@ export function Combobox<T extends ComboboxOption>({
           onFocus={handleFocus}
           placeholder={placeholder}
           disabled={disabled}
-          className={cn("w-full", inputClassName)}
+          className={cn("w-full py-xs", inputClassName)}
         />
         {isOpen && (
           <div className="absolute top-full left-0 right-0 z-50 mt-sm max-h-64 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-none">
@@ -177,7 +177,7 @@ export function Combobox<T extends ComboboxOption>({
                   type="button"
                   onClick={() => handleSelect(option)}
                   className={cn(
-                    "w-full cursor-pointer border-b border-border-subtle px-md py-sm text-left text-sm text-text-primary transition-colors last:border-b-0",
+                    "w-full cursor-pointer border-b border-border-subtle px-md py-xs text-left text-sm text-text-primary transition-colors last:border-b-0",
                     index === selectedIndex
                       ? "bg-action-primary/10"
                       : "hover:bg-bg-hover",
@@ -187,7 +187,7 @@ export function Combobox<T extends ComboboxOption>({
                 </button>
               ))
             ) : (
-              <div className="px-md py-sm text-sm text-text-secondary">
+              <div className="px-md py-xs text-sm text-text-secondary">
                 {emptyMessage}
               </div>
             )}
@@ -196,7 +196,7 @@ export function Combobox<T extends ComboboxOption>({
                 type="button"
                 onClick={handleCreate}
                 className={cn(
-                  "w-full cursor-pointer border-t border-border-subtle px-md py-sm text-left text-sm text-text-primary transition-colors",
+                  "w-full cursor-pointer border-t border-border-subtle px-md py-xs text-left text-sm text-text-primary transition-colors",
                   selectedIndex === filteredOptions.length
                     ? "bg-action-primary/10"
                     : "hover:bg-bg-hover",
