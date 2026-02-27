@@ -97,6 +97,7 @@ export const semanticTokens = {
     size: {
       body: typographyPrimitives.fontSize.md,
       caption: typographyPrimitives.fontSize.sm,
+      logo: typographyPrimitives.fontSize.lg,
       headingSm: typographyPrimitives.fontSize.xl,
       headingMd: typographyPrimitives.fontSize["2xl"],
       headingLg: typographyPrimitives.fontSize["3xl"],
