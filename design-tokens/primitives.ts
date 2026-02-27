@@ -41,17 +41,16 @@ export const colorPrimitives = {
 } as const
 
 export const spacingPrimitives = {
-  1: "2px",
-  2: "4px",
-  3: "8px",
-  4: "12px",
-  5: "16px",
-  6: "20px",
-  7: "24px",
-  8: "32px",
-  10: "40px",
-  12: "48px",
-  16: "64px",
+  1: "4px",
+  2: "8px",
+  3: "10px",
+  4: "16px",
+  5: "24px",
+  6: "32px",
+  7: "40px",
+  8: "48px",
+  9: "64px",
+  10: "80px",
 } as const
 
 export const radiusPrimitives = {

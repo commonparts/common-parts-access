@@ -46,13 +46,15 @@ export const semanticTokens = {
   },
 
   spacing: {
-    xs: spacingPrimitives[1],
-    sm: spacingPrimitives[2],
-    md: spacingPrimitives[4],
+    "3xs": spacingPrimitives[1],
+    "2xs": spacingPrimitives[2],
+    xs: spacingPrimitives[3],
+    sm: spacingPrimitives[4],
+    md: spacingPrimitives[5],
     lg: spacingPrimitives[6],
     xl: spacingPrimitives[8],
-    "2xl": spacingPrimitives[12],
-    "3xl": spacingPrimitives[16],
+    "2xl": spacingPrimitives[9],
+    "3xl": spacingPrimitives[10],
   },
 
   radius: {
