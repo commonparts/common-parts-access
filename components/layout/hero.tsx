@@ -96,8 +96,7 @@ export const Hero: React.FC = () => {
                 <p className="text-caption uppercase tracking-wide text-text-secondary">Find parts</p>
                 <CardTitle className="text-heading-sm font-semibold">Search by product</CardTitle>
                 <CardDescription className="text-caption">
-                  Use the same brand, category, and product logic as the upload form to zero in on
-                  the right fit.
+                  Filter by brand, category, and product to quickly find the part that fits.
                 </CardDescription>
               </CardHeader>
 
