@@ -15,7 +15,7 @@ export function Logo({
   linkClassName,
 }: LogoProps) {
   const logoText = (
-    <span className={cn("font-heading text-logo font-medium", className)}>
+    <span className={cn("font-heading text-heading-sm font-medium", className)}>
       Common Parts <span className="font-normal">Access</span>
     </span>
   );
