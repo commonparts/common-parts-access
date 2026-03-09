@@ -4,9 +4,7 @@ import { AuthShell } from "@/components/layout/auth-shell";
 export default function Page() {
   return (
     <AuthShell>
-      <div className="mx-auto w-full max-w-sm">
-        <ForgotPasswordForm />
-      </div>
+      <ForgotPasswordForm />
     </AuthShell>
   );
 }

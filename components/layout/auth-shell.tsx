@@ -27,9 +27,9 @@ export function AuthShell({ children, size = "sm", align = "center", className }
       </div>
 
       <Container size={size} className="w-full">
-        <Grid columns={12} className={cn("justify-center", align === "center" ? "items-center" : "items-start")}> 
-          <div className="col-span-12 mx-auto flex justify-center">
-            <div className="w-full max-w-container-sm">
+        <Grid columns={12} className={cn("justify-center", align === "center" ? "items-center" : "items-start")}>
+          <div className="col-span-12 mx-auto flex w-full justify-center">
+            <div className="w-full max-w-sm [&>*]:w-full">
               {children}
             </div>
           </div>
