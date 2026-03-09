@@ -10,6 +10,7 @@ import { useModelUploadFormState } from "@/hooks/use-model-upload-form-state";
 import { Container } from "@/components/layout/container";
 import { Grid } from "@/components/layout/grid";
 import { DropdownInput } from "@/components/ui/dropdown-input";
+import { Section } from '@/components/layout/section';
 
 // ---- HERO SECTION ----
 export const Hero: React.FC = () => {
@@ -55,7 +56,7 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section className="py-xl sm:py-2xl">
+    <Section>
       <Container size="xl">
         <Grid columns={12} className="items-center gap-2xl">
           <div className="col-span-12 mx-auto flex w-full max-w-xl flex-col space-y-lg lg:col-span-6">
@@ -196,6 +197,6 @@ export const Hero: React.FC = () => {
           </div>
         </Grid>
       </Container>
-    </section>
+    </Section>
   );
 };

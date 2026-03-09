@@ -68,7 +68,7 @@ export function FeaturedModels() {
   if (error) {
     return (
       <Section>
-        <Container size="lg">
+        <Container size="xl">
           <div className="text-center py-xl">
             <div className="mx-auto mb-sm flex size-16 items-center justify-center rounded-full bg-border-subtle">
               <svg className="size-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,13 +85,8 @@ export function FeaturedModels() {
 
   return (
     <Section>
-      <Container size="lg" className="space-y-lg">
-        <div className="space-y-xs text-center">
-          <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most Downloaded Models</h2>
-          <p className="text-body text-text-secondary max-w-2xl mx-auto">
-            Discover the most popular 3D models and parts shared by our community
-          </p>
-        </div>
+      <Container size="xl" className="space-y-lg">
+        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most Downloaded Parts</h2>
 
         <ModelGrid 
           models={models}
@@ -106,7 +101,7 @@ export function FeaturedModels() {
           <div className="text-center">
             <Button asChild variant="outline">
               <Link href="/browse">
-                View More Models
+                View More Parts
               </Link>
             </Button>
           </div>
