@@ -144,23 +144,6 @@ export function ModelCard({
       </CardHeader>
 
       <CardContent className="pb-2">
-        {/* Tags */}
-        <div className="mb-2 flex flex-wrap gap-1">
-          <Badge variant="secondary" className="text-xs uppercase">
-            {model.category}
-          </Badge>
-          {model.tags.slice(0, 2).map((tag) => (
-            <Badge key={tag} variant="outline" className="text-xs uppercase">
-              {tag}
-            </Badge>
-          ))}
-          {model.tags.length > 2 && (
-            <Badge variant="outline" className="text-xs">
-              +{model.tags.length - 2}
-            </Badge>
-          )}
-        </div>
-
         {/* Author */}
         {showAuthor && (
           <div className="flex items-center space-x-2">
