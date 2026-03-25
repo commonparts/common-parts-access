@@ -1,0 +1,10 @@
+protected_branches="main staging"
+current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
+
+for branch in $protected_branches; do
+  if [ "$current_branch" = "$branch" ]; then
+    echo "⛔ Direct push to '$branch' is not allowed."
+    echo "→ Open a pull request from dev or a feature branch."
+    exit 1
+  fi
+done
