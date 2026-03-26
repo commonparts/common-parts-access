@@ -59,7 +59,7 @@ export function DeleteAccountForm() {
 
       {error ? <p className="text-sm text-destructive">{error}</p> : null}
 
-      <Button type="submit" variant="destructive" className="w-full" disabled={isPending}>
+      <Button type="submit" variant="outline" className="w-full" disabled={isPending}>
         {isPending ? "Deleting..." : "Delete my account"}
       </Button>
     </form>
