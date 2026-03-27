@@ -45,9 +45,10 @@ export function ModelCard({
     return num.toString()
   }
 
+  const [now] = React.useState(() => Date.now())
   const formatDate = (date: Date) => {
     return new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-      Math.ceil((date.getTime() - Date.now()) / (1000 * 60 * 60 * 24)),
+      Math.ceil((date.getTime() - now) / (1000 * 60 * 60 * 24)),
       'day'
     )
   }
