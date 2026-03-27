@@ -1,5 +1,4 @@
 import * as React from 'react'
-import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 export interface AvatarProps extends React.HTMLAttributes<HTMLDivElement> {}
@@ -11,8 +10,9 @@ Avatar.displayName = 'Avatar'
 
 export interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(({ className, src, alt = '', ...props }, ref) => (
-  <Image ref={ref} className={cn('aspect-square h-full w-full', className)} src={src ?? ''} alt={alt} fill unoptimized {...props} />
+const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(({ className, alt = '', ...props }, ref) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img ref={ref} className={cn('aspect-square h-full w-full object-cover', className)} alt={alt} {...props} />
 ))
 AvatarImage.displayName = 'AvatarImage'
 
