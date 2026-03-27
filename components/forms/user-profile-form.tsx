@@ -1,4 +1,5 @@
 import * as React from "react"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -115,7 +116,7 @@ export function UserProfileForm({
           <div className="flex items-center space-x-4">
             <Avatar className="w-20 h-20">
               {avatarPreview ? (
-                <img src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover rounded-full" />
+                <Image src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover rounded-full" width={80} height={80} unoptimized />
               ) : (
                 <div className="w-full h-full bg-muted flex items-center justify-center">
                   <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
