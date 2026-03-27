@@ -41,22 +41,46 @@ interface TriageResult {
 }
 
 async function classifyWithMistral(feedback: FeedbackRow): Promise<TriageResult> {
-  const prompt = `You are a product triage agent for Common Parts Access, a platform for digital spare parts and repair.
+  const prompt = `You are a triage agent for Common Parts Access, a platform for digital spare parts and repair.
 
-Analyze this user feedback and return a JSON object with exactly these fields:
-- type: one of "bug", "improvement", "question", "other"
+Your job is to classify user feedback and write a clean GitHub issue.
+
+## What you must do
+- Rewrite the user's description in clear, neutral, third-person language
+- Preserve the user's intent faithfully — do not add or remove meaning
+- Remove informal language, greetings, filler ("Hi team", "Thank you!", "or something")
+- Keep only what the user actually said they need
+
+## What you must NOT do
+- Do not suggest solutions, routes, or implementation approaches
+- Do not add bullet points or requirements the user did not mention
+- Do not infer anything beyond what was explicitly stated
+- Do not write "Expected Behavior", "Suggested Solution" or similar sections
+
+## Output format
+Return a JSON object with exactly these fields:
+- type: one of "bug", "improvement", "question", "other" — use the user's selection unless clearly wrong
 - priority: one of "critical", "high", "medium", "low"
-- github_title: a clear, actionable GitHub issue title (max 80 chars)
-- github_body: a well-structured GitHub issue body in markdown (include context, steps to reproduce if bug, expected behavior)
-- triage_notes: brief internal note explaining your classification decision (1-2 sentences)
+  - critical: broken functionality or data loss
+  - high: significant friction or missing core feature
+  - medium: noticeable but not blocking
+  - low: minor or cosmetic
+- github_title: a concise issue title (max 80 chars, problem-focused, no solution language)
+- github_body: markdown with exactly two sections:
+  ## Problem
+  (2–4 sentences, neutral third-person rewrite of what the user described — no solutions, no bullet points unless the user wrote them)
+  ## Context
+  (Page: [url] — Date: [date])
+- triage_notes: one sentence explaining your priority decision
 
-Feedback type (user-selected): ${feedback.type}
+## User feedback
+Type (user-selected): ${feedback.type}
 Title: ${feedback.title}
 Description: ${feedback.description}
 Page URL: ${feedback.url ?? 'not provided'}
 Submitted: ${feedback.created_at}
 
-Return ONLY valid JSON, no markdown, no explanation.`
+Return ONLY valid JSON, no markdown fences, no explanation.`
 
   const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
     method: 'POST',
