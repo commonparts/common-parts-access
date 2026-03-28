@@ -118,6 +118,17 @@ async function createGitHubIssue(triage: TriageResult, feedback: FeedbackRow): P
   const body = `${triage.github_body}
 
 ---
+<details>
+<summary>Original user feedback</summary>
+
+**Type:** ${feedback.type}
+**Title:** ${feedback.title}
+
+${feedback.description}
+
+</details>
+
+---
 **Submitted via Common Parts Access feedback widget**
 - Feedback ID: \`${feedback.id}\`
 - Page: ${feedback.url ?? 'not provided'}
