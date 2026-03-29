@@ -1,7 +1,6 @@
-# Agent Dev — Common Parts Access
+# Dev Agent Instructions — Common Parts Access
 
-This file is read automatically by Agent Dev at the start of every session.
-Read it entirely before writing any code or proposing any changes.
+Read this file entirely before writing any code or proposing any changes.
 
 ---
 
@@ -172,12 +171,14 @@ dev         → integration branch, PRs target here
 feature/xxx → your working branch
 ```
 
-Every session starts with:
-```bash
-git checkout dev
-git pull origin dev
-git checkout -b feature/issue-[number]-[short-description]
-```
+Before starting any work, read the open issue via the GitHub MCP to understand
+the full context — labels, body, linked PRs.
+
+Always work on a feature branch named `feature/issue-[number]-[short-description]`,
+created from `dev`. Never work directly on `main`, `staging`, or `dev`.
+
+Open the PR toward `dev` via the GitHub MCP once the work is complete and the
+self-review checklist passes.
 
 Every commit must follow Conventional Commits (enforced by commitlint):
 ```
@@ -459,3 +460,39 @@ If you are unsure about:
 - **Database** — never run migrations without explicit instruction; describe the SQL and let the human run it via the Supabase SQL editor
 
 When in doubt, propose and wait for confirmation. A wrong implementation costs more than a short question.
+
+---
+
+## MCP tools available in this agent
+
+You have direct access to the following MCP servers. Use them actively — never ask the human to fetch information you can get yourself.
+
+### GitHub MCP
+- Read the issue before starting any work — never rely on the human's summary alone
+- Check existing PRs to avoid duplicating work in progress
+- After completing work, open a PR toward `dev` with a structured description
+
+### Supabase MCP
+- Check the actual table schema before writing queries — never assume column names
+- Verify RLS policies exist before inserting into a new table
+- Read edge function logs if debugging a triage or pipeline issue
+
+### Vercel MCP
+- Check deployment status and build logs if the human reports a production issue
+- Never trigger a deployment manually — Vercel deploys automatically on push
+
+### Workflow with MCP
+
+When the human gives you an issue number:
+1. Read the issue via GitHub MCP
+2. Understand the full context — labels, body, comments
+3. Check which files are relevant — propose your approach before touching anything
+4. Implement following all conventions in this file
+5. Verify with tsc + lint before committing
+6. Open the PR via GitHub MCP or provide the git commands
+
+When the human reports a bug in production:
+1. Check Vercel runtime logs via Vercel MCP
+2. Check Supabase logs if it looks like a database issue
+3. Identify the root cause before proposing a fix
+4. Never deploy a fix directly — open a PR
