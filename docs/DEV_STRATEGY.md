@@ -1,7 +1,7 @@
 # Common Parts Access — Development Strategy & Process
 
 **Project:** Common Parts Access (`partharbor`)
-**Stack:** Next.js 16 · TypeScript · Supabase · Vercel
+**Stack:** Next.js · TypeScript · Supabase · Vercel
 **Last updated:** March 2026
 
 ---
@@ -30,33 +30,33 @@ User feedback (in-app widget)
         ↓
 GitHub Issues (structured, labelled)
         ↓
-[ Agent PM ] — prioritises, maintains roadmap, surfaces improvements for discussion
-        ↓ bugs/tasks → auto-assigned
-        ↓ improvements → reviewed with human first
+[ Agent PM ] — Claude Project in Claude.ai
+        ↓ reads issues, proposes priorities, discusses with human
+        ↓ generates gh CLI commands after human validation
 [ You ] — validate priorities and roadmap
         ↓
-[ Agent Dev ] — resolves issues, opens PRs (never merges)
-        ↓
-[ Agent QA ] — reviews PRs, runs tests, checks logs
+[ Agent Dev ] — GitHub Copilot agent in VS Code
+        ↓ reads issues via MCP, proposes approach, implements, opens PRs
+        ↓ never merges
+[ Agent QA ] — (planned)
         ↓
 CI/CD Pipeline (GitHub Actions → Vercel)
         ↓
 [ You ] — merge to staging → main
         ↓
-[ Agent Comms ] — updates docs, changelog, public roadmap
+[ Agent Comms ] — (planned) updates docs, changelog, public roadmap
 ```
 
 **Automation level by layer:**
 
-| Layer | Mode |
-|---|---|
-| Feedback triage | Fully automatic |
-| GitHub issue creation | Fully automatic |
-| PM prioritisation | Semi-automatic (human validates improvements) |
-| Dev (bug fixes) | Automatic → PR opened for review |
-| Dev (features) | Human-validated before agent starts |
-| Merge to staging/main | Always manual |
-| Docs & changelog | Fully automatic |
+| Layer | Mode | Tool |
+|---|---|---|
+| Feedback triage | Fully automatic | Supabase Edge Function + Mistral Small |
+| GitHub issue creation | Fully automatic | GitHub API via Edge Function |
+| PM prioritisation | Semi-automatic (human validates) | Claude Project in Claude.ai |
+| Dev (bugs & features) | Dialogue — agent proposes, human validates | GitHub Copilot agent in VS Code |
+| Merge to staging/main | Always manual | Human |
+| Docs & changelog | Planned | — |
 
 ---
 
@@ -81,9 +81,10 @@ fix(scope): short description
 chore(scope): short description
 docs(scope): short description
 refactor(scope): short description
-test(scope): short description
 ci(scope): short description
 ```
+
+Commit messages must reference the related issue number: `fix(ui): correct button variant (#42)`
 
 Husky hooks:
 - `commit-msg` — rejects commits that don't match the convention
@@ -92,7 +93,7 @@ Husky hooks:
 ### Pull Request Rules
 
 - `main` and `staging` are protected: no direct push allowed
-- All changes go through a PR
+- All changes go through a PR toward `dev`
 - CI must pass before merge is possible
 - PR comments must be resolved before merge
 
@@ -153,9 +154,74 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ---
 
-## Database Schema (Supabase)
+## Agent Reference
 
-Core tables relevant to the agent pipeline:
+### Agent Triage
+
+**Tool:** Supabase Edge Function (`supabase/functions/triage-feedback/`)
+**Model:** Mistral Small (`mistral-small-latest`) at temperature 0.1
+**Trigger:** Supabase database webhook on `feedback` INSERT
+**What it does:**
+- Classifies the feedback (type + priority)
+- Rewrites it in neutral third-person language — no solution language, no invented requirements
+- Creates a GitHub issue with structured body (Problem + Context) and original feedback in a collapsible block
+- Applies correct labels based on type and priority
+- Updates the `feedback` row with issue URL, issue number, and triage notes
+
+**Response time:** 2–5 seconds end to end
+**Secrets required:** `MISTRAL_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
+
+---
+
+### Agent PM
+
+**Tool:** Claude Project in Claude.ai
+**Model:** Claude Sonnet or Opus (human chooses per session)
+**Trigger:** On-demand — human initiates the session
+**Interface:** Conversation in Claude.ai — no separate app or infrastructure
+
+**Session workflow:**
+1. Human runs `gh issue list --label "agent:pm" --json ...` and pastes the result
+2. Agent reads all issues, analyses each one against Common Parts mission
+3. Proposes action (promote / defer / close / discuss) + priority + justification per issue
+4. Human discusses, validates, or modifies proposals
+5. Agent generates a single `gh` CLI command block to execute all decisions
+6. Human copy-pastes and runs the commands
+
+**Project files:** `docs/dev-strategy.md` + Common Parts institutional brief
+**System prompt location:** Claude Project instructions (not in the repo)
+
+---
+
+### Agent Dev
+
+**Tool:** GitHub Copilot agent mode in VS Code
+**Model:** GPT-4o / Claude Sonnet depending on Copilot configuration
+**Trigger:** On-demand — human opens a session in VS Code and assigns an issue
+**Interface:** Chat panel in VS Code, directly in the codebase
+
+**MCP servers connected:**
+- **GitHub MCP** — reads issues, opens PRs, checks existing work
+- **Supabase MCP** — checks table schema, RLS policies, edge function logs
+- **Vercel MCP** — checks deployment status and runtime logs
+
+**Instructions file:** `.github/agents/dev.agent.md` (read automatically by the agent)
+**What it does:**
+- Reads the issue directly via GitHub MCP — no copy-pasting
+- Proposes a technical approach before writing any code
+- Implements following all conventions in `dev.agent.md`
+- Runs self-review checklist (tsc + lint) before committing
+- Opens a PR toward `dev` via GitHub MCP
+
+**What it never does:**
+- Merges a PR
+- Pushes to `main` or `staging`
+- Installs dependencies without asking
+- Modifies `design-tokens/`, `middleware.ts`, or core Supabase client files
+
+---
+
+## Database Schema (Supabase)
 
 **`feedback`** — user-submitted feedback, entry point of the pipeline
 
@@ -200,55 +266,52 @@ RLS: anyone can insert, users can read their own rows only.
 
 - Supabase Edge Function: `triage-feedback`
 - Triggered by Supabase database webhook on `feedback` INSERT
-- Calls Mistral Small (`mistral-small-latest`) at temperature 0.1
-- Prompt instructs: neutral third-person reformulation, no solution language, no invented requirements
-- Creates GitHub issue with structured body (Problem + Context sections) and original feedback in collapsible block
-- Applies correct labels based on type and priority
-- Updates `feedback` row with issue URL, issue number, and triage notes
-- Response time: 2–5 seconds end to end
-- All executions returning HTTP 200 ✅
+- Classifies, reformulates, creates GitHub issue with correct labels
+- Updates `feedback` row with issue URL, number, and triage notes
+- All executions returning HTTP 200, 2–5s response time
+
+### ✅ Agent PM
+
+- Claude Project in Claude.ai with full system prompt
+- Project files: `docs/dev-strategy.md` + institutional brief
+- On-demand sessions via `gh issue list` + conversation
+- Outputs ready-to-run `gh` CLI command blocks
+- Decisions always validated by human before execution
+
+### ✅ Agent Dev
+
+- GitHub Copilot agent mode in VS Code
+- Instructions in `.github/agents/dev.agent.md`
+- Connected to GitHub, Supabase, and Vercel via MCP
+- Dialogue mode: proposes approach → human validates → implements → opens PR
+- Reads issues directly via GitHub MCP — no manual copy-paste
+
+### ✅ Agent Dev — Instructions (`dev.agent.md`)
+
+Covers: project structure, TypeScript conventions, Supabase patterns, design system tokens, component library, security requirements, scalability rules, reusability rules, maintainability rules, self-review checklist, branch and commit workflow, MCP tool usage.
 
 ---
 
 ## What Remains to Build
 
-### 🔲 Agent PM
+### 🔲 Page `/roadmap` on the site
 
-The PM agent reads GitHub issues labelled `agent:pm` and:
-- Proposes a priority ranking for improvements
-- Presents improvements to the human for discussion
-- Maintains a public roadmap (published on the site)
-- Creates or updates GitHub issues based on decisions made
-- Does not act on `type:bug` issues — those go directly to Agent Dev
-
-Implementation approach: likely a scheduled script or Claude-powered interface rather than a Supabase Edge Function, since it requires back-and-forth with the human.
-
-### 🔲 Agent Dev
-
-The dev agent reads GitHub issues labelled `agent:dev` and:
-- Understands the codebase structure and conventions
-- Implements the fix or feature on a new branch (`feature/issue-xxx`)
-- Opens a PR with a conventional commit message and issue reference
-- Never merges
-
-Tooling to evaluate: Claude Code (CLI), GitHub Copilot Workspace, or a custom orchestrator using the Anthropic API with file access tools.
-
-Key constraint: the agent must follow commit conventions, write TypeScript, and respect the existing component library.
+A public-facing roadmap page at `access.commonparts.org/roadmap`. Reads from GitHub issues (issues labelled `priority:high` and `priority:medium` with `agent:dev`) or from a `ROADMAP.md` file maintained by the Agent PM after each session. Language should be user-facing, not developer-facing.
 
 ### 🔲 Agent QA
 
 Reviews PRs opened by Agent Dev:
 - Checks for type errors and lint issues (CI already does this)
-- Reviews logic and edge cases
+- Reviews logic, edge cases, and security concerns
 - Leaves review comments on the PR
-- Does not approve — human approves
+- Does not approve — human approves and merges
 
 ### 🔲 Agent Comms
 
 After a PR is merged to `main`:
 - Updates `CHANGELOG.md` from commit history
-- Updates the public roadmap page on the site
-- Optionally posts a summary somewhere (email, internal log)
+- Updates the public roadmap page
+- Could be a GitHub Action triggered on merge to `main`
 
 ### 🔲 Testing Infrastructure
 
@@ -259,19 +322,19 @@ After a PR is merged to `main`:
 
 ### 🔲 Supabase Migrations Workflow
 
-Currently all schema changes are made via the Supabase SQL Editor UI. This is fine for now but needs to be formalised:
+Currently all schema changes are made via the Supabase SQL Editor UI. To formalise:
 - Add `supabase/migrations/` folder to repo
-- Version-control all schema changes
-- Document the process for applying migrations in CI
+- Version-control all schema changes as `.sql` files
+- Document the process for applying migrations
 
 ### 🔲 Error Monitoring
 
 - Connect Vercel runtime logs to a structured alerting system
-- Optionally: auto-create a `type:bug priority:high` GitHub issue when an unhandled error is detected in production
+- Auto-create a `type:bug priority:high` GitHub issue when an unhandled error is detected in production
 
 ### 🔲 Domain & Environment Setup
 
-- Configure `access.commonparts.org` on Vercel
+- Configure `access.commonparts.org` on Vercel production
 - Set up `staging.commonparts.org` as a fixed preview environment
 - Manage environment variables cleanly across dev / staging / production
 
@@ -280,18 +343,24 @@ Currently all schema changes are made via the Supabase SQL Editor UI. This is fi
 ## Key Decisions & Rationale
 
 **Why Supabase Edge Functions for triage, not a separate server?**
-Zero infrastructure overhead. Triggered directly by the database. Free tier is sufficient for the current volume. No latency from polling.
+Zero infrastructure overhead. Triggered directly by the database. Free tier is sufficient for current volume. No latency from polling.
 
-**Why Mistral Small and not a larger model?**
-The triage task is classification and light reformulation — not reasoning or generation. Mistral Small handles it in under 3 seconds at a fraction of the cost. The PM agent will use a more capable model for nuanced decisions.
+**Why Mistral Small and not a larger model for triage?**
+The triage task is classification and light reformulation — not reasoning or generation. Mistral Small handles it in under 3 seconds at a fraction of the cost.
 
 **Why temperature 0.1 for triage?**
 Classification tasks benefit from low temperature. We want consistent, deterministic outputs. Creative interpretation is exactly what we want to avoid at this stage.
 
 **Why include the original feedback verbatim in the issue?**
-The agent's reformulation is never perfect. Including the source in a collapsible block means the PM agent and human always have access to what the user actually said, regardless of reformulation quality. It's a structural guarantee, not a workaround.
+The agent's reformulation is never perfect. Including the source in a collapsible block means the PM agent and human always have access to what the user actually said. It's a structural guarantee, not a workaround.
 
-**Why squash merge only on main?**
+**Why Claude Project for Agent PM, not a custom app?**
+The PM session requires genuine back-and-forth reasoning with the human. A conversation interface is the right medium. No infrastructure, no deployment, immediate to use.
+
+**Why GitHub Copilot agent for Agent Dev, not Claude Code?**
+The human's primary editor is VS Code with GitHub Copilot already integrated. Using Copilot agent mode keeps the workflow native, avoids installing a separate CLI tool, and allows direct MCP connections to GitHub, Supabase, and Vercel from the same interface.
+
+**Why squash merge only on `main`?**
 One commit per feature or fix. `main`'s history stays readable. Changelogs can be generated cleanly. Agents reading commit history get unambiguous signals.
 
 **Why 0 required approvals on PRs?**
@@ -304,6 +373,8 @@ The project is solo. The goal of PR protection is not human review — it's forc
 ```
 /
 ├── .github/
+│   ├── agents/
+│   │   └── dev.agent.md            # Agent Dev instructions (read by Copilot)
 │   └── workflows/
 │       └── ci.yml                  # Lint + type check
 ├── .husky/
@@ -313,11 +384,13 @@ The project is solo. The goal of PR protection is not human review — it's forc
 │   └── functions/
 │       └── triage-feedback/
 │           └── index.ts            # Agent Triage edge function
+├── docs/
+│   └── dev-strategy.md             # This document
 ├── app/
 │   └── layout.tsx                  # FeedbackButton mounted here
 ├── components/
 │   └── feedback/
-│       ├── feedback-form.tsx       # Form component
+│       ├── feedback-form.tsx       # Feedback form component
 │       └── feedback-button.tsx     # Floating button
 └── commitlint.config.mjs           # Commit convention config
 ```
