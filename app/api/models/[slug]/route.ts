@@ -1,29 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// GET /api/models/[id] - Get model by ID
+// GET /api/models/[slug] - Get model by slug
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
-  // TODO: Implement get model by ID
-  return NextResponse.json({ message: `Get model ${params.id}` })
+  const { slug } = await params
+  // TODO: Implement get model by slug
+  return NextResponse.json({ message: `Get model ${slug}` })
 }
 
-// PUT /api/models/[id] - Update model
+// PUT /api/models/[slug] - Update model
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await params
   // TODO: Implement model update
   const body = await request.json()
-  return NextResponse.json({ message: `Update model ${params.id}`, model: body })
+  return NextResponse.json({ message: `Update model ${slug}`, model: body })
 }
 
-// DELETE /api/models/[id] - Delete model
+// DELETE /api/models/[slug] - Delete model
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ slug: string }> }
 ) {
+  const { slug } = await params
   // TODO: Implement model deletion
-  return NextResponse.json({ message: `Delete model ${params.id}` })
+  return NextResponse.json({ message: `Delete model ${slug}` })
 }
