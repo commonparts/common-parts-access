@@ -15,7 +15,7 @@ interface SubmitFeedbackPayload {
 /**
  * Inserts a feedback record into the feedback table.
  * Called from the client-side feedback widget.
- * RLS policy: anyone can insert (user_id must match auth.uid() or be null).
+ * RLS policy: current INSERT policy is `with check (true)`; the database does not validate user_id.
  * Accepts an optional pre-existing client to avoid creating a second instance.
  */
 export async function submitFeedback(

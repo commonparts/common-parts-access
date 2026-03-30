@@ -52,7 +52,8 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
       }, supabase)
       setStatus('success')
       setTimeout(() => onClose?.(), 2000)
-    } catch {
+    } catch (err) {
+      console.error('Failed to submit feedback:', err)
       setStatus('error')
     }
   }

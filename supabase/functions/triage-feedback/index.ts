@@ -184,24 +184,25 @@ Deno.serve(async (req) => {
     return new Response('Invalid payload', { status: 400 })
   }
 
-  // Idempotency guard: re-fetch the current row to detect retries after partial failures.
-  // The webhook payload always reflects the INSERT state (github_issue_number = null),
-  // so we must read the live row — not the payload — to know if the issue was already created.
-  const { data: currentRow } = await supabase
-    .from('feedback')
-    .select('github_issue_number')
-    .eq('id', feedback.id)
-    .single()
-  if (currentRow?.github_issue_number) {
-    console.log(`Feedback ${feedback.id} already triaged (issue #${currentRow.github_issue_number}), skipping.`)
-    return new Response(JSON.stringify({ skipped: true }), {
-      headers: { 'Content-Type': 'application/json' },
-    })
-  }
-
   console.log(`Triaging feedback: ${feedback.id} — "${feedback.title}"`)
 
   try {
+    // Idempotency guard: re-fetch the current row to detect retries after partial failures.
+    // The webhook payload always reflects the INSERT state (github_issue_number = null),
+    // so we must read the live row — not the payload — to know if the issue was already created.
+    const { data: currentRow, error: currentRowError } = await supabase
+      .from('feedback')
+      .select('github_issue_number')
+      .eq('id', feedback.id)
+      .single()
+    if (currentRowError) throw currentRowError
+    if (currentRow?.github_issue_number) {
+      console.log(`Feedback ${feedback.id} already triaged (issue #${currentRow.github_issue_number}), skipping.`)
+      return new Response(JSON.stringify({ skipped: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      })
+    }
+
     // 1. Classify with Mistral
     const triage = await classifyWithMistral(feedback)
     console.log(`Classification: type=${triage.type} priority=${triage.priority}`)
