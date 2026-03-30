@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
       .select('id')
     if (claimError) throw claimError
     if (!claimed || claimed.length === 0) {
-      console.log(`Feedback ${feedback.id} already claimed or processed, skipping.`)
+      console.info(`Feedback ${feedback.id} already claimed or processed, skipping.`)
       return new Response(JSON.stringify({ skipped: true }), {
         headers: { 'Content-Type': 'application/json' },
       })
@@ -207,11 +207,11 @@ Deno.serve(async (req) => {
 
     // 1. Classify with Mistral
     const triage = await classifyWithMistral(feedback)
-    console.log(`Classification: type=${triage.type} priority=${triage.priority}`)
+    console.info(`Classification: type=${triage.type} priority=${triage.priority}`)
 
     // 2. Create GitHub issue
     const issue = await createGitHubIssue(triage, feedback)
-    console.log(`GitHub issue created: #${issue.number} ${issue.url}`)
+    console.info(`GitHub issue created: #${issue.number} ${issue.url}`)
 
     // 3. Update feedback row
     const { error } = await supabase
@@ -233,8 +233,9 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('Triage failed:', err)
 
-    // Leave status as 'pending' so the row remains recoverable.
-    // Only write triage_notes; do not falsely mark as triaged.
+    // Status is currently 'triaged' (set by the atomic claim above).
+    // Only write triage_notes with the error detail; a separate recovery
+    // process can reset status to 'pending' if a retry is needed.
     const { error: updateError } = await supabase
       .from('feedback')
       .update({ triage_notes: `Triage error: ${(err as Error).message}` })

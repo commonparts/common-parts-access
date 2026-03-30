@@ -273,7 +273,7 @@ RLS: anyone can insert, users can read their own rows only.
 ### ✅ Agent PM
 
 - Claude Project in Claude.ai with full system prompt
-- Project files: `docs/dev-strategy.md` + institutional brief
+- Project files: `docs/DEV_STRATEGY.md` + institutional brief
 - On-demand sessions via `gh issue list` + conversation
 - Outputs ready-to-run `gh` CLI command blocks
 - Decisions always validated by human before execution
