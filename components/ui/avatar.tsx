@@ -10,8 +10,9 @@ Avatar.displayName = 'Avatar'
 
 export interface AvatarImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {}
 
-const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(({ className, ...props }, ref) => (
-  <img ref={ref} className={cn('aspect-square h-full w-full', className)} {...props} />
+const AvatarImage = React.forwardRef<HTMLImageElement, AvatarImageProps>(({ className, alt = '', ...props }, ref) => (
+  // eslint-disable-next-line @next/next/no-img-element
+  <img ref={ref} className={cn('aspect-square h-full w-full object-cover', className)} alt={alt} {...props} />
 ))
 AvatarImage.displayName = 'AvatarImage'
 
