@@ -23,7 +23,7 @@ export default function DeleteAccountPage() {
               account will be removed and you will be signed out immediately.
             </p>
           </div>
-          <Button asChild variant="destructive" className="w-full">
+          <Button asChild variant="outline" className="w-full">
             <Link href="/delete-account/confirm">Continue to confirmation</Link>
           </Button>
           <Button asChild variant="secondary" className="w-full">
