@@ -140,12 +140,17 @@ export default async function ModelPage({ params }: ModelPageProps) {
 export async function generateStaticParams() {
   // Use a cookie-free client — generateStaticParams runs at build time
   // before any HTTP request exists, so cookies() cannot be called here.
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  )
-
+  // Guard env vars: on Vercel preview builds they may be absent;
+  // returning [] is safe — Next.js will render those paths on demand.
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return []
+    }
+
+    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
+
     const { data: models, error } = await supabase
       .from('models')
       .select('slug')
