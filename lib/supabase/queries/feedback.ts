@@ -15,9 +15,10 @@ interface SubmitFeedbackPayload {
  * Inserts a feedback record into the feedback table.
  * Called from the client-side feedback widget.
  * Derives user_id internally from the authenticated session so callers cannot spoof attribution.
- * RLS policy: INSERT is allowed only when `user_id IS NULL OR auth.uid() = user_id` —
- * authenticated users can only attribute feedback to themselves; anonymous submissions
- * must leave user_id null.
+ * RLS policy: INSERT is allowed when `(auth.uid() IS NULL AND user_id IS NULL) OR auth.uid() = user_id` —
+ * feedback may be anonymous only when there is no signed-in session (user_id must be null);
+ * authenticated users must self-attribute (user_id = auth.uid()) and cannot submit anonymously.
+ * This helper always sets user_id from the current session when available.
  * Accepts an optional pre-existing client to avoid creating a second instance.
  */
 export async function submitFeedback(

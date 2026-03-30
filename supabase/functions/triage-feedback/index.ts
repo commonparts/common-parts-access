@@ -184,7 +184,7 @@ Deno.serve(async (req) => {
     return new Response('Invalid payload', { status: 400 })
   }
 
-  console.log(`Triaging feedback ${feedback.id} (type: ${feedback.type})`)
+  console.info(`Triaging feedback ${feedback.id} (type: ${feedback.type})`)
 
   try {
     // Atomic idempotency claim: update status from 'pending' to 'triaged' only when it is
