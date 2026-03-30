@@ -140,7 +140,7 @@ ${feedback.description}
 **Submitted via Common Parts Access feedback widget**
 - Feedback ID: \`${feedback.id}\`
 - Page: ${feedback.url ?? 'not provided'}
-- User: ${feedback.user_id ? `\`${feedback.user_id}\`` : 'anonymous'}
+- User: ${feedback.user_id ? 'authenticated' : 'anonymous'}
 - Original type: \`${feedback.type}\`
 `
 
@@ -184,20 +184,22 @@ Deno.serve(async (req) => {
     return new Response('Invalid payload', { status: 400 })
   }
 
-  console.log(`Triaging feedback: ${feedback.id} — "${feedback.title}"`)
+  console.log(`Triaging feedback ${feedback.id} (type: ${feedback.type})`)
 
   try {
-    // Idempotency guard: re-fetch the current row to detect retries after partial failures.
-    // The webhook payload always reflects the INSERT state (github_issue_number = null),
-    // so we must read the live row — not the payload — to know if the issue was already created.
-    const { data: currentRow, error: currentRowError } = await supabase
+    // Atomic idempotency claim: update status from 'pending' to 'triaged' only when it is
+    // still 'pending'. Because UPDATE is atomic in Postgres, exactly one concurrent execution
+    // can claim the row — all others will receive zero rows back and skip.
+    // This prevents duplicate GitHub issues on webhook retries or parallel deliveries.
+    const { data: claimed, error: claimError } = await supabase
       .from('feedback')
-      .select('github_issue_number')
+      .update({ status: 'triaged' })
       .eq('id', feedback.id)
-      .single()
-    if (currentRowError) throw currentRowError
-    if (currentRow?.github_issue_number) {
-      console.log(`Feedback ${feedback.id} already triaged (issue #${currentRow.github_issue_number}), skipping.`)
+      .eq('status', 'pending')
+      .select('id')
+    if (claimError) throw claimError
+    if (!claimed || claimed.length === 0) {
+      console.log(`Feedback ${feedback.id} already claimed or processed, skipping.`)
       return new Response(JSON.stringify({ skipped: true }), {
         headers: { 'Content-Type': 'application/json' },
       })

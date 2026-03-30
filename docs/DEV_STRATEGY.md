@@ -101,12 +101,12 @@ Husky hooks:
 
 Triggered on:
 - Every push to `dev`
-- Every PR targeting `main` or `staging`
+- Every PR targeting `dev`, `main`, or `staging`
 
 Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`)
-3. Lint (`next lint`)
+3. Lint (`npm run lint` → `eslint .`)
 
 Tests will be added when the MVP stabilises (Vitest, to be configured).
 
@@ -188,7 +188,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 5. Agent generates a single `gh` CLI command block to execute all decisions
 6. Human copy-pastes and runs the commands
 
-**Project files:** `docs/dev-strategy.md` + Common Parts institutional brief
+**Project files:** `docs/DEV_STRATEGY.md` + Common Parts institutional brief
 **System prompt location:** Claude Project instructions (not in the repo)
 
 ---
@@ -385,7 +385,7 @@ The project is solo. The goal of PR protection is not human review — it's forc
 │       └── triage-feedback/
 │           └── index.ts            # Agent Triage edge function
 ├── docs/
-│   └── dev-strategy.md             # This document
+│   └── DEV_STRATEGY.md             # This document
 ├── app/
 │   └── layout.tsx                  # FeedbackButton mounted here
 ├── components/
