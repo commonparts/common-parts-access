@@ -34,19 +34,12 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
     if (!title.trim() || !description.trim()) return
     setStatus('loading')
 
-    const { data, error: authError } = await supabase.auth.getUser()
-    const user = data?.user ?? null
-    if (authError) {
-      console.error('Failed to retrieve authenticated user for feedback submission:', authError)
-    }
-
     try {
       await submitFeedback({
         type,
         title:       title.trim(),
         description: description.trim(),
         email:       email.trim() || null,
-        user_id:     user?.id ?? null,
         url:         typeof window !== 'undefined' ? window.location.href : null,
         user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }, supabase)

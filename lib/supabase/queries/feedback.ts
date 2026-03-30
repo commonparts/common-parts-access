@@ -7,7 +7,6 @@ interface SubmitFeedbackPayload {
   title: string
   description: string
   email: string | null
-  user_id: string | null
   url: string | null
   user_agent: string | null
 }
@@ -15,6 +14,7 @@ interface SubmitFeedbackPayload {
 /**
  * Inserts a feedback record into the feedback table.
  * Called from the client-side feedback widget.
+ * Derives user_id internally from the authenticated session so callers cannot spoof attribution.
  * RLS policy: current INSERT policy is `with check (true)`; the database does not validate user_id.
  * Accepts an optional pre-existing client to avoid creating a second instance.
  */
@@ -22,6 +22,13 @@ export async function submitFeedback(
   payload: SubmitFeedbackPayload,
   supabase: ReturnType<typeof createClient> = createClient(),
 ): Promise<void> {
-  const { error } = await supabase.from('feedback').insert(payload)
+  const { data, error: authError } = await supabase.auth.getUser()
+  if (authError) {
+    console.error('Failed to retrieve authenticated user for feedback submission:', authError)
+  }
+  const { error } = await supabase.from('feedback').insert({
+    ...payload,
+    user_id: data?.user?.id ?? null,
+  })
   if (error) throw new Error(`Failed to submit feedback: ${error.message}`)
 }
