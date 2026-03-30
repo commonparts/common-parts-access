@@ -1,3 +1,4 @@
+#!/usr/bin/env sh
 protected_branches="main staging"
 current_branch=$(git symbolic-ref HEAD | sed -e 's,.*/\(.*\),\1,')
 
