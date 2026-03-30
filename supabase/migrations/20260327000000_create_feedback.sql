@@ -1,3 +1,8 @@
+-- Ensure gen_random_uuid() is available. On Supabase this extension is
+-- already present; this is a no-op there, but makes the migration portable
+-- to fresh Postgres instances.
+create extension if not exists pgcrypto;
+
 create table public.feedback (
   id           uuid primary key default gen_random_uuid(),
   created_at   timestamptz not null default now(),

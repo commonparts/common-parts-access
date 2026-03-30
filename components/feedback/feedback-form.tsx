@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -22,7 +22,7 @@ interface FeedbackFormProps {
 }
 
 export function FeedbackForm({ onClose }: FeedbackFormProps) {
-  const supabase = createClient()
+  const supabase = useMemo(() => createClient(), [])
 
   const [type, setType]               = useState<FeedbackType>('improvement')
   const [title, setTitle]             = useState('')
