@@ -32,7 +32,7 @@ export function FeedbackButton() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="feedback-panel-title"
-            className="fixed bottom-[4.5rem] right-lg z-50 w-full max-w-sm"
+            className="fixed bottom-[4.5rem] right-lg z-50 max-w-sm"
           >
             <Card className="shadow-none">
               <CardHeader className="flex-row items-center justify-between pb-xs">

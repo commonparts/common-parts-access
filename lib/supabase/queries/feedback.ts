@@ -16,9 +16,12 @@ interface SubmitFeedbackPayload {
  * Inserts a feedback record into the feedback table.
  * Called from the client-side feedback widget.
  * RLS policy: anyone can insert (user_id must match auth.uid() or be null).
+ * Accepts an optional pre-existing client to avoid creating a second instance.
  */
-export async function submitFeedback(payload: SubmitFeedbackPayload): Promise<void> {
-  const supabase = createClient()
+export async function submitFeedback(
+  payload: SubmitFeedbackPayload,
+  supabase: ReturnType<typeof createClient> = createClient(),
+): Promise<void> {
   const { error } = await supabase.from('feedback').insert(payload)
   if (error) throw new Error(`Failed to submit feedback: ${error.message}`)
 }

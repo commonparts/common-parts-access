@@ -49,7 +49,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
         user_id:     user?.id ?? null,
         url:         typeof window !== 'undefined' ? window.location.href : null,
         user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
-      })
+      }, supabase)
       setStatus('success')
       setTimeout(() => onClose?.(), 2000)
     } catch {

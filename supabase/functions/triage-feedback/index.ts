@@ -11,6 +11,7 @@ const GITHUB_TOKEN    = getRequiredEnvVar('GITHUB_TOKEN')
 const GITHUB_REPO     = getRequiredEnvVar('GITHUB_REPO')
 const SUPABASE_URL    = getRequiredEnvVar('SUPABASE_URL')
 const SUPABASE_KEY    = getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY')
+const WEBHOOK_SECRET  = getRequiredEnvVar('WEBHOOK_SECRET')
 
 // Label mapping from feedback type to GitHub labels
 const TYPE_LABELS: Record<string, string[]> = {
@@ -169,7 +170,7 @@ ${feedback.description}
 Deno.serve(async (req) => {
   // Verify the request comes from Supabase webhook
   const authHeader = req.headers.get('Authorization')
-  if (authHeader !== `Bearer ${Deno.env.get('WEBHOOK_SECRET')}`) {
+  if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
     return new Response('Unauthorized', { status: 401 })
   }
 
@@ -183,10 +184,16 @@ Deno.serve(async (req) => {
     return new Response('Invalid payload', { status: 400 })
   }
 
-  // Fix 4: Idempotency guard — if a GitHub issue already exists, skip processing.
-  // Webhook retries after a partial failure would otherwise create duplicate issues.
-  if (feedback.github_issue_number) {
-    console.log(`Feedback ${feedback.id} already triaged (issue #${feedback.github_issue_number}), skipping.`)
+  // Idempotency guard: re-fetch the current row to detect retries after partial failures.
+  // The webhook payload always reflects the INSERT state (github_issue_number = null),
+  // so we must read the live row — not the payload — to know if the issue was already created.
+  const { data: currentRow } = await supabase
+    .from('feedback')
+    .select('github_issue_number')
+    .eq('id', feedback.id)
+    .single()
+  if (currentRow?.github_issue_number) {
+    console.log(`Feedback ${feedback.id} already triaged (issue #${currentRow.github_issue_number}), skipping.`)
     return new Response(JSON.stringify({ skipped: true }), {
       headers: { 'Content-Type': 'application/json' },
     })
@@ -224,11 +231,12 @@ Deno.serve(async (req) => {
     console.error('Triage failed:', err)
 
     // Leave status as 'pending' so the row remains recoverable.
-    // Only log the error message; do not falsely mark as triaged.
-    await supabase
+    // Only write triage_notes; do not falsely mark as triaged.
+    const { error: updateError } = await supabase
       .from('feedback')
       .update({ triage_notes: `Triage error: ${(err as Error).message}` })
       .eq('id', feedback.id)
+    if (updateError) console.error('Failed to persist triage error notes:', updateError)
 
     return new Response(JSON.stringify({ error: (err as Error).message }), {
       status: 500,
