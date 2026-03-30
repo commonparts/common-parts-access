@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createBrowserClient } from '@supabase/supabase-js'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
@@ -137,10 +138,14 @@ export default async function ModelPage({ params }: ModelPageProps) {
 
 // Generate static params for popular models (optional, for better performance)
 export async function generateStaticParams() {
+  // Use a cookie-free client — generateStaticParams runs at build time
+  // before any HTTP request exists, so cookies() cannot be called here.
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
   try {
-    const supabase = await createClient()
-    
-    // Get the most popular models for static generation
     const { data: models, error } = await supabase
       .from('models')
       .select('slug')
