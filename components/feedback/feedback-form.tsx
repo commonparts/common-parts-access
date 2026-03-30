@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { submitFeedback } from '@/lib/supabase/queries/feedback'
 
 type FeedbackType = 'bug' | 'improvement' | 'question' | 'other'
 
@@ -33,25 +34,27 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
     if (!title.trim() || !description.trim()) return
     setStatus('loading')
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    const { error } = await supabase.from('feedback').insert({
-      type,
-      title:       title.trim(),
-      description: description.trim(),
-      email:       email.trim() || null,
-      user_id:     user?.id ?? null,
-      url:         typeof window !== 'undefined' ? window.location.href : null,
-      user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
-    })
-
-    if (error) {
-      setStatus('error')
-      return
+    const { data, error: authError } = await supabase.auth.getUser()
+    const user = data?.user ?? null
+    if (authError) {
+      console.error('Failed to retrieve authenticated user for feedback submission:', authError)
     }
 
-    setStatus('success')
-    setTimeout(() => onClose?.(), 2000)
+    try {
+      await submitFeedback({
+        type,
+        title:       title.trim(),
+        description: description.trim(),
+        email:       email.trim() || null,
+        user_id:     user?.id ?? null,
+        url:         typeof window !== 'undefined' ? window.location.href : null,
+        user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
+      })
+      setStatus('success')
+      setTimeout(() => onClose?.(), 2000)
+    } catch {
+      setStatus('error')
+    }
   }
 
   if (status === 'success') {

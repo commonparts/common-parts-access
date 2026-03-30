@@ -1,10 +1,16 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2'
 
-const MISTRAL_API_KEY = Deno.env.get('MISTRAL_API_KEY')!
-const GITHUB_TOKEN    = Deno.env.get('GITHUB_TOKEN')!
-const GITHUB_REPO     = Deno.env.get('GITHUB_REPO')!
-const SUPABASE_URL    = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_KEY    = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+function getRequiredEnvVar(name: string): string {
+  const value = Deno.env.get(name)
+  if (!value) throw new Error(`Missing required environment variable: ${name}`)
+  return value
+}
+
+const MISTRAL_API_KEY = getRequiredEnvVar('MISTRAL_API_KEY')
+const GITHUB_TOKEN    = getRequiredEnvVar('GITHUB_TOKEN')
+const GITHUB_REPO     = getRequiredEnvVar('GITHUB_REPO')
+const SUPABASE_URL    = getRequiredEnvVar('SUPABASE_URL')
+const SUPABASE_KEY    = getRequiredEnvVar('SUPABASE_SERVICE_ROLE_KEY')
 
 // Label mapping from feedback type to GitHub labels
 const TYPE_LABELS: Record<string, string[]> = {
@@ -30,6 +36,7 @@ interface FeedbackRow {
   url: string | null
   user_id: string | null
   created_at: string
+  github_issue_number: number | null
 }
 
 interface TriageResult {
@@ -176,6 +183,15 @@ Deno.serve(async (req) => {
     return new Response('Invalid payload', { status: 400 })
   }
 
+  // Fix 4: Idempotency guard — if a GitHub issue already exists, skip processing.
+  // Webhook retries after a partial failure would otherwise create duplicate issues.
+  if (feedback.github_issue_number) {
+    console.log(`Feedback ${feedback.id} already triaged (issue #${feedback.github_issue_number}), skipping.`)
+    return new Response(JSON.stringify({ skipped: true }), {
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
   console.log(`Triaging feedback: ${feedback.id} — "${feedback.title}"`)
 
   try {
@@ -207,10 +223,11 @@ Deno.serve(async (req) => {
   } catch (err) {
     console.error('Triage failed:', err)
 
-    // Mark as triaged even on error so it's not retried endlessly
+    // Leave status as 'pending' so the row remains recoverable.
+    // Only log the error message; do not falsely mark as triaged.
     await supabase
       .from('feedback')
-      .update({ status: 'triaged', triage_notes: `Triage error: ${(err as Error).message}` })
+      .update({ triage_notes: `Triage error: ${(err as Error).message}` })
       .eq('id', feedback.id)
 
     return new Response(JSON.stringify({ error: (err as Error).message }), {

@@ -28,10 +28,15 @@ export function FeedbackButton() {
           />
 
           {/* Panel */}
-          <div className="fixed bottom-[4.5rem] right-lg z-50 w-120">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="feedback-panel-title"
+            className="fixed bottom-[4.5rem] right-lg z-50 w-full max-w-sm"
+          >
             <Card className="shadow-none">
               <CardHeader className="flex-row items-center justify-between pb-xs">
-                <CardTitle className="text-heading-sm font-semibold text-text-primary">
+                <CardTitle id="feedback-panel-title" className="text-heading-sm font-semibold text-text-primary">
                   Send feedback
                 </CardTitle>
                 <button
