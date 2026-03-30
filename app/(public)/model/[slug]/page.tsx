@@ -4,10 +4,13 @@ import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
 import { createClient } from '@/lib/supabase/server'
-import { createClient as createBrowserClient } from '@supabase/supabase-js'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
+
+// This page uses cookies() via the Supabase server client,
+// so it cannot be statically rendered at build time.
+export const dynamic = 'force-dynamic'
 
 interface ModelPageProps {
   params: Promise<{
@@ -134,40 +137,4 @@ export default async function ModelPage({ params }: ModelPageProps) {
       </Container>
     </Section>
   )
-}
-
-// Generate static params for popular models (optional, for better performance)
-export async function generateStaticParams() {
-  // Use a cookie-free client — generateStaticParams runs at build time
-  // before any HTTP request exists, so cookies() cannot be called here.
-  // Guard env vars: on Vercel preview builds they may be absent;
-  // returning [] is safe — Next.js will render those paths on demand.
-  try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return []
-    }
-
-    const supabase = createBrowserClient(supabaseUrl, supabaseAnonKey)
-
-    const { data: models, error } = await supabase
-      .from('models')
-      .select('slug')
-      .eq('status', 'published')
-      .order('download_count', { ascending: false })
-      .limit(50) // Pre-generate top 50 models
-
-    if (error || !models) {
-      console.error('Error fetching models for static generation:', error)
-      return []
-    }
-
-    return models.map((model) => ({
-      slug: model.slug
-    }))
-  } catch (error) {
-    console.error('Error in generateStaticParams:', error)
-    return []
-  }
 }
