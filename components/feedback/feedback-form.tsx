@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +23,13 @@ interface FeedbackFormProps {
 
 export function FeedbackForm({ onClose }: FeedbackFormProps) {
   const supabase = useMemo(() => createClient(), [])
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current !== null) clearTimeout(closeTimerRef.current)
+    }
+  }, [])
 
   const [type, setType]               = useState<FeedbackType>('improvement')
   const [title, setTitle]             = useState('')
@@ -44,7 +51,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
         user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }, supabase)
       setStatus('success')
-      setTimeout(() => onClose?.(), 2000)
+      closeTimerRef.current = setTimeout(() => onClose?.(), 2000)
     } catch (err) {
       console.error('Failed to submit feedback:', err)
       setStatus('error')
