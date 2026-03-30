@@ -191,7 +191,26 @@ refactor(scope): short description
 
 Commit messages must reference the issue number: `fix(ui): correct button variant (#42)`
 
-Open PRs toward `dev`, never toward `main` or `staging`.
+Open PRs toward `dev`, never toward `main` or `staging`. The PR description must always include a closing keyword
+referencing the issue so GitHub closes it automatically when the PR is merged:
+```
+Closes #[number]
+```
+
+Use `Closes` for fixes and features that fully resolve the issue.
+Use `Fixes` for bugs specifically.
+Never open a PR without this reference — the issue must be traceable to the code that resolved it.
+
+Example PR description:
+```
+Implement user dashboard for published parts
+
+- Adds /dashboard/my-models route with list of user's published models
+- Edit and delete actions per model
+- Pagination with 20 items per page
+
+Closes #12
+```
 
 ---
 
