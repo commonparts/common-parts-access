@@ -206,7 +206,6 @@ export interface ModelWithRelations extends Model {
   categories?: Category | Category[];
   products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
   licenses?: License | License[];
-  source_licenses?: License | License[];
 }
 
 // ============================================================================
