@@ -32,11 +32,13 @@ create table if not exists public.feedback (
 alter table if exists public.feedback enable row level security;
 
 -- N'importe qui peut soumettre (y compris anonyme)
+drop policy if exists "Anyone can submit feedback" on public.feedback;
 create policy "Anyone can submit feedback"
   on public.feedback for insert
   with check (true);
 
 -- Seul l'utilisateur peut voir son propre feedback
+drop policy if exists "Users can view own feedback" on public.feedback;
 create policy "Users can view own feedback"
   on public.feedback for select
   using (auth.uid() = user_id);

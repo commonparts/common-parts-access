@@ -3,6 +3,8 @@
 -- `license` column on `models`. All open-source / Creative Commons licenses
 -- used by the curation workflow are seeded here.
 
+create extension if not exists pgcrypto;
+
 create table if not exists public.licenses (
   id                     uuid primary key default gen_random_uuid(),
   spdx_id                text not null unique,   -- e.g. "CC0-1.0", "CC-BY-4.0"
@@ -19,6 +21,7 @@ create table if not exists public.licenses (
 -- RLS: reference data — public read, no direct writes (only via migrations)
 alter table if exists public.licenses enable row level security;
 
+drop policy if exists "Licenses are publicly readable" on public.licenses;
 create policy "Licenses are publicly readable"
   on public.licenses for select
   using (true);
@@ -75,4 +78,5 @@ values
     'GPL 3.0',
     'https://www.gnu.org/licenses/gpl-3.0.html',
     true, true, true, true
-  );
+  )
+on conflict (spdx_id) do nothing;

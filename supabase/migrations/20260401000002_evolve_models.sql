@@ -12,77 +12,93 @@
 
 -- Origin tracking
 alter table if exists public.models
-  add column origin_type text not null default 'original'
+  add column if not exists origin_type text not null default 'original'
     check (origin_type in ('original', 'curated', 'manufacturer'));
 
 alter table if exists public.models
-  add column source_url text;
+  add column if not exists source_url text;
 
 alter table if exists public.models
-  add column source_platform text;
+  add column if not exists source_platform text;
 
 alter table if exists public.models
-  add column source_published_at timestamptz;
+  add column if not exists source_published_at timestamptz;
 
 -- Attribution
 alter table if exists public.models
-  add column original_author text;
+  add column if not exists original_author text;
 
 alter table if exists public.models
-  add column original_author_url text;
+  add column if not exists original_author_url text;
 
 -- License foreign keys (nullable until the legacy migration below runs)
 alter table if exists public.models
-  add column license_id uuid references public.licenses(id);
+  add column if not exists license_id uuid references public.licenses(id);
 
 alter table if exists public.models
-  add column source_license_id uuid references public.licenses(id);
+  add column if not exists source_license_id uuid references public.licenses(id);
 
 -- Validation
 alter table if exists public.models
-  add column verification_status text not null default 'unverified'
+  add column if not exists verification_status text not null default 'unverified'
     check (verification_status in ('unverified', 'author_tested', 'community_validated', 'certified'));
 
 alter table if exists public.models
-  add column makes_count integer default 0;
+  add column if not exists makes_count integer default 0;
 
 -- ============================================================================
 -- Step 2 — Migrate legacy free-text license → license_id (best-effort)
+-- Wrapped in a DO block so it is safe to run even if the `license` column
+-- has already been dropped (e.g. repair runs or environment restores).
 -- ============================================================================
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'CC0-1.0')
-where lower(license) in ('cc0', 'cc0-1.0', 'cc 0', 'creative commons zero', 'public domain');
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name   = 'models'
+      and column_name  = 'license'
+  ) then
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'CC-BY-4.0')
-where lower(license) in ('cc-by-4.0', 'cc by 4.0', 'cc by', 'creative commons attribution 4.0');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'CC0-1.0')
+    where lower(license) in ('cc0', 'cc0-1.0', 'cc 0', 'creative commons zero', 'public domain');
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'CC-BY-SA-4.0')
-where lower(license) in ('cc-by-sa-4.0', 'cc by-sa 4.0', 'cc by sa 4.0', 'creative commons attribution-sharealike 4.0');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'CC-BY-4.0')
+    where lower(license) in ('cc-by-4.0', 'cc by 4.0', 'cc by', 'creative commons attribution 4.0');
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'CC-BY-NC-4.0')
-where lower(license) in ('cc-by-nc-4.0', 'cc by-nc 4.0', 'cc by nc 4.0', 'creative commons attribution-noncommercial 4.0');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'CC-BY-SA-4.0')
+    where lower(license) in ('cc-by-sa-4.0', 'cc by-sa 4.0', 'cc by sa 4.0', 'creative commons attribution-sharealike 4.0');
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'CC-BY-NC-SA-4.0')
-where lower(license) in ('cc-by-nc-sa-4.0', 'cc by-nc-sa 4.0', 'cc by nc sa 4.0', 'creative commons attribution-noncommercial-sharealike 4.0');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'CC-BY-NC-4.0')
+    where lower(license) in ('cc-by-nc-4.0', 'cc by-nc 4.0', 'cc by nc 4.0', 'creative commons attribution-noncommercial 4.0');
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'MIT')
-where lower(license) in ('mit', 'mit license', 'mit licence');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'CC-BY-NC-SA-4.0')
+    where lower(license) in ('cc-by-nc-sa-4.0', 'cc by-nc-sa 4.0', 'cc by nc sa 4.0', 'creative commons attribution-noncommercial-sharealike 4.0');
 
-update public.models
-set license_id = (select id from public.licenses where spdx_id = 'GPL-3.0-only')
-where lower(license) in ('gpl-3.0-only', 'gpl-3.0', 'gpl 3.0', 'gnu general public license v3.0');
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'MIT')
+    where lower(license) in ('mit', 'mit license', 'mit licence');
+
+    update public.models
+    set license_id = (select id from public.licenses where spdx_id = 'GPL-3.0-only')
+    where lower(license) in ('gpl-3.0-only', 'gpl-3.0', 'gpl 3.0', 'gnu general public license v3.0');
+
+  end if;
+end;
+$$ language plpgsql;
 
 -- ============================================================================
 -- Step 3 — Drop the legacy free-text license column
 -- ============================================================================
 
-alter table if exists public.models drop column license;
+alter table if exists public.models drop column if exists license;
 
 -- ============================================================================
 -- Step 4 — Add the curated_requires_source constraint
@@ -91,6 +107,7 @@ alter table if exists public.models drop column license;
 -- (all origin_type = 'original') are not affected.
 -- ============================================================================
 
+alter table if exists public.models drop constraint if exists curated_requires_source;
 alter table if exists public.models
   add constraint curated_requires_source check (
     origin_type != 'curated'

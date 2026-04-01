@@ -70,6 +70,14 @@ export interface Product {
   updated_at?: string;
 }
 
+// ============================================================================
+// Model enum types — declared before Model so the interface can reference them
+// ============================================================================
+
+export type ModelStatus = 'draft' | 'published' | 'archived';
+export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
+export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+
 export interface Model {
   id: string;
   name: string;
@@ -103,7 +111,7 @@ export interface Model {
   like_count?: number;
   
   // Origin tracking
-  origin_type?: 'original' | 'curated' | 'manufacturer';
+  origin_type?: ModelOriginType;
   source_url?: string | null;
   source_platform?: string | null;   // 'printables', 'thingiverse', 'github', etc.
   source_published_at?: string | null;
@@ -117,7 +125,7 @@ export interface Model {
   source_license_id?: string | null;
 
   // Validation
-  verification_status?: 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+  verification_status?: ModelVerificationStatus;
   makes_count?: number;
 
   // Metadata
@@ -204,10 +212,6 @@ export interface ModelWithRelations extends Model {
 // ============================================================================
 // Database Filter Types
 // ============================================================================
-
-export type ModelStatus = 'draft' | 'published' | 'archived';
-export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
-export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 
 export interface ModelFilters {
   category_id?: string;

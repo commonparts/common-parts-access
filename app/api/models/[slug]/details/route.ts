@@ -123,7 +123,7 @@ export async function GET(
     const [
       { data: files, error: filesError },
       { data: comments, error: commentsError },
-      { data: likeRow },
+      { data: likeRow, error: likeError },
     ] = await Promise.all([
       supabase
         .from('model_files')
@@ -156,11 +156,12 @@ export async function GET(
             .eq('model_id', model.id)
             .eq('user_id', user.id)
             .maybeSingle()
-        : Promise.resolve({ data: null }),
+        : Promise.resolve({ data: null, error: null }),
     ])
 
     if (filesError) console.error('Error fetching model files:', filesError)
     if (commentsError) console.error('Error fetching comments:', commentsError)
+    if (likeError) console.error('Error checking like status:', likeError)
 
     const author = first(model.user_profiles)
     const product = first(model.products)
