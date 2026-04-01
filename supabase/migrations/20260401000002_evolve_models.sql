@@ -11,39 +11,39 @@
 -- ============================================================================
 
 -- Origin tracking
-alter table public.models
+alter table if exists public.models
   add column origin_type text not null default 'original'
     check (origin_type in ('original', 'curated', 'manufacturer'));
 
-alter table public.models
+alter table if exists public.models
   add column source_url text;
 
-alter table public.models
+alter table if exists public.models
   add column source_platform text;
 
-alter table public.models
+alter table if exists public.models
   add column source_published_at timestamptz;
 
 -- Attribution
-alter table public.models
+alter table if exists public.models
   add column original_author text;
 
-alter table public.models
+alter table if exists public.models
   add column original_author_url text;
 
 -- License foreign keys (nullable until the legacy migration below runs)
-alter table public.models
+alter table if exists public.models
   add column license_id uuid references public.licenses(id);
 
-alter table public.models
+alter table if exists public.models
   add column source_license_id uuid references public.licenses(id);
 
 -- Validation
-alter table public.models
+alter table if exists public.models
   add column verification_status text not null default 'unverified'
     check (verification_status in ('unverified', 'author_tested', 'community_validated', 'certified'));
 
-alter table public.models
+alter table if exists public.models
   add column makes_count integer default 0;
 
 -- ============================================================================
@@ -82,7 +82,7 @@ where lower(license) in ('gpl-3.0-only', 'gpl-3.0', 'gpl 3.0', 'gnu general publ
 -- Step 3 — Drop the legacy free-text license column
 -- ============================================================================
 
-alter table public.models drop column license;
+alter table if exists public.models drop column license;
 
 -- ============================================================================
 -- Step 4 — Add the curated_requires_source constraint
@@ -91,7 +91,7 @@ alter table public.models drop column license;
 -- (all origin_type = 'original') are not affected.
 -- ============================================================================
 
-alter table public.models
+alter table if exists public.models
   add constraint curated_requires_source check (
     origin_type != 'curated'
     or (
@@ -107,6 +107,6 @@ alter table public.models
 -- The partial index skips NULL values so original models are unaffected.
 -- ============================================================================
 
-create unique index idx_models_source_url
+create unique index if not exists idx_models_source_url
   on public.models (source_url)
   where source_url is not null;

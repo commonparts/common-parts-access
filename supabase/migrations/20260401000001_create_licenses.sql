@@ -3,7 +3,7 @@
 -- `license` column on `models`. All open-source / Creative Commons licenses
 -- used by the curation workflow are seeded here.
 
-create table public.licenses (
+create table if not exists public.licenses (
   id                     uuid primary key default gen_random_uuid(),
   spdx_id                text not null unique,   -- e.g. "CC0-1.0", "CC-BY-4.0"
   name                   text not null,          -- full legal name
@@ -17,7 +17,7 @@ create table public.licenses (
 );
 
 -- RLS: reference data — public read, no direct writes (only via migrations)
-alter table public.licenses enable row level security;
+alter table if exists public.licenses enable row level security;
 
 create policy "Licenses are publicly readable"
   on public.licenses for select

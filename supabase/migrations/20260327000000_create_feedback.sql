@@ -3,7 +3,7 @@
 -- to fresh Postgres instances.
 create extension if not exists pgcrypto;
 
-create table public.feedback (
+create table if not exists public.feedback (
   id           uuid primary key default gen_random_uuid(),
   created_at   timestamptz not null default now(),
 
@@ -29,7 +29,7 @@ create table public.feedback (
 );
 
 -- RLS
-alter table public.feedback enable row level security;
+alter table if exists public.feedback enable row level security;
 
 -- N'importe qui peut soumettre (y compris anonyme)
 create policy "Anyone can submit feedback"
