@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const categoryId = (formData.get('category') || '').toString().trim() || null
     const brandId = (formData.get('brand') || '').toString().trim() || null
     const productId = (formData.get('product') || '').toString().trim() || null
-    const license = (formData.get('license') || '').toString().trim() || null
+    const licenseId = (formData.get('license_id') || '').toString().trim() || null
     const isPublic = String(formData.get('isPublic') ?? 'true') === 'true'
 
     const tags = formData.getAll('tags').map((tag) => tag.toString().trim()).filter(Boolean)
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
     }
 
-    const [categoryRow, brandRow, productRow] = await Promise.all([
+    const [categoryRow, brandRow, productRow, licenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
       productId
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
           .eq('id', productId)
           .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      licenseId ? supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
     ])
 
     if (categoryRow.error || !categoryRow.data) {
@@ -109,6 +110,12 @@ export async function POST(request: NextRequest) {
       const brandResult = brandRow as any
       if (brandResult?.error || !brandResult?.data) {
         return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
+      }
+    }
+
+    if (licenseId) {
+      if ((licenseRow as any)?.error || !(licenseRow as any)?.data) {
+        return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
       }
     }
 
@@ -139,7 +146,7 @@ export async function POST(request: NextRequest) {
         brand_id: brandId || null,
         product_id: productId || null,
         tags,
-        license,
+        license_id: licenseId,
         status,
         user_id: user.id,
       })

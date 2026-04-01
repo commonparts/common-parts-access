@@ -33,7 +33,18 @@ export async function GET(
         view_count,
         like_count,
         tags,
-        license,
+        license_id,
+        licenses(
+          id,
+          spdx_id,
+          name,
+          short_name,
+          url,
+          allows_redistribution,
+          requires_attribution,
+          allows_commercial,
+          is_copyleft
+        ),
         instructions,
         notes,
         created_at,
@@ -187,7 +198,21 @@ export async function GET(
       },
       viewerHasLiked,
       tags: model.tags || [],
-      license: model.license,
+      license: (() => {
+        const lic = Array.isArray(model.licenses) ? model.licenses[0] : model.licenses
+        if (!lic) return null
+        return {
+          id: lic.id,
+          spdxId: lic.spdx_id,
+          name: lic.name,
+          shortName: lic.short_name,
+          url: lic.url,
+          allowsRedistribution: lic.allows_redistribution,
+          requiresAttribution: lic.requires_attribution,
+          allowsCommercial: lic.allows_commercial,
+          isCopyleft: lic.is_copyleft,
+        }
+      })(),
       instructions: model.instructions,
       notes: model.notes,
       createdAt: model.created_at,
