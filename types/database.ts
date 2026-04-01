@@ -16,6 +16,19 @@ export interface UserProfile {
   updated_at?: string;
 }
 
+export interface License {
+  id: string;
+  spdx_id: string;         // e.g. "CC0-1.0", "CC-BY-4.0"
+  name: string;            // full legal name
+  short_name: string;      // display label
+  url: string;             // canonical URL
+  allows_redistribution: boolean;
+  requires_attribution: boolean;
+  allows_commercial: boolean;
+  is_copyleft: boolean;
+  created_at?: string;
+}
+
 export interface Brand {
   id: string;
   name: string;
@@ -89,9 +102,26 @@ export interface Model {
   view_count?: number;
   like_count?: number;
   
+  // Origin tracking
+  origin_type?: 'original' | 'curated' | 'manufacturer';
+  source_url?: string | null;
+  source_platform?: string | null;   // 'printables', 'thingiverse', 'github', etc.
+  source_published_at?: string | null;
+
+  // Attribution (required when origin_type = 'curated')
+  original_author?: string | null;
+  original_author_url?: string | null;
+
+  // License
+  license_id?: string | null;
+  source_license_id?: string | null;
+
+  // Validation
+  verification_status?: 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+  makes_count?: number;
+
   // Metadata
   tags?: string[] | null;
-  license?: string | null;
   instructions?: string | null;
   notes?: string | null;
   
@@ -167,6 +197,8 @@ export interface ModelWithRelations extends Model {
   brands?: Brand | Brand[];
   categories?: Category | Category[];
   products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
+  licenses?: License | License[];
+  source_licenses?: License | License[];
 }
 
 // ============================================================================
@@ -174,6 +206,8 @@ export interface ModelWithRelations extends Model {
 // ============================================================================
 
 export type ModelStatus = 'draft' | 'published' | 'archived';
+export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
+export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 
 export interface ModelFilters {
   category_id?: string;
