@@ -66,7 +66,17 @@ interface ModelData {
   }
   viewerHasLiked?: boolean
   tags: string[]
-  license: string
+  license: {
+    id: string
+    spdxId: string
+    name: string
+    shortName: string
+    url: string
+    allowsRedistribution: boolean
+    requiresAttribution: boolean
+    allowsCommercial: boolean
+    isCopyleft: boolean
+  } | null
   instructions?: string
   notes?: string
   createdAt: string
@@ -596,7 +606,13 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground font-medium">License</span>
-              <Badge variant="outline" className="w-fit">{model.license}</Badge>
+              {model.license ? (
+                <a href={model.license.url} target="_blank" rel="noopener noreferrer">
+                  <Badge variant="outline" className="w-fit">{model.license.shortName}</Badge>
+                </a>
+              ) : (
+                <Badge variant="outline" className="w-fit">—</Badge>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground font-medium">Uploaded</span>
