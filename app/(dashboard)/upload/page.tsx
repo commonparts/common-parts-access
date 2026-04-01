@@ -28,7 +28,7 @@ export default function UploadPage() {
     body.append('title', payload.title)
     body.append('description', payload.description || '')
     body.append('category', payload.categoryId)
-    body.append('license', payload.license || '')
+    body.append('license_id', payload.licenseId || '')
     body.append('isPublic', String(Boolean(payload.isPublic)))
     if (payload.brandId) body.append('brand', payload.brandId)
     if (payload.productId) body.append('product', payload.productId)
