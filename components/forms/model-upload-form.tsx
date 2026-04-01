@@ -28,6 +28,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     tagInput,
     setTagInput,
     brands,
+    licenses,
     products,
     loadingProducts,
     loadingMeta,
@@ -153,15 +154,17 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               <DropdownInput
                 as="select"
                 id="license"
-                value={formData.license}
-                onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
+                value={formData.licenseId}
+                onChange={(e) => setFormData(prev => ({ ...prev, licenseId: e.target.value }))}
+                disabled={loadingMeta}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
-                <option value="cc-by-4.0">CC BY 4.0</option>
-                <option value="cc-by-sa-4.0">CC BY-SA 4.0</option>
-                <option value="cc-by-nc-4.0">CC BY-NC 4.0</option>
-                <option value="mit">MIT License</option>
-                <option value="proprietary">Proprietary</option>
+                <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
+                {licenses.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.shortName}
+                  </option>
+                ))}
               </DropdownInput>
             </div>
           </Grid>
