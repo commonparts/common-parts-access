@@ -144,10 +144,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Color is too long (max 50 characters)' }, { status: 400 })
     }
 
-    const dimensions = dimensionsRaw ? (() => { try { return JSON.parse(dimensionsRaw) } catch { return null } })() : null
-    const printSettings = printSettingsRaw ? (() => { try { return JSON.parse(printSettingsRaw) } catch { return null } })() : null
-    const estimatedPrintTime = estimatedPrintTimeRaw ? parseInt(estimatedPrintTimeRaw, 10) || null : null
-    const estimatedMaterialUsage = estimatedMaterialUsageRaw ? parseFloat(estimatedMaterialUsageRaw) || null : null
+    let dimensions: unknown = null
+    if (dimensionsRaw) {
+      try {
+        dimensions = JSON.parse(dimensionsRaw)
+      } catch {
+        return NextResponse.json({ error: 'Invalid JSON in dimensions' }, { status: 400 })
+      }
+    }
+
+    let printSettings: unknown = null
+    if (printSettingsRaw) {
+      try {
+        printSettings = JSON.parse(printSettingsRaw)
+      } catch {
+        return NextResponse.json({ error: 'Invalid JSON in print_settings' }, { status: 400 })
+      }
+    }
+
+    const estimatedPrintTime = estimatedPrintTimeRaw
+      ? (() => {
+        const parsed = Number.parseInt(estimatedPrintTimeRaw, 10)
+        return Number.isNaN(parsed) ? null : parsed
+      })()
+      : null
+    const estimatedMaterialUsage = estimatedMaterialUsageRaw
+      ? (() => {
+        const parsed = Number.parseFloat(estimatedMaterialUsageRaw)
+        return Number.isNaN(parsed) ? null : parsed
+      })()
+      : null
 
     const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
@@ -237,6 +263,9 @@ export async function POST(request: NextRequest) {
 
     if (modelError || !model) {
       console.error('Failed to insert model row', modelError)
+      if (modelError?.code === '23505' && modelError?.message?.includes('source_url')) {
+        return NextResponse.json({ error: 'A model with this source URL already exists' }, { status: 409 })
+      }
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
     }
 

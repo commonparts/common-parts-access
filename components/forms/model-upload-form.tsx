@@ -587,6 +587,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 onChange={(e) => setFormData(prev => ({ ...prev, sourceLicenseId: e.target.value }))}
                 disabled={loadingMeta}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                required={formData.originType === 'curated'}
               >
                 <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
                 {licenses.map((l) => (

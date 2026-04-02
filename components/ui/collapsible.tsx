@@ -13,7 +13,6 @@ interface CollapsibleProps {
 interface CollapsibleTriggerProps {
   children: React.ReactNode
   className?: string
-  asChild?: boolean
 }
 
 interface CollapsibleContentProps {
@@ -85,6 +84,8 @@ function CollapsibleContent({ children, className }: CollapsibleContentProps) {
     <div
       className={cn("overflow-hidden transition-[height] duration-200 ease-in-out")}
       style={{ height: height ?? 0 }}
+      aria-hidden={!open}
+      inert={!open ? true : undefined}
     >
       <div ref={contentRef} className={className}>
         {children}
