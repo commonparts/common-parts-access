@@ -175,6 +175,14 @@ export async function POST(request: NextRequest) {
       })()
       : null
 
+    if (estimatedPrintTime !== null && estimatedPrintTime < 0) {
+      return NextResponse.json({ error: 'estimated_print_time must be a non-negative number' }, { status: 400 })
+    }
+
+    if (estimatedMaterialUsage !== null && estimatedMaterialUsage < 0) {
+      return NextResponse.json({ error: 'estimated_material_usage must be a non-negative number' }, { status: 400 })
+    }
+
     const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
@@ -263,7 +271,15 @@ export async function POST(request: NextRequest) {
 
     if (modelError || !model) {
       console.error('Failed to insert model row', modelError)
-      if (modelError?.code === '23505' && modelError?.message?.includes('source_url')) {
+      const isSourceUrlUniqueViolation =
+        modelError?.code === '23505' &&
+        (
+          modelError?.message?.includes('idx_models_source_url') ||
+          modelError?.message?.includes('source_url') ||
+          modelError?.details?.includes('idx_models_source_url') ||
+          modelError?.details?.includes('source_url')
+        )
+      if (isSourceUrlUniqueViolation) {
         return NextResponse.json({ error: 'A model with this source URL already exists' }, { status: 409 })
       }
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
