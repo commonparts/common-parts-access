@@ -65,6 +65,23 @@ export async function POST(request: NextRequest) {
     const licenseId = (formData.get('license_id') || '').toString().trim() || null
     const isPublic = String(formData.get('isPublic') ?? 'true') === 'true'
 
+    // Attribution & License fields
+    const originType = (formData.get('origin_type') || 'original').toString().trim()
+    const sourceUrl = (formData.get('source_url') || '').toString().trim() || null
+    const sourcePlatform = (formData.get('source_platform') || '').toString().trim() || null
+    const originalAuthor = (formData.get('original_author') || '').toString().trim() || null
+    const originalAuthorUrl = (formData.get('original_author_url') || '').toString().trim() || null
+    const sourceLicenseId = (formData.get('source_license_id') || '').toString().trim() || null
+    const verificationStatus = (formData.get('verification_status') || 'unverified').toString().trim()
+
+    // Advanced — print metadata fields
+    const material = (formData.get('material') || '').toString().trim() || null
+    const color = (formData.get('color') || '').toString().trim() || null
+    const dimensionsRaw = (formData.get('dimensions') || '').toString().trim()
+    const printSettingsRaw = (formData.get('print_settings') || '').toString().trim()
+    const estimatedPrintTimeRaw = (formData.get('estimated_print_time') || '').toString().trim()
+    const estimatedMaterialUsageRaw = (formData.get('estimated_material_usage') || '').toString().trim()
+
     const tags = formData.getAll('tags').map((tag) => tag.toString().trim()).filter(Boolean)
     const modelFiles = formData.getAll('files').filter((value): value is File => value instanceof File)
     const thumbnails = formData.getAll('thumbnails').filter((value): value is File => value instanceof File)
@@ -89,7 +106,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
     }
 
-    const [categoryRow, brandRow, productRow, licenseRow] = await Promise.all([
+    const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
+    if (!VALID_ORIGIN_TYPES.includes(originType as typeof VALID_ORIGIN_TYPES[number])) {
+      return NextResponse.json({ error: 'Invalid origin type' }, { status: 400 })
+    }
+
+    const VALID_VERIFICATION = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
+    if (!VALID_VERIFICATION.includes(verificationStatus as typeof VALID_VERIFICATION[number])) {
+      return NextResponse.json({ error: 'Invalid verification status' }, { status: 400 })
+    }
+
+    if (originType === 'curated') {
+      if (!sourceUrl) {
+        return NextResponse.json({ error: 'Source URL is required for curated models' }, { status: 400 })
+      }
+      if (!originalAuthor) {
+        return NextResponse.json({ error: 'Original author is required for curated models' }, { status: 400 })
+      }
+      if (!sourceLicenseId) {
+        return NextResponse.json({ error: 'Source license is required for curated models' }, { status: 400 })
+      }
+    }
+
+    if (sourceUrl && sourceUrl.length > 2048) {
+      return NextResponse.json({ error: 'Source URL is too long (max 2048 characters)' }, { status: 400 })
+    }
+    if (originalAuthorUrl && originalAuthorUrl.length > 2048) {
+      return NextResponse.json({ error: 'Original author URL is too long (max 2048 characters)' }, { status: 400 })
+    }
+    if (originalAuthor && originalAuthor.length > 200) {
+      return NextResponse.json({ error: 'Original author name is too long (max 200 characters)' }, { status: 400 })
+    }
+    if (material && material.length > 100) {
+      return NextResponse.json({ error: 'Material is too long (max 100 characters)' }, { status: 400 })
+    }
+    if (color && color.length > 50) {
+      return NextResponse.json({ error: 'Color is too long (max 50 characters)' }, { status: 400 })
+    }
+
+    const dimensions = dimensionsRaw ? (() => { try { return JSON.parse(dimensionsRaw) } catch { return null } })() : null
+    const printSettings = printSettingsRaw ? (() => { try { return JSON.parse(printSettingsRaw) } catch { return null } })() : null
+    const estimatedPrintTime = estimatedPrintTimeRaw ? parseInt(estimatedPrintTimeRaw, 10) || null : null
+    const estimatedMaterialUsage = estimatedMaterialUsageRaw ? parseFloat(estimatedMaterialUsageRaw) || null : null
+
+    const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
       productId
@@ -100,6 +160,7 @@ export async function POST(request: NextRequest) {
           .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
       licenseId ? supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
+      sourceLicenseId ? supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
     ])
 
     if (categoryRow.error || !categoryRow.data) {
@@ -116,6 +177,12 @@ export async function POST(request: NextRequest) {
     if (licenseId) {
       if ((licenseRow as any)?.error || !(licenseRow as any)?.data) {
         return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      }
+    }
+
+    if (sourceLicenseId) {
+      if ((sourceLicenseRow as any)?.error || !(sourceLicenseRow as any)?.data) {
+        return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
       }
     }
 
@@ -149,6 +216,21 @@ export async function POST(request: NextRequest) {
         license_id: licenseId,
         status,
         user_id: user.id,
+        // Attribution & origin
+        origin_type: originType,
+        source_url: sourceUrl,
+        source_platform: sourcePlatform,
+        original_author: originalAuthor,
+        original_author_url: originalAuthorUrl,
+        source_license_id: sourceLicenseId,
+        verification_status: verificationStatus,
+        // Print metadata
+        material,
+        color,
+        dimensions,
+        print_settings: printSettings,
+        estimated_print_time: estimatedPrintTime,
+        estimated_material_usage: estimatedMaterialUsage,
       })
       .select('id, slug')
       .single()
