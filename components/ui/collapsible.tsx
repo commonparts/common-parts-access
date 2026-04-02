@@ -23,14 +23,16 @@ interface CollapsibleContentProps {
 const CollapsibleContext = React.createContext<{
   open: boolean
   toggle: () => void
+  triggerId: string
   contentId: string
-}>({ open: false, toggle: () => {}, contentId: '' })
+}>({ open: false, toggle: () => {}, triggerId: '', contentId: '' })
 
 function Collapsible({ open: controlledOpen, onOpenChange, children, className }: CollapsibleProps) {
   const [internalOpen, setInternalOpen] = React.useState(false)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : internalOpen
   const contentId = React.useId()
+  const triggerId = `${contentId}-trigger`
 
   const toggle = React.useCallback(() => {
     const next = !open
@@ -39,18 +41,19 @@ function Collapsible({ open: controlledOpen, onOpenChange, children, className }
   }, [open, isControlled, onOpenChange])
 
   return (
-    <CollapsibleContext.Provider value={{ open, toggle, contentId }}>
+    <CollapsibleContext.Provider value={{ open, toggle, triggerId, contentId }}>
       <div className={className}>{children}</div>
     </CollapsibleContext.Provider>
   )
 }
 
 function CollapsibleTrigger({ children, className }: CollapsibleTriggerProps) {
-  const { open, toggle, contentId } = React.useContext(CollapsibleContext)
+  const { open, toggle, triggerId, contentId } = React.useContext(CollapsibleContext)
 
   return (
     <button
       type="button"
+      id={triggerId}
       onClick={toggle}
       aria-expanded={open}
       aria-controls={contentId}
@@ -75,7 +78,7 @@ function CollapsibleTrigger({ children, className }: CollapsibleTriggerProps) {
 }
 
 function CollapsibleContent({ children, className }: CollapsibleContentProps) {
-  const { open, contentId } = React.useContext(CollapsibleContext)
+  const { open, triggerId, contentId } = React.useContext(CollapsibleContext)
   const contentRef = React.useRef<HTMLDivElement>(null)
   const [height, setHeight] = React.useState<number | undefined>(0)
 
@@ -89,6 +92,7 @@ function CollapsibleContent({ children, className }: CollapsibleContentProps) {
     <div
       id={contentId}
       role="region"
+      aria-labelledby={triggerId}
       className={cn("overflow-hidden transition-[height] duration-200 ease-in-out")}
       style={{ height: height ?? 0 }}
       aria-hidden={!open}

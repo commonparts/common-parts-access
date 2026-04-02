@@ -47,6 +47,90 @@ async function cleanupUploadedAssets(
   )
 }
 
+const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
+const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
+const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
+const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
+
+type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string }
+
+interface ValidDimensions {
+  length?: number
+  width?: number
+  height?: number
+  unit?: string
+}
+
+interface ValidPrintSettings {
+  layer_height?: number
+  infill?: number
+  supports?: string
+}
+
+function parseIntOrNull(value: string): number | null {
+  const parsed = Number.parseInt(value, 10)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+function parseFloatOrNull(value: string): number | null {
+  const parsed = Number.parseFloat(value)
+  return Number.isNaN(parsed) ? null : parsed
+}
+
+/**
+ * Validates and parses a JSON dimensions string.
+ * Expects { length?, width?, height? } as non-negative numbers and unit as mm|cm|in.
+ */
+function parseDimensions(raw: string): ParseResult<ValidDimensions> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { ok: false, error: 'Invalid JSON in dimensions' }
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, error: 'dimensions must be a JSON object' }
+  }
+  const obj = parsed as Record<string, unknown>
+  if (obj.unit !== undefined && (typeof obj.unit !== 'string' || !(ALLOWED_DIMENSION_UNITS as readonly string[]).includes(obj.unit))) {
+    return { ok: false, error: 'dimensions.unit must be one of: mm, cm, in' }
+  }
+  for (const key of ['length', 'width', 'height'] as const) {
+    const val = obj[key]
+    if (val !== undefined && (typeof val !== 'number' || Number.isNaN(val) || val < 0)) {
+      return { ok: false, error: `dimensions.${key} must be a non-negative number` }
+    }
+  }
+  return { ok: true, data: parsed as ValidDimensions }
+}
+
+/**
+ * Validates and parses a JSON print settings string.
+ * Expects { layer_height?, infill?, supports? } with appropriate constraints.
+ */
+function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { ok: false, error: 'Invalid JSON in print_settings' }
+  }
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return { ok: false, error: 'print_settings must be a JSON object' }
+  }
+  const ps = parsed as Record<string, unknown>
+  if (ps.layer_height !== undefined && (typeof ps.layer_height !== 'number' || Number.isNaN(ps.layer_height) || ps.layer_height < 0)) {
+    return { ok: false, error: 'print_settings.layer_height must be a non-negative number' }
+  }
+  if (ps.infill !== undefined && (typeof ps.infill !== 'number' || Number.isNaN(ps.infill) || ps.infill < 0 || ps.infill > 100)) {
+    return { ok: false, error: 'print_settings.infill must be a number between 0 and 100' }
+  }
+  if (ps.supports !== undefined && (typeof ps.supports !== 'string' || !(ALLOWED_SUPPORT_TYPES as readonly string[]).includes(ps.supports))) {
+    return { ok: false, error: 'print_settings.supports must be one of: none, buildplate_only, everywhere' }
+  }
+  return { ok: true, data: parsed as ValidPrintSettings }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -106,13 +190,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
     }
 
-    const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
-    if (!VALID_ORIGIN_TYPES.includes(originType as typeof VALID_ORIGIN_TYPES[number])) {
+    if (!(VALID_ORIGIN_TYPES as readonly string[]).includes(originType)) {
       return NextResponse.json({ error: 'Invalid origin type' }, { status: 400 })
     }
 
-    const VALID_VERIFICATION = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
-    if (!VALID_VERIFICATION.includes(verificationStatus as typeof VALID_VERIFICATION[number])) {
+    if (!(VALID_VERIFICATION_STATUSES as readonly string[]).includes(verificationStatus)) {
       return NextResponse.json({ error: 'Invalid verification status' }, { status: 400 })
     }
 
@@ -144,36 +226,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Color is too long (max 50 characters)' }, { status: 400 })
     }
 
-    let dimensions: unknown = null
+    let dimensions: ValidDimensions | null = null
     if (dimensionsRaw) {
-      try {
-        dimensions = JSON.parse(dimensionsRaw)
-      } catch {
-        return NextResponse.json({ error: 'Invalid JSON in dimensions' }, { status: 400 })
-      }
+      const result = parseDimensions(dimensionsRaw)
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+      dimensions = result.data
     }
 
-    let printSettings: unknown = null
+    let printSettings: ValidPrintSettings | null = null
     if (printSettingsRaw) {
-      try {
-        printSettings = JSON.parse(printSettingsRaw)
-      } catch {
-        return NextResponse.json({ error: 'Invalid JSON in print_settings' }, { status: 400 })
-      }
+      const result = parsePrintSettings(printSettingsRaw)
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+      printSettings = result.data
     }
 
-    const estimatedPrintTime = estimatedPrintTimeRaw
-      ? (() => {
-        const parsed = Number.parseInt(estimatedPrintTimeRaw, 10)
-        return Number.isNaN(parsed) ? null : parsed
-      })()
-      : null
-    const estimatedMaterialUsage = estimatedMaterialUsageRaw
-      ? (() => {
-        const parsed = Number.parseFloat(estimatedMaterialUsageRaw)
-        return Number.isNaN(parsed) ? null : parsed
-      })()
-      : null
+    const estimatedPrintTime = estimatedPrintTimeRaw ? parseIntOrNull(estimatedPrintTimeRaw) : null
+    const estimatedMaterialUsage = estimatedMaterialUsageRaw ? parseFloatOrNull(estimatedMaterialUsageRaw) : null
 
     if (estimatedPrintTime !== null && estimatedPrintTime < 0) {
       return NextResponse.json({ error: 'estimated_print_time must be a non-negative number' }, { status: 400 })
@@ -201,31 +269,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
     }
 
-    if (brandId) {
-      const brandResult = brandRow as any
-      if (brandResult?.error || !brandResult?.data) {
-        return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
-      }
+    if (brandId && (brandRow.error || !brandRow.data)) {
+      return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
     }
 
-    if (licenseId) {
-      if ((licenseRow as any)?.error || !(licenseRow as any)?.data) {
-        return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
-      }
+    if (licenseId && (licenseRow.error || !licenseRow.data)) {
+      return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
     }
 
-    if (sourceLicenseId) {
-      if ((sourceLicenseRow as any)?.error || !(sourceLicenseRow as any)?.data) {
-        return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
-      }
+    if (sourceLicenseId && (sourceLicenseRow.error || !sourceLicenseRow.data)) {
+      return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
     }
 
     if (productId) {
-      if ((productRow as any)?.error || !(productRow as any)?.data) {
+      if (productRow.error || !productRow.data) {
         return NextResponse.json({ error: 'Invalid product selected' }, { status: 400 })
       }
-
-      const prod = (productRow as any).data as { brand_id?: string | null; category_id?: string | null }
+      const prod = productRow.data
       if (brandId && prod.brand_id && prod.brand_id !== brandId) {
         return NextResponse.json({ error: 'Product does not belong to the selected brand' }, { status: 400 })
       }
