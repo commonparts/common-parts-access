@@ -1,6 +1,7 @@
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { createClient } from "@/lib/supabase/client"
+import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 export interface CategoryOption {
   id: string
@@ -57,6 +58,26 @@ export interface ModelFormData {
   thumbnails: File[]
   isPublic: boolean
   licenseId: string
+  // Attribution & License
+  originType: ModelOriginType
+  sourceUrl: string
+  sourcePlatform: string
+  originalAuthor: string
+  originalAuthorUrl: string
+  sourceLicenseId: string
+  verificationStatus: ModelVerificationStatus
+  // Advanced — print metadata
+  material: string
+  color: string
+  dimensionsLength: string
+  dimensionsWidth: string
+  dimensionsHeight: string
+  dimensionsUnit: string
+  layerHeight: string
+  infill: string
+  supports: string
+  estimatedPrintTime: string
+  estimatedMaterialUsage: string
 }
 
 const emptyCreateProduct: CreateProductFormData = {
@@ -81,6 +102,26 @@ export function useModelUploadFormState() {
     thumbnails: [],
     isPublic: true,
     licenseId: "",
+    // Attribution & License
+    originType: "original",
+    sourceUrl: "",
+    sourcePlatform: "",
+    originalAuthor: "",
+    originalAuthorUrl: "",
+    sourceLicenseId: "",
+    verificationStatus: "unverified",
+    // Advanced — print metadata
+    material: "",
+    color: "",
+    dimensionsLength: "",
+    dimensionsWidth: "",
+    dimensionsHeight: "",
+    dimensionsUnit: "mm",
+    layerHeight: "",
+    infill: "",
+    supports: "",
+    estimatedPrintTime: "",
+    estimatedMaterialUsage: "",
   })
   const [tagInput, setTagInput] = React.useState("")
   const [categories, setCategories] = React.useState<CategoryOption[]>([])
