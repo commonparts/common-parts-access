@@ -20,12 +20,22 @@ interface CollapsibleContentProps {
   className?: string
 }
 
-const CollapsibleContext = React.createContext<{
+interface CollapsibleContextValue {
   open: boolean
   toggle: () => void
   triggerId: string
   contentId: string
-}>({ open: false, toggle: () => {}, triggerId: '', contentId: '' })
+}
+
+const CollapsibleContext = React.createContext<CollapsibleContextValue | null>(null)
+
+function useCollapsibleContext(): CollapsibleContextValue {
+  const context = React.useContext(CollapsibleContext)
+  if (!context) {
+    throw new Error('CollapsibleTrigger and CollapsibleContent must be used within a Collapsible component.')
+  }
+  return context
+}
 
 function Collapsible({ open: controlledOpen, onOpenChange, children, className }: CollapsibleProps) {
   const [internalOpen, setInternalOpen] = React.useState(false)
@@ -48,7 +58,7 @@ function Collapsible({ open: controlledOpen, onOpenChange, children, className }
 }
 
 function CollapsibleTrigger({ children, className }: CollapsibleTriggerProps) {
-  const { open, toggle, triggerId, contentId } = React.useContext(CollapsibleContext)
+  const { open, toggle, triggerId, contentId } = useCollapsibleContext()
 
   return (
     <button
@@ -80,7 +90,7 @@ function CollapsibleTrigger({ children, className }: CollapsibleTriggerProps) {
 const TRANSITION_DURATION_MS = 200
 
 function CollapsibleContent({ children, className }: CollapsibleContentProps) {
-  const { open, triggerId, contentId } = React.useContext(CollapsibleContext)
+  const { open, triggerId, contentId } = useCollapsibleContext()
   const contentRef = React.useRef<HTMLDivElement>(null)
   const [height, setHeight] = React.useState<number | 'auto'>(0)
 
