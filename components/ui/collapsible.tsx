@@ -103,11 +103,13 @@ function CollapsibleContent({ children, className }: CollapsibleContentProps) {
     if (!el || !open) return
 
     const observer = new ResizeObserver(() => {
-      if (height === 'auto') setHeight('auto')
+      setHeight((currentHeight) =>
+        currentHeight === 'auto' ? currentHeight : el.scrollHeight
+      )
     })
     observer.observe(el)
     return () => observer.disconnect()
-  }, [open, height])
+  }, [open])
 
   return (
     <div

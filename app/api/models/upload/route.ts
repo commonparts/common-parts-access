@@ -68,14 +68,14 @@ interface ValidPrintSettings {
 }
 
 function parseNonNegativeInt(value: string, field: string): ParseResult<number> {
-  const parsed = Number.parseInt(value, 10)
-  if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid integer` }
+  const parsed = Number(value)
+  if (!Number.isInteger(parsed)) return { ok: false, error: `${field} must be a valid integer` }
   if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
   return { ok: true, data: parsed }
 }
 
 function parseNonNegativeFloat(value: string, field: string): ParseResult<number> {
-  const parsed = Number.parseFloat(value)
+  const parsed = Number(value)
   if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid number` }
   if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
   return { ok: true, data: parsed }
