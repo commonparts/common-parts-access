@@ -77,16 +77,37 @@ function CollapsibleTrigger({ children, className }: CollapsibleTriggerProps) {
   )
 }
 
+const TRANSITION_DURATION_MS = 200
+
 function CollapsibleContent({ children, className }: CollapsibleContentProps) {
   const { open, triggerId, contentId } = React.useContext(CollapsibleContext)
   const contentRef = React.useRef<HTMLDivElement>(null)
-  const [height, setHeight] = React.useState<number | undefined>(0)
+  const [height, setHeight] = React.useState<number | 'auto'>(0)
 
   React.useEffect(() => {
-    if (contentRef.current) {
-      setHeight(open ? contentRef.current.scrollHeight : 0)
+    const el = contentRef.current
+    if (!el) return
+
+    if (open) {
+      setHeight(el.scrollHeight)
+      const timer = setTimeout(() => setHeight('auto'), TRANSITION_DURATION_MS)
+      return () => clearTimeout(timer)
     }
+    // Collapse: snap to current scrollHeight first so the transition animates from a fixed value
+    setHeight(el.scrollHeight)
+    requestAnimationFrame(() => setHeight(0))
   }, [open])
+
+  React.useEffect(() => {
+    const el = contentRef.current
+    if (!el || !open) return
+
+    const observer = new ResizeObserver(() => {
+      if (height === 'auto') setHeight('auto')
+    })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [open, height])
 
   return (
     <div
@@ -94,7 +115,7 @@ function CollapsibleContent({ children, className }: CollapsibleContentProps) {
       role="region"
       aria-labelledby={triggerId}
       className={cn("overflow-hidden transition-[height] duration-200 ease-in-out")}
-      style={{ height: height ?? 0 }}
+      style={{ height: height === 'auto' ? 'auto' : height }}
       aria-hidden={!open}
       inert={!open ? true : undefined}
     >

@@ -67,14 +67,18 @@ interface ValidPrintSettings {
   supports?: string
 }
 
-function parseIntOrNull(value: string): number | null {
+function parseNonNegativeInt(value: string, field: string): ParseResult<number> {
   const parsed = Number.parseInt(value, 10)
-  return Number.isNaN(parsed) ? null : parsed
+  if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid integer` }
+  if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
+  return { ok: true, data: parsed }
 }
 
-function parseFloatOrNull(value: string): number | null {
+function parseNonNegativeFloat(value: string, field: string): ParseResult<number> {
   const parsed = Number.parseFloat(value)
-  return Number.isNaN(parsed) ? null : parsed
+  if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid number` }
+  if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
+  return { ok: true, data: parsed }
 }
 
 /**
@@ -97,8 +101,8 @@ function parseDimensions(raw: string): ParseResult<ValidDimensions> {
   }
   for (const key of ['length', 'width', 'height'] as const) {
     const val = obj[key]
-    if (val !== undefined && (typeof val !== 'number' || Number.isNaN(val) || val < 0)) {
-      return { ok: false, error: `dimensions.${key} must be a non-negative number` }
+    if (val !== undefined && (typeof val !== 'number' || !Number.isFinite(val) || val < 0)) {
+      return { ok: false, error: `dimensions.${key} must be a non-negative finite number` }
     }
   }
   return { ok: true, data: parsed as ValidDimensions }
@@ -119,11 +123,11 @@ function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
     return { ok: false, error: 'print_settings must be a JSON object' }
   }
   const ps = parsed as Record<string, unknown>
-  if (ps.layer_height !== undefined && (typeof ps.layer_height !== 'number' || Number.isNaN(ps.layer_height) || ps.layer_height < 0)) {
-    return { ok: false, error: 'print_settings.layer_height must be a non-negative number' }
+  if (ps.layer_height !== undefined && (typeof ps.layer_height !== 'number' || !Number.isFinite(ps.layer_height) || ps.layer_height < 0)) {
+    return { ok: false, error: 'print_settings.layer_height must be a non-negative finite number' }
   }
-  if (ps.infill !== undefined && (typeof ps.infill !== 'number' || Number.isNaN(ps.infill) || ps.infill < 0 || ps.infill > 100)) {
-    return { ok: false, error: 'print_settings.infill must be a number between 0 and 100' }
+  if (ps.infill !== undefined && (typeof ps.infill !== 'number' || !Number.isFinite(ps.infill) || ps.infill < 0 || ps.infill > 100)) {
+    return { ok: false, error: 'print_settings.infill must be a finite number between 0 and 100' }
   }
   if (ps.supports !== undefined && (typeof ps.supports !== 'string' || !(ALLOWED_SUPPORT_TYPES as readonly string[]).includes(ps.supports))) {
     return { ok: false, error: 'print_settings.supports must be one of: none, buildplate_only, everywhere' }
@@ -240,15 +244,18 @@ export async function POST(request: NextRequest) {
       printSettings = result.data
     }
 
-    const estimatedPrintTime = estimatedPrintTimeRaw ? parseIntOrNull(estimatedPrintTimeRaw) : null
-    const estimatedMaterialUsage = estimatedMaterialUsageRaw ? parseFloatOrNull(estimatedMaterialUsageRaw) : null
-
-    if (estimatedPrintTime !== null && estimatedPrintTime < 0) {
-      return NextResponse.json({ error: 'estimated_print_time must be a non-negative number' }, { status: 400 })
+    let estimatedPrintTime: number | null = null
+    if (estimatedPrintTimeRaw) {
+      const result = parseNonNegativeInt(estimatedPrintTimeRaw, 'estimated_print_time')
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+      estimatedPrintTime = result.data
     }
 
-    if (estimatedMaterialUsage !== null && estimatedMaterialUsage < 0) {
-      return NextResponse.json({ error: 'estimated_material_usage must be a non-negative number' }, { status: 400 })
+    let estimatedMaterialUsage: number | null = null
+    if (estimatedMaterialUsageRaw) {
+      const result = parseNonNegativeFloat(estimatedMaterialUsageRaw, 'estimated_material_usage')
+      if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+      estimatedMaterialUsage = result.data
     }
 
     const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
