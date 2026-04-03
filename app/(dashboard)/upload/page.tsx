@@ -63,7 +63,7 @@ export default function UploadPage() {
     if (hasPrintSettings) {
       const printSettings: Record<string, unknown> = {}
       if (payload.layerHeight) printSettings.layer_height = parseFloat(payload.layerHeight)
-      if (payload.infill) printSettings.infill = parseInt(payload.infill, 10)
+      if (payload.infill) printSettings.infill = parseFloat(payload.infill)
       if (payload.supports) printSettings.supports = payload.supports
       body.append('print_settings', JSON.stringify(printSettings))
     }

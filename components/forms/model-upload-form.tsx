@@ -305,7 +305,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         <Collapsible>
           <CardHeader>
             <CollapsibleTrigger>
-              <CardTitle>Advanced</CardTitle>
+              <span className="font-semibold leading-tight text-text-primary">Advanced</span>
             </CollapsibleTrigger>
           </CardHeader>
           <CollapsibleContent>

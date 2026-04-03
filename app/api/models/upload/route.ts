@@ -105,7 +105,12 @@ function parseDimensions(raw: string): ParseResult<ValidDimensions> {
       return { ok: false, error: `dimensions.${key} must be a non-negative finite number` }
     }
   }
-  return { ok: true, data: parsed as ValidDimensions }
+  const result: ValidDimensions = {}
+  if (obj.length !== undefined) result.length = obj.length as number
+  if (obj.width !== undefined) result.width = obj.width as number
+  if (obj.height !== undefined) result.height = obj.height as number
+  if (obj.unit !== undefined) result.unit = obj.unit as string
+  return { ok: true, data: result }
 }
 
 /**
@@ -132,7 +137,11 @@ function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
   if (ps.supports !== undefined && (typeof ps.supports !== 'string' || !(ALLOWED_SUPPORT_TYPES as readonly string[]).includes(ps.supports))) {
     return { ok: false, error: 'print_settings.supports must be one of: none, buildplate_only, everywhere' }
   }
-  return { ok: true, data: parsed as ValidPrintSettings }
+  const result: ValidPrintSettings = {}
+  if (ps.layer_height !== undefined) result.layer_height = ps.layer_height as number
+  if (ps.infill !== undefined) result.infill = ps.infill as number
+  if (ps.supports !== undefined) result.supports = ps.supports as string
+  return { ok: true, data: result }
 }
 
 export async function POST(request: NextRequest) {
