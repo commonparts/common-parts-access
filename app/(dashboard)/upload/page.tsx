@@ -45,8 +45,12 @@ export default function UploadPage() {
     // Advanced — print metadata
     if (payload.material) body.append('material', payload.material)
     if (payload.color) body.append('color', payload.color)
-    if (payload.estimatedPrintTime) body.append('estimated_print_time', payload.estimatedPrintTime)
-    if (payload.estimatedMaterialUsage) body.append('estimated_material_usage', payload.estimatedMaterialUsage)
+    if (payload.estimatedPrintTime !== '' && payload.estimatedPrintTime != null) {
+      body.append('estimated_print_time', payload.estimatedPrintTime)
+    }
+    if (payload.estimatedMaterialUsage !== '' && payload.estimatedMaterialUsage != null) {
+      body.append('estimated_material_usage', payload.estimatedMaterialUsage)
+    }
 
     const hasDimensions = payload.dimensionsLength || payload.dimensionsWidth || payload.dimensionsHeight
     if (hasDimensions) {
