@@ -3,6 +3,20 @@
  */
 
 /**
+ * Validates that a redirect path is a safe relative in-app path.
+ * Rejects absolute URLs, protocol-relative paths (//), and anything
+ * containing a scheme — prevents open-redirect attacks.
+ */
+export function isSafeRedirect(path: string): boolean {
+  return (
+    typeof path === "string" &&
+    path.startsWith("/") &&
+    !path.startsWith("//") &&
+    !path.includes("://")
+  );
+}
+
+/**
  * Email validation
  * @param email - Email to validate
  * @returns True if valid email format

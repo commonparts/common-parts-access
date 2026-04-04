@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { isSafeRedirect } from "@/lib/utils/validation";
 
 export function SignUpForm({
   className,
@@ -27,12 +28,11 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-
-  const getRedirectPath = () => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    return params.get("redirect");
-  };
+  const searchParams = useSearchParams();
+  const redirectPath = (() => {
+    const raw = searchParams.get("redirect");
+    return raw && isSafeRedirect(raw) ? raw : null;
+  })();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +65,6 @@ export function SignUpForm({
     }
 
     try {
-      const redirectPath = getRedirectPath();
       const confirmUrl = redirectPath
         ? `${window.location.origin}/confirm?next=${encodeURIComponent(redirectPath)}`
         : `${window.location.origin}/confirm`;
@@ -146,8 +145,8 @@ export function SignUpForm({
               Already have an account?{" "}
               <Link
                 href={
-                  getRedirectPath()
-                    ? `/login?redirect=${encodeURIComponent(getRedirectPath()!)}`
+                  redirectPath
+                    ? `/login?redirect=${encodeURIComponent(redirectPath)}`
                     : "/login"
                 }
                 className="underline"

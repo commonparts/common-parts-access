@@ -74,8 +74,21 @@ export async function updateSession(request: NextRequest) {
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    url.searchParams.set("redirect", pathname);
-    return NextResponse.redirect(url);
+    // Preserve the full path + query string so the user lands back on the
+    // exact page they were trying to reach after authenticating.
+    url.searchParams.set(
+      "redirect",
+      request.nextUrl.pathname + request.nextUrl.search,
+    );
+    // Copy cookies/headers from supabaseResponse so any auth cookie mutations
+    // (e.g. clearing invalid tokens) applied by createServerClient are not lost.
+    const redirectResponse = NextResponse.redirect(url);
+    supabaseResponse.headers.forEach((value, key) => {
+      if (key.toLowerCase() !== "location") {
+        redirectResponse.headers.append(key, value);
+      }
+    });
+    return redirectResponse;
   }
 
   return supabaseResponse;
