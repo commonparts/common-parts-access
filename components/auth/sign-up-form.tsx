@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { isSafeRedirect } from "@/lib/utils/validation";
 
 export function SignUpForm({
   className,
@@ -27,6 +28,11 @@ export function SignUpForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectPath = (() => {
+    const raw = searchParams.get("redirect");
+    return raw && isSafeRedirect(raw) ? raw : null;
+  })();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -59,7 +65,10 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await signUp(email, password, username, `${window.location.origin}/`);
+      const confirmUrl = redirectPath
+        ? `${window.location.origin}/confirm?next=${encodeURIComponent(redirectPath)}`
+        : `${window.location.origin}/confirm`;
+      const { error } = await signUp(email, password, username, confirmUrl);
       if (error) throw error;
       router.push("/sign-up-success");
     } catch (error: unknown) {
@@ -134,7 +143,14 @@ export function SignUpForm({
             </div>
             <div className="mt-md text-center text-caption">
               Already have an account?{" "}
-              <Link href="/login" className="underline">
+              <Link
+                href={
+                  redirectPath
+                    ? `/login?redirect=${encodeURIComponent(redirectPath)}`
+                    : "/login"
+                }
+                className="underline"
+              >
                 Login
               </Link>
             </div>
