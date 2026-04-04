@@ -1,21 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/models/[slug]/files - List model files
+// Not yet implemented — tracked in GitHub issues
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params
-  // TODO: Implement list model files
-  return NextResponse.json({ message: `List files for model ${slug}`, files: [] })
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }
 
 // POST /api/models/[slug]/files - Upload model file
+// Not yet implemented — tracked in GitHub issues
 export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params
-  // TODO: Implement file upload
-  return NextResponse.json({ message: `Upload file for model ${slug}` })
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }

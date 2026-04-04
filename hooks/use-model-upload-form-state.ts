@@ -28,6 +28,17 @@ export interface LicenseOption {
   isCopyleft: boolean
 }
 
+interface RawLicenseRow {
+  id: string
+  spdx_id: string
+  short_name: string
+  name: string
+  url: string
+  requires_attribution: boolean
+  allows_commercial: boolean
+  is_copyleft: boolean
+}
+
 export interface ProductOption {
   id: string
   name: string
@@ -220,7 +231,7 @@ export function useModelUploadFormState() {
           setCategories(Array.isArray(catJson.categories) ? catJson.categories : [])
           setBrands(Array.isArray(brandJson.brands) ? brandJson.brands : [])
           const rawLicenses: LicenseOption[] = Array.isArray(licenseJson.licenses)
-            ? licenseJson.licenses.map((l: any) => ({
+            ? licenseJson.licenses.map((l: RawLicenseRow) => ({
                 id: l.id,
                 spdxId: l.spdx_id,
                 shortName: l.short_name,
