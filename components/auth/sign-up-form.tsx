@@ -28,6 +28,12 @@ export function SignUpForm({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  const getRedirectPath = () => {
+    if (typeof window === "undefined") return null;
+    const params = new URLSearchParams(window.location.search);
+    return params.get("redirect");
+  };
+
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -59,7 +65,11 @@ export function SignUpForm({
     }
 
     try {
-      const { error } = await signUp(email, password, username, `${window.location.origin}/`);
+      const redirectPath = getRedirectPath();
+      const confirmUrl = redirectPath
+        ? `${window.location.origin}/confirm?next=${encodeURIComponent(redirectPath)}`
+        : `${window.location.origin}/confirm`;
+      const { error } = await signUp(email, password, username, confirmUrl);
       if (error) throw error;
       router.push("/sign-up-success");
     } catch (error: unknown) {
@@ -134,7 +144,14 @@ export function SignUpForm({
             </div>
             <div className="mt-md text-center text-caption">
               Already have an account?{" "}
-              <Link href="/login" className="underline">
+              <Link
+                href={
+                  getRedirectPath()
+                    ? `/login?redirect=${encodeURIComponent(getRedirectPath()!)}`
+                    : "/login"
+                }
+                className="underline"
+              >
                 Login
               </Link>
             </div>

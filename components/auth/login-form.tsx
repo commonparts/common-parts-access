@@ -103,7 +103,11 @@ export function LoginForm({
             <div className="mt-md text-center text-caption">
               Don&apos;t have an account?{" "}
               <Link
-                href="/sign-up"
+                href={
+                  getRedirectPath()
+                    ? `/sign-up?redirect=${encodeURIComponent(getRedirectPath()!)}`
+                    : "/sign-up"
+                }
                 className="underline"
               >
                 Sign up
