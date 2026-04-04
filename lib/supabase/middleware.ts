@@ -80,13 +80,12 @@ export async function updateSession(request: NextRequest) {
       "redirect",
       request.nextUrl.pathname + request.nextUrl.search,
     );
-    // Copy cookies/headers from supabaseResponse so any auth cookie mutations
-    // (e.g. clearing invalid tokens) applied by createServerClient are not lost.
+    // Copy Supabase cookie mutations explicitly so refreshed/cleared auth
+    // cookies are preserved on the redirect response. Using cookies.getAll()
+    // avoids the Set-Cookie collapse problem that happens when iterating headers.
     const redirectResponse = NextResponse.redirect(url);
-    supabaseResponse.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== "location") {
-        redirectResponse.headers.append(key, value);
-      }
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      redirectResponse.cookies.set(cookie);
     });
     return redirectResponse;
   }
