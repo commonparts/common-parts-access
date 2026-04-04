@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { sourceSans } from "./fonts";
 import "./globals.css";
 import { lightTheme, themeToCSSVars } from "@/design-tokens";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 
 const lightThemeCSSVars = themeToCSSVars(lightTheme);
 
@@ -23,7 +24,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={sourceSans.variable}>
-      <body style={lightThemeCSSVars}>{children}</body>
+      <body style={lightThemeCSSVars}>
+        {children}
+        <FeedbackButton />
+      </body>
     </html>
   );
 }

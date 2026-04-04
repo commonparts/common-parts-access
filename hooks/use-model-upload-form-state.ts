@@ -1,6 +1,7 @@
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { createClient } from "@/lib/supabase/client"
+import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 export interface CategoryOption {
   id: string
@@ -14,6 +15,28 @@ export interface BrandOption {
   id: string
   name: string
   slug: string
+}
+
+export interface LicenseOption {
+  id: string
+  spdxId: string
+  shortName: string
+  name: string
+  url: string
+  requiresAttribution: boolean
+  allowsCommercial: boolean
+  isCopyleft: boolean
+}
+
+interface RawLicenseRow {
+  id: string
+  spdx_id: string
+  short_name: string
+  name: string
+  url: string
+  requires_attribution: boolean
+  allows_commercial: boolean
+  is_copyleft: boolean
 }
 
 export interface ProductOption {
@@ -45,7 +68,27 @@ export interface ModelFormData {
   files: File[]
   thumbnails: File[]
   isPublic: boolean
-  license: string
+  licenseId: string
+  // Attribution & License
+  originType: ModelOriginType
+  sourceUrl: string
+  sourcePlatform: string
+  originalAuthor: string
+  originalAuthorUrl: string
+  sourceLicenseId: string
+  verificationStatus: ModelVerificationStatus
+  // Advanced — print metadata
+  material: string
+  color: string
+  dimensionsLength: string
+  dimensionsWidth: string
+  dimensionsHeight: string
+  dimensionsUnit: string
+  layerHeight: string
+  infill: string
+  supports: string
+  estimatedPrintTime: string
+  estimatedMaterialUsage: string
 }
 
 const emptyCreateProduct: CreateProductFormData = {
@@ -69,11 +112,32 @@ export function useModelUploadFormState() {
     files: [],
     thumbnails: [],
     isPublic: true,
-    license: "cc-by-4.0",
+    licenseId: "",
+    // Attribution & License
+    originType: "original",
+    sourceUrl: "",
+    sourcePlatform: "",
+    originalAuthor: "",
+    originalAuthorUrl: "",
+    sourceLicenseId: "",
+    verificationStatus: "unverified",
+    // Advanced — print metadata
+    material: "",
+    color: "",
+    dimensionsLength: "",
+    dimensionsWidth: "",
+    dimensionsHeight: "",
+    dimensionsUnit: "mm",
+    layerHeight: "",
+    infill: "",
+    supports: "",
+    estimatedPrintTime: "",
+    estimatedMaterialUsage: "",
   })
   const [tagInput, setTagInput] = React.useState("")
   const [categories, setCategories] = React.useState<CategoryOption[]>([])
   const [brands, setBrands] = React.useState<BrandOption[]>([])
+  const [licenses, setLicenses] = React.useState<LicenseOption[]>([])
   const [products, setProducts] = React.useState<ProductOption[]>([])
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
@@ -153,17 +217,38 @@ export function useModelUploadFormState() {
     async function loadMetadata() {
       setLoadingMeta(true)
       try {
-        const [catRes, brandRes] = await Promise.all([
+        const [catRes, brandRes, licenseRes] = await Promise.all([
           fetch("/api/categories"),
           fetch("/api/brands"),
+          fetch("/api/licenses"),
         ])
 
         const catJson = await catRes.json().catch(() => ({ categories: [] }))
         const brandJson = await brandRes.json().catch(() => ({ brands: [] }))
+        const licenseJson = await licenseRes.json().catch(() => ({ licenses: [] }))
 
         if (!cancelled) {
           setCategories(Array.isArray(catJson.categories) ? catJson.categories : [])
           setBrands(Array.isArray(brandJson.brands) ? brandJson.brands : [])
+          const rawLicenses: LicenseOption[] = Array.isArray(licenseJson.licenses)
+            ? licenseJson.licenses.map((l: RawLicenseRow) => ({
+                id: l.id,
+                spdxId: l.spdx_id,
+                shortName: l.short_name,
+                name: l.name,
+                url: l.url,
+                requiresAttribution: l.requires_attribution,
+                allowsCommercial: l.allows_commercial,
+                isCopyleft: l.is_copyleft,
+              }))
+            : []
+          setLicenses(rawLicenses)
+          if (rawLicenses.length > 0) {
+            setFormData(prev => ({
+              ...prev,
+              licenseId: prev.licenseId || rawLicenses[0].id,
+            }))
+          }
         }
       } catch (error) {
         console.error("Failed to load categories/brands", error)
@@ -430,6 +515,7 @@ export function useModelUploadFormState() {
     setTagInput,
     categories,
     brands,
+    licenses,
     products,
     loadingProducts,
     loadingMeta,

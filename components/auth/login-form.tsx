@@ -13,8 +13,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { isSafeRedirect } from "@/lib/utils/validation";
 
 export function LoginForm({
   className,
@@ -25,12 +26,11 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  // Get redirect query param from URL
-  const getRedirectPath = () => {
-    if (typeof window === "undefined") return null;
-    const params = new URLSearchParams(window.location.search);
-    return params.get("redirect");
-  };
+  const searchParams = useSearchParams();
+  const redirectPath = (() => {
+    const raw = searchParams.get("redirect");
+    return raw && isSafeRedirect(raw) ? raw : null;
+  })();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +38,9 @@ export function LoginForm({
     setError(null);
 
     try {
-      console.log("[LoginForm] Attempting login for:", email);
       const { data, error } = await signInWithPassword(email, password);
-      console.log("[LoginForm] Login result:", { data, error });
       if (error) throw error;
       // Redirect to the originally requested page if present
-      const redirectPath = getRedirectPath();
       router.push(redirectPath || "/");
       router.refresh();
     } catch (error: unknown) {
@@ -103,7 +100,11 @@ export function LoginForm({
             <div className="mt-md text-center text-caption">
               Don&apos;t have an account?{" "}
               <Link
-                href="/sign-up"
+                href={
+                  redirectPath
+                    ? `/sign-up?redirect=${encodeURIComponent(redirectPath)}`
+                    : "/sign-up"
+                }
                 className="underline"
               >
                 Sign up

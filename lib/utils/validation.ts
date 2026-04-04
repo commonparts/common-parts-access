@@ -3,6 +3,31 @@
  */
 
 /**
+ * Validates that a redirect path is a safe relative in-app path.
+ * Accepts only strings that start with a single "/" (not "//") and contain
+ * no ASCII control characters, whitespace, or backslashes — preventing
+ * protocol-relative redirects and malformed Location header issues.
+ *
+ * The path is also percent-decoded before validation so encoded slashes or
+ * backslashes cannot bypass the checks (for example, "/%5c%5cevil.com").
+ */
+export function isSafeRedirect(path: string): boolean {
+  if (typeof path !== "string") return false;
+  if (/[\u0000-\u001F\u007F]/.test(path)) return false;
+  if (!/^\/(?!\/)[^\s\\]*$/.test(path)) return false;
+
+  let decodedPath: string;
+  try {
+    decodedPath = decodeURIComponent(path);
+  } catch {
+    return false;
+  }
+
+  if (/[\u0000-\u001F\u007F]/.test(decodedPath)) return false;
+  return /^\/(?!\/)[^\s\\]*$/.test(decodedPath);
+}
+
+/**
  * Email validation
  * @param email - Email to validate
  * @returns True if valid email format
