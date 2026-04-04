@@ -3,6 +3,18 @@
  */
 
 /**
+ * Validates that a redirect path is a safe relative in-app path.
+ * Accepts only strings that start with a single "/" (not "//") and contain
+ * no ASCII control characters, whitespace, or backslashes — preventing
+ * protocol-relative redirects and malformed Location header issues.
+ */
+export function isSafeRedirect(path: string): boolean {
+  if (typeof path !== "string") return false;
+  if (/[\u0000-\u001F\u007F]/.test(path)) return false;
+  return /^\/(?!\/)[^\s\\]*$/.test(path);
+}
+
+/**
  * Email validation
  * @param email - Email to validate
  * @returns True if valid email format
