@@ -31,7 +31,7 @@ jobs:
             const repo = context.repo.repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const urlPrefix = `https://github\\.com/${owner}/${repo}/issues/`;
             const pattern = new RegExp(
-              `(?:closes|fixes|resolves)\\s*:?\\s*(?:${urlPrefix}|#)(\\d+)`,
+              `\\b(?:closes|fixes|resolves)\\b\\s*:?\\s*(?:${urlPrefix}|#)(\\d+)`,
               'gi'
             );
             const matches = [...body.matchAll(pattern)];
