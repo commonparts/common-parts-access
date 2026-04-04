@@ -2,13 +2,13 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 
 interface SuccessPageProps {
-  searchParams: {
+  searchParams: Promise<{
     slug?: string
-  }
+  }>
 }
 
-export default function UploadSuccessPage({ searchParams }: SuccessPageProps) {
-  const slug = searchParams.slug
+export default async function UploadSuccessPage({ searchParams }: SuccessPageProps) {
+  const { slug } = await searchParams
   const viewHref = slug ? `/model/${slug}` : '/browse'
 
   return (
