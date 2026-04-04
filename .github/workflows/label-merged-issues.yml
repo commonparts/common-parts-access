@@ -24,8 +24,16 @@ jobs:
 
             // Match closing keywords: Closes, Fixes, Resolves (case-insensitive).
             // Supports bare references (#123), optional colon (Closes: #123),
-            // and full GitHub issue URLs.
-            const pattern = /(?:closes|fixes|resolves)\s*:?\s*(?:https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/issues\/)?#(\d+)/gi;
+            // and full GitHub issue URLs for this repository only.
+            // Pattern is built dynamically to restrict URL matches to the current repo,
+            // preventing a cross-repo URL from silently labeling the wrong issue number.
+            const owner = context.repo.owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const repo = context.repo.repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const urlPrefix = `https://github\\.com/${owner}/${repo}/issues/`;
+            const pattern = new RegExp(
+              `(?:closes|fixes|resolves)\\s*:?\\s*(?:${urlPrefix}|#)(\\d+)`,
+              'gi'
+            );
             const matches = [...body.matchAll(pattern)];
 
             if (matches.length === 0) {
@@ -62,29 +70,37 @@ jobs:
             }
 
             for (const issueNumber of issueNumbers) {
-              // Fetch the item to check labels and confirm it is an issue, not a PR
-              const { data: issue } = await github.rest.issues.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-              });
+              try {
+                // Fetch the item to check labels and confirm it is an issue, not a PR
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
 
-              if (issue.pull_request) {
-                console.log(`#${issueNumber} is a pull request, skipping.`);
-                continue;
+                if (issue.pull_request) {
+                  console.log(`#${issueNumber} is a pull request, skipping.`);
+                  continue;
+                }
+
+                const alreadyLabeled = issue.labels.some(l => l.name === label);
+                if (alreadyLabeled) {
+                  console.log(`Issue #${issueNumber} already has label '${label}', skipping.`);
+                  continue;
+                }
+
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: [label],
+                });
+                console.log(`Applied '${label}' to issue #${issueNumber}.`);
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`#${issueNumber} not found (404), skipping.`);
+                  continue;
+                }
+                throw e;
               }
-
-              const alreadyLabeled = issue.labels.some(l => l.name === label);
-              if (alreadyLabeled) {
-                console.log(`Issue #${issueNumber} already has label '${label}', skipping.`);
-                continue;
-              }
-
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                labels: [label],
-              });
-              console.log(`Applied '${label}' to issue #${issueNumber}.`);
             }
