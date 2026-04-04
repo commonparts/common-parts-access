@@ -12,6 +12,8 @@ import { Grid } from "@/components/layout/grid"
 import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
+import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -28,6 +30,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     tagInput,
     setTagInput,
     brands,
+    licenses,
     products,
     loadingProducts,
     loadingMeta,
@@ -118,7 +121,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
 
           <Grid columns={12}>
-            <div className="col-span-12 space-y-sm md:col-span-6">
+            <div className="col-span-12 space-y-sm">
               <Label htmlFor="category">Category *</Label>
               <div className="flex flex-col gap-sm">
                 {categoryLevels.map((level, idx) => {
@@ -146,23 +149,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   )
                 })}
               </div>
-            </div>
-
-            <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="license">License</Label>
-              <DropdownInput
-                as="select"
-                id="license"
-                value={formData.license}
-                onChange={(e) => setFormData(prev => ({ ...prev, license: e.target.value }))}
-                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
-              >
-                <option value="cc-by-4.0">CC BY 4.0</option>
-                <option value="cc-by-sa-4.0">CC BY-SA 4.0</option>
-                <option value="cc-by-nc-4.0">CC BY-NC 4.0</option>
-                <option value="mit">MIT License</option>
-                <option value="proprietary">Proprietary</option>
-              </DropdownInput>
             </div>
           </Grid>
 
@@ -311,6 +297,307 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Advanced — collapsed by default */}
+      <Card>
+        <Collapsible>
+          <CardHeader>
+            <CollapsibleTrigger>
+              <span className="font-semibold leading-tight text-text-primary">Advanced</span>
+            </CollapsibleTrigger>
+          </CardHeader>
+          <CollapsibleContent>
+            <CardContent className="space-y-md">
+              <Grid columns={12}>
+                <div className="col-span-12 space-y-sm md:col-span-6">
+                  <Label htmlFor="material">Material</Label>
+                  <Input
+                    id="material"
+                    type="text"
+                    placeholder="e.g. PLA, PETG, ABS"
+                    value={formData.material}
+                    onChange={(e) => setFormData(prev => ({ ...prev, material: e.target.value }))}
+                  />
+                </div>
+                <div className="col-span-12 space-y-sm md:col-span-6">
+                  <Label htmlFor="color">Color</Label>
+                  <Input
+                    id="color"
+                    type="text"
+                    placeholder="e.g. Black, White, Any"
+                    value={formData.color}
+                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                  />
+                </div>
+              </Grid>
+
+              <fieldset className="space-y-sm">
+                <legend className="text-sm font-medium text-text-primary">Dimensions</legend>
+                <Grid columns={12}>
+                  <div className="col-span-6 space-y-sm md:col-span-3">
+                    <Label htmlFor="dimensionsLength">Length</Label>
+                    <Input
+                      id="dimensionsLength"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={formData.dimensionsLength}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensionsLength: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-span-6 space-y-sm md:col-span-3">
+                    <Label htmlFor="dimensionsWidth">Width</Label>
+                    <Input
+                      id="dimensionsWidth"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={formData.dimensionsWidth}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensionsWidth: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-span-6 space-y-sm md:col-span-3">
+                    <Label htmlFor="dimensionsHeight">Height</Label>
+                    <Input
+                      id="dimensionsHeight"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder="0"
+                      value={formData.dimensionsHeight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensionsHeight: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-span-6 space-y-sm md:col-span-3">
+                    <Label htmlFor="dimensionsUnit">Unit</Label>
+                    <DropdownInput
+                      as="select"
+                      id="dimensionsUnit"
+                      value={formData.dimensionsUnit}
+                      onChange={(e) => setFormData(prev => ({ ...prev, dimensionsUnit: e.target.value }))}
+                      className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                    >
+                      <option value="mm">mm</option>
+                      <option value="cm">cm</option>
+                      <option value="in">in</option>
+                    </DropdownInput>
+                  </div>
+                </Grid>
+              </fieldset>
+
+              <fieldset className="space-y-sm">
+                <legend className="text-sm font-medium text-text-primary">Print settings</legend>
+                <Grid columns={12}>
+                  <div className="col-span-6 space-y-sm md:col-span-4">
+                    <Label htmlFor="layerHeight">Layer height (mm)</Label>
+                    <Input
+                      id="layerHeight"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="e.g. 0.2"
+                      value={formData.layerHeight}
+                      onChange={(e) => setFormData(prev => ({ ...prev, layerHeight: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-span-6 space-y-sm md:col-span-4">
+                    <Label htmlFor="infill">Infill (%)</Label>
+                    <Input
+                      id="infill"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      placeholder="e.g. 20"
+                      value={formData.infill}
+                      onChange={(e) => setFormData(prev => ({ ...prev, infill: e.target.value }))}
+                    />
+                  </div>
+                  <div className="col-span-12 space-y-sm md:col-span-4">
+                    <Label htmlFor="supports">Supports</Label>
+                    <DropdownInput
+                      as="select"
+                      id="supports"
+                      value={formData.supports}
+                      onChange={(e) => setFormData(prev => ({ ...prev, supports: e.target.value }))}
+                      className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                    >
+                      <option value="">Not specified</option>
+                      <option value="none">None</option>
+                      <option value="buildplate_only">Build plate only</option>
+                      <option value="everywhere">Everywhere</option>
+                    </DropdownInput>
+                  </div>
+                </Grid>
+              </fieldset>
+
+              <Grid columns={12}>
+                <div className="col-span-12 space-y-sm md:col-span-6">
+                  <Label htmlFor="estimatedPrintTime">Estimated print time (minutes)</Label>
+                  <Input
+                    id="estimatedPrintTime"
+                    type="number"
+                    min="0"
+                    step="1"
+                    placeholder="e.g. 120"
+                    value={formData.estimatedPrintTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedPrintTime: e.target.value }))}
+                  />
+                </div>
+                <div className="col-span-12 space-y-sm md:col-span-6">
+                  <Label htmlFor="estimatedMaterialUsage">Estimated material usage (grams)</Label>
+                  <Input
+                    id="estimatedMaterialUsage"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    placeholder="e.g. 45"
+                    value={formData.estimatedMaterialUsage}
+                    onChange={(e) => setFormData(prev => ({ ...prev, estimatedMaterialUsage: e.target.value }))}
+                  />
+                </div>
+              </Grid>
+            </CardContent>
+          </CollapsibleContent>
+        </Collapsible>
+      </Card>
+
+      {/* Attribution & License */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Attribution & License</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-md">
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="originType">Origin type</Label>
+              <DropdownInput
+                as="select"
+                id="originType"
+                value={formData.originType}
+                onChange={(e) => setFormData(prev => ({ ...prev, originType: e.target.value as ModelOriginType }))}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+              >
+                <option value="original">Original — I created this model</option>
+                <option value="curated">Curated — imported from another source</option>
+                <option value="manufacturer">Manufacturer — official brand upload</option>
+              </DropdownInput>
+            </div>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="verificationStatus">Verification status</Label>
+              <DropdownInput
+                as="select"
+                id="verificationStatus"
+                value={formData.verificationStatus}
+                onChange={(e) => setFormData(prev => ({ ...prev, verificationStatus: e.target.value as ModelVerificationStatus }))}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+              >
+                <option value="unverified">Unverified</option>
+                <option value="author_tested">Author tested</option>
+                <option value="community_validated">Community validated</option>
+                <option value="certified">Certified</option>
+              </DropdownInput>
+            </div>
+          </Grid>
+
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="sourceUrl">Source URL{formData.originType === 'curated' ? ' *' : ''}</Label>
+              <Input
+                id="sourceUrl"
+                type="url"
+                placeholder="https://www.printables.com/model/..."
+                value={formData.sourceUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
+                required={formData.originType === 'curated'}
+              />
+            </div>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="sourcePlatform">Source platform</Label>
+              <DropdownInput
+                as="select"
+                id="sourcePlatform"
+                value={formData.sourcePlatform}
+                onChange={(e) => setFormData(prev => ({ ...prev, sourcePlatform: e.target.value }))}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+              >
+                <option value="">Not specified</option>
+                <option value="printables">Printables</option>
+                <option value="thingiverse">Thingiverse</option>
+                <option value="cults3d">Cults3D</option>
+                <option value="github">GitHub</option>
+                <option value="other">Other</option>
+              </DropdownInput>
+            </div>
+          </Grid>
+
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="originalAuthor">Original author{formData.originType === 'curated' ? ' *' : ''}</Label>
+              <Input
+                id="originalAuthor"
+                type="text"
+                placeholder="Author name or handle"
+                value={formData.originalAuthor}
+                onChange={(e) => setFormData(prev => ({ ...prev, originalAuthor: e.target.value }))}
+                required={formData.originType === 'curated'}
+              />
+            </div>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="originalAuthorUrl">Original author profile URL</Label>
+              <Input
+                id="originalAuthorUrl"
+                type="url"
+                placeholder="https://www.printables.com/@author"
+                value={formData.originalAuthorUrl}
+                onChange={(e) => setFormData(prev => ({ ...prev, originalAuthorUrl: e.target.value }))}
+              />
+            </div>
+          </Grid>
+
+          <Grid columns={12}>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="licenseId">License on Common Parts Access</Label>
+              <DropdownInput
+                as="select"
+                id="licenseId"
+                value={formData.licenseId}
+                onChange={(e) => setFormData(prev => ({ ...prev, licenseId: e.target.value }))}
+                disabled={loadingMeta}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+              >
+                <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
+                {licenses.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.shortName}
+                  </option>
+                ))}
+              </DropdownInput>
+            </div>
+            <div className="col-span-12 space-y-sm md:col-span-6">
+              <Label htmlFor="sourceLicenseId">Source license{formData.originType === 'curated' ? ' *' : ''}</Label>
+              <DropdownInput
+                as="select"
+                id="sourceLicenseId"
+                value={formData.sourceLicenseId}
+                onChange={(e) => setFormData(prev => ({ ...prev, sourceLicenseId: e.target.value }))}
+                disabled={loadingMeta}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+                required={formData.originType === 'curated'}
+              >
+                <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
+                {licenses.map((l) => (
+                  <option key={l.id} value={l.id}>
+                    {l.shortName}
+                  </option>
+                ))}
+              </DropdownInput>
+            </div>
+          </Grid>
         </CardContent>
       </Card>
 

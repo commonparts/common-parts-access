@@ -66,7 +66,17 @@ interface ModelData {
   }
   viewerHasLiked?: boolean
   tags: string[]
-  license: string
+  license: {
+    id: string
+    spdxId: string
+    name: string
+    shortName: string
+    url: string
+    allowsRedistribution: boolean
+    requiresAttribution: boolean
+    allowsCommercial: boolean
+    isCopyleft: boolean
+  } | null
   instructions?: string
   notes?: string
   createdAt: string
@@ -552,31 +562,31 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       {model.partDetails.dimensions.length && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Length:</span>
-                          <span className="font-mono">{model.partDetails.dimensions.length} mm</span>
+                          <span className="font-mono">{model.partDetails.dimensions.length} {model.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {model.partDetails.dimensions.width && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Width:</span>
-                          <span className="font-mono">{model.partDetails.dimensions.width} mm</span>
+                          <span className="font-mono">{model.partDetails.dimensions.width} {model.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {model.partDetails.dimensions.height && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Height:</span>
-                          <span className="font-mono">{model.partDetails.dimensions.height} mm</span>
+                          <span className="font-mono">{model.partDetails.dimensions.height} {model.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {model.partDetails.dimensions.diameter && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Diameter:</span>
-                          <span className="font-mono">{model.partDetails.dimensions.diameter} mm</span>
+                          <span className="font-mono">{model.partDetails.dimensions.diameter} {model.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {model.partDetails.dimensions.thickness && (
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Thickness:</span>
-                          <span className="font-mono">{model.partDetails.dimensions.thickness} mm</span>
+                          <span className="font-mono">{model.partDetails.dimensions.thickness} {model.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                     </div>
@@ -596,7 +606,13 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground font-medium">License</span>
-              <Badge variant="outline" className="w-fit">{model.license}</Badge>
+              {model.license ? (
+                <a href={model.license.url} target="_blank" rel="noopener noreferrer">
+                  <Badge variant="outline" className="w-fit">{model.license.shortName}</Badge>
+                </a>
+              ) : (
+                <Badge variant="outline" className="w-fit">—</Badge>
+              )}
             </div>
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground font-medium">Uploaded</span>
