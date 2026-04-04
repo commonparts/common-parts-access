@@ -124,6 +124,14 @@ alter table if exists public.models
 -- The partial index skips NULL values so original models are unaffected.
 -- ============================================================================
 
-create unique index if not exists idx_models_source_url
-  on public.models (source_url)
-  where source_url is not null;
+do $$
+begin
+  if to_regclass('public.models') is not null then
+    execute $sql$
+      create unique index if not exists idx_models_source_url
+        on public.models (source_url)
+        where source_url is not null
+    $sql$;
+  end if;
+end
+$$;

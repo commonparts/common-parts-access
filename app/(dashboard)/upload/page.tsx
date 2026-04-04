@@ -52,23 +52,44 @@ export default function UploadPage() {
       body.append('estimated_material_usage', payload.estimatedMaterialUsage)
     }
 
-    const hasDimensions = payload.dimensionsLength || payload.dimensionsWidth || payload.dimensionsHeight
+    const hasDimensions =
+      (payload.dimensionsLength != null && payload.dimensionsLength !== '') ||
+      (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') ||
+      (payload.dimensionsHeight != null && payload.dimensionsHeight !== '')
     if (hasDimensions) {
       const dimensions = {
-        length: payload.dimensionsLength ? parseFloat(payload.dimensionsLength) : undefined,
-        width: payload.dimensionsWidth ? parseFloat(payload.dimensionsWidth) : undefined,
-        height: payload.dimensionsHeight ? parseFloat(payload.dimensionsHeight) : undefined,
+        length:
+          payload.dimensionsLength != null && payload.dimensionsLength !== ''
+            ? parseFloat(payload.dimensionsLength)
+            : undefined,
+        width:
+          payload.dimensionsWidth != null && payload.dimensionsWidth !== ''
+            ? parseFloat(payload.dimensionsWidth)
+            : undefined,
+        height:
+          payload.dimensionsHeight != null && payload.dimensionsHeight !== ''
+            ? parseFloat(payload.dimensionsHeight)
+            : undefined,
         unit: payload.dimensionsUnit || 'mm',
       }
       body.append('dimensions', JSON.stringify(dimensions))
     }
 
-    const hasPrintSettings = payload.layerHeight || payload.infill || payload.supports
+    const hasPrintSettings =
+      (payload.layerHeight != null && payload.layerHeight !== '') ||
+      (payload.infill != null && payload.infill !== '') ||
+      (payload.supports != null && payload.supports !== '')
     if (hasPrintSettings) {
       const printSettings: Record<string, unknown> = {}
-      if (payload.layerHeight) printSettings.layer_height = parseFloat(payload.layerHeight)
-      if (payload.infill) printSettings.infill = parseFloat(payload.infill)
-      if (payload.supports) printSettings.supports = payload.supports
+      if (payload.layerHeight != null && payload.layerHeight !== '') {
+        printSettings.layer_height = parseFloat(payload.layerHeight)
+      }
+      if (payload.infill != null && payload.infill !== '') {
+        printSettings.infill = parseFloat(payload.infill)
+      }
+      if (payload.supports != null && payload.supports !== '') {
+        printSettings.supports = payload.supports
+      }
       body.append('print_settings', JSON.stringify(printSettings))
     }
 
