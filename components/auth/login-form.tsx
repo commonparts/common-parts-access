@@ -38,9 +38,7 @@ export function LoginForm({
     setError(null);
 
     try {
-      console.log("[LoginForm] Attempting login for:", email);
       const { data, error } = await signInWithPassword(email, password);
-      console.log("[LoginForm] Login result:", { data, error });
       if (error) throw error;
       // Redirect to the originally requested page if present
       router.push(redirectPath || "/");

@@ -1,32 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // GET /api/models/[slug] - Get model by slug
+// Not yet implemented — tracked in GitHub issues
 export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params
-  // TODO: Implement get model by slug
-  return NextResponse.json({ message: `Get model ${slug}` })
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }
 
 // PUT /api/models/[slug] - Update model
+// Not yet implemented — tracked in GitHub issues
 export async function PUT(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params
-  // TODO: Implement model update
-  const body = await request.json()
-  return NextResponse.json({ message: `Update model ${slug}`, model: body })
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }
 
 // DELETE /api/models/[slug] - Delete model
+// Not yet implemented — tracked in GitHub issues
 export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ slug: string }> }
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
 ) {
-  const { slug } = await params
-  // TODO: Implement model deletion
-  return NextResponse.json({ message: `Delete model ${slug}` })
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }
