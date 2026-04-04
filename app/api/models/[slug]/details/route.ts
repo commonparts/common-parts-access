@@ -10,7 +10,7 @@ function first<T>(value: T | T[] | null | undefined): T | null {
 
 // GET /api/models/[slug]/details - Get detailed model information by slug
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {

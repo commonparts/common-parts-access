@@ -105,7 +105,7 @@ export interface Model {
   images?: Record<string, any> | null; // Array of image URLs (JSONB)
   
   // Status and metrics
-  status?: string; // draft, published, archived
+  status?: ModelStatus;
   download_count?: number;
   view_count?: number;
   like_count?: number;
