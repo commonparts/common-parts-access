@@ -1,0 +1,128 @@
+name: Label referenced issues on PR merge
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [dev, staging]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  label-referenced-issues:
+    name: Apply status:merged-staging to referenced issues
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Apply label to referenced issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+
+            // Two-pass extraction to handle both single and multi-issue closing references.
+            // Examples handled: "Closes #1", "Closes: #1", "Closes #1, #2",
+            //   "Closes https://github.com/owner/repo/issues/1"
+            // URL matches are restricted to this repository to prevent cross-repo false positives.
+            const ownerEsc = context.repo.owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const repoEsc = context.repo.repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const urlPrefix = `https://github\\.com/${ownerEsc}/${repoEsc}/issues/`;
+
+            // Pass 1: find each closing keyword and capture the rest of its line.
+            const keywordPattern = new RegExp(
+              `\\b(?:closes|fixes|resolves)\\b\\s*:?\\s*(.+)`,
+              'gi'
+            );
+            // Pass 2: from each captured tail, extract all bare (#N) and URL issue references.
+            const refPattern = new RegExp(
+              `(?:${urlPrefix}|#)(\\d+)`,
+              'g'
+            );
+
+            const issueNumberSet = new Set();
+            for (const keywordMatch of body.matchAll(keywordPattern)) {
+              const tail = keywordMatch[1];
+              for (const refMatch of tail.matchAll(refPattern)) {
+                issueNumberSet.add(parseInt(refMatch[1], 10));
+              }
+            }
+
+            if (issueNumberSet.size === 0) {
+              console.log('No referenced issues found in PR body.');
+              return;
+            }
+
+            const issueNumbers = [...issueNumberSet];
+            console.log(`Referenced issues: ${issueNumbers.join(', ')}`);
+
+            const label = 'status:merged-staging';
+
+            // Ensure the label exists in the repo, create it if not
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+              });
+            } catch (e) {
+              if (e.status === 404) {
+                // Label does not exist — create it. Treat 422 (already exists from a
+                // concurrent run) as success so the rest of the job still proceeds.
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: '0075ca',
+                    description: 'Issue resolved in dev or staging, pending promotion to main',
+                  });
+                  console.log(`Created label '${label}'.`);
+                } catch (createError) {
+                  if (createError.status === 422) {
+                    console.log(`Label '${label}' already exists (concurrent creation); continuing.`);
+                  } else {
+                    throw createError;
+                  }
+                }
+              } else {
+                throw e;
+              }
+            }
+
+            for (const issueNumber of issueNumbers) {
+              try {
+                // Fetch the item to check labels and confirm it is an issue, not a PR
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                });
+
+                if (issue.pull_request) {
+                  console.log(`#${issueNumber} is a pull request, skipping.`);
+                  continue;
+                }
+
+                const alreadyLabeled = issue.labels.some(l => l.name === label);
+                if (alreadyLabeled) {
+                  console.log(`Issue #${issueNumber} already has label '${label}', skipping.`);
+                  continue;
+                }
+
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber,
+                  labels: [label],
+                });
+                console.log(`Applied '${label}' to issue #${issueNumber}.`);
+              } catch (e) {
+                if (e.status === 404) {
+                  console.log(`#${issueNumber} not found (404), skipping.`);
+                  continue;
+                }
+                throw e;
+              }
+            }

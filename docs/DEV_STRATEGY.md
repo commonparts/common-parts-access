@@ -215,6 +215,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 | `agent:dev` | Assigned to dev agent, ready to build |
 | `agent:pm` | Needs PM review with human |
 | `status:blocked` | Blocked, waiting on something |
+| `status:merged-staging` | Resolved in `dev` or `staging`, pending promotion to `main` |
 
 ---
 
