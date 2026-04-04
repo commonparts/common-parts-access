@@ -127,7 +127,7 @@ export async function GET(
     ] = await Promise.all([
       supabase
         .from('model_files')
-        .select('id, filename, original_filename, file_type, file_size, file_url, file_category, upload_path, created_at')
+        .select('id, filename, original_filename, file_type, file_size, file_url, file_category, created_at')
         .eq('model_id', model.id)
         .order('created_at', { ascending: true }),
       supabase
