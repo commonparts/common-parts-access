@@ -22,27 +22,39 @@ jobs:
           script: |
             const body = context.payload.pull_request.body || '';
 
-            // Match closing keywords: Closes, Fixes, Resolves (case-insensitive).
-            // Supports bare references (#123), optional colon (Closes: #123),
-            // and full GitHub issue URLs for this repository only.
-            // Pattern is built dynamically to restrict URL matches to the current repo,
-            // preventing a cross-repo URL from silently labeling the wrong issue number.
-            const owner = context.repo.owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const repo = context.repo.repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const urlPrefix = `https://github\\.com/${owner}/${repo}/issues/`;
-            const pattern = new RegExp(
-              `\\b(?:closes|fixes|resolves)\\b\\s*:?\\s*(?:${urlPrefix}|#)(\\d+)`,
+            // Two-pass extraction to handle both single and multi-issue closing references.
+            // Examples handled: "Closes #1", "Closes: #1", "Closes #1, #2",
+            //   "Closes https://github.com/owner/repo/issues/1"
+            // URL matches are restricted to this repository to prevent cross-repo false positives.
+            const ownerEsc = context.repo.owner.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const repoEsc = context.repo.repo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const urlPrefix = `https://github\\.com/${ownerEsc}/${repoEsc}/issues/`;
+
+            // Pass 1: find each closing keyword and capture the rest of its line.
+            const keywordPattern = new RegExp(
+              `\\b(?:closes|fixes|resolves)\\b\\s*:?\\s*(.+)`,
               'gi'
             );
-            const matches = [...body.matchAll(pattern)];
+            // Pass 2: from each captured tail, extract all bare (#N) and URL issue references.
+            const refPattern = new RegExp(
+              `(?:${urlPrefix}|#)(\\d+)`,
+              'g'
+            );
 
-            if (matches.length === 0) {
+            const issueNumberSet = new Set();
+            for (const keywordMatch of body.matchAll(keywordPattern)) {
+              const tail = keywordMatch[1];
+              for (const refMatch of tail.matchAll(refPattern)) {
+                issueNumberSet.add(parseInt(refMatch[1], 10));
+              }
+            }
+
+            if (issueNumberSet.size === 0) {
               console.log('No referenced issues found in PR body.');
               return;
             }
 
-            // Deduplicate issue numbers
-            const issueNumbers = [...new Set(matches.map(m => parseInt(m[1], 10)))];
+            const issueNumbers = [...issueNumberSet];
             console.log(`Referenced issues: ${issueNumbers.join(', ')}`);
 
             const label = 'status:merged-staging';
@@ -56,14 +68,24 @@ jobs:
               });
             } catch (e) {
               if (e.status === 404) {
-                await github.rest.issues.createLabel({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  name: label,
-                  color: '0075ca',
-                  description: 'Issue resolved in dev or staging, pending promotion to main',
-                });
-                console.log(`Created label '${label}'.`);
+                // Label does not exist — create it. Treat 422 (already exists from a
+                // concurrent run) as success so the rest of the job still proceeds.
+                try {
+                  await github.rest.issues.createLabel({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    name: label,
+                    color: '0075ca',
+                    description: 'Issue resolved in dev or staging, pending promotion to main',
+                  });
+                  console.log(`Created label '${label}'.`);
+                } catch (createError) {
+                  if (createError.status === 422) {
+                    console.log(`Label '${label}' already exists (concurrent creation); continuing.`);
+                  } else {
+                    throw createError;
+                  }
+                }
               } else {
                 throw e;
               }
