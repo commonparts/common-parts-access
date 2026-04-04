@@ -21,7 +21,7 @@ export default async function UploadSuccessPage({ searchParams }: SuccessPagePro
         </div>
 
         <div className="mt-6 space-y-2 text-center">
-          <h1 className="text-2xl font-semibold">Your model has been docked</h1>
+          <h1 className="text-2xl font-semibold">Your model has been uploaded</h1>
           <p className="text-sm text-muted-foreground">
             Everything is saved. You can review the model details or share it with the community.
           </p>
