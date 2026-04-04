@@ -8,6 +8,7 @@ on:
 permissions:
   issues: write
   pull-requests: read
+  labels: write
 
 jobs:
   label-referenced-issues:
@@ -37,6 +38,28 @@ jobs:
             console.log(`Referenced issues: ${issueNumbers.join(', ')}`);
 
             const label = 'status:merged-staging';
+
+            // Ensure the label exists in the repo, create it if not
+            try {
+              await github.rest.issues.getLabel({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: label,
+              });
+            } catch (e) {
+              if (e.status === 404) {
+                await github.rest.issues.createLabel({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  name: label,
+                  color: '0075ca',
+                  description: 'Issue resolved in dev or staging, pending promotion to main',
+                });
+                console.log(`Created label '${label}'.`);
+              } else {
+                throw e;
+              }
+            }
 
             for (const issueNumber of issueNumbers) {
               // Fetch current labels to avoid duplicates
