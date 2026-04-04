@@ -4,9 +4,9 @@
 
 /**
  * Validates that a redirect path is a safe relative in-app path.
- * Rejects absolute URLs, protocol-relative paths (//), anything containing
- * a scheme, ASCII control characters, whitespace, and backslashes —
- * prevents open-redirect attacks and malformed Location header issues.
+ * Accepts only strings that start with a single "/" (not "//") and contain
+ * no ASCII control characters, whitespace, or backslashes — preventing
+ * protocol-relative redirects and malformed Location header issues.
  */
 export function isSafeRedirect(path: string): boolean {
   if (typeof path !== "string") return false;
