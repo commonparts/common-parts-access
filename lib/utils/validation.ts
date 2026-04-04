@@ -4,16 +4,14 @@
 
 /**
  * Validates that a redirect path is a safe relative in-app path.
- * Rejects absolute URLs, protocol-relative paths (//), and anything
- * containing a scheme — prevents open-redirect attacks.
+ * Rejects absolute URLs, protocol-relative paths (//), anything containing
+ * a scheme, ASCII control characters, whitespace, and backslashes —
+ * prevents open-redirect attacks and malformed Location header issues.
  */
 export function isSafeRedirect(path: string): boolean {
-  return (
-    typeof path === "string" &&
-    path.startsWith("/") &&
-    !path.startsWith("//") &&
-    !path.includes("://")
-  );
+  if (typeof path !== "string") return false;
+  if (/[\u0000-\u001F\u007F]/.test(path)) return false;
+  return /^\/(?!\/)[^\s\\]*$/.test(path);
 }
 
 /**

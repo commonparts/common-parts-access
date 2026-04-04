@@ -77,12 +77,10 @@ export async function updateSession(request: NextRequest) {
     // so protected-route params are not leaked or duplicated on /login.
     url.search = "";
     url.pathname = "/login";
-    // Preserve the full path + query string so the user lands back on the
-    // exact page they were trying to reach after authenticating.
-    url.searchParams.set(
-      "redirect",
-      request.nextUrl.pathname + request.nextUrl.search,
-    );
+    // Preserve only the pathname so the user returns to the right page after
+    // signing in without leaking protected-route query params into the login
+    // URL (browser history, server logs, referrer headers).
+    url.searchParams.set("redirect", request.nextUrl.pathname);
     // Copy Supabase cookie mutations explicitly so refreshed/cleared auth
     // cookies are preserved on the redirect response. Using cookies.getAll()
     // avoids the Set-Cookie collapse problem that happens when iterating headers.
