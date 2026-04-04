@@ -1,7 +1,7 @@
 name: Label referenced issues on PR merge
 
 on:
-  pull_request:
+  pull_request_target:
     types: [closed]
     branches: [dev, staging]
 
@@ -22,9 +22,10 @@ jobs:
           script: |
             const body = context.payload.pull_request.body || '';
 
-            // Match closing keywords: Closes, Fixes, Resolves (case-insensitive)
-            // Supports both bare (#123) and URL references
-            const pattern = /(?:closes|fixes|resolves)\s+#(\d+)/gi;
+            // Match closing keywords: Closes, Fixes, Resolves (case-insensitive).
+            // Supports bare references (#123), optional colon (Closes: #123),
+            // and full GitHub issue URLs.
+            const pattern = /(?:closes|fixes|resolves)\s*:?\s*(?:https:\/\/github\.com\/[^/\s]+\/[^/\s]+\/issues\/)?#(\d+)/gi;
             const matches = [...body.matchAll(pattern)];
 
             if (matches.length === 0) {
@@ -61,12 +62,17 @@ jobs:
             }
 
             for (const issueNumber of issueNumbers) {
-              // Fetch current labels to avoid duplicates
+              // Fetch the item to check labels and confirm it is an issue, not a PR
               const { data: issue } = await github.rest.issues.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: issueNumber,
               });
+
+              if (issue.pull_request) {
+                console.log(`#${issueNumber} is a pull request, skipping.`);
+                continue;
+              }
 
               const alreadyLabeled = issue.labels.some(l => l.name === label);
               if (alreadyLabeled) {
