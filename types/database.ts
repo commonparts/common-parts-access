@@ -111,7 +111,7 @@ export interface Model {
   like_count?: number;
   
   // Origin tracking
-  origin_type?: ModelOriginType;
+  origin_type: ModelOriginType;
   source_url?: string | null;
   source_platform?: string | null;   // 'printables', 'thingiverse', 'github', etc.
   source_published_at?: string | null;
@@ -125,7 +125,7 @@ export interface Model {
   source_license_id?: string | null;
 
   // Validation
-  verification_status?: ModelVerificationStatus;
+  verification_status: ModelVerificationStatus;
   makes_count?: number;
 
   // Metadata
