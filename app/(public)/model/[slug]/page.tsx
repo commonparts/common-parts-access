@@ -8,6 +8,10 @@ import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 
+// This page uses cookies() via the Supabase server client,
+// so it cannot be statically rendered at build time.
+export const dynamic = 'force-dynamic'
+
 interface ModelPageProps {
   params: Promise<{
     slug: string
@@ -133,31 +137,4 @@ export default async function ModelPage({ params }: ModelPageProps) {
       </Container>
     </Section>
   )
-}
-
-// Generate static params for popular models (optional, for better performance)
-export async function generateStaticParams() {
-  try {
-    const supabase = await createClient()
-    
-    // Get the most popular models for static generation
-    const { data: models, error } = await supabase
-      .from('models')
-      .select('slug')
-      .eq('status', 'published')
-      .order('download_count', { ascending: false })
-      .limit(50) // Pre-generate top 50 models
-
-    if (error || !models) {
-      console.error('Error fetching models for static generation:', error)
-      return []
-    }
-
-    return models.map((model) => ({
-      slug: model.slug
-    }))
-  } catch (error) {
-    console.error('Error in generateStaticParams:', error)
-    return []
-  }
 }
