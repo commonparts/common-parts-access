@@ -73,6 +73,9 @@ export async function updateSession(request: NextRequest) {
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
+    // Clear the original page's query string before building the login URL
+    // so protected-route params are not leaked or duplicated on /login.
+    url.search = "";
     url.pathname = "/login";
     // Preserve the full path + query string so the user lands back on the
     // exact page they were trying to reach after authenticating.
