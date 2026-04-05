@@ -48,10 +48,10 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
     }
 
-    // Look up the model by slug
+    // Look up the model by slug — include images fields for merge on update
     const { data: model, error: modelError } = await supabase
       .from('models')
-      .select('id, user_id')
+      .select('id, user_id, thumbnail_url, images')
       .eq('slug', slug)
       .single()
 
@@ -287,9 +287,13 @@ export async function POST(
 
     const imageFiles = fileRows.filter((f) => f.file_category === 'image')
     if (imageFiles.length > 0) {
-      const imageUrls = imageFiles.map((f) => f.file_url)
-      modelUpdate.thumbnail_url = imageUrls[0]
-      modelUpdate.images = imageUrls
+      const newImageUrls = imageFiles.map((f) => f.file_url)
+      const existingImages = Array.isArray(model.images)
+        ? model.images.filter((img): img is string => typeof img === 'string')
+        : []
+      const mergedImages = [...new Set([...existingImages, ...newImageUrls])]
+      modelUpdate.thumbnail_url = model.thumbnail_url || newImageUrls[0]
+      modelUpdate.images = mergedImages
     }
 
     if (intendedStatus === 'published') {
