@@ -175,10 +175,10 @@ export default function UploadPage() {
       setProgressText('Finalizing upload…')
 
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
-      const registerResponse = await fetch(`/api/models/${encodeURIComponent(modelId)}/files`, {
+      const registerResponse = await fetch(`/api/models/${encodeURIComponent(slug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: allFiles }),
+        body: JSON.stringify({ modelId, files: allFiles }),
       })
       const registerData = await registerResponse.json().catch(() => ({}))
 
