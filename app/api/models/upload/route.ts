@@ -207,7 +207,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const body: unknown = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     if (typeof body !== 'object' || body === null || Array.isArray(body)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
@@ -391,8 +396,9 @@ export async function POST(request: NextRequest) {
     }
 
     const slug = await ensureUniqueSlug(name, supabase)
-    const status = isPublic ? 'published' : 'draft'
+    const intendedStatus = isPublic ? 'published' : 'draft'
 
+    // Always create as draft — status is promoted after files are registered
     const { data: model, error: modelError } = await supabase
       .from('models')
       .insert({
@@ -404,7 +410,7 @@ export async function POST(request: NextRequest) {
         product_id: productId || null,
         tags,
         license_id: licenseId,
-        status,
+        status: 'draft',
         user_id: user.id,
         // Attribution & origin
         origin_type: originType,
@@ -445,7 +451,7 @@ export async function POST(request: NextRequest) {
       modelId: model.id,
       slug: model.slug,
       userId: user.id,
-      status,
+      intendedStatus,
     }, { status: 201 })
   } catch (error) {
     console.error('Model upload failed', error)

@@ -66,13 +66,21 @@ export async function POST(
 
     const modelId = model.id
 
-    const body: unknown = await request.json()
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    }
     if (typeof body !== 'object' || body === null || Array.isArray(body)) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
     const payload = body as Record<string, unknown>
     const files = Array.isArray(payload.files) ? payload.files : []
+
+    // Optional: promote model status after files are registered
+    const intendedStatus = payload.intendedStatus === 'published' ? 'published' : null
 
     if (files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 })
@@ -200,18 +208,29 @@ export async function POST(
     }
 
     // Check cumulative counts against existing files for this model
-    const { data: existingFiles, error: countError } = await supabase
-      .from('model_files')
-      .select('file_category')
-      .eq('model_id', modelId)
+    const [
+      { count: existingModelCountRaw, error: modelCountError },
+      { count: existingImageCountRaw, error: imageCountError },
+    ] = await Promise.all([
+      supabase
+        .from('model_files')
+        .select('id', { count: 'exact', head: true })
+        .eq('model_id', modelId)
+        .eq('file_category', 'model'),
+      supabase
+        .from('model_files')
+        .select('id', { count: 'exact', head: true })
+        .eq('model_id', modelId)
+        .eq('file_category', 'image'),
+    ])
 
-    if (countError) {
-      console.error('Failed to check existing file counts', countError)
+    if (modelCountError || imageCountError) {
+      console.error('Failed to check existing file counts', modelCountError ?? imageCountError)
       return NextResponse.json({ error: 'Failed to validate file limits' }, { status: 500 })
     }
 
-    const existingModelCount = (existingFiles ?? []).filter((f) => f.file_category === 'model').length
-    const existingImageCount = (existingFiles ?? []).filter((f) => f.file_category === 'image').length
+    const existingModelCount = existingModelCountRaw ?? 0
+    const existingImageCount = existingImageCountRaw ?? 0
 
     if (existingModelCount + modelCount > MODEL_UPLOAD_LIMITS.maxModelFiles) {
       return NextResponse.json(
@@ -233,21 +252,30 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to register uploaded files' }, { status: 500 })
     }
 
-    // Update model thumbnail and images from uploaded thumbnails
+    // Update model: thumbnails and/or status promotion
+    const modelUpdate: Record<string, unknown> = {}
+
     const imageFiles = fileRows.filter((f) => f.file_category === 'image')
     if (imageFiles.length > 0) {
       const imageUrls = imageFiles.map((f) => f.file_url)
-      const primaryThumbnailUrl = imageUrls[0]
+      modelUpdate.thumbnail_url = imageUrls[0]
+      modelUpdate.images = imageUrls
+    }
 
+    if (intendedStatus === 'published') {
+      modelUpdate.status = 'published'
+    }
+
+    if (Object.keys(modelUpdate).length > 0) {
       const { error: updateError } = await supabase
         .from('models')
-        .update({ thumbnail_url: primaryThumbnailUrl, images: imageUrls })
+        .update(modelUpdate)
         .eq('id', modelId)
         .select('id')
         .single()
 
       if (updateError) {
-        console.error('Failed to update model thumbnails', updateError)
+        console.error('Failed to update model after file registration', updateError)
       }
     }
 

@@ -148,10 +148,11 @@ export default function UploadPage() {
         return
       }
 
-      const { modelId, slug, userId } = createData as {
+      const { modelId, slug, userId, intendedStatus } = createData as {
         modelId: string
         slug: string
         userId: string
+        intendedStatus: string
       }
 
       if (!modelId || !slug || !userId || typeof modelId !== 'string' || typeof slug !== 'string' || typeof userId !== 'string') {
@@ -183,7 +184,7 @@ export default function UploadPage() {
       const registerResponse = await fetch(`/api/models/${encodeURIComponent(slug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: allFiles }),
+        body: JSON.stringify({ files: allFiles, intendedStatus }),
       })
       const registerData = await registerResponse.json().catch(() => ({}))
 
