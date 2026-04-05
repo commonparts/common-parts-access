@@ -35,13 +35,15 @@ export interface ClientUploadedFile {
  * Uploads a single file directly from the browser to Supabase Storage.
  * Bypasses the API route body-size limit by going straight to storage.
  */
+type BrowserSupabaseClient = ReturnType<typeof createClient>
+
 async function uploadFileToStorage(params: {
+  supabase: BrowserSupabaseClient
   file: File
   userId: string
   modelId: string
   kind: 'model' | 'thumbnail'
 }): Promise<ClientUploadedFile> {
-  const supabase = createClient()
   const extension = getFileExtension(params.file.name)
   const filename = uniqueFilename(params.file.name)
   const folder = params.kind === 'thumbnail' ? 'thumbnails' : 'files'
@@ -54,7 +56,7 @@ async function uploadFileToStorage(params: {
     ? (inferImageContentType(extension) || 'image/jpeg')
     : resolveModelContentType(extension)
 
-  const { error } = await supabase.storage
+  const { error } = await params.supabase.storage
     .from(bucket)
     .upload(path, params.file, { upsert: false, contentType })
 
@@ -92,6 +94,7 @@ export async function uploadFilesFromClient(params: {
   thumbnails: File[]
   onProgress?: (progress: UploadProgress) => void
 }): Promise<{ modelFiles: ClientUploadedFile[]; thumbnails: ClientUploadedFile[] }> {
+  const supabase = createClient()
   const uploaded: ClientUploadedFile[] = []
   const modelResults: ClientUploadedFile[] = []
   const thumbnailResults: ClientUploadedFile[] = []
@@ -109,6 +112,7 @@ export async function uploadFilesFromClient(params: {
       })
 
       const result = await uploadFileToStorage({
+        supabase,
         file,
         userId: params.userId,
         modelId: params.modelId,
@@ -128,6 +132,7 @@ export async function uploadFilesFromClient(params: {
       })
 
       const result = await uploadFileToStorage({
+        supabase,
         file: thumb,
         userId: params.userId,
         modelId: params.modelId,
@@ -140,7 +145,6 @@ export async function uploadFilesFromClient(params: {
     return { modelFiles: modelResults, thumbnails: thumbnailResults }
   } catch (error) {
     // Cleanup any files already uploaded in this batch
-    const supabase = createClient()
     const grouped = uploaded.reduce<Record<string, string[]>>((acc, f) => {
       acc[f.bucket] = acc[f.bucket] || []
       acc[f.bucket].push(f.path)

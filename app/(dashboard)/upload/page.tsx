@@ -154,6 +154,11 @@ export default function UploadPage() {
         userId: string
       }
 
+      if (!modelId || !slug || !userId || typeof modelId !== 'string' || typeof slug !== 'string' || typeof userId !== 'string') {
+        setError('Invalid response from server — missing model data')
+        return
+      }
+
       // --- Phase 2: Upload files directly to Supabase Storage ---
       setProgressText('Uploading files…')
 

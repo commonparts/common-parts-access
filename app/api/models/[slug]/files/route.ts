@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, STORAGE_BUCKETS } from '@/constants/app'
+import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
 
@@ -117,6 +118,17 @@ export async function POST(
       if (size < 0) {
         return NextResponse.json({ error: `Invalid file size for ${originalName.slice(0, 50)}` }, { status: 400 })
       }
+
+      // Enforce per-file size limits matching phase-1 validation
+      const maxFileSize = category === 'model'
+        ? MODEL_UPLOAD_LIMITS.maxModelFileSize
+        : MODEL_UPLOAD_LIMITS.maxThumbnailSize
+      if (size > maxFileSize) {
+        return NextResponse.json(
+          { error: `File ${originalName.slice(0, 50)} exceeds size limit (${Math.round(maxFileSize / (1024 * 1024))}MB)` },
+          { status: 400 },
+        )
+      }
       if (!path || path.length > MAX_PATH_LENGTH) {
         return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
       }
@@ -142,11 +154,11 @@ export async function POST(
         return NextResponse.json({ error: `Extension "${extension}" does not match filename "${filename.slice(0, 50)}"` }, { status: 400 })
       }
 
-      // Verify the path is scoped to the authenticated user's model folder
+      // Verify the path exactly matches the expected structure
       const expectedFolder = CATEGORY_FOLDER_MAP[category]
-      const expectedPathPrefix = `${user.id}/${modelId}/${expectedFolder}/`
-      if (!path.startsWith(expectedPathPrefix)) {
-        return NextResponse.json({ error: 'File path does not match authenticated user and model' }, { status: 403 })
+      const expectedPath = `${user.id}/${modelId}/${expectedFolder}/${filename}`
+      if (path !== expectedPath) {
+        return NextResponse.json({ error: 'File path does not match authenticated user, model, and filename' }, { status: 403 })
       }
 
       // Derive public URL server-side — never trust client-provided URLs
@@ -162,6 +174,12 @@ export async function POST(
         file_category: category,
         upload_path: path,
       })
+    }
+
+    // Enforce total size limit across all files
+    const totalSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
+    if (totalSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+      return NextResponse.json({ error: 'Total upload size exceeds limit' }, { status: 400 })
     }
 
     // Insert file rows
@@ -191,9 +209,8 @@ export async function POST(
 
     return NextResponse.json({ registered: fileRows.length }, { status: 201 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error while registering files'
     console.error('File registration failed', error)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: 'Unexpected error while registering files' }, { status: 500 })
   }
 }
 

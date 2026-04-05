@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils/slug'
-import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
@@ -9,12 +9,6 @@ export const runtime = 'nodejs'
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
 const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
-
-function getFileExtension(name: string): string {
-  const lastDot = name.lastIndexOf('.')
-  if (lastDot === -1) return ''
-  return name.slice(lastDot).toLowerCase()
-}
 
 interface FileInfo {
   name: string
@@ -454,8 +448,7 @@ export async function POST(request: NextRequest) {
       status,
     }, { status: 201 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error while creating model'
     console.error('Model upload failed', error)
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: 'Unexpected error while creating model' }, { status: 500 })
   }
 }
