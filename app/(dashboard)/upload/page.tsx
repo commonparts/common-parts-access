@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
+import { uploadFilesFromClient, type UploadProgress } from '@/lib/storage/client-upload'
 
 interface UploadIssue {
   field?: string
@@ -17,114 +18,185 @@ export default function UploadPage() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [issues, setIssues] = useState<UploadIssue[]>([])
+  const [progressText, setProgressText] = useState<string | null>(null)
 
-  const handleSubmit = async (payload: any) => {
+  /**
+   * Three-phase upload:
+   * 1. Send metadata (no files) to the API to create the model record.
+   * 2. Upload files directly to Supabase Storage from the browser.
+   * 3. Register the uploaded files via a second API call.
+   *
+   * This bypasses the Vercel 4.5 MB serverless body-size limit by never
+   * sending file bytes through the API route.
+   */
+  const handleSubmit = async (payload: {
+    title: string
+    description: string
+    categoryId: string
+    tags: string[]
+    brandId?: string
+    productId?: string
+    files: File[]
+    thumbnails: File[]
+    isPublic: boolean
+    licenseId: string
+    originType: string
+    sourceUrl: string
+    sourcePlatform: string
+    originalAuthor: string
+    originalAuthorUrl: string
+    sourceLicenseId: string
+    verificationStatus: string
+    material: string
+    color: string
+    dimensionsLength: string
+    dimensionsWidth: string
+    dimensionsHeight: string
+    dimensionsUnit: string
+    layerHeight: string
+    infill: string
+    supports: string
+    estimatedPrintTime: string
+    estimatedMaterialUsage: string
+  }) => {
     setLoading(true)
     setError(null)
     setSuccess(null)
     setIssues([])
-
-    const body = new FormData()
-    body.append('title', payload.title)
-    body.append('description', payload.description || '')
-    body.append('category', payload.categoryId)
-    body.append('license_id', payload.licenseId || '')
-    body.append('isPublic', String(Boolean(payload.isPublic)))
-    if (payload.brandId) body.append('brand', payload.brandId)
-    if (payload.productId) body.append('product', payload.productId)
-
-    // Attribution & License
-    body.append('origin_type', payload.originType || 'original')
-    if (payload.sourceUrl) body.append('source_url', payload.sourceUrl)
-    if (payload.sourcePlatform) body.append('source_platform', payload.sourcePlatform)
-    if (payload.originalAuthor) body.append('original_author', payload.originalAuthor)
-    if (payload.originalAuthorUrl) body.append('original_author_url', payload.originalAuthorUrl)
-    if (payload.sourceLicenseId) body.append('source_license_id', payload.sourceLicenseId)
-    body.append('verification_status', payload.verificationStatus || 'unverified')
-
-    // Advanced — print metadata
-    if (payload.material) body.append('material', payload.material)
-    if (payload.color) body.append('color', payload.color)
-    if (payload.estimatedPrintTime !== '' && payload.estimatedPrintTime != null) {
-      body.append('estimated_print_time', payload.estimatedPrintTime)
-    }
-    if (payload.estimatedMaterialUsage !== '' && payload.estimatedMaterialUsage != null) {
-      body.append('estimated_material_usage', payload.estimatedMaterialUsage)
-    }
-
-    const hasDimensions =
-      (payload.dimensionsLength != null && payload.dimensionsLength !== '') ||
-      (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') ||
-      (payload.dimensionsHeight != null && payload.dimensionsHeight !== '')
-    if (hasDimensions) {
-      const dimensions = {
-        length:
-          payload.dimensionsLength != null && payload.dimensionsLength !== ''
-            ? parseFloat(payload.dimensionsLength)
-            : undefined,
-        width:
-          payload.dimensionsWidth != null && payload.dimensionsWidth !== ''
-            ? parseFloat(payload.dimensionsWidth)
-            : undefined,
-        height:
-          payload.dimensionsHeight != null && payload.dimensionsHeight !== ''
-            ? parseFloat(payload.dimensionsHeight)
-            : undefined,
-        unit: payload.dimensionsUnit || 'mm',
-      }
-      body.append('dimensions', JSON.stringify(dimensions))
-    }
-
-    const hasPrintSettings =
-      (payload.layerHeight != null && payload.layerHeight !== '') ||
-      (payload.infill != null && payload.infill !== '') ||
-      (payload.supports != null && payload.supports !== '')
-    if (hasPrintSettings) {
-      const printSettings: Record<string, unknown> = {}
-      if (payload.layerHeight != null && payload.layerHeight !== '') {
-        printSettings.layer_height = parseFloat(payload.layerHeight)
-      }
-      if (payload.infill != null && payload.infill !== '') {
-        printSettings.infill = parseFloat(payload.infill)
-      }
-      if (payload.supports != null && payload.supports !== '') {
-        printSettings.supports = payload.supports
-      }
-      body.append('print_settings', JSON.stringify(printSettings))
-    }
-
-    for (const tag of payload.tags || []) {
-      body.append('tags', tag)
-    }
-    for (const file of payload.files || []) {
-      body.append('files', file)
-    }
-    for (const thumb of payload.thumbnails || []) {
-      body.append('thumbnails', thumb)
-    }
+    setProgressText('Creating model record…')
 
     try {
-      const response = await fetch('/api/models/upload', {
-        method: 'POST',
-        body,
-      })
-      const data = await response.json().catch(() => ({}))
+      // --- Build metadata payload (no file bytes) ---
+      const metadata: Record<string, unknown> = {
+        title: payload.title,
+        description: payload.description || '',
+        category: payload.categoryId,
+        license_id: payload.licenseId || '',
+        isPublic: Boolean(payload.isPublic),
+        origin_type: payload.originType || 'original',
+        verification_status: payload.verificationStatus || 'unverified',
+        tags: payload.tags || [],
+        // File metadata for server-side validation (names/sizes only)
+        modelFiles: payload.files.map((f) => ({ name: f.name, size: f.size })),
+        thumbnails: payload.thumbnails.map((f) => ({ name: f.name, size: f.size })),
+      }
 
-      if (!response.ok) {
-        setError(data?.error || 'Upload failed')
-        setIssues(Array.isArray(data?.issues) ? data.issues : [])
+      if (payload.brandId) metadata.brand = payload.brandId
+      if (payload.productId) metadata.product = payload.productId
+      if (payload.sourceUrl) metadata.source_url = payload.sourceUrl
+      if (payload.sourcePlatform) metadata.source_platform = payload.sourcePlatform
+      if (payload.originalAuthor) metadata.original_author = payload.originalAuthor
+      if (payload.originalAuthorUrl) metadata.original_author_url = payload.originalAuthorUrl
+      if (payload.sourceLicenseId) metadata.source_license_id = payload.sourceLicenseId
+      if (payload.material) metadata.material = payload.material
+      if (payload.color) metadata.color = payload.color
+
+      if (payload.estimatedPrintTime !== '' && payload.estimatedPrintTime != null) {
+        metadata.estimated_print_time = payload.estimatedPrintTime
+      }
+      if (payload.estimatedMaterialUsage !== '' && payload.estimatedMaterialUsage != null) {
+        metadata.estimated_material_usage = payload.estimatedMaterialUsage
+      }
+
+      const hasDimensions =
+        (payload.dimensionsLength != null && payload.dimensionsLength !== '') ||
+        (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') ||
+        (payload.dimensionsHeight != null && payload.dimensionsHeight !== '')
+      if (hasDimensions) {
+        const dimensions: Record<string, unknown> = { unit: payload.dimensionsUnit || 'mm' }
+        if (payload.dimensionsLength != null && payload.dimensionsLength !== '') {
+          dimensions.length = parseFloat(payload.dimensionsLength)
+        }
+        if (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') {
+          dimensions.width = parseFloat(payload.dimensionsWidth)
+        }
+        if (payload.dimensionsHeight != null && payload.dimensionsHeight !== '') {
+          dimensions.height = parseFloat(payload.dimensionsHeight)
+        }
+        metadata.dimensions = JSON.stringify(dimensions)
+      }
+
+      const hasPrintSettings =
+        (payload.layerHeight != null && payload.layerHeight !== '') ||
+        (payload.infill != null && payload.infill !== '') ||
+        (payload.supports != null && payload.supports !== '')
+      if (hasPrintSettings) {
+        const settings: Record<string, unknown> = {}
+        if (payload.layerHeight != null && payload.layerHeight !== '') {
+          settings.layer_height = parseFloat(payload.layerHeight)
+        }
+        if (payload.infill != null && payload.infill !== '') {
+          settings.infill = parseFloat(payload.infill)
+        }
+        if (payload.supports != null && payload.supports !== '') {
+          settings.supports = payload.supports
+        }
+        metadata.print_settings = JSON.stringify(settings)
+      }
+
+      // --- Phase 1: Create model record ---
+      const createResponse = await fetch('/api/models/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(metadata),
+      })
+      const createData = await createResponse.json().catch(() => ({}))
+
+      if (!createResponse.ok) {
+        setError(createData?.error || 'Failed to create model record')
+        setIssues(Array.isArray(createData?.issues) ? createData.issues : [])
+        return
+      }
+
+      const { modelId, slug, userId } = createData as {
+        modelId: string
+        slug: string
+        userId: string
+      }
+
+      // --- Phase 2: Upload files directly to Supabase Storage ---
+      setProgressText('Uploading files…')
+
+      const handleProgress = (progress: UploadProgress) => {
+        setProgressText(
+          `Uploading ${progress.fileName} (${progress.current}/${progress.total})…`,
+        )
+      }
+
+      const uploads = await uploadFilesFromClient({
+        userId,
+        modelId,
+        modelFiles: payload.files,
+        thumbnails: payload.thumbnails,
+        onProgress: handleProgress,
+      })
+
+      // --- Phase 3: Register uploaded files ---
+      setProgressText('Finalizing upload…')
+
+      const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
+      const registerResponse = await fetch(`/api/models/${encodeURIComponent(modelId)}/files`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: allFiles }),
+      })
+      const registerData = await registerResponse.json().catch(() => ({}))
+
+      if (!registerResponse.ok) {
+        setError(registerData?.error || 'Failed to register uploaded files')
         return
       }
 
       setSuccess('Model uploaded successfully')
-      if (data?.slug) {
-        const params = new URLSearchParams({ slug: data.slug })
+      if (slug) {
+        const params = new URLSearchParams({ slug })
         router.push(`/upload/success?${params.toString()}`)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed')
+      setError(err instanceof Error ? err.message : 'Upload failed — please try again')
     } finally {
       setLoading(false)
+      setProgressText(null)
     }
   }
 
@@ -155,6 +227,9 @@ export default function UploadPage() {
           )}
 
           <ModelUploadForm onSubmit={handleSubmit} loading={loading} />
+          {progressText && loading && (
+            <p className="text-sm text-text-secondary">{progressText}</p>
+          )}
         </div>
       </Grid>
     </DashboardShell>

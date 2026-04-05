@@ -1,10 +1,72 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils/slug'
-import { uploadModelAssets } from '@/lib/storage/upload'
-import { validateModelUpload } from '@/lib/storage/file-validation'
+import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { FILE_TYPES } from '@/constants/app'
 
 export const runtime = 'nodejs'
+
+const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
+const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
+
+function getFileExtension(name: string): string {
+  const lastDot = name.lastIndexOf('.')
+  if (lastDot === -1) return ''
+  return name.slice(lastDot).toLowerCase()
+}
+
+interface FileInfo {
+  name: string
+  size: number
+}
+
+/**
+ * Validates file metadata (names, sizes, counts) without requiring actual file bytes.
+ * Used to pre-validate before the client uploads files directly to storage.
+ */
+function validateFileMetadata(
+  modelFiles: FileInfo[],
+  thumbnails: FileInfo[],
+): { ok: boolean; issues: { field: string; message: string }[] } {
+  const issues: { field: string; message: string }[] = []
+
+  if (!modelFiles || modelFiles.length === 0) {
+    issues.push({ field: 'files', message: 'At least one model file is required' })
+  }
+  if (modelFiles.length > MODEL_UPLOAD_LIMITS.maxModelFiles) {
+    issues.push({ field: 'files', message: `Too many model files. Max ${MODEL_UPLOAD_LIMITS.maxModelFiles}` })
+  }
+  if (thumbnails.length > MODEL_UPLOAD_LIMITS.maxThumbnailFiles) {
+    issues.push({ field: 'thumbnails', message: `Too many thumbnails. Max ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles}` })
+  }
+
+  let totalSize = 0
+  for (const file of modelFiles) {
+    const ext = getFileExtension(file.name)
+    if (!MODEL_EXTENSIONS.has(ext)) {
+      issues.push({ field: 'files', message: `File ${file.name} has unsupported extension ${ext || '(none)'}` })
+    }
+    if (file.size > MODEL_UPLOAD_LIMITS.maxModelFileSize) {
+      issues.push({ field: 'files', message: `File ${file.name} exceeds limit (${Math.round(MODEL_UPLOAD_LIMITS.maxModelFileSize / (1024 * 1024))}MB)` })
+    }
+    totalSize += file.size
+  }
+  for (const file of thumbnails) {
+    const ext = getFileExtension(file.name)
+    if (!IMAGE_EXTENSIONS.has(ext)) {
+      issues.push({ field: 'thumbnails', message: `File ${file.name} has unsupported extension ${ext || '(none)'}` })
+    }
+    if (file.size > MODEL_UPLOAD_LIMITS.maxThumbnailSize) {
+      issues.push({ field: 'thumbnails', message: `File ${file.name} exceeds limit (${Math.round(MODEL_UPLOAD_LIMITS.maxThumbnailSize / (1024 * 1024))}MB)` })
+    }
+    totalSize += file.size
+  }
+  if (totalSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+    issues.push({ field: 'files', message: 'Total upload size exceeds limit' })
+  }
+
+  return { ok: issues.length === 0, issues }
+}
 
 async function ensureUniqueSlug(name: string, supabase: Awaited<ReturnType<typeof createClient>>) {
   const base = slugify(name) || `model-${Date.now().toString(36)}`
@@ -30,22 +92,6 @@ async function ensureUniqueSlug(name: string, supabase: Awaited<ReturnType<typeo
   return candidate
 }
 
-async function cleanupUploadedAssets(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  paths: { bucket: string; path: string }[],
-) {
-  const grouped = paths.reduce<Record<string, string[]>>((acc, asset) => {
-    acc[asset.bucket] = acc[asset.bucket] || []
-    acc[asset.bucket].push(asset.path)
-    return acc
-  }, {})
-
-  await Promise.all(
-    Object.entries(grouped).map(([bucket, bucketPaths]) =>
-      supabase.storage.from(bucket).remove(bucketPaths),
-    ),
-  )
-}
 
 const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
 const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
@@ -144,6 +190,11 @@ function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
   return { ok: true, data: result }
 }
 
+/**
+ * Creates a model record from metadata only (no file bytes).
+ * Files are uploaded directly to Supabase Storage by the client, then
+ * registered via POST /api/models/[id]/files.
+ */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -153,46 +204,60 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const formData = await request.formData()
-    const name = (formData.get('title') || formData.get('name') || '').toString().trim()
-    const description = (formData.get('description') || '').toString().trim() || null
-    const categoryId = (formData.get('category') || '').toString().trim() || null
-    const brandId = (formData.get('brand') || '').toString().trim() || null
-    const productId = (formData.get('product') || '').toString().trim() || null
-    const licenseId = (formData.get('license_id') || '').toString().trim() || null
-    const isPublic = String(formData.get('isPublic') ?? 'true') === 'true'
+    const body: unknown = await request.json()
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    const payload = body as Record<string, unknown>
+
+    const name = typeof payload.title === 'string' ? payload.title.trim() : ''
+    const description = typeof payload.description === 'string' ? payload.description.trim() || null : null
+    const categoryId = typeof payload.category === 'string' ? payload.category.trim() || null : null
+    const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
+    const productId = typeof payload.product === 'string' ? payload.product.trim() || null : null
+    const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
+    const isPublic = payload.isPublic !== false
 
     // Attribution & License fields
-    const originType = (formData.get('origin_type') || 'original').toString().trim()
-    const sourceUrl = (formData.get('source_url') || '').toString().trim() || null
-    const sourcePlatform = (formData.get('source_platform') || '').toString().trim() || null
-    const originalAuthor = (formData.get('original_author') || '').toString().trim() || null
-    const originalAuthorUrl = (formData.get('original_author_url') || '').toString().trim() || null
-    const sourceLicenseId = (formData.get('source_license_id') || '').toString().trim() || null
-    const verificationStatus = (formData.get('verification_status') || 'unverified').toString().trim()
+    const originType = typeof payload.origin_type === 'string' ? payload.origin_type.trim() : 'original'
+    const sourceUrl = typeof payload.source_url === 'string' ? payload.source_url.trim() || null : null
+    const sourcePlatform = typeof payload.source_platform === 'string' ? payload.source_platform.trim() || null : null
+    const originalAuthor = typeof payload.original_author === 'string' ? payload.original_author.trim() || null : null
+    const originalAuthorUrl = typeof payload.original_author_url === 'string' ? payload.original_author_url.trim() || null : null
+    const sourceLicenseId = typeof payload.source_license_id === 'string' ? payload.source_license_id.trim() || null : null
+    const verificationStatus = typeof payload.verification_status === 'string' ? payload.verification_status.trim() : 'unverified'
 
     // Advanced — print metadata fields
-    const material = (formData.get('material') || '').toString().trim() || null
-    const color = (formData.get('color') || '').toString().trim() || null
-    const dimensionsRaw = (formData.get('dimensions') || '').toString().trim()
-    const printSettingsRaw = (formData.get('print_settings') || '').toString().trim()
-    const estimatedPrintTimeRaw = (formData.get('estimated_print_time') || '').toString().trim()
-    const estimatedMaterialUsageRaw = (formData.get('estimated_material_usage') || '').toString().trim()
+    const material = typeof payload.material === 'string' ? payload.material.trim() || null : null
+    const color = typeof payload.color === 'string' ? payload.color.trim() || null : null
+    const dimensionsRaw = typeof payload.dimensions === 'string' ? payload.dimensions.trim() : ''
+    const printSettingsRaw = typeof payload.print_settings === 'string' ? payload.print_settings.trim() : ''
+    const estimatedPrintTimeRaw = typeof payload.estimated_print_time === 'string' ? payload.estimated_print_time.trim() : ''
+    const estimatedMaterialUsageRaw = typeof payload.estimated_material_usage === 'string' ? payload.estimated_material_usage.trim() : ''
 
-    const tags = formData.getAll('tags').map((tag) => tag.toString().trim()).filter(Boolean)
-    const modelFiles = formData.getAll('files').filter((value): value is File => value instanceof File)
-    const thumbnails = formData.getAll('thumbnails').filter((value): value is File => value instanceof File)
+    const tags = Array.isArray(payload.tags)
+      ? payload.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
+      : []
 
-    const validation = validateModelUpload({
-      name,
-      category: categoryId,
-      tags,
-      modelFiles,
-      thumbnails,
-    })
+    // File metadata validation (names and sizes only — no file bytes)
+    const modelFileInfos: FileInfo[] = Array.isArray(payload.modelFiles)
+      ? payload.modelFiles
+          .filter((f): f is Record<string, unknown> => typeof f === 'object' && f !== null)
+          .map((f) => ({ name: String(f.name ?? ''), size: Number(f.size ?? 0) }))
+      : []
+    const thumbnailInfos: FileInfo[] = Array.isArray(payload.thumbnails)
+      ? payload.thumbnails
+          .filter((f): f is Record<string, unknown> => typeof f === 'object' && f !== null)
+          .map((f) => ({ name: String(f.name ?? ''), size: Number(f.size ?? 0) }))
+      : []
 
-    if (!validation.ok) {
-      return NextResponse.json({ error: 'Validation failed', issues: validation.issues }, { status: 400 })
+    if (!name || name.length < 3) {
+      return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: 'Title must be at least 3 characters' }] }, { status: 400 })
+    }
+
+    const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
+    if (!fileValidation.ok) {
+      return NextResponse.json({ error: 'Validation failed', issues: fileValidation.issues }, { status: 400 })
     }
 
     if (!categoryId) {
@@ -361,74 +426,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
     }
 
-    const uploads = await uploadModelAssets({
-      supabase,
-      userId: user.id,
-      modelId: model.id,
-      modelFiles: validation.modelFiles,
-      thumbnails: validation.thumbnails,
-    })
-
-    const fileRows = [
-      ...uploads.modelFiles.map((asset) => ({
-        model_id: model.id,
-        filename: asset.filename,
-        original_filename: asset.originalName,
-        file_type: asset.extension,
-        file_size: asset.size,
-        file_url: asset.publicUrl,
-        file_category: 'model',
-        upload_path: asset.path,
-      })),
-      ...uploads.thumbnails.map((asset) => ({
-        model_id: model.id,
-        filename: asset.filename,
-        original_filename: asset.originalName,
-        file_type: asset.extension,
-        file_size: asset.size,
-        file_url: asset.publicUrl,
-        file_category: 'image',
-        upload_path: asset.path,
-      })),
-    ]
-
-    if (fileRows.length > 0) {
-      const { error: filesError } = await supabase.from('model_files').insert(fileRows)
-      if (filesError) {
-        await cleanupUploadedAssets(supabase, [...uploads.modelFiles, ...uploads.thumbnails])
-        console.error('Failed to insert model_files rows', filesError)
-        return NextResponse.json({ error: 'Failed to persist uploaded files' }, { status: 500 })
-      }
-    }
-
-    if (uploads.primaryThumbnailUrl || uploads.imageUrls.length) {
-      const { error: updateError } = await supabase
-        .from('models')
-        .update({
-          thumbnail_url: uploads.primaryThumbnailUrl,
-          images: uploads.imageUrls,
-        })
-        .eq('id', model.id)
-        .select('id')
-        .single()
-
-      if (updateError) {
-        console.warn('Uploaded but failed to update thumbnail/images', updateError)
-      }
-    }
-
     return NextResponse.json({
       modelId: model.id,
       slug: model.slug,
+      userId: user.id,
       status,
-      fileCount: uploads.modelFiles.length,
-      thumbnailUrl: uploads.primaryThumbnailUrl,
-      images: uploads.imageUrls,
     }, { status: 201 })
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unexpected error while uploading model'
-    const isUnsupported = message.toLowerCase().includes('unsupported content type') || message.toLowerCase().includes('mime type')
+    const message = error instanceof Error ? error.message : 'Unexpected error while creating model'
     console.error('Model upload failed', error)
-    return NextResponse.json({ error: message }, { status: isUnsupported ? 400 : 500 })
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }
