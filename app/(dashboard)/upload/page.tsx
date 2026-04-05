@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
-import { uploadFilesFromClient, type UploadProgress } from '@/lib/storage/client-upload'
+import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
 
 interface UploadIssue {
   field?: string
@@ -191,18 +191,7 @@ export default function UploadPage() {
       if (!registerResponse.ok) {
         // Best-effort cleanup of orphaned storage files
         try {
-          const { createClient } = await import('@/lib/supabase/client')
-          const supabase = createClient()
-          const grouped = allFiles.reduce<Record<string, string[]>>((acc, f) => {
-            acc[f.bucket] = acc[f.bucket] || []
-            acc[f.bucket].push(f.path)
-            return acc
-          }, {})
-          await Promise.all(
-            Object.entries(grouped).map(([bucket, paths]) =>
-              supabase.storage.from(bucket).remove(paths),
-            ),
-          )
+          await cleanupUploadedFiles(allFiles)
         } catch (cleanupError) {
           console.error('Failed to clean up orphaned files after registration failure', cleanupError)
         }

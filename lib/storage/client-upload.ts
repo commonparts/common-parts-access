@@ -32,6 +32,33 @@ export interface ClientUploadedFile {
 }
 
 /**
+ * Best-effort removal of uploaded storage objects, grouped by bucket.
+ * Swallows errors so the original failure is never masked.
+ */
+export async function cleanupUploadedFiles(
+  files: { bucket: string; path: string }[],
+): Promise<void> {
+  if (files.length === 0) return
+
+  const supabase = createClient()
+  const grouped = files.reduce<Record<string, string[]>>((acc, f) => {
+    acc[f.bucket] = acc[f.bucket] || []
+    acc[f.bucket].push(f.path)
+    return acc
+  }, {})
+
+  try {
+    await Promise.all(
+      Object.entries(grouped).map(([bucket, paths]) =>
+        supabase.storage.from(bucket).remove(paths),
+      ),
+    )
+  } catch {
+    // Swallow — caller decides how to handle cleanup failures
+  }
+}
+
+/**
  * Uploads a single file directly from the browser to Supabase Storage.
  * Bypasses the API route body-size limit by going straight to storage.
  */
@@ -145,22 +172,7 @@ export async function uploadFilesFromClient(params: {
     return { modelFiles: modelResults, thumbnails: thumbnailResults }
   } catch (error) {
     // Best-effort cleanup — don't let cleanup errors mask the original failure
-    const grouped = uploaded.reduce<Record<string, string[]>>((acc, f) => {
-      acc[f.bucket] = acc[f.bucket] || []
-      acc[f.bucket].push(f.path)
-      return acc
-    }, {})
-
-    try {
-      await Promise.all(
-        Object.entries(grouped).map(([bucket, paths]) =>
-          supabase.storage.from(bucket).remove(paths),
-        ),
-      )
-    } catch {
-      // Ignore cleanup errors — preserving the original failure is more important
-    }
-
+    await cleanupUploadedFiles(uploaded)
     throw error
   }
 }
