@@ -188,19 +188,23 @@ export default function UploadPage() {
       const registerData = await registerResponse.json().catch(() => ({}))
 
       if (!registerResponse.ok) {
-        // Clean up orphaned storage files since registration failed
-        const { createClient } = await import('@/lib/supabase/client')
-        const supabase = createClient()
-        const grouped = allFiles.reduce<Record<string, string[]>>((acc, f) => {
-          acc[f.bucket] = acc[f.bucket] || []
-          acc[f.bucket].push(f.path)
-          return acc
-        }, {})
-        await Promise.all(
-          Object.entries(grouped).map(([bucket, paths]) =>
-            supabase.storage.from(bucket).remove(paths),
-          ),
-        )
+        // Best-effort cleanup of orphaned storage files
+        try {
+          const { createClient } = await import('@/lib/supabase/client')
+          const supabase = createClient()
+          const grouped = allFiles.reduce<Record<string, string[]>>((acc, f) => {
+            acc[f.bucket] = acc[f.bucket] || []
+            acc[f.bucket].push(f.path)
+            return acc
+          }, {})
+          await Promise.all(
+            Object.entries(grouped).map(([bucket, paths]) =>
+              supabase.storage.from(bucket).remove(paths),
+            ),
+          )
+        } catch (cleanupError) {
+          console.error('Failed to clean up orphaned files after registration failure', cleanupError)
+        }
 
         setError(registerData?.error || 'Failed to register uploaded files')
         return

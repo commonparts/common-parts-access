@@ -176,10 +176,54 @@ export async function POST(
       })
     }
 
-    // Enforce total size limit across all files
+    // Enforce total size limit across all files in this request
     const totalSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
     if (totalSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
       return NextResponse.json({ error: 'Total upload size exceeds limit' }, { status: 400 })
+    }
+
+    // Enforce per-category counts within this request
+    const modelCount = fileRows.filter((f) => f.file_category === 'model').length
+    const imageCount = fileRows.filter((f) => f.file_category === 'image').length
+
+    if (modelCount > MODEL_UPLOAD_LIMITS.maxModelFiles) {
+      return NextResponse.json(
+        { error: `Too many model files (max ${MODEL_UPLOAD_LIMITS.maxModelFiles})` },
+        { status: 400 },
+      )
+    }
+    if (imageCount > MODEL_UPLOAD_LIMITS.maxThumbnailFiles) {
+      return NextResponse.json(
+        { error: `Too many thumbnails (max ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles})` },
+        { status: 400 },
+      )
+    }
+
+    // Check cumulative counts against existing files for this model
+    const { data: existingFiles, error: countError } = await supabase
+      .from('model_files')
+      .select('file_category')
+      .eq('model_id', modelId)
+
+    if (countError) {
+      console.error('Failed to check existing file counts', countError)
+      return NextResponse.json({ error: 'Failed to validate file limits' }, { status: 500 })
+    }
+
+    const existingModelCount = (existingFiles ?? []).filter((f) => f.file_category === 'model').length
+    const existingImageCount = (existingFiles ?? []).filter((f) => f.file_category === 'image').length
+
+    if (existingModelCount + modelCount > MODEL_UPLOAD_LIMITS.maxModelFiles) {
+      return NextResponse.json(
+        { error: `Adding ${modelCount} model file(s) would exceed the limit of ${MODEL_UPLOAD_LIMITS.maxModelFiles} (${existingModelCount} already registered)` },
+        { status: 400 },
+      )
+    }
+    if (existingImageCount + imageCount > MODEL_UPLOAD_LIMITS.maxThumbnailFiles) {
+      return NextResponse.json(
+        { error: `Adding ${imageCount} thumbnail(s) would exceed the limit of ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles} (${existingImageCount} already registered)` },
+        { status: 400 },
+      )
     }
 
     // Insert file rows

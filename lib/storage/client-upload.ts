@@ -144,18 +144,22 @@ export async function uploadFilesFromClient(params: {
 
     return { modelFiles: modelResults, thumbnails: thumbnailResults }
   } catch (error) {
-    // Cleanup any files already uploaded in this batch
+    // Best-effort cleanup — don't let cleanup errors mask the original failure
     const grouped = uploaded.reduce<Record<string, string[]>>((acc, f) => {
       acc[f.bucket] = acc[f.bucket] || []
       acc[f.bucket].push(f.path)
       return acc
     }, {})
 
-    await Promise.all(
-      Object.entries(grouped).map(([bucket, paths]) =>
-        supabase.storage.from(bucket).remove(paths),
-      ),
-    )
+    try {
+      await Promise.all(
+        Object.entries(grouped).map(([bucket, paths]) =>
+          supabase.storage.from(bucket).remove(paths),
+        ),
+      )
+    } catch {
+      // Ignore cleanup errors — preserving the original failure is more important
+    }
 
     throw error
   }
