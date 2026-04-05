@@ -126,6 +126,18 @@ export async function POST(
       if (size < 0) {
         return NextResponse.json({ error: `Invalid file size for ${originalName.slice(0, 50)}` }, { status: 400 })
       }
+      if (!path || path.length > MAX_PATH_LENGTH) {
+        return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
+      }
+
+      // Validate category and matching bucket before applying category-specific limits
+      const expectedBucket = CATEGORY_BUCKET_MAP[category]
+      if (!expectedBucket) {
+        return NextResponse.json({ error: `Invalid file category: ${category}` }, { status: 400 })
+      }
+      if (bucket !== expectedBucket) {
+        return NextResponse.json({ error: `Bucket mismatch for category "${category}"` }, { status: 400 })
+      }
 
       // Enforce per-file size limits matching phase-1 validation
       const maxFileSize = category === 'model'
@@ -137,21 +149,11 @@ export async function POST(
           { status: 400 },
         )
       }
-      if (!path || path.length > MAX_PATH_LENGTH) {
-        return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
-      }
-
-      // Validate category and matching bucket
-      const expectedBucket = CATEGORY_BUCKET_MAP[category]
-      if (!expectedBucket) {
-        return NextResponse.json({ error: `Invalid file category: ${category}` }, { status: 400 })
-      }
-      if (bucket !== expectedBucket) {
-        return NextResponse.json({ error: `Bucket mismatch for category "${category}"` }, { status: 400 })
-      }
 
       // Validate extension against category allowlist
       const extWithDot = extension.startsWith('.') ? extension : `.${extension}`
+      // Store extension without leading dot for DB consistency
+      const normalizedExtension = extension.replace(/^\./, '')
       const allowedExtensions = category === 'model' ? MODEL_EXTENSIONS : IMAGE_EXTENSIONS
       if (!allowedExtensions.has(extWithDot)) {
         return NextResponse.json({ error: `Extension "${extension}" not allowed for category "${category}"` }, { status: 400 })
@@ -176,7 +178,7 @@ export async function POST(
         model_id: modelId,
         filename,
         original_filename: originalName,
-        file_type: extension,
+        file_type: normalizedExtension,
         file_size: size,
         file_url: publicData.publicUrl,
         file_category: category,
@@ -185,8 +187,8 @@ export async function POST(
     }
 
     // Enforce total size limit across all files in this request
-    const totalSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
-    if (totalSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+    const newBatchSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
+    if (newBatchSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
       return NextResponse.json({ error: 'Total upload size exceeds limit' }, { status: 400 })
     }
 
@@ -207,10 +209,11 @@ export async function POST(
       )
     }
 
-    // Check cumulative counts against existing files for this model
+    // Check cumulative counts and total size against existing files for this model
     const [
       { count: existingModelCountRaw, error: modelCountError },
       { count: existingImageCountRaw, error: imageCountError },
+      { data: existingSizeData, error: existingSizeError },
     ] = await Promise.all([
       supabase
         .from('model_files')
@@ -222,10 +225,14 @@ export async function POST(
         .select('id', { count: 'exact', head: true })
         .eq('model_id', modelId)
         .eq('file_category', 'image'),
+      supabase
+        .from('model_files')
+        .select('file_size')
+        .eq('model_id', modelId),
     ])
 
-    if (modelCountError || imageCountError) {
-      console.error('Failed to check existing file counts', modelCountError ?? imageCountError)
+    if (modelCountError || imageCountError || existingSizeError) {
+      console.error('Failed to check existing file counts', modelCountError ?? imageCountError ?? existingSizeError)
       return NextResponse.json({ error: 'Failed to validate file limits' }, { status: 500 })
     }
 
@@ -243,6 +250,15 @@ export async function POST(
         { error: `Adding ${imageCount} thumbnail(s) would exceed the limit of ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles} (${existingImageCount} already registered)` },
         { status: 400 },
       )
+    }
+
+    // Enforce cumulative total size across existing + new files
+    const existingTotalSize = (existingSizeData ?? []).reduce(
+      (sum, f) => sum + (typeof f.file_size === 'number' ? f.file_size : 0),
+      0,
+    )
+    if (existingTotalSize + newBatchSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+      return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
     }
 
     // Insert file rows
@@ -263,6 +279,14 @@ export async function POST(
     }
 
     if (intendedStatus === 'published') {
+      // Ensure at least one model file exists before publishing
+      const hasModelFilesInBatch = modelCount > 0
+      if (!hasModelFilesInBatch && existingModelCount === 0) {
+        return NextResponse.json(
+          { error: 'At least one model file is required before publishing' },
+          { status: 400 },
+        )
+      }
       modelUpdate.status = 'published'
     }
 
@@ -276,6 +300,10 @@ export async function POST(
 
       if (updateError) {
         console.error('Failed to update model after file registration', updateError)
+        return NextResponse.json(
+          { error: 'Files were registered, but the model could not be updated' },
+          { status: 500 },
+        )
       }
     }
 
