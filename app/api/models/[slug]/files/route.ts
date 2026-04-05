@@ -1,25 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { FILE_TYPES, STORAGE_BUCKETS } from '@/constants/app'
 
 export const runtime = 'nodejs'
 
 const MAX_FILES_PER_REQUEST = 20
 const MAX_FILENAME_LENGTH = 300
 const MAX_PATH_LENGTH = 500
-const VALID_CATEGORIES = new Set(['model', 'image'])
+
+const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
+const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
+
+const CATEGORY_BUCKET_MAP: Record<string, string> = {
+  model: STORAGE_BUCKETS.MODEL_FILES,
+  image: STORAGE_BUCKETS.MODEL_THUMBNAILS,
+} as const
+
+const CATEGORY_FOLDER_MAP: Record<string, string> = {
+  model: 'files',
+  image: 'thumbnails',
+} as const
 
 /**
  * Registers uploaded files for an existing model after the client has uploaded
  * them directly to Supabase Storage. Also updates model thumbnail/images.
  *
- * Accepts modelId in the request body (the slug param is not used for lookup
- * because the upload page only has the modelId at this point).
+ * Uses the [slug] route param to look up the model.
+ * Derives public URLs server-side from bucket + path — never trusts client URLs.
  *
  * Requires: authenticated user who owns the model.
  */
 export async function POST(
   request: NextRequest,
-  _context: { params: Promise<{ slug: string }> },
+  context: { params: Promise<{ slug: string }> },
 ) {
   try {
     const supabase = await createClient()
@@ -29,23 +42,17 @@ export async function POST(
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
     }
 
-    const body: unknown = await request.json()
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    const { slug } = await context.params
+
+    if (!slug || slug.length > 200) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
     }
 
-    const payload = body as Record<string, unknown>
-    const modelId = typeof payload.modelId === 'string' ? payload.modelId.trim() : ''
-
-    if (!modelId || modelId.length > 36) {
-      return NextResponse.json({ error: 'Invalid model ID' }, { status: 400 })
-    }
-
-    // Verify the model exists and belongs to this user
+    // Look up the model by slug
     const { data: model, error: modelError } = await supabase
       .from('models')
       .select('id, user_id')
-      .eq('id', modelId)
+      .eq('slug', slug)
       .single()
 
     if (modelError || !model) {
@@ -56,6 +63,14 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
 
+    const modelId = model.id
+
+    const body: unknown = await request.json()
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    const payload = body as Record<string, unknown>
     const files = Array.isArray(payload.files) ? payload.files : []
 
     if (files.length === 0) {
@@ -65,7 +80,7 @@ export async function POST(
       return NextResponse.json({ error: `Too many files (max ${MAX_FILES_PER_REQUEST})` }, { status: 400 })
     }
 
-    // Validate and sanitize each file entry
+    // Validate and build each file row
     const fileRows: {
       model_id: string
       filename: string
@@ -85,10 +100,12 @@ export async function POST(
 
       const originalName = typeof entry.originalName === 'string' ? entry.originalName.trim() : ''
       const filename = typeof entry.filename === 'string' ? entry.filename.trim() : ''
-      const extension = typeof entry.extension === 'string' ? entry.extension.trim() : ''
-      const size = typeof entry.size === 'number' && Number.isFinite(entry.size) ? entry.size : -1
+      const extension = typeof entry.extension === 'string' ? entry.extension.trim().toLowerCase() : ''
+      const size = typeof entry.size === 'number' && Number.isFinite(entry.size) && entry.size >= 0
+        ? entry.size
+        : -1
       const path = typeof entry.path === 'string' ? entry.path.trim() : ''
-      const publicUrl = typeof entry.publicUrl === 'string' ? entry.publicUrl.trim() : ''
+      const bucket = typeof entry.bucket === 'string' ? entry.bucket.trim() : ''
       const category = typeof entry.category === 'string' ? entry.category.trim() : ''
 
       if (!originalName || originalName.length > MAX_FILENAME_LENGTH) {
@@ -98,22 +115,42 @@ export async function POST(
         return NextResponse.json({ error: `Invalid filename: ${filename.slice(0, 50)}` }, { status: 400 })
       }
       if (size < 0) {
-        return NextResponse.json({ error: 'Invalid file size' }, { status: 400 })
+        return NextResponse.json({ error: `Invalid file size for ${originalName.slice(0, 50)}` }, { status: 400 })
       }
       if (!path || path.length > MAX_PATH_LENGTH) {
         return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
       }
-      if (!publicUrl) {
-        return NextResponse.json({ error: 'Missing file URL' }, { status: 400 })
-      }
-      if (!VALID_CATEGORIES.has(category)) {
+
+      // Validate category and matching bucket
+      const expectedBucket = CATEGORY_BUCKET_MAP[category]
+      if (!expectedBucket) {
         return NextResponse.json({ error: `Invalid file category: ${category}` }, { status: 400 })
       }
-
-      // Verify the path starts with the user's ID to prevent path manipulation
-      if (!path.startsWith(`${user.id}/`)) {
-        return NextResponse.json({ error: 'File path does not match authenticated user' }, { status: 403 })
+      if (bucket !== expectedBucket) {
+        return NextResponse.json({ error: `Bucket mismatch for category "${category}"` }, { status: 400 })
       }
+
+      // Validate extension against category allowlist
+      const extWithDot = extension.startsWith('.') ? extension : `.${extension}`
+      const allowedExtensions = category === 'model' ? MODEL_EXTENSIONS : IMAGE_EXTENSIONS
+      if (!allowedExtensions.has(extWithDot)) {
+        return NextResponse.json({ error: `Extension "${extension}" not allowed for category "${category}"` }, { status: 400 })
+      }
+
+      // Verify extension matches the filename
+      if (!filename.toLowerCase().endsWith(extWithDot)) {
+        return NextResponse.json({ error: `Extension "${extension}" does not match filename "${filename.slice(0, 50)}"` }, { status: 400 })
+      }
+
+      // Verify the path is scoped to the authenticated user's model folder
+      const expectedFolder = CATEGORY_FOLDER_MAP[category]
+      const expectedPathPrefix = `${user.id}/${modelId}/${expectedFolder}/`
+      if (!path.startsWith(expectedPathPrefix)) {
+        return NextResponse.json({ error: 'File path does not match authenticated user and model' }, { status: 403 })
+      }
+
+      // Derive public URL server-side — never trust client-provided URLs
+      const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path)
 
       fileRows.push({
         model_id: modelId,
@@ -121,7 +158,7 @@ export async function POST(
         original_filename: originalName,
         file_type: extension,
         file_size: size,
-        file_url: publicUrl,
+        file_url: publicData.publicUrl,
         file_category: category,
         upload_path: path,
       })

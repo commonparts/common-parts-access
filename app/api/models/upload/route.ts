@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils/slug'
 import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { FILE_TYPES } from '@/constants/app'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 export const runtime = 'nodejs'
 
@@ -42,6 +43,10 @@ function validateFileMetadata(
 
   let totalSize = 0
   for (const file of modelFiles) {
+    if (!Number.isFinite(file.size) || file.size < 0) {
+      issues.push({ field: 'files', message: `File ${file.name} has an invalid size` })
+      continue
+    }
     const ext = getFileExtension(file.name)
     if (!MODEL_EXTENSIONS.has(ext)) {
       issues.push({ field: 'files', message: `File ${file.name} has unsupported extension ${ext || '(none)'}` })
@@ -52,6 +57,10 @@ function validateFileMetadata(
     totalSize += file.size
   }
   for (const file of thumbnails) {
+    if (!Number.isFinite(file.size) || file.size < 0) {
+      issues.push({ field: 'thumbnails', message: `File ${file.name} has an invalid size` })
+      continue
+    }
     const ext = getFileExtension(file.name)
     if (!IMAGE_EXTENSIONS.has(ext)) {
       issues.push({ field: 'thumbnails', message: `File ${file.name} has unsupported extension ${ext || '(none)'}` })
@@ -193,7 +202,7 @@ function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
 /**
  * Creates a model record from metadata only (no file bytes).
  * Files are uploaded directly to Supabase Storage by the client, then
- * registered via POST /api/models/[id]/files.
+ * registered via POST /api/models/[slug]/files.
  */
 export async function POST(request: NextRequest) {
   try {
@@ -216,7 +225,7 @@ export async function POST(request: NextRequest) {
     const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
     const productId = typeof payload.product === 'string' ? payload.product.trim() || null : null
     const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
-    const isPublic = payload.isPublic !== false
+    const isPublic = typeof payload.isPublic === 'boolean' ? payload.isPublic : true
 
     // Attribution & License fields
     const originType = typeof payload.origin_type === 'string' ? payload.origin_type.trim() : 'original'
@@ -238,6 +247,18 @@ export async function POST(request: NextRequest) {
     const tags = Array.isArray(payload.tags)
       ? payload.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
       : []
+
+    if (tags.length > VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT) {
+      return NextResponse.json({ error: `Too many tags (max ${VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT})` }, { status: 400 })
+    }
+    for (const tag of tags) {
+      if (tag.length < VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH || tag.length > VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH) {
+        return NextResponse.json(
+          { error: `Tag \"${tag.slice(0, 30)}\" must be between ${VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH} characters` },
+          { status: 400 },
+        )
+      }
+    }
 
     // File metadata validation (names and sizes only — no file bytes)
     const modelFileInfos: FileInfo[] = Array.isArray(payload.modelFiles)

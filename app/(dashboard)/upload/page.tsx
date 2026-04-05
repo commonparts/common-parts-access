@@ -178,11 +178,25 @@ export default function UploadPage() {
       const registerResponse = await fetch(`/api/models/${encodeURIComponent(slug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ modelId, files: allFiles }),
+        body: JSON.stringify({ files: allFiles }),
       })
       const registerData = await registerResponse.json().catch(() => ({}))
 
       if (!registerResponse.ok) {
+        // Clean up orphaned storage files since registration failed
+        const { createClient } = await import('@/lib/supabase/client')
+        const supabase = createClient()
+        const grouped = allFiles.reduce<Record<string, string[]>>((acc, f) => {
+          acc[f.bucket] = acc[f.bucket] || []
+          acc[f.bucket].push(f.path)
+          return acc
+        }, {})
+        await Promise.all(
+          Object.entries(grouped).map(([bucket, paths]) =>
+            supabase.storage.from(bucket).remove(paths),
+          ),
+        )
+
         setError(registerData?.error || 'Failed to register uploaded files')
         return
       }

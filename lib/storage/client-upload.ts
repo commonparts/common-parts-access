@@ -17,14 +17,13 @@ function uniqueFilename(originalName: string): string {
   const lastDot = originalName.lastIndexOf('.')
   const base = lastDot === -1 ? originalName : originalName.slice(0, lastDot)
   const safe = sanitizeName(base)
-  const suffix = Date.now().toString(36)
+  const suffix = crypto.randomUUID()
   return `${safe}-${suffix}${ext}`
 }
 
 export interface ClientUploadedFile {
   bucket: string
   path: string
-  publicUrl: string
   filename: string
   originalName: string
   extension: string
@@ -55,24 +54,17 @@ async function uploadFileToStorage(params: {
     ? (inferImageContentType(extension) || 'image/jpeg')
     : resolveModelContentType(extension)
 
-  const uploadBody = params.file.type === contentType
-    ? params.file
-    : new File([params.file], params.file.name, { type: contentType })
-
   const { error } = await supabase.storage
     .from(bucket)
-    .upload(path, uploadBody, { upsert: false, contentType })
+    .upload(path, params.file, { upsert: false, contentType })
 
   if (error) {
     throw new Error(`Failed to upload ${params.file.name}: ${error.message}`)
   }
 
-  const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path)
-
   return {
     bucket,
     path,
-    publicUrl: publicData.publicUrl,
     filename,
     originalName: params.file.name,
     extension: extension.replace(/^\./, ''),
