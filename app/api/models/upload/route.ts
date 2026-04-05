@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { slugify } from '@/lib/utils/slug'
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
-import { FILE_TYPES } from '@/constants/app'
+import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 export const runtime = 'nodejs'
@@ -41,6 +41,9 @@ function validateFileMetadata(
       issues.push({ field: 'files', message: `File ${file.name} has an invalid size` })
       continue
     }
+    if (file.name.length > MAX_FILENAME_LENGTH) {
+      issues.push({ field: 'files', message: `Filename too long (max ${MAX_FILENAME_LENGTH} characters)` })
+    }
     const ext = getFileExtension(file.name)
     if (!MODEL_EXTENSIONS.has(ext)) {
       issues.push({ field: 'files', message: `File ${file.name} has unsupported extension ${ext || '(none)'}` })
@@ -54,6 +57,9 @@ function validateFileMetadata(
     if (!Number.isFinite(file.size) || file.size < 0) {
       issues.push({ field: 'thumbnails', message: `File ${file.name} has an invalid size` })
       continue
+    }
+    if (file.name.length > MAX_FILENAME_LENGTH) {
+      issues.push({ field: 'thumbnails', message: `Filename too long (max ${MAX_FILENAME_LENGTH} characters)` })
     }
     const ext = getFileExtension(file.name)
     if (!IMAGE_EXTENSIONS.has(ext)) {

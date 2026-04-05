@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { FILE_TYPES, STORAGE_BUCKETS } from '@/constants/app'
+import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
 
 const MAX_FILES_PER_REQUEST = 20
-const MAX_FILENAME_LENGTH = 300
 const MAX_PATH_LENGTH = 500
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
@@ -120,8 +119,14 @@ export async function POST(
       if (!originalName || originalName.length > MAX_FILENAME_LENGTH) {
         return NextResponse.json({ error: `Invalid original filename: ${originalName.slice(0, 50)}` }, { status: 400 })
       }
+      if (/[\/\\]|\.\./.test(originalName)) {
+        return NextResponse.json({ error: 'Original filename contains invalid characters' }, { status: 400 })
+      }
       if (!filename || filename.length > MAX_FILENAME_LENGTH) {
         return NextResponse.json({ error: `Invalid filename: ${filename.slice(0, 50)}` }, { status: 400 })
+      }
+      if (/[\/\\]|\.\./.test(filename)) {
+        return NextResponse.json({ error: 'Filename contains invalid path characters' }, { status: 400 })
       }
       if (size < 0) {
         return NextResponse.json({ error: `Invalid file size for ${originalName.slice(0, 50)}` }, { status: 400 })
