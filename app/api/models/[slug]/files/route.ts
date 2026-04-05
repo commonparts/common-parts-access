@@ -228,7 +228,8 @@ export async function POST(
       supabase
         .from('model_files')
         .select('file_size')
-        .eq('model_id', modelId),
+        .eq('model_id', modelId)
+        .limit(MODEL_UPLOAD_LIMITS.maxModelFiles + MODEL_UPLOAD_LIMITS.maxThumbnailFiles),
     ])
 
     if (modelCountError || imageCountError || existingSizeError) {
@@ -261,6 +262,14 @@ export async function POST(
       return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
     }
 
+    // Check publish eligibility before inserting — avoids DB writes that a 400 would orphan
+    if (intendedStatus === 'published' && modelCount === 0 && existingModelCount === 0) {
+      return NextResponse.json(
+        { error: 'At least one model file is required before publishing' },
+        { status: 400 },
+      )
+    }
+
     // Insert file rows
     const { error: insertError } = await supabase.from('model_files').insert(fileRows)
     if (insertError) {
@@ -279,14 +288,6 @@ export async function POST(
     }
 
     if (intendedStatus === 'published') {
-      // Ensure at least one model file exists before publishing
-      const hasModelFilesInBatch = modelCount > 0
-      if (!hasModelFilesInBatch && existingModelCount === 0) {
-        return NextResponse.json(
-          { error: 'At least one model file is required before publishing' },
-          { status: 400 },
-        )
-      }
       modelUpdate.status = 'published'
     }
 
@@ -301,8 +302,8 @@ export async function POST(
       if (updateError) {
         console.error('Failed to update model after file registration', updateError)
         return NextResponse.json(
-          { error: 'Files were registered, but the model could not be updated' },
-          { status: 500 },
+          { registered: fileRows.length, warning: 'Files were registered, but the model could not be updated' },
+          { status: 201 },
         )
       }
     }
