@@ -4,6 +4,9 @@ export const FILE_TYPES = {
   DOC_FILES: [] as const,
 } as const;
 
+/** Maximum length for uploaded filenames — aligned with DB column constraints. */
+export const MAX_FILENAME_LENGTH = 255;
+
 export const STORAGE_BUCKETS = {
   MODEL_FILES: 'model-files',
   MODEL_THUMBNAILS: 'model-thumbnails',
