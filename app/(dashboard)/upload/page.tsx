@@ -6,6 +6,7 @@ import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
 import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
+import type { ModelFormData } from '@/hooks/use-model-upload-form-state'
 
 interface UploadIssue {
   field?: string
@@ -29,36 +30,7 @@ export default function UploadPage() {
    * This bypasses the Vercel 4.5 MB serverless body-size limit by never
    * sending file bytes through the API route.
    */
-  const handleSubmit = async (payload: {
-    title: string
-    description: string
-    categoryId: string
-    tags: string[]
-    brandId?: string
-    productId?: string
-    files: File[]
-    thumbnails: File[]
-    isPublic: boolean
-    licenseId: string
-    originType: string
-    sourceUrl: string
-    sourcePlatform: string
-    originalAuthor: string
-    originalAuthorUrl: string
-    sourceLicenseId: string
-    verificationStatus: string
-    material: string
-    color: string
-    dimensionsLength: string
-    dimensionsWidth: string
-    dimensionsHeight: string
-    dimensionsUnit: string
-    layerHeight: string
-    infill: string
-    supports: string
-    estimatedPrintTime: string
-    estimatedMaterialUsage: string
-  }) => {
+  const handleSubmit = async (payload: ModelFormData) => {
     setLoading(true)
     setError(null)
     setSuccess(null)
