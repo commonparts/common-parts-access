@@ -1,3 +1,5 @@
+'use client'
+
 import { createClient } from '@/lib/supabase/client'
 import { STORAGE_BUCKETS } from '@/constants/app'
 import { inferImageContentType, sanitizeFilename } from '@/lib/storage/image-processing'
