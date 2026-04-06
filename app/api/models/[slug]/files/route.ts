@@ -5,7 +5,8 @@ import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
 
-const MAX_FILES_PER_REQUEST = 20
+const MAX_FILES_PER_REQUEST =
+  MODEL_UPLOAD_LIMITS.maxModelFiles + MODEL_UPLOAD_LIMITS.maxThumbnailFiles
 const MAX_PATH_LENGTH = 500
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
