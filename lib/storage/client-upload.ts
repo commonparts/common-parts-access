@@ -1,22 +1,14 @@
 import { createClient } from '@/lib/supabase/client'
 import { STORAGE_BUCKETS } from '@/constants/app'
-import { inferImageContentType } from '@/lib/storage/image-processing'
+import { inferImageContentType, sanitizeFilename } from '@/lib/storage/image-processing'
 import { resolveModelContentType } from '@/lib/storage/upload'
 import { getFileExtension } from '@/lib/storage/file-validation'
-
-const INVALID_CHARS_REGEX = /[^A-Za-z0-9._-]/g
-
-function sanitizeName(name: string): string {
-  const trimmed = name.trim().replace(/\s+/g, '-')
-  const cleaned = trimmed.replace(INVALID_CHARS_REGEX, '').replace(/-+/g, '-').replace(/_+/g, '_')
-  return (cleaned || 'file').slice(0, 120)
-}
 
 function uniqueFilename(originalName: string): string {
   const ext = getFileExtension(originalName) || ''
   const lastDot = originalName.lastIndexOf('.')
   const base = lastDot === -1 ? originalName : originalName.slice(0, lastDot)
-  const safe = sanitizeName(base)
+  const safe = sanitizeFilename(base, 'file')
   const suffix = crypto.randomUUID()
   return `${safe}-${suffix}${ext}`
 }
