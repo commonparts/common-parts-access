@@ -162,7 +162,7 @@ export interface ModelDownload {
   id: string;
   user_id?: string | null;
   model_id: string;
-  file_id: string;
+  file_id: string | null; // Nullable for archive/ZIP downloads
   ip_hash?: string | null; // SHA-256 of IP + UA
   user_agent?: string | null;
   downloaded_at?: string;

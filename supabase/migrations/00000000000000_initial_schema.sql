@@ -7,7 +7,7 @@
 -- ============================================================================
 
 -- Extensions
-create extension if not exists "uuid-ossp" with schema extensions;
+create schema if not exists extensions;
 create extension if not exists pg_trgm;
 create extension if not exists pgcrypto;
 
@@ -150,11 +150,11 @@ create table public.brands (
 
 -- categories (self-referencing via parent_id)
 create table public.categories (
-  id          uuid primary key default extensions.uuid_generate_v4(),
+  id          uuid primary key default gen_random_uuid(),
   name        text not null check (length(name) <= 100),
   slug        text not null unique check (length(slug) <= 100),
   description text,
-  icon        text default 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/icons/default_icon.png',
+  icon        text default 'category-icons/default_icon.png',
   parent_id   uuid references public.categories(id),
   level       integer default 0,
   path        text,
@@ -193,7 +193,7 @@ create table public.products (
 
 -- models
 create table public.models (
-  id                       uuid primary key default extensions.uuid_generate_v4(),
+  id                       uuid primary key default gen_random_uuid(),
   name                     text not null check (length(name) <= 200),
   slug                     text not null unique,
   description              text,
@@ -217,7 +217,8 @@ create table public.models (
   images                   text[],
 
   -- Status and metrics
-  status                   text default 'draft' check (length(status) <= 20),
+  status                   text not null default 'draft'
+                             check (status in ('draft', 'published', 'archived')),
   download_count           bigint default 0,
   view_count               bigint default 0,
   like_count               bigint default 0,
@@ -290,11 +291,13 @@ create table public.model_downloads (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid references public.user_profiles(id),
   model_id      uuid not null references public.models(id),
-  file_id       uuid not null references public.model_files(id),
+  file_id       uuid references public.model_files(id),
   ip_hash       text,
   user_agent    text,
   downloaded_at timestamptz default now()
 );
+comment on column public.model_downloads.file_id is
+  'References a single downloaded file; null for archive downloads containing multiple files.';
 
 -- model_views
 create table public.model_views (

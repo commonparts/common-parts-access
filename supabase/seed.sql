@@ -179,13 +179,13 @@ on conflict (name) do nothing;
 -- Level 0 (root categories)
 insert into public.categories (id, name, slug, description, icon, parent_id)
 values
-  ('347b23ca-ebd0-4331-bc10-61cb7042a9cb', 'Appliances',            'appliances',             'Large and small household appliances for cooking, cleaning and food storage.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_appliances.png', null),
-  ('a38a6e94-5dbd-4c6e-b1c3-010429c86123', 'Cars & Trucks',         'cars-and-trucks',        'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_cars_trucks.png', null),
-  ('8b29991d-a54a-46da-a7d8-3fed8eb3613b', 'Furniture',             'furniture',              'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_furniture.png', null),
-  ('1da4a32c-0ca7-4fab-be29-ca8ae4a32783', 'Gadgets & Electronics', 'gadgets-and-electronics','Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_gadgets_electronics.png', null),
-  ('ef769541-ea4d-4d69-aa84-504c92e02ca4', 'Other',                 'other-category',         'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/default_icon.png', null),
-  ('6345bb11-895f-48bc-b937-b2e2943fdd65', 'Tools',                 'tools',                  'Handheld and power tools for repair, construction and maintenance.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_tools.png', null),
-  ('aef1ceb6-af87-4a35-89e0-155066702ffb', 'Toys & Games',          'toys-and-games',         'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/category-icons/category_toys_games.png', null)
+  ('347b23ca-ebd0-4331-bc10-61cb7042a9cb', 'Appliances',            'appliances',             'Large and small household appliances for cooking, cleaning and food storage.', 'category-icons/category_appliances.png', null),
+  ('a38a6e94-5dbd-4c6e-b1c3-010429c86123', 'Cars & Trucks',         'cars-and-trucks',        'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/category_cars_trucks.png', null),
+  ('8b29991d-a54a-46da-a7d8-3fed8eb3613b', 'Furniture',             'furniture',              'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/category_furniture.png', null),
+  ('1da4a32c-0ca7-4fab-be29-ca8ae4a32783', 'Gadgets & Electronics', 'gadgets-and-electronics','Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/category_gadgets_electronics.png', null),
+  ('ef769541-ea4d-4d69-aa84-504c92e02ca4', 'Other',                 'other-category',         'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/default_icon.png', null),
+  ('6345bb11-895f-48bc-b937-b2e2943fdd65', 'Tools',                 'tools',                  'Handheld and power tools for repair, construction and maintenance.', 'category-icons/category_tools.png', null),
+  ('aef1ceb6-af87-4a35-89e0-155066702ffb', 'Toys & Games',          'toys-and-games',         'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/category_toys_games.png', null)
 on conflict (slug) do nothing;
 
 -- Level 1
@@ -247,14 +247,14 @@ values
   ('9b2f2d9f-2343-4b1a-8690-a5929b523e9d', 'BCG800XL Smart Grinder', 'bcg800xl-smart-grinder',
     '6079bd2d-ce8b-4c07-bd6e-4cab13d0e1a9', 'ac174543-d344-49a6-b735-5103e1d189e6',
     null, null, null, false,
-    'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/product-thumbnails/9b2f2d9f-2343-4b1a-8690-a5929b523e9d/breville-bcg800xl-smart-grinder.png'),
+    'product-thumbnails/9b2f2d9f-2343-4b1a-8690-a5929b523e9d/breville-bcg800xl-smart-grinder.png'),
   ('d522114b-6069-435f-bd3b-c73b0a8421e4', 'B26FT50SNS French Door Bottom Mount Refrigerator', 'b26ft50sns-french-door-bottom-mount-refrigerator',
     'c83cd4b0-b21c-42cf-b52f-6e1fb0278031', '884e2d49-c7e7-4256-ac41-6286c338ac9f',
-    null, null, null, false, ''),
+    null, null, null, false, null),
   ('f5c397e0-f3a8-48d6-9480-6a8891d4dab9', 'B30BB830SS Built-in Bottom Freezer Refrigerator', 'b30bb830ss-built-in-bottom-freezer-refrigerator',
     'c83cd4b0-b21c-42cf-b52f-6e1fb0278031', '884e2d49-c7e7-4256-ac41-6286c338ac9f',
     null, null, null, false,
-    'https://pyzttrqnxvirpkuxtjxl.supabase.co/storage/v1/object/public/product-thumbnails/d126b874-b56d-44a0-8e32-43530b830402/product-1765916883528-MCSA052958_B30BB830SS_def.webp'),
+    'product-thumbnails/d126b874-b56d-44a0-8e32-43530b830402/product-1765916883528-MCSA052958_B30BB830SS_def.webp'),
   ('1bd83164-dc8c-4e92-a14a-26561e77df2d', 'HJÄLPA', 'hjlpa',
     'e6422b89-2f25-47ee-906d-87716fdd173b', 'bd1a077c-7e98-4457-bd54-3c5a88f83f1e',
     null, null, null, false, null)
