@@ -5,6 +5,10 @@ const URL_REGEX = /^https?:\/\//i
  * Accepts both full URLs (returned as-is) and relative storage paths
  * like 'bucket-name/object-path' (converted to the full public URL).
  * Returns null unchanged so callers can safely pass nullable values.
+ *
+ * When NEXT_PUBLIC_SUPABASE_URL is missing:
+ * - In development/test: throws immediately so the issue is caught early.
+ * - In production: returns the original relative path as a fallback.
  */
 export function resolveStorageUrl(pathOrUrl: string): string
 export function resolveStorageUrl(pathOrUrl: string | null | undefined): string | null

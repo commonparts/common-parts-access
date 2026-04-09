@@ -21,15 +21,17 @@ export async function CategoriesPreview() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
         {categories.map((category) => (
           <Card key={category.id} className="p-6 flex flex-col items-center gap-4 cursor-default">
-            <div className="w-16 h-16 flex items-center justify-center">
-              <Image 
-                src={resolveStorageUrl(category.icon) ?? ''} 
-                alt={category.name}
-                width={64}
-                height={64}
-                className="object-contain"
-              />
-            </div>
+            {resolveStorageUrl(category.icon) && (
+              <div className="w-16 h-16 flex items-center justify-center">
+                <Image 
+                  src={resolveStorageUrl(category.icon)!}
+                  alt={category.name}
+                  width={64}
+                  height={64}
+                  className="object-contain"
+                />
+              </div>
+            )}
             <h3 className="text-lg font-medium">{category.name}</h3>
           </Card>
         ))}

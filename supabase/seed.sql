@@ -188,54 +188,54 @@ values
   ('aef1ceb6-af87-4a35-89e0-155066702ffb', 'Toys & Games',          'toys-and-games',         'Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry''s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.', 'category-icons/category_toys_games.png', null)
 on conflict (slug) do nothing;
 
--- Level 1
-insert into public.categories (id, name, slug, description, icon, parent_id)
+-- Level 1 (icon omitted — DB default applies)
+insert into public.categories (id, name, slug, description, parent_id)
 values
   -- Appliances children
-  ('2964221f-6710-4283-8044-8c606ab49a90', 'Dishwasher',            'dishwasher',             null, null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('ede984b8-f640-4e3e-889e-db7b71b6386e', 'Dryer',                 'dryer',                  null, null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('7b16d43f-2352-4903-86eb-7b4ee0d2ce59', 'Oven',                  'oven',                   'Conventional and convection ovens for baking and roasting.', null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('884e2d49-c7e7-4256-ac41-6286c338ac9f', 'Refrigerator',          'refrigerator',           'Fridges and freezers for food preservation.', null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('b875d4a7-0bdb-4ed2-a30b-777e3d2dde94', 'Small Kitchen Appliance','small-kitchen-appliance','Compact countertop appliances and accessories.', null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('134d3d99-5405-4540-ae8b-75dc8fcbb105', 'Steam Cleaner',         'steam-cleaner',          null, null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('696c116f-a5fd-4d7c-ac59-a234d261a44f', 'Vacuum Cleaner',        'vacuum-cleaner',         null, null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
-  ('e8793bc8-c179-4e92-bc4d-a30d845584a4', 'Washing Machine',       'washing-machine',        'Top-load and front-load laundry machines.', null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('2964221f-6710-4283-8044-8c606ab49a90', 'Dishwasher',            'dishwasher',             null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('ede984b8-f640-4e3e-889e-db7b71b6386e', 'Dryer',                 'dryer',                  null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('7b16d43f-2352-4903-86eb-7b4ee0d2ce59', 'Oven',                  'oven',                   'Conventional and convection ovens for baking and roasting.', '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('884e2d49-c7e7-4256-ac41-6286c338ac9f', 'Refrigerator',          'refrigerator',           'Fridges and freezers for food preservation.', '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('b875d4a7-0bdb-4ed2-a30b-777e3d2dde94', 'Small Kitchen Appliance','small-kitchen-appliance','Compact countertop appliances and accessories.', '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('134d3d99-5405-4540-ae8b-75dc8fcbb105', 'Steam Cleaner',         'steam-cleaner',          null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('696c116f-a5fd-4d7c-ac59-a234d261a44f', 'Vacuum Cleaner',        'vacuum-cleaner',         null, '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
+  ('e8793bc8-c179-4e92-bc4d-a30d845584a4', 'Washing Machine',       'washing-machine',        'Top-load and front-load laundry machines.', '347b23ca-ebd0-4331-bc10-61cb7042a9cb'),
   -- Furniture children
-  ('bd1a077c-7e98-4457-bd54-3c5a88f83f1e', 'Storage Unit',          'storage-unit',           null, null, '8b29991d-a54a-46da-a7d8-3fed8eb3613b'),
+  ('bd1a077c-7e98-4457-bd54-3c5a88f83f1e', 'Storage Unit',          'storage-unit',           null, '8b29991d-a54a-46da-a7d8-3fed8eb3613b'),
   -- Tools children
-  ('ead24077-d069-4b6c-80cf-54f124d42ec4', 'Hand Tool',             'hand-tool',              'Manual tools for carpentry, plumbing, and general repairs', null, '6345bb11-895f-48bc-b937-b2e2943fdd65'),
-  ('cdbb349a-8d20-4220-9e79-812c75acc639', 'Outdoor Tool',          'outdoor-tool',           null, null, '6345bb11-895f-48bc-b937-b2e2943fdd65'),
-  ('3e3efc03-d16c-4696-bed4-05601a6f9186', 'Power Tool',            'power-tool',             'Drills, saws, sanders and other motorized tools.', null, '6345bb11-895f-48bc-b937-b2e2943fdd65')
+  ('ead24077-d069-4b6c-80cf-54f124d42ec4', 'Hand Tool',             'hand-tool',              'Manual tools for carpentry, plumbing, and general repairs', '6345bb11-895f-48bc-b937-b2e2943fdd65'),
+  ('cdbb349a-8d20-4220-9e79-812c75acc639', 'Outdoor Tool',          'outdoor-tool',           null, '6345bb11-895f-48bc-b937-b2e2943fdd65'),
+  ('3e3efc03-d16c-4696-bed4-05601a6f9186', 'Power Tool',            'power-tool',             'Drills, saws, sanders and other motorized tools.', '6345bb11-895f-48bc-b937-b2e2943fdd65')
 on conflict (slug) do nothing;
 
--- Level 2
-insert into public.categories (id, name, slug, description, icon, parent_id)
+-- Level 2 (icon omitted — DB default applies)
+insert into public.categories (id, name, slug, description, parent_id)
 values
   -- Small Kitchen Appliance children
-  ('d5e1dbf5-5a69-4034-addb-7185bd02e883', 'Air Fryer',       'air-fryer',       null, null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('69c9b9df-7427-4d9b-9011-bc9ad9c7011e', 'Blender',         'blender',         'Countertop and immersion blenders for food prep.', null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('ac174543-d344-49a6-b735-5103e1d189e6', 'Coffee Maker',    'coffee-maker',    'Drip, espresso, and pod coffee machines.', null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('08637fe0-f11a-45a9-a26d-581091046e40', 'Cooker',          'cooker',          null, null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('b3927bf0-68d6-42ee-b7d1-a5635422624e', 'Food Processor',  'food-processor',  null, null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('2f33fec5-1574-4aed-ae1d-0d3f704ed91f', 'Kettle',          'kettle',          'Electric and stovetop kettles for boiling water.', null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
-  ('e0a3913d-4abc-4f16-8dd5-7c15bccd419a', 'Microwave Oven',  'microwave-oven',  null, null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('d5e1dbf5-5a69-4034-addb-7185bd02e883', 'Air Fryer',       'air-fryer',       null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('69c9b9df-7427-4d9b-9011-bc9ad9c7011e', 'Blender',         'blender',         'Countertop and immersion blenders for food prep.', 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('ac174543-d344-49a6-b735-5103e1d189e6', 'Coffee Maker',    'coffee-maker',    'Drip, espresso, and pod coffee machines.', 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('08637fe0-f11a-45a9-a26d-581091046e40', 'Cooker',          'cooker',          null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('b3927bf0-68d6-42ee-b7d1-a5635422624e', 'Food Processor',  'food-processor',  null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('2f33fec5-1574-4aed-ae1d-0d3f704ed91f', 'Kettle',          'kettle',          'Electric and stovetop kettles for boiling water.', 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
+  ('e0a3913d-4abc-4f16-8dd5-7c15bccd419a', 'Microwave Oven',  'microwave-oven',  null, 'b875d4a7-0bdb-4ed2-a30b-777e3d2dde94'),
   -- Hand Tool children
-  ('be197004-0043-4a41-ac4d-be06c0c90249', 'Hammer',          'hammer',          'Claw, sledge, and mallet hammers.', null, 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
-  ('f69e947d-3458-4a39-956c-5bee9fe8515d', 'Pliers',          'pliers',          'Cutting and gripping pliers.', null, 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
-  ('46106835-c530-47b0-b996-0980407eeae8', 'Screwdriver',     'screwdriver',     'Flathead, Phillips and specialty screwdrivers.', null, 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
+  ('be197004-0043-4a41-ac4d-be06c0c90249', 'Hammer',          'hammer',          'Claw, sledge, and mallet hammers.', 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
+  ('f69e947d-3458-4a39-956c-5bee9fe8515d', 'Pliers',          'pliers',          'Cutting and gripping pliers.', 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
+  ('46106835-c530-47b0-b996-0980407eeae8', 'Screwdriver',     'screwdriver',     'Flathead, Phillips and specialty screwdrivers.', 'ead24077-d069-4b6c-80cf-54f124d42ec4'),
   -- Power Tool children
-  ('3a9e4e83-c481-4ece-b433-977610ecdcad', 'Impact Driver',   'impact-driver',   null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
-  ('fb04a22f-e0d4-4c8f-9069-4fdc2b904e76', 'Angle Grinder',   'angle-grinder',   null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
-  ('f310cc1e-a928-4661-b84c-426c0345492a', 'Circular Saw',    'circular-saw',    null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
-  ('61da04eb-9ac3-4c02-ba6f-c616778ffa60', 'Drill',           'drill',           null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
-  ('9bd37c2f-80c4-477d-86b5-72b12774fd6e', 'Jigsaw',          'jigsaw',          null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
-  ('64ebb796-4c38-4617-b21c-37524fb2cdd1', 'Sander',          'sander',          null, null, '3e3efc03-d16c-4696-bed4-05601a6f9186')
+  ('3a9e4e83-c481-4ece-b433-977610ecdcad', 'Impact Driver',   'impact-driver',   null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
+  ('fb04a22f-e0d4-4c8f-9069-4fdc2b904e76', 'Angle Grinder',   'angle-grinder',   null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
+  ('f310cc1e-a928-4661-b84c-426c0345492a', 'Circular Saw',    'circular-saw',    null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
+  ('61da04eb-9ac3-4c02-ba6f-c616778ffa60', 'Drill',           'drill',           null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
+  ('9bd37c2f-80c4-477d-86b5-72b12774fd6e', 'Jigsaw',          'jigsaw',          null, '3e3efc03-d16c-4696-bed4-05601a6f9186'),
+  ('64ebb796-4c38-4617-b21c-37524fb2cdd1', 'Sander',          'sander',          null, '3e3efc03-d16c-4696-bed4-05601a6f9186')
 on conflict (slug) do nothing;
 
--- Level 3
-insert into public.categories (id, name, slug, description, icon, parent_id)
+-- Level 3 (icon omitted — DB default applies)
+insert into public.categories (id, name, slug, description, parent_id)
 values
-  ('e66e2c1e-ac96-4035-b8d2-d252d2ca4c16', 'Rice Cooker', 'rice-cooker', null, null, '08637fe0-f11a-45a9-a26d-581091046e40')
+  ('e66e2c1e-ac96-4035-b8d2-d252d2ca4c16', 'Rice Cooker', 'rice-cooker', null, '08637fe0-f11a-45a9-a26d-581091046e40')
 on conflict (slug) do nothing;
 
 -- ============================================================================
