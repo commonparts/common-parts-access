@@ -11,6 +11,16 @@ export function resolveStorageUrl(pathOrUrl: string | null | undefined): string 
 export function resolveStorageUrl(pathOrUrl: string | null | undefined): string | null {
   if (!pathOrUrl) return null
   if (URL_REGEX.test(pathOrUrl)) return pathOrUrl
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) {
+    if (process.env.NODE_ENV !== 'production') {
+      throw new Error(
+        'resolveStorageUrl requires NEXT_PUBLIC_SUPABASE_URL to resolve relative storage paths.'
+      )
+    }
+    return pathOrUrl
+  }
+
   return `${supabaseUrl}/storage/v1/object/public/${pathOrUrl}`
 }

@@ -416,7 +416,8 @@ create policy "Users can insert own profile"
 
 create policy "Users can update own profile"
   on public.user_profiles for update
-  using (auth.uid() = id);
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
 
 -- brands ----------------------------------------------------------------------
 create policy "Enable read access for all users"
