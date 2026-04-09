@@ -26,5 +26,5 @@ export function resolveStorageUrl(pathOrUrl: string | null | undefined): string 
     return pathOrUrl
   }
 
-  return `${supabaseUrl}/storage/v1/object/public/${pathOrUrl}`
+  return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${pathOrUrl}`
 }

@@ -67,7 +67,7 @@ create or replace function public.increment_model_like_count()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   update public.models
@@ -82,7 +82,7 @@ create or replace function public.decrement_model_like_count()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   update public.models
@@ -97,7 +97,7 @@ create or replace function public.increment_model_view_count()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   update public.models
@@ -112,7 +112,7 @@ create or replace function public.increment_model_download_count()
 returns trigger
 language plpgsql
 security definer
-set search_path = public
+set search_path = ''
 as $$
 begin
   update public.models
@@ -300,8 +300,8 @@ create table public.model_downloads (
   user_id       uuid references public.user_profiles(id),
   model_id      uuid not null references public.models(id),
   file_id       uuid references public.model_files(id),
-  ip_hash       text,
-  user_agent    text,
+  ip_hash       text check (length(ip_hash) <= 64),
+  user_agent    text check (length(user_agent) <= 500),
   downloaded_at timestamptz default now()
 );
 comment on column public.model_downloads.file_id is
@@ -312,8 +312,8 @@ create table public.model_views (
   id         uuid primary key default gen_random_uuid(),
   model_id   uuid not null references public.models(id),
   user_id    uuid references auth.users(id),
-  ip_hash    text,
-  user_agent text,
+  ip_hash    text check (length(ip_hash) <= 64),
+  user_agent text check (length(user_agent) <= 500),
   viewed_at  timestamptz not null default now()
 );
 
@@ -373,7 +373,7 @@ create table public.feedback (
 
 create index idx_categories_path          on public.categories     using btree (path);
 create index idx_model_files_model        on public.model_files    using btree (model_id);
-create index idx_model_downloads_recent   on public.model_downloads using btree (downloaded_at desc, model_id);
+create index idx_model_downloads_recent   on public.model_downloads using btree (model_id, downloaded_at desc);
 create index idx_models_brand             on public.models         using btree (brand_id);
 create index idx_models_category          on public.models         using btree (category_id);
 create index idx_models_user              on public.models         using btree (user_id);
