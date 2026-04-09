@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
+import { resolveStorageUrl } from "@/lib/storage/url";
 
 export async function CategoriesPreview() {
   const supabase = await createClient();
@@ -22,7 +23,7 @@ export async function CategoriesPreview() {
           <Card key={category.id} className="p-6 flex flex-col items-center gap-4 cursor-default">
             <div className="w-16 h-16 flex items-center justify-center">
               <Image 
-                src={category.icon} 
+                src={resolveStorageUrl(category.icon) ?? ''} 
                 alt={category.name}
                 width={64}
                 height={64}

@@ -490,7 +490,13 @@ create policy "Service role can read model_likes"
 
 create policy "Users can insert likes"
   on public.model_likes for insert
-  with check (auth.uid() = user_id);
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.models m
+      where m.id = model_id and m.status = 'published'
+    )
+  );
 
 create policy "Users can delete own likes"
   on public.model_likes for delete
@@ -499,7 +505,14 @@ create policy "Users can delete own likes"
 -- model_downloads -------------------------------------------------------------
 create policy "Users can log their own downloads"
   on public.model_downloads for insert
-  with check (auth.uid() = user_id or user_id is null);
+  with check (
+    ((auth.uid() is not null and auth.uid() = user_id)
+      or (auth.uid() is null and user_id is null))
+    and exists (
+      select 1 from public.models m
+      where m.id = model_id and m.status = 'published'
+    )
+  );
 
 create policy "Service role can read model_downloads"
   on public.model_downloads for select
@@ -535,7 +548,14 @@ create policy "Users can delete own comments"
 -- model_views -----------------------------------------------------------------
 create policy "Authenticated can insert own views"
   on public.model_views for insert
-  with check (auth.uid() = user_id or user_id is null);
+  with check (
+    ((auth.uid() is not null and auth.uid() = user_id)
+      or (auth.uid() is null and user_id is null))
+    and exists (
+      select 1 from public.models m
+      where m.id = model_id and m.status = 'published'
+    )
+  );
 
 create policy "Service role can read model_views"
   on public.model_views for select

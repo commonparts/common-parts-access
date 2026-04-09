@@ -48,7 +48,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string | null;
-  icon?: string | null; // URL to category icon image
+  icon?: string | null; // Storage path to category icon image (e.g. 'category-icons/icon.png')
   parent_id?: string | null;
   level?: number;
   path?: string | null; // Materialized path: /electronics/phones/
