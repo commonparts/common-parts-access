@@ -277,8 +277,11 @@ export async function POST(request: NextRequest) {
           .map((f) => ({ name: String(f.name ?? ''), size: Number(f.size ?? 0) }))
       : []
 
-    if (!name || name.length < 3) {
-      return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: 'Title must be at least 3 characters' }] }, { status: 400 })
+    if (!name || name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH) {
+      return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at least ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} characters` }] }, { status: 400 })
+    }
+    if (name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
+      return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
     }
 
     const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)

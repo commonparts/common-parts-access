@@ -48,7 +48,7 @@ export interface Category {
   name: string;
   slug: string;
   description?: string | null;
-  icon?: string | null; // Lucide icon name
+  icon?: string | null; // Storage path to category icon image (e.g. 'category-icons/icon.png')
   parent_id?: string | null;
   level?: number;
   path?: string | null; // Materialized path: /electronics/phones/
@@ -102,7 +102,7 @@ export interface Model {
   
   // Files and media
   thumbnail_url?: string | null;
-  images?: Record<string, any> | null; // Array of image URLs (JSONB)
+  images?: string[] | null; // Array of image URLs (text[])
   
   // Status and metrics
   status?: ModelStatus;
@@ -162,7 +162,7 @@ export interface ModelDownload {
   id: string;
   user_id?: string | null;
   model_id: string;
-  file_id?: string | null;
+  file_id: string | null; // Nullable for archive/ZIP downloads
   ip_hash?: string | null; // SHA-256 of IP + UA
   user_agent?: string | null;
   downloaded_at?: string;
