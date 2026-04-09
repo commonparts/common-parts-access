@@ -24,12 +24,12 @@ function uniqueFilename(originalName: string) {
 	return `${name}-${suffix}${extension}`
 }
 
-function resolveModelContentType(extension: string): string {
+export function resolveModelContentType(extension: string): string {
 	switch (extension.toLowerCase()) {
 		case '.stl':
 			return 'model/stl'
 		case '.obj':
-			return 'text/plain'
+			return 'model/obj'
 		case '.stp':
 		case '.step':
 			return 'model/step'
