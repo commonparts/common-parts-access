@@ -279,8 +279,8 @@ create table public.model_files (
 -- model_likes
 create table public.model_likes (
   id       uuid primary key default gen_random_uuid(),
-  user_id  uuid references public.user_profiles(id),
-  model_id uuid references public.models(id),
+  user_id  uuid not null references public.user_profiles(id),
+  model_id uuid not null references public.models(id),
   liked_at timestamptz default now(),
   unique (user_id, model_id)
 );
@@ -289,8 +289,8 @@ create table public.model_likes (
 create table public.model_downloads (
   id            uuid primary key default gen_random_uuid(),
   user_id       uuid references public.user_profiles(id),
-  model_id      uuid references public.models(id),
-  file_id       uuid references public.model_files(id),
+  model_id      uuid not null references public.models(id),
+  file_id       uuid not null references public.model_files(id),
   ip_hash       text,
   user_agent    text,
   downloaded_at timestamptz default now()
@@ -309,8 +309,8 @@ create table public.model_views (
 -- model_comments
 create table public.model_comments (
   id         uuid primary key default gen_random_uuid(),
-  model_id   uuid references public.models(id),
-  user_id    uuid references public.user_profiles(id),
+  model_id   uuid not null references public.models(id),
+  user_id    uuid not null references public.user_profiles(id),
   parent_id  uuid references public.model_comments(id),
   content    text not null,
   rating     integer check (rating >= 1 and rating <= 5),
@@ -482,11 +482,38 @@ create policy "Users can delete own likes"
 -- model_downloads -------------------------------------------------------------
 create policy "Users can log their own downloads"
   on public.model_downloads for insert
-  with check (auth.uid() is not null and user_id = auth.uid());
+  with check (auth.uid() = user_id or user_id is null);
 
 create policy "Service role can read model_downloads"
   on public.model_downloads for select
   using ((auth.jwt() ->> 'role') = 'service_role');
+
+-- model_comments --------------------------------------------------------------
+create policy "Anyone can read comments on published models"
+  on public.model_comments for select
+  using (exists (
+    select 1 from public.models m
+    where m.id = model_comments.model_id
+      and (m.status = 'published' or m.user_id = auth.uid())
+  ));
+
+create policy "Users can insert comments on published models"
+  on public.model_comments for insert
+  with check (
+    auth.uid() = user_id
+    and exists (
+      select 1 from public.models m
+      where m.id = model_id and m.status = 'published'
+    )
+  );
+
+create policy "Users can update own comments"
+  on public.model_comments for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own comments"
+  on public.model_comments for delete
+  using (auth.uid() = user_id);
 
 -- model_views -----------------------------------------------------------------
 create policy "Authenticated can insert own views"
