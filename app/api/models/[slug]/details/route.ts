@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { resolveStorageUrl } from '@/lib/storage/url'
 
 // Supabase returns joined rows as T | T[] depending on cardinality.
 // This helper normalises both shapes to a single record or null.
@@ -230,7 +231,7 @@ export async function GET(
           description: product.description,
           releaseYear: product.release_year,
           discontinued: product.discontinued,
-          image: product.image_url,
+          image: resolveStorageUrl(product.image_url),
           brand: productBrand ? {
             id: productBrand.id,
             name: productBrand.name,
@@ -246,7 +247,7 @@ export async function GET(
           name: category.name,
           slug: category.slug,
           description: category.description,
-          icon: category.icon,
+          icon: resolveStorageUrl(category.icon),
           path: category.path,
         } : null,
         brand: brand ? {
