@@ -66,6 +66,8 @@ $$;
 create or replace function public.increment_model_like_count()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   update public.models
@@ -79,6 +81,8 @@ $$;
 create or replace function public.decrement_model_like_count()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   update public.models
@@ -92,6 +96,8 @@ $$;
 create or replace function public.increment_model_view_count()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   update public.models
@@ -105,6 +111,8 @@ $$;
 create or replace function public.increment_model_download_count()
 returns trigger
 language plpgsql
+security definer
+set search_path = public
 as $$
 begin
   update public.models
@@ -446,7 +454,8 @@ create policy "Users can view own models"
 
 create policy "Users can manage own models"
   on public.models for all
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- model_files -----------------------------------------------------------------
 create policy "Users can view files of accessible models"
@@ -460,6 +469,11 @@ create policy "Users can view files of accessible models"
 create policy "Users can manage files of own models"
   on public.model_files for all
   using (exists (
+    select 1 from public.models m
+    where m.id = model_files.model_id
+      and m.user_id = auth.uid()
+  ))
+  with check (exists (
     select 1 from public.models m
     where m.id = model_files.model_id
       and m.user_id = auth.uid()
@@ -538,7 +552,8 @@ create policy "Users can view own collections"
 
 create policy "Users can manage own collections"
   on public.collections for all
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 -- collection_models -----------------------------------------------------------
 create policy "Collection models are readable for public collections"
@@ -552,6 +567,11 @@ create policy "Collection models are readable for public collections"
 create policy "Users can manage own collection models"
   on public.collection_models for all
   using (exists (
+    select 1 from public.collections c
+    where c.id = collection_models.collection_id
+      and c.user_id = auth.uid()
+  ))
+  with check (exists (
     select 1 from public.collections c
     where c.id = collection_models.collection_id
       and c.user_id = auth.uid()

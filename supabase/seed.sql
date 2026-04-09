@@ -169,7 +169,7 @@ values
   ('26126180-0905-429f-8f86-3ede92738442', 'Whirlpool',       'whirlpool',       'Large household appliances for kitchen and laundry.', null, null, null, null, false),
   ('72f1e9ce-1cfc-435c-a774-3c158e747c7a', 'Withings',        'withings',        'Health-focused smart devices.', null, null, null, null, false),
   ('bd4a5819-3ad5-45e4-b3b3-44a7c4882403', 'Yamaha',          'yamaha',          'Audio equipment, instruments, and motorcycles.', null, null, null, null, false)
-on conflict (name) do nothing;
+on conflict (slug) do nothing;
 
 -- ============================================================================
 -- 1.3 Categories
