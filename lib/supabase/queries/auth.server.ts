@@ -19,12 +19,3 @@ export async function verifyOtp(type: EmailOtpType, token_hash: string) {
     token_hash,
   });
 }
-
-/**
- * Exchange a PKCE auth code for a session (used when Supabase redirects back
- * with ?code=... after verifying the confirmation link server-side).
- */
-export async function exchangeAuthCode(code: string) {
-  const supabase = await createClient();
-  return await supabase.auth.exchangeCodeForSession(code);
-}
