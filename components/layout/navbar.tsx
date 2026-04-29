@@ -41,11 +41,12 @@ export default async function Navbar() {
               <Button asChild variant="ghost" size="sm" className="font-medium">
                 <Link href="/login">Sign in</Link>
               </Button>
-              <Button asChild variant="default" size="sm" className="font-medium">
-                <Link href="/upload">Publish a Part</Link>
-              </Button>
             </div>
           )}
+
+          <Button asChild variant="default" size="sm" className="font-medium">
+            <Link href="/upload">Publish a Part</Link>
+          </Button>
         </div>
       </div>
     </nav>
