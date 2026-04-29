@@ -21,7 +21,7 @@ export default async function Navbar() {
       <div className="mx-auto flex h-16 max-w-container-xl items-center justify-between px-md">
         <Logo asLink />
 
-        <div className="hidden items-center gap-lg md:flex">
+        <div className="hidden items-center gap-sm md:flex">
           {menuLinks.map((item) => (
             <Button
               key={item.label}
