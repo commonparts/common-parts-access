@@ -7,25 +7,25 @@ const footerColumns = [
     links: [
       { label: "Browse Parts", href: "/browse" },
       { label: "Publish a Part", href: "/upload" },
-      { label: "Registry", href: "/browse/latest" },
-      { label: "API", href: "/api" },
+      { label: "Registry", href: "" },
+      { label: "API", href: "" },
     ],
   },
   {
     title: "Institution",
     links: [
-      { label: "About Common Parts", href: "https://commonparts.org" },
-      { label: "Governance", href: "https://commonparts.org/governance" },
-      { label: "CPSP Protocol", href: "https://cpsp.commonparts.org" },
-      { label: "Certification", href: "https://certification.commonparts.org" },
+      { label: "About Common Parts", href: "" },
+      { label: "Governance", href: "" },
+      { label: "CPSP Protocol", href: "" },
+      { label: "Certification", href: "" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "/docs" },
-      { label: "Contact", href: "mailto:contact@commonparts.org" },
-      { label: "Press", href: "https://commonparts.org/press" },
+      { label: "Documentation", href: "" },
+      { label: "Contact", href: "" },
+      { label: "Press", href: "" },
     ],
   },
 ];
