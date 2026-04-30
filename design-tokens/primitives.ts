@@ -1,83 +1,112 @@
 export const colorPrimitives = {
-  // Neutral, institutional base
-  charcoal: {
-    50: "#EDEDED",
-    100: "#D9D9D9",
-    200: "#BFBFBF",
-    300: "#A6A6A6",
-    400: "#8C8C8C",
-    500: "#737373",
-    600: "#4D4D4D",
-    700: "#333333",
-    800: "#1F1F1F",
-    900: "#111111",
+  // Core neutral — warm black, not pure
+  black: {
+    50: "#F7F7F6",
+    100: "#EFEFED",
+    200: "#E4E4E2",
+    300: "#D0D0CE",
+    400: "#AAAAAA",
+    500: "#888888",
+    600: "#777777",
+    700: "#555555",
+    800: "#333333",
+    900: "#1A1A1A",
   },
 
-  neutral: {
-    50: "#FFFFFF",
-    100: "#F9F9F9",
-    200: "#F5F5F5",
-    300: "#EEEEEE",
-    400: "#E5E5E5",
-    500: "#D8D8D8",
-    600: "#BFBFBF",
-    700: "#A6A6A6",
-    800: "#8C8C8C",
-    900: "#737373",
+  // Surface & background tones
+  surface: {
+    white: "#FFFFFF",
+    light: "#F7F7F6",
+    subtle: "#EFEFED",
+    muted: "#E4E4E2",
   },
 
-  accentBlue: {
-    50: "#E8EEF7",
-    100: "#C9D6EB",
-    200: "#A3BCDC",
-    300: "#7A9DCA",
-    400: "#4F7EB6",
-    500: "#1E3A5F",
-    600: "#18304F",
-    700: "#12263F",
-    800: "#0C1B2F",
-    900: "#081323",
+  // Institutional green — the seal color
+  green: {
+    50: "#F4F7F3",
+    100: "#EEF2EC",
+    200: "#D4E0CF",
+    300: "#A8C4A0",
+    400: "#6B9A60",
+    500: "#2D6A4F", // Malachite — interface / digital
+    600: "#234F3E", // Viridian — institutional / print
+    700: "#1B3D30",
+    800: "#132B22",
+    900: "#0C1C16",
+  },
+
+  // Functional: error / destructive
+  red: {
+    50: "#FEF2F2",
+    100: "#FDE8E8",
+    200: "#F9C4C4",
+    300: "#F09898",
+    400: "#E25C5C",
+    500: "#C53030",
+    600: "#9B2C2C",
+    700: "#742A2A",
+    800: "#4A1D1D",
+    900: "#2D1111",
+  },
+
+  // Functional: warning
+  amber: {
+    50: "#FFFBEB",
+    100: "#FEF3C7",
+    200: "#FDE68A",
+    300: "#FCD34D",
+    400: "#FBBF24",
+    500: "#D97706",
+    600: "#B45309",
+    700: "#92400E",
+    800: "#78350F",
+    900: "#451A03",
   },
 } as const
 
 export const spacingPrimitives = {
+  0: "0",
   1: "4px",
   2: "8px",
-  3: "10px",
+  3: "12px",
   4: "16px",
-  5: "24px",
-  6: "32px",
-  7: "40px",
-  8: "48px",
-  9: "64px",
-  10: "80px",
+  5: "20px",
+  6: "24px",
+  7: "32px",
+  8: "40px",
+  9: "48px",
+  10: "64px",
+  11: "80px",
+  12: "96px",
+  13: "120px",
 } as const
 
 export const radiusPrimitives = {
   none: "0",
-  sm: "2px",
-  md: "3px",
-  lg: "6px",
+  sm: "4px",
+  md: "6px",
+  lg: "8px",
+  xl: "10px",
+  "2xl": "12px",
+  "3xl": "14px",
   full: "9999px",
 } as const
 
 export const elevationPrimitives = {
   none: "none",
-
-  xs: "0 1px 2px rgba(0, 0, 0, 0.04)",
-  sm: "0 2px 4px rgba(0, 0, 0, 0.06)",
-  md: "0 4px 8px rgba(0, 0, 0, 0.08)",
-  lg: "0 8px 16px rgba(0, 0, 0, 0.10)",
-  xl: "0 16px 32px rgba(0, 0, 0, 0.12)",
+  xs: "0 1px 2px rgba(26, 26, 26, 0.04)",
+  sm: "0 2px 4px rgba(26, 26, 26, 0.06)",
+  md: "0 4px 8px rgba(26, 26, 26, 0.08)",
+  lg: "0 8px 16px rgba(26, 26, 26, 0.10)",
+  xl: "0 16px 32px rgba(26, 26, 26, 0.12)",
 } as const
 
 export const motionPrimitives = {
   duration: {
     fast: "100ms",
-    medium: "200ms",
-    slow: "300ms",
+    medium: "150ms",
+    slow: "200ms",
   },
-
   easing: {
     standard: "cubic-bezier(0.4, 0, 0.2, 1)",
     in: "cubic-bezier(0.4, 0, 1, 1)",
@@ -87,32 +116,46 @@ export const motionPrimitives = {
 
 export const typographyPrimitives = {
   fontFamily: {
-    body: "'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-    heading: "'Source Sans 3', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-    mono: "'Source Sans 3', ui-monospace, SFMono-Regular, monospace",
+    body: "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    heading:
+      "'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    mono: "'IBM Plex Mono', 'SFMono-Regular', 'Consolas', monospace",
   },
 
   fontSize: {
-    xs: "12px",
-    sm: "14px",
-    md: "16px",
-    lg: "18px",
-    xl: "20px",
-    "2xl": "24px",
-    "3xl": "30px",
-    "4xl": "36px",
+    xs: "11px",
+    sm: "13px",
+    md: "14px",
+    base: "15px",
+    lg: "16px",
+    xl: "17px",
+    "2xl": "22px",
+    "3xl": "28px",
+    "4xl": "32px",
+    "5xl": "42px",
+    "6xl": "48px",
   },
 
   fontWeight: {
+    light: 300,
     regular: 400,
     medium: 500,
     semibold: 600,
-    bold: 700,
   },
 
   lineHeight: {
-    tight: 1.2,
+    tight: 1.15,
+    snug: 1.3,
     normal: 1.5,
-    relaxed: 1.7,
+    relaxed: 1.65,
+  },
+
+  letterSpacing: {
+    tight: "-0.02em",
+    snug: "-0.01em",
+    normal: "0",
+    wide: "0.01em",
+    wider: "0.08em",
+    widest: "0.1em",
   },
 } as const
