@@ -11,9 +11,9 @@ export default async function Navbar() {
 
   const menuLinks = [
     { label: "Browse Parts", href: "/browse" },
-    { label: "Registry", href: "/browse/latest" },
-    { label: "About", href: "/about" },
-    { label: "Common Parts", href: "https://commonparts.org" },
+    { label: "Registry", href: "" },
+    { label: "About", href: "t" },
+    { label: "Common Parts", href: "" },
   ];
 
   return (
