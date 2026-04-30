@@ -12,38 +12,61 @@ export const darkTheme = {
     ...semanticTokens.color,
 
     text: {
-      primary: colorPrimitives.neutral[50],
-      secondary: colorPrimitives.neutral[200],
-      disabled: colorPrimitives.charcoal[400],
-      inverse: colorPrimitives.charcoal[900],
-      link: colorPrimitives.accentBlue[400],
+      primary: colorPrimitives.black[50], // #F7F7F6
+      secondary: colorPrimitives.black[400], // #AAAAAA
+      tertiary: colorPrimitives.black[500], // #888888
+      disabled: colorPrimitives.black[600], // #777777
+      inverse: colorPrimitives.black[900], // #1A1A1A
+      link: colorPrimitives.green[400], // lighter green for dark bg
+      linkHover: colorPrimitives.green[300],
     },
 
     background: {
-      page: colorPrimitives.charcoal[900],
-      surface: colorPrimitives.charcoal[800],
-      subtle: colorPrimitives.charcoal[700],
-      hover: colorPrimitives.charcoal[700],
-      disabled: colorPrimitives.charcoal[800],
+      page: colorPrimitives.black[900], // #1A1A1A
+      surface: colorPrimitives.black[800], // #333333
+      subtle: colorPrimitives.black[700], // #555555
+      muted: colorPrimitives.black[700],
+      hover: colorPrimitives.black[700],
+      disabled: colorPrimitives.black[800],
+      accent: colorPrimitives.green[900], // very dark green
+      accentSubtle: colorPrimitives.green[800],
     },
 
     border: {
-      default: colorPrimitives.charcoal[600],
-      subtle: colorPrimitives.charcoal[700],
-      strong: colorPrimitives.charcoal[500],
-      focus: colorPrimitives.accentBlue[400],
+      default: colorPrimitives.black[700], // #555555
+      subtle: colorPrimitives.black[800], // #333333
+      strong: colorPrimitives.black[500], // #888888
+      focus: colorPrimitives.green[400],
     },
 
     action: {
-      primary: colorPrimitives.accentBlue[400],
-      primaryHover: colorPrimitives.accentBlue[500],
-      primaryActive: colorPrimitives.accentBlue[600],
-      disabled: colorPrimitives.charcoal[500],
+      primary: colorPrimitives.green[500], // Malachite stays
+      primaryHover: colorPrimitives.green[400],
+      primaryActive: colorPrimitives.green[600],
+      disabled: colorPrimitives.black[700],
+    },
+
+    institutional: {
+      viridian: colorPrimitives.green[600], // unchanged — the seal is the seal
+      malachite: colorPrimitives.green[500], // unchanged
     },
 
     status: {
-      success: colorPrimitives.accentBlue[300],
-      successText: colorPrimitives.accentBlue[100],
+      success: colorPrimitives.green[900],
+      successText: colorPrimitives.green[300],
+      error: colorPrimitives.red[900],
+      errorText: colorPrimitives.red[300],
+      errorBorder: colorPrimitives.red[700],
+      warning: colorPrimitives.amber[900],
+      warningText: colorPrimitives.amber[300],
+      warningBorder: colorPrimitives.amber[700],
+    },
+
+    certification: {
+      background: colorPrimitives.green[600], // unchanged — protected mark
+      text: colorPrimitives.surface.white,
+      outlineBorder: colorPrimitives.green[400],
+      outlineText: colorPrimitives.green[400],
     },
   },
 } as const
