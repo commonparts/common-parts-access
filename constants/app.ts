@@ -14,5 +14,4 @@ export const STORAGE_BUCKETS = {
   BRAND_ASSETS: 'brand-assets',
   CATEGORY_ICONS: 'category-icons',
   PRODUCT_THUMBNAILS: 'product-thumbnails',
-  BRAND_LOGOS: 'brand-logos',
 } as const;
