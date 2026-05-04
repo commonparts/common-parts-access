@@ -3,10 +3,14 @@
 -- Issue #62: RLS policy violation on file upload
 -- Created: 2026-05-04
 --
--- Creates all 8 storage buckets (ON CONFLICT DO NOTHING — safe to run on
+-- Creates all 7 storage buckets (ON CONFLICT DO NOTHING — safe to run on
 -- existing environments) and defines RLS policies on storage.objects so
 -- that:
---   - All public buckets allow anonymous SELECT
+--   - model-files / model-thumbnails: authenticated users may SELECT if they
+--     are the owner OR if the file belongs to a published model
+--     (path segment [2] is the model UUID; checked against models.status)
+--   - All other buckets: authenticated users may SELECT only files they own
+--     (public URL access works via bucket public=true without a SELECT policy)
 --   - Authenticated users may INSERT files into their own path prefix
 --     (first path segment must equal auth.uid())
 --   - Only the file owner may UPDATE or DELETE their files
@@ -46,9 +50,19 @@ ON CONFLICT (id) DO NOTHING;
 -- model-files
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "model-files: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'model-files');
+CREATE POLICY "model-files: owner or published model read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'model-files'
+    AND (
+      owner = auth.uid()
+      OR EXISTS (
+        SELECT 1 FROM public.models
+        WHERE id = (storage.foldername(name))[2]::uuid
+          AND status = 'published'
+      )
+    )
+  );
 
 CREATE POLICY "model-files: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -75,9 +89,19 @@ CREATE POLICY "model-files: owner delete"
 -- model-thumbnails
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "model-thumbnails: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'model-thumbnails');
+CREATE POLICY "model-thumbnails: owner or published model read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'model-thumbnails'
+    AND (
+      owner = auth.uid()
+      OR EXISTS (
+        SELECT 1 FROM public.models
+        WHERE id = (storage.foldername(name))[2]::uuid
+          AND status = 'published'
+      )
+    )
+  );
 
 CREATE POLICY "model-thumbnails: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -104,9 +128,12 @@ CREATE POLICY "model-thumbnails: owner delete"
 -- user-avatars
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "user-avatars: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'user-avatars');
+CREATE POLICY "user-avatars: owner read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'user-avatars'
+    AND owner = auth.uid()
+  );
 
 CREATE POLICY "user-avatars: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -133,9 +160,12 @@ CREATE POLICY "user-avatars: owner delete"
 -- brand-assets
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "brand-assets: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'brand-assets');
+CREATE POLICY "brand-assets: owner read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'brand-assets'
+    AND owner = auth.uid()
+  );
 
 CREATE POLICY "brand-assets: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -162,9 +192,12 @@ CREATE POLICY "brand-assets: owner delete"
 -- category-icons
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "category-icons: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'category-icons');
+CREATE POLICY "category-icons: owner read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'category-icons'
+    AND owner = auth.uid()
+  );
 
 CREATE POLICY "category-icons: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -191,9 +224,12 @@ CREATE POLICY "category-icons: owner delete"
 -- product-images
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "product-images: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'product-images');
+CREATE POLICY "product-images: owner read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'product-images'
+    AND owner = auth.uid()
+  );
 
 CREATE POLICY "product-images: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
@@ -220,9 +256,12 @@ CREATE POLICY "product-images: owner delete"
 -- product-thumbnails
 -- ----------------------------------------------------------------------------
 
-CREATE POLICY "product-thumbnails: public read"
-  ON storage.objects FOR SELECT
-  USING (bucket_id = 'product-thumbnails');
+CREATE POLICY "product-thumbnails: owner read"
+  ON storage.objects FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'product-thumbnails'
+    AND owner = auth.uid()
+  );
 
 CREATE POLICY "product-thumbnails: authenticated insert"
   ON storage.objects FOR INSERT TO authenticated
