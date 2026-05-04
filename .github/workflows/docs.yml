@@ -184,6 +184,9 @@ jobs:
 
           git add CHANGELOG.md
           git commit -m "docs(changelog): add release notes for ${VERSION}"
+          # Direct push to main is intentional for CHANGELOG.md — this is the sole exception
+          # to the no-direct-push convention. Husky's pre-push hook is local-only and does
+          # not run in GitHub Actions, so this succeeds in CI.
           git push origin main
 
   update-docs:
@@ -216,7 +219,7 @@ jobs:
           echo "$DIFF" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # Read current doc files for Claude to analyse
+          # Read current doc files for Mistral to analyse
           DEV_STRATEGY=$(cat docs/DEV_STRATEGY.md 2>/dev/null || echo "")
           DEV_AGENT=$(cat .github/agents/dev.agent.md 2>/dev/null || echo "")
           DOCS_AGENT=$(cat .github/agents/docs.agent.md 2>/dev/null || echo "")
