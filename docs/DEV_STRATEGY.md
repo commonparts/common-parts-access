@@ -41,11 +41,14 @@ GitHub Issues (structured, labelled)
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
         ↓ inline comments + summary, never approves
         ↓
+[ Agent Docs ] — GitHub Action + Mistral Medium
+        ↓ generates release notes, creates GitHub Release, updates CHANGELOG.md
+        ↓ analyses diff → opens PR toward dev with doc updates if needed
+        ↓ PR requires human validation before merge
+        ↓
 CI/CD Pipeline (GitHub Actions → Vercel)
         ↓
 [ You ] — review, merge to staging, validate, merge to main
-        ↓
-[ Agent Comms ] — (planned) updates docs, changelog, public roadmap
 ```
 
 **Automation level by layer:**
@@ -58,7 +61,7 @@ CI/CD Pipeline (GitHub Actions → Vercel)
 | Dev (bugs & features) | Dialogue — agent proposes, human validates | GitHub Copilot agent in VS Code |
 | QA review | Fully automatic on every PR | GitHub Copilot code review |
 | Merge to staging/main | Always manual | Human |
-| Docs & changelog | Planned | — |
+| Docs & changelog | Semi-automatic (release notes fully auto, doc updates via PR) | GitHub Action + Mistral Medium |
 
 ---
 
@@ -309,6 +312,33 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ---
 
+### Agent Docs
+
+**Tool:** GitHub Actions workflow (`.github/workflows/docs.yml`)
+**Model:** Mistral Medium (`mistral-medium-latest`) via Mistral API
+**Trigger:** Automatic on every push to `main` (i.e. after every human-approved merge)
+**Instructions file:** `.github/agents/docs.agent.md`
+
+**What it does — always:**
+- Determines the next semver tag from commits since the last tag (`feat(` → minor bump, anything else → patch bump)
+- Generates a release note in plain English describing what changed and why
+- Creates a GitHub Release with the generated note
+- Prepends a new entry to `CHANGELOG.md` and commits it directly to `main`
+
+**What it does — conditionally:**
+- Reads the diff of the merge, scoped to `docs/`, `.github/agents/`, `.github/workflows/`, `.github/copilot-instructions.md`, and `supabase/`
+- Decides whether any documentation file needs updating (new agent, schema change, new convention, file structure change, etc.)
+- If yes: opens a PR toward `dev` with the proposed documentation changes
+- If no: does nothing beyond the release note
+
+**What it never does:**
+- Modifies application code
+- Pushes doc changes directly to `main` or `staging` — always via PR toward `dev`
+- Invents facts not visible in the diff
+- Merges its own PRs
+
+---
+
 ## Database Schema (Supabase)
 
 **`feedback`** — user-submitted feedback, entry point of the pipeline
@@ -386,20 +416,22 @@ RLS: anyone can insert, users can read their own rows only.
 - Checks: security, logic, conventions, performance, maintainability
 - Reports inline comments + summary on every PR
 
+### ✅ Agent Docs
+
+- GitHub Action: `docs.yml` — triggered on every push to `main`
+- Automatic semver tagging: `feat(` → minor bump, anything else → patch bump
+- Claude-generated release notes committed as GitHub Releases
+- `CHANGELOG.md` auto-updated on every release
+- Diff analysis on `docs/` + `.github/agents/` — opens PR toward `dev` when documentation is impacted
+- Doc PRs labelled `type:docs`, `priority:low`, `agent:pm` — always require human approval
+
 ---
 
 ## What Remains to Build
 
 ### 🔲 Page `/roadmap` on the site
 
-A public-facing roadmap page at `access.commonparts.org/roadmap`. To be built and maintained by the agents (Agent Dev + Agent Comms) after the PM session produces a structured backlog.
-
-### 🔲 Agent Comms
-
-After a PR is merged to `main`:
-- Updates `CHANGELOG.md` from commit history
-- Updates the public roadmap page
-- Could be a GitHub Action triggered on merge to `main`
+A public-facing roadmap page at `access.commonparts.org/roadmap`. To be built and maintained by the agents after the PM session produces a structured backlog.
 
 ### 🔲 Testing Infrastructure
 
@@ -461,10 +493,13 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 /
 ├── .github/
 │   ├── agents/
-│   │   └── dev.agent.md            # Agent Dev instructions
+│   │   ├── dev.agent.md            # Agent Dev instructions
+│   │   └── docs.agent.md           # Agent Docs instructions
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
-│       └── ci.yml                  # Lint + type check
+│       ├── ci.yml                  # Lint + type check
+│       └── docs.yml                # Agent Docs — releases + doc updates
+├── CHANGELOG.md                    # Generated and maintained by Agent Docs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
 │   └── pre-push                    # Block direct push to main/staging
