@@ -1,0 +1,371 @@
+name: Agent Docs
+
+on:
+  push:
+    branches:
+      - main
+
+# Prevent concurrent runs — if two merges happen in quick succession,
+# queue them rather than running in parallel to avoid tag conflicts.
+concurrency:
+  group: agent-docs
+  cancel-in-progress: false
+
+jobs:
+  release-notes:
+    name: Generate release notes and update CHANGELOG
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "Agent Docs"
+          git config user.email "agent-docs@commonparts.org"
+
+      - name: Determine next semver
+        id: semver
+        run: |
+          # Get the latest tag; empty string means this is the first release
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Latest tag: ${LATEST_TAG:-none}"
+
+          if [ -z "$LATEST_TAG" ]; then
+            # First release — always start at v0.1.0
+            NEXT_VERSION="v0.1.0"
+          else
+            # Extract major, minor, patch
+            VERSION=${LATEST_TAG#v}
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f2)
+            PATCH=$(echo $VERSION | cut -d. -f3)
+
+            # Get commits since last tag
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
+
+            # Determine bump type — feat( → minor, anything else → patch
+            if echo "$COMMITS" | grep -qE "^feat\("; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+
+            NEXT_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
+          fi
+
+          echo "Next version: $NEXT_VERSION"
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Collect commits since last tag
+        id: commits
+        run: |
+          LATEST_TAG="${{ steps.semver.outputs.latest_tag }}"
+
+          # Get commits — if no previous tag, list all commits
+          if [ -n "$LATEST_TAG" ]; then
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s%n  %b")
+            COMMIT_LIST=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
+          else
+            COMMITS=$(git log --pretty=format:"- %s%n  %b")
+            COMMIT_LIST=$(git log --pretty=format:"%s")
+          fi
+
+          # Escape for multiline output
+          echo "commits<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMITS" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "commit_list<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get full diff for documentation analysis
+        id: diff
+        run: |
+          LATEST_TAG="${{ steps.semver.outputs.latest_tag }}"
+          DIFF=$(git diff ${LATEST_TAG}..HEAD --stat 2>/dev/null || git diff HEAD~1..HEAD --stat)
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Full diff for doc analysis (limited to relevant paths)
+          FULL_DIFF=$(git diff ${LATEST_TAG}..HEAD -- docs/ .github/agents/ .github/workflows/ .github/copilot-instructions.md supabase/migrations/ 2>/dev/null || echo "")
+          echo "full_diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$FULL_DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes with Mistral
+        id: release_notes
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          VERSION="${{ steps.semver.outputs.version }}"
+          COMMITS="${{ steps.commits.outputs.commits }}"
+          COMMIT_LIST="${{ steps.commits.outputs.commit_list }}"
+
+          RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $MISTRAL_API_KEY" \
+            -d "$(jq -n \
+              --arg version "$VERSION" \
+              --arg commits "$COMMITS" \
+              --arg commit_list "$COMMIT_LIST" \
+              '{
+                model: "mistral-medium-latest",
+                max_tokens: 1000,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are Agent Docs for Common Parts Access, a public-interest institution that governs standards and protocols for digital spare parts. You write precise, institutional technical documentation. No startup language. No emotional framing. Write in English. Present tense for states, past tense for changes."
+                  },
+                  {
+                    role: "user",
+                    content: ("Generate release notes for version " + $version + " of Common Parts Access.\n\nCommits since last release:\n" + $commits + "\n\nFormat your response as follows — output ONLY the markdown, no preamble:\n\n## What changed\n\n[2-4 sentences in plain English describing what this release brings. Focus on effect, not implementation. Institutional tone. If only fixes, say so plainly.]\n\n## Changes\n\n" + $commit_list + "\n\n## Technical details\n\n[1-2 sentences on architectural impact if relevant. Omit this section entirely if the release is purely a bug fix or minor improvement.]")
+                  }
+                ]
+              }' \
+            )")
+
+          # Extract text content — fail the job if Mistral returns nothing
+          RELEASE_BODY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+          if [ -z "$RELEASE_BODY" ]; then
+            echo "ERROR: Mistral API returned no content for release notes. Aborting." >&2
+            exit 1
+          fi
+
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Git tag
+        run: |
+          VERSION="${{ steps.semver.outputs.version }}"
+          git tag -a "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+
+      - name: Create GitHub Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.semver.outputs.version }}"
+          RELEASE_BODY="${{ steps.release_notes.outputs.release_body }}"
+
+          gh release create "$VERSION" \
+            --title "$VERSION" \
+            --notes "$RELEASE_BODY"
+
+      - name: Update CHANGELOG.md
+        run: |
+          VERSION="${{ steps.semver.outputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+          RELEASE_BODY="${{ steps.release_notes.outputs.release_body }}"
+
+          # Build new changelog entry
+          NEW_ENTRY="# ${VERSION} — ${DATE}\n\n${RELEASE_BODY}\n\n---\n\n"
+
+          # Prepend to existing CHANGELOG.md or create it
+          if [ -f CHANGELOG.md ]; then
+            EXISTING=$(cat CHANGELOG.md)
+            printf "%b%s" "$NEW_ENTRY" "$EXISTING" > CHANGELOG.md
+          else
+            printf "%b" "$NEW_ENTRY" > CHANGELOG.md
+          fi
+
+          git add CHANGELOG.md
+          git commit -m "docs(changelog): add release notes for ${VERSION}"
+          git push origin main
+
+  update-docs:
+    name: Analyse diff and open doc PR if needed
+    runs-on: ubuntu-latest
+    needs: release-notes
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "Agent Docs"
+          git config user.email "agent-docs@commonparts.org"
+
+      - name: Get diff of relevant files
+        id: diff
+        run: |
+          # Diff against the previous commit — always reliable after a squash merge to main
+          DIFF=$(git diff HEAD~1..HEAD -- docs/ .github/agents/ .github/workflows/ .github/copilot-instructions.md supabase/ 2>/dev/null || echo "")
+
+          echo "diff<<EOF" >> $GITHUB_OUTPUT
+          echo "$DIFF" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # Read current doc files for Claude to analyse
+          DEV_STRATEGY=$(cat docs/DEV_STRATEGY.md 2>/dev/null || echo "")
+          DEV_AGENT=$(cat .github/agents/dev.agent.md 2>/dev/null || echo "")
+          DOCS_AGENT=$(cat .github/agents/docs.agent.md 2>/dev/null || echo "")
+          COPILOT=$(cat .github/copilot-instructions.md 2>/dev/null || echo "")
+
+          echo "dev_strategy<<EOF" >> $GITHUB_OUTPUT
+          echo "$DEV_STRATEGY" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "dev_agent<<EOF" >> $GITHUB_OUTPUT
+          echo "$DEV_AGENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "docs_agent<<EOF" >> $GITHUB_OUTPUT
+          echo "$DOCS_AGENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          echo "copilot<<EOF" >> $GITHUB_OUTPUT
+          echo "$COPILOT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Analyse diff and generate doc updates
+        id: doc_analysis
+        env:
+          MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+        run: |
+          DIFF="${{ steps.diff.outputs.diff }}"
+          DEV_STRATEGY="${{ steps.diff.outputs.dev_strategy }}"
+          DEV_AGENT="${{ steps.diff.outputs.dev_agent }}"
+          DOCS_AGENT="${{ steps.diff.outputs.docs_agent }}"
+          COPILOT="${{ steps.diff.outputs.copilot }}"
+
+          RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $MISTRAL_API_KEY" \
+            -d "$(jq -n \
+              --arg diff "$DIFF" \
+              --arg dev_strategy "$DEV_STRATEGY" \
+              --arg dev_agent "$DEV_AGENT" \
+              --arg docs_agent "$DOCS_AGENT" \
+              --arg copilot "$COPILOT" \
+              '{
+                model: "mistral-medium-latest",
+                max_tokens: 1000,
+                messages: [
+                  {
+                    role: "system",
+                    content: "You are Agent Docs for Common Parts Access. You analyse code diffs and decide whether technical documentation needs updating. You only document facts visible in the diff. You never invent or guess. When in doubt, output needs_update false. You respond only in the JSON format requested — no markdown, no explanation, valid JSON only."
+                  },
+                  {
+                    role: "user",
+                    content: ("Analyse this diff and decide if any documentation file needs updating.\n\nDIFF:\n" + $diff + "\n\nCurrent docs/DEV_STRATEGY.md:\n" + $dev_strategy + "\n\nCurrent .github/agents/dev.agent.md:\n" + $dev_agent + "\n\nCurrent .github/agents/docs.agent.md:\n" + $docs_agent + "\n\nCurrent .github/copilot-instructions.md:\n" + $copilot + "\n\nUpdate docs ONLY if the diff contains: new/changed agent pipeline, branch structure change, CI workflow change, new Supabase table or column, new enforced convention, file structure change, or deprecation of a documented pattern. Do NOT update for: UI changes, bug fixes without architectural impact, dependency updates, styling changes.\n\nRespond with ONLY valid JSON, no markdown fences, no explanation:\n{\n  \"needs_update\": true,\n  \"reason\": \"one sentence explaining why\",\n  \"updates\": [\n    {\n      \"file\": \"relative path to file\",\n      \"section\": \"name of the section to update\",\n      \"current_content\": \"exact current text of the section\",\n      \"new_content\": \"exact replacement text\",\n      \"explanation\": \"one sentence on what changed and why\"\n    }\n  ]\n}")
+                  }
+                ]
+              }' \
+            )")
+
+          ANALYSIS=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "{\"needs_update\": false, \"reason\": \"API error\"}"')
+
+          # Strip markdown fences if Mistral wraps the JSON anyway
+          ANALYSIS=$(echo "$ANALYSIS" | sed 's/^```json//;s/^```//;s/```$//')
+
+          echo "analysis=$ANALYSIS" >> $GITHUB_OUTPUT
+
+          NEEDS_UPDATE=$(echo "$ANALYSIS" | jq -r '.needs_update // false')
+          echo "needs_update=$NEEDS_UPDATE" >> $GITHUB_OUTPUT
+
+      - name: Apply documentation updates
+        id: apply_updates
+        if: steps.doc_analysis.outputs.needs_update == 'true'
+        run: |
+          ANALYSIS='${{ steps.doc_analysis.outputs.analysis }}'
+          VERSION=$(git describe --tags --abbrev=0)
+
+          # Create a branch for the doc PR
+          BRANCH="docs/update-${VERSION}"
+          git checkout -b "$BRANCH" origin/dev
+
+          # Apply each update from the analysis
+          echo "$ANALYSIS" | jq -c '.updates[]' | while read -r update; do
+            FILE=$(echo "$update" | jq -r '.file')
+            CURRENT=$(echo "$update" | jq -r '.current_content')
+            NEW=$(echo "$update" | jq -r '.new_content')
+
+            if [ -f "$FILE" ]; then
+              python3 -c "
+          import sys
+          file = sys.argv[1]
+          current = sys.argv[2]
+          new = sys.argv[3]
+          if not current:
+              print('SKIP: current_content is empty for ' + file, file=sys.stderr)
+              sys.exit(0)
+          with open(file, 'r') as f:
+              content = f.read()
+          if current not in content:
+              print('SKIP: current_content not found in ' + file, file=sys.stderr)
+              sys.exit(0)
+          updated = content.replace(current, new, 1)
+          with open(file, 'w') as f:
+              f.write(updated)
+          print('Updated:', file)
+          " "$FILE" "$CURRENT" "$NEW"
+            fi
+          done
+
+          # Only commit and push if the working tree has actual changes
+          if git diff --quiet HEAD -- docs/ .github/agents/ .github/copilot-instructions.md; then
+            echo "No documentation changes after applying updates — skipping PR"
+            echo "changes_made=false" >> $GITHUB_OUTPUT
+          else
+            git add docs/ .github/agents/ .github/copilot-instructions.md
+            git commit -m "docs(agents): update technical documentation for ${VERSION}"
+            git push origin "$BRANCH"
+            echo "changes_made=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Open PR for doc updates
+        if: steps.doc_analysis.outputs.needs_update == 'true' && steps.apply_updates.outputs.changes_made == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(git describe --tags --abbrev=0)
+          BRANCH="docs/update-${VERSION}"
+          ANALYSIS='${{ steps.doc_analysis.outputs.analysis }}'
+          REASON=$(echo "$ANALYSIS" | jq -r '.reason')
+
+          # Build file list for PR description
+          FILES=$(echo "$ANALYSIS" | jq -r '.updates[] | "- `" + .file + "` — " + .explanation' | tr '\n' '\n')
+
+          gh pr create \
+            --base dev \
+            --head "$BRANCH" \
+            --title "docs: update technical documentation for ${VERSION}" \
+            --body "Automated documentation update following merge of ${VERSION} to main.
+
+          **Reason:** ${REASON}
+
+          ## Files updated
+
+          ${FILES}
+
+          ## What to check
+
+          - [ ] The updated sections accurately reflect the merged changes
+          - [ ] No existing accurate documentation was removed or altered
+          - [ ] The tone and format are consistent with the rest of the file
+
+          Triggered by merge commit: ${{ github.sha }}" \
+            --label "type:docs" \
+            --label "priority:low" \
+            --label "agent:pm"
