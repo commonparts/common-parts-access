@@ -29,7 +29,7 @@
 
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES
-  ('model-files',        'model-files',        true, null,    null),
+  ('model-files',        'model-files',        true, 104857600, array['model/stl', 'model/obj', 'model/step', 'application/octet-stream']),
   ('model-thumbnails',   'model-thumbnails',   true, null,    array['image/*']),
   ('user-avatars',       'user-avatars',       true, null,    array['image/*']),
   ('brand-assets',       'brand-assets',       true, null,    array['image/*']),
