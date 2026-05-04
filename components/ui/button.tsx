@@ -5,7 +5,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-sm whitespace-nowrap rounded-lg border border-transparent text-md font-regular transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:pointer-events-none disabled:bg-action-disabled disabled:text-text-disabled disabled:border-border-subtle shadow-none [&_svg]:pointer-events-none [&_svg]:size-md [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-sm whitespace-nowrap rounded-lg border border-transparent text-sm font-regular transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:pointer-events-none disabled:bg-action-disabled disabled:text-text-disabled disabled:border-border-subtle shadow-none [&_svg]:pointer-events-none [&_svg]:size-md [&_svg]:shrink-0",
   {
     variants: {
       variant: {
@@ -15,13 +15,13 @@ const buttonVariants = cva(
           "bg-bg-subtle text-text-primary border-border-subtle hover:bg-bg-hover",
         outline:
           "border-border-default bg-transparent text-text-primary hover:bg-bg-hover",
-        ghost: "text-text-primary hover:bg-bg-hover",
+        ghost: "text-text-secondary hover:text-text-primary",
         link: "text-text-link hover:text-text-link",
       },
       size: {
-        default: "px-sm py-xs",
-        sm: "px-sm py-xs text-sm",
-        lg: "px-lg py-md text-base",
+        default: "px-sm py-2xs",
+        sm: "px-sm py-2xs text-sm",
+        lg: "px-lg py-sm text-base",
         icon: "size-xl",
       },
     },
