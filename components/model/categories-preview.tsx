@@ -19,12 +19,14 @@ export async function CategoriesPreview() {
     <div className="w-full flex flex-col items-center gap-6">
       <h2 className="text-2xl font-semibold">Browse by Category</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
-        {categories.map((category) => (
+        {categories.map((category) => {
+          const iconUrl = resolveStorageUrl(category.icon);
+          return (
           <Card key={category.id} className="p-6 flex flex-col items-center gap-4 cursor-default">
-            {resolveStorageUrl(category.icon) && (
+            {iconUrl && (
               <div className="w-16 h-16 flex items-center justify-center">
-                <Image 
-                  src={resolveStorageUrl(category.icon)!}
+                <Image
+                  src={iconUrl}
                   alt={category.name}
                   width={64}
                   height={64}
@@ -34,7 +36,8 @@ export async function CategoriesPreview() {
             )}
             <h3 className="text-lg font-medium">{category.name}</h3>
           </Card>
-        ))}
+          );
+        })}
       </div>
       <Button asChild variant="outline">
         <Link href="/browse/categories">

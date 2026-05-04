@@ -1,10 +1,15 @@
-import { Source_Sans_3 } from 'next/font/google'
+import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 
-const sourceSans = Source_Sans_3({
+export const plexSans = IBM_Plex_Sans({
   subsets: ["latin"],
-  variable: "--font-source-sans",
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500", "600"],
+  variable: "--font-body",
   display: "swap",
-})
+});
 
-export { sourceSans }
+export const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-mono",
+  display: "swap",
+});

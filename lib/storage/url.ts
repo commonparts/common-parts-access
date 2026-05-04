@@ -13,7 +13,7 @@ const URL_REGEX = /^https?:\/\//i
 export function resolveStorageUrl(pathOrUrl: string): string
 export function resolveStorageUrl(pathOrUrl: string | null | undefined): string | null
 export function resolveStorageUrl(pathOrUrl: string | null | undefined): string | null {
-  if (!pathOrUrl) return null
+  if (pathOrUrl == null) return null
   if (URL_REGEX.test(pathOrUrl)) return pathOrUrl
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

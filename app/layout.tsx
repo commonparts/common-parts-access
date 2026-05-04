@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { sourceSans } from "./fonts";
+import { plexSans, plexMono } from "./fonts";
 import "./globals.css";
 import { lightTheme, themeToCSSVars } from "@/design-tokens";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
@@ -12,9 +12,9 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Common Parts Access — Open platform for repair parts",
+  title: "Common Parts Access — Open platform for digital spare parts",
   description:
-    "Common Parts Access is an open platform for publishing and accessing digital spare parts for everyday repairs.",
+    "Common Parts Access is an open platform for publishing and accessing digital spare parts, helping extend the life of everyday objects.",
 };
 
 export default function RootLayout({
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={sourceSans.variable}>
+    <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
       <body style={lightThemeCSSVars}>
         {children}
         <FeedbackButton />
