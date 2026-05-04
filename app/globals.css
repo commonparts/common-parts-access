@@ -42,6 +42,6 @@ body {
 
   .text-mono {
     font-family: var(--font-mono);
-    font-size: var(--typography-size-sm);
+    font-size: var(--typography-size-caption);
   }
 }
