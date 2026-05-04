@@ -35,47 +35,57 @@ jobs:
       - name: Determine next semver
         id: semver
         run: |
-          # Get the latest tag, default to v0.0.0 if none exists
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest tag: $LATEST_TAG"
+          # Get the latest tag; empty string means this is the first release
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Latest tag: ${LATEST_TAG:-none}"
 
-          # Extract major, minor, patch
-          VERSION=${LATEST_TAG#v}
-          MAJOR=$(echo $VERSION | cut -d. -f1)
-          MINOR=$(echo $VERSION | cut -d. -f2)
-          PATCH=$(echo $VERSION | cut -d. -f3)
-
-          # Get commits since last tag
-          COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
-
-          # Determine bump type — feat = minor, anything else = patch
-          if echo "$COMMITS" | grep -qE "^feat\("; then
-            MINOR=$((MINOR + 1))
-            PATCH=0
+          if [ -z "$LATEST_TAG" ]; then
+            # First release — always start at v0.1.0
+            NEXT_VERSION="v0.1.0"
           else
-            PATCH=$((PATCH + 1))
+            # Extract major, minor, patch
+            VERSION=${LATEST_TAG#v}
+            MAJOR=$(echo $VERSION | cut -d. -f1)
+            MINOR=$(echo $VERSION | cut -d. -f2)
+            PATCH=$(echo $VERSION | cut -d. -f3)
+
+            # Get commits since last tag
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
+
+            # Determine bump type — feat( → minor, anything else → patch
+            if echo "$COMMITS" | grep -qE "^feat\("; then
+              MINOR=$((MINOR + 1))
+              PATCH=0
+            else
+              PATCH=$((PATCH + 1))
+            fi
+
+            NEXT_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
           fi
 
-          NEXT_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
           echo "Next version: $NEXT_VERSION"
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
-          echo "latest_tag=$LATEST_TAG" >> $GITHUB_OUTPUT
+          echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
 
       - name: Collect commits since last tag
         id: commits
         run: |
           LATEST_TAG="${{ steps.semver.outputs.latest_tag }}"
 
-          # Get commits with subject + body for Claude to work with
-          COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s%n  %b" 2>/dev/null || git log --pretty=format:"- %s%n  %b")
-          
+          # Get commits — if no previous tag, list all commits
+          if [ -n "$LATEST_TAG" ]; then
+            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s%n  %b")
+            COMMIT_LIST=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
+          else
+            COMMITS=$(git log --pretty=format:"- %s%n  %b")
+            COMMIT_LIST=$(git log --pretty=format:"%s")
+          fi
+
           # Escape for multiline output
           echo "commits<<EOF" >> $GITHUB_OUTPUT
           echo "$COMMITS" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # Also get a clean list for the Changes section
-          COMMIT_LIST=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s" 2>/dev/null || git log --pretty=format:"%s")
           echo "commit_list<<EOF" >> $GITHUB_OUTPUT
           echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -127,8 +137,12 @@ jobs:
               }' \
             )")
 
-          # Extract text content from response
-          RELEASE_BODY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "Release notes generation failed."')
+          # Extract text content — fail the job if Mistral returns nothing
+          RELEASE_BODY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
+          if [ -z "$RELEASE_BODY" ]; then
+            echo "ERROR: Mistral API returned no content for release notes. Aborting." >&2
+            exit 1
+          fi
 
           echo "release_body<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
@@ -195,20 +209,15 @@ jobs:
       - name: Get diff of relevant files
         id: diff
         run: |
-          # Compare main to staging to get what was just merged
-          DIFF=$(git diff origin/staging..HEAD -- docs/ .github/agents/ .github/workflows/ .github/copilot-instructions.md supabase/ 2>/dev/null || echo "")
-          
-          if [ -z "$DIFF" ]; then
-            # Fallback: diff against previous commit
-            DIFF=$(git diff HEAD~1..HEAD -- docs/ .github/agents/ .github/workflows/ .github/copilot-instructions.md supabase/ 2>/dev/null || echo "")
-          fi
+          # Diff against the previous commit — always reliable after a squash merge to main
+          DIFF=$(git diff HEAD~1..HEAD -- docs/ .github/agents/ .github/workflows/ .github/copilot-instructions.md supabase/ 2>/dev/null || echo "")
 
           echo "diff<<EOF" >> $GITHUB_OUTPUT
           echo "$DIFF" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
           # Read current doc files for Claude to analyse
-          DEV_STRATEGY=$(cat docs/dev-strategy.md 2>/dev/null || echo "")
+          DEV_STRATEGY=$(cat docs/DEV_STRATEGY.md 2>/dev/null || echo "")
           DEV_AGENT=$(cat .github/agents/dev.agent.md 2>/dev/null || echo "")
           DOCS_AGENT=$(cat .github/agents/docs.agent.md 2>/dev/null || echo "")
           COPILOT=$(cat .github/copilot-instructions.md 2>/dev/null || echo "")
@@ -259,7 +268,7 @@ jobs:
                   },
                   {
                     role: "user",
-                    content: ("Analyse this diff and decide if any documentation file needs updating.\n\nDIFF:\n" + $diff + "\n\nCurrent docs/dev-strategy.md:\n" + $dev_strategy + "\n\nCurrent .github/agents/dev.agent.md:\n" + $dev_agent + "\n\nCurrent .github/agents/docs.agent.md:\n" + $docs_agent + "\n\nCurrent .github/copilot-instructions.md:\n" + $copilot + "\n\nUpdate docs ONLY if the diff contains: new/changed agent pipeline, branch structure change, CI workflow change, new Supabase table or column, new enforced convention, file structure change, or deprecation of a documented pattern. Do NOT update for: UI changes, bug fixes without architectural impact, dependency updates, styling changes.\n\nRespond with ONLY valid JSON, no markdown fences, no explanation:\n{\n  \"needs_update\": true,\n  \"reason\": \"one sentence explaining why\",\n  \"updates\": [\n    {\n      \"file\": \"relative path to file\",\n      \"section\": \"name of the section to update\",\n      \"current_content\": \"exact current text of the section\",\n      \"new_content\": \"exact replacement text\",\n      \"explanation\": \"one sentence on what changed and why\"\n    }\n  ]\n}")
+                    content: ("Analyse this diff and decide if any documentation file needs updating.\n\nDIFF:\n" + $diff + "\n\nCurrent docs/DEV_STRATEGY.md:\n" + $dev_strategy + "\n\nCurrent .github/agents/dev.agent.md:\n" + $dev_agent + "\n\nCurrent .github/agents/docs.agent.md:\n" + $docs_agent + "\n\nCurrent .github/copilot-instructions.md:\n" + $copilot + "\n\nUpdate docs ONLY if the diff contains: new/changed agent pipeline, branch structure change, CI workflow change, new Supabase table or column, new enforced convention, file structure change, or deprecation of a documented pattern. Do NOT update for: UI changes, bug fixes without architectural impact, dependency updates, styling changes.\n\nRespond with ONLY valid JSON, no markdown fences, no explanation:\n{\n  \"needs_update\": true,\n  \"reason\": \"one sentence explaining why\",\n  \"updates\": [\n    {\n      \"file\": \"relative path to file\",\n      \"section\": \"name of the section to update\",\n      \"current_content\": \"exact current text of the section\",\n      \"new_content\": \"exact replacement text\",\n      \"explanation\": \"one sentence on what changed and why\"\n    }\n  ]\n}")
                   }
                 ]
               }' \
@@ -276,6 +285,7 @@ jobs:
           echo "needs_update=$NEEDS_UPDATE" >> $GITHUB_OUTPUT
 
       - name: Apply documentation updates
+        id: apply_updates
         if: steps.doc_analysis.outputs.needs_update == 'true'
         run: |
           ANALYSIS='${{ steps.doc_analysis.outputs.analysis }}'
@@ -292,14 +302,19 @@ jobs:
             NEW=$(echo "$update" | jq -r '.new_content')
 
             if [ -f "$FILE" ]; then
-              # Use Python for reliable string replacement
               python3 -c "
           import sys
           file = sys.argv[1]
           current = sys.argv[2]
           new = sys.argv[3]
+          if not current:
+              print('SKIP: current_content is empty for ' + file, file=sys.stderr)
+              sys.exit(0)
           with open(file, 'r') as f:
               content = f.read()
+          if current not in content:
+              print('SKIP: current_content not found in ' + file, file=sys.stderr)
+              sys.exit(0)
           updated = content.replace(current, new, 1)
           with open(file, 'w') as f:
               f.write(updated)
@@ -308,13 +323,19 @@ jobs:
             fi
           done
 
-          # Commit and push
-          git add docs/ .github/agents/ .github/copilot-instructions.md
-          git commit -m "docs(agents): update technical documentation for ${VERSION}"
-          git push origin "$BRANCH"
+          # Only commit and push if the working tree has actual changes
+          if git diff --quiet HEAD -- docs/ .github/agents/ .github/copilot-instructions.md; then
+            echo "No documentation changes after applying updates — skipping PR"
+            echo "changes_made=false" >> $GITHUB_OUTPUT
+          else
+            git add docs/ .github/agents/ .github/copilot-instructions.md
+            git commit -m "docs(agents): update technical documentation for ${VERSION}"
+            git push origin "$BRANCH"
+            echo "changes_made=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Open PR for doc updates
-        if: steps.doc_analysis.outputs.needs_update == 'true'
+        if: steps.doc_analysis.outputs.needs_update == 'true' && steps.apply_updates.outputs.changes_made == 'true'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

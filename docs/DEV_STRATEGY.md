@@ -420,7 +420,7 @@ RLS: anyone can insert, users can read their own rows only.
 
 - GitHub Action: `docs.yml` — triggered on every push to `main`
 - Automatic semver tagging: `feat(` → minor bump, anything else → patch bump
-- Claude-generated release notes committed as GitHub Releases
+- Mistral-generated release notes committed as GitHub Releases
 - `CHANGELOG.md` auto-updated on every release
 - Diff analysis on `docs/` + `.github/agents/` — opens PR toward `dev` when documentation is impacted
 - Doc PRs labelled `type:docs`, `priority:low`, `agent:pm` — always require human approval

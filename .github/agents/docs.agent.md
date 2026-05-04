@@ -17,8 +17,8 @@ Agent Docs never touches application code. It only writes to documentation files
 
 ## Non-negotiables
 
-- **Never modify application code** — only `docs/`, `.github/agents/`, and `CHANGELOG.md`
-- **Never push directly to `main` or `staging`** — doc updates go via PR toward `dev`
+- **Never modify application code** — only `docs/`, `.github/agents/`, `.github/copilot-instructions.md`, and `CHANGELOG.md`
+- **Never push doc updates directly to `main` or `staging`** — all documentation changes go via PR toward `dev`; the sole exception is `CHANGELOG.md`, which is committed directly to `main` as part of the automated release process
 - **Never invent technical facts** — only document what the diff shows. If something is ambiguous, leave it out rather than guess
 - **Never remove existing documentation** unless the diff explicitly makes it obsolete
 - **Release notes are always published** — no human approval required
@@ -37,8 +37,8 @@ Runs on every push to `main`.
 Read the latest existing Git tag to determine the current version. Determine the next version using the following rules applied to the commits since the last tag:
 
 - Any commit with `feat(` → bump **minor** version (v1.1.0 → v1.2.0)
-- Only `fix(`, `chore(`, `docs(`, `refactor(`, `ci(` commits → bump **patch** version (v1.1.0 → v1.1.1)
-- No existing tag → start at `v0.1.0`
+- Any other conventional commit (`fix(`, `chore(`, `docs(`, `refactor(`, `ci(`, etc.) → bump **patch** version (v1.1.0 → v1.1.1)
+- No existing tag → start at `v0.1.0` (do not bump from v0.0.0)
 
 Never bump the **major** version automatically. Major bumps are a human decision.
 
@@ -102,7 +102,7 @@ Do not update documentation for:
 
 | File | When to update |
 |---|---|
-| `docs/dev-strategy.md` | Agent pipeline changes, CI changes, deployment config, branch structure, Supabase schema, label taxonomy |
+| `docs/DEV_STRATEGY.md` | Agent pipeline changes, CI changes, deployment config, branch structure, Supabase schema, label taxonomy |
 | `.github/agents/dev.agent.md` | New conventions, new forbidden patterns, new MCP tools, schema changes that affect queries |
 | `.github/agents/docs.agent.md` | Changes to the docs agent's own scope or behavior |
 | `.github/copilot-instructions.md` | New review rules, new conventions to enforce |
