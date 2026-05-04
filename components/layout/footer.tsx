@@ -1,31 +1,41 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
 
-const footerColumns = [
+interface FooterLink {
+  label: string
+  href: string | null
+}
+
+interface FooterColumn {
+  title: string
+  links: FooterLink[]
+}
+
+const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
       { label: "Browse Parts", href: "/browse" },
       { label: "Publish a Part", href: "/upload" },
-      { label: "Registry", href: "" },
-      { label: "API", href: "" },
+      { label: "Registry", href: null },
+      { label: "API", href: null },
     ],
   },
   {
     title: "Institution",
     links: [
-      { label: "About Common Parts", href: "" },
-      { label: "Governance", href: "" },
-      { label: "CPSP Protocol", href: "" },
-      { label: "Certification", href: "" },
+      { label: "About Common Parts", href: null },
+      { label: "Governance", href: null },
+      { label: "CPSP Protocol", href: null },
+      { label: "Certification", href: null },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "" },
-      { label: "Contact", href: "" },
-      { label: "Press", href: "" },
+      { label: "Documentation", href: null },
+      { label: "Contact", href: null },
+      { label: "Press", href: null },
     ],
   },
 ];
@@ -54,15 +64,24 @@ export function Footer() {
                 {col.title}
               </div>
               <div className="flex flex-col gap-2xs">
-                {col.links.map((link) => (
-                  <Link
-                    key={link.label}
-                    href={link.href}
-                    className="text-body text-text-secondary transition-colors duration-fast hover:text-text-primary"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {col.links.map((link) =>
+                  link.href ? (
+                    <Link
+                      key={link.label}
+                      href={link.href}
+                      className="text-body text-text-secondary transition-colors duration-fast hover:text-text-primary"
+                    >
+                      {link.label}
+                    </Link>
+                  ) : (
+                    <span
+                      key={link.label}
+                      className="text-body text-text-disabled cursor-default"
+                    >
+                      {link.label}
+                    </span>
+                  )
+                )}
               </div>
             </div>
           ))}
