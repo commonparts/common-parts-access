@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { isValidHttpUrl } from "@/lib/utils/validation"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -67,6 +68,23 @@ interface ModelData {
   viewerHasLiked?: boolean
   tags: string[]
   license: {
+    id: string
+    spdxId: string
+    name: string
+    shortName: string
+    url: string
+    allowsRedistribution: boolean
+    requiresAttribution: boolean
+    allowsCommercial: boolean
+    isCopyleft: boolean
+  } | null
+  originType: 'original' | 'curated' | 'manufacturer'
+  verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
+  sourcePlatform?: string | null
+  sourceUrl?: string | null
+  originalAuthor?: string | null
+  originalAuthorUrl?: string | null
+  sourceLicense?: {
     id: string
     spdxId: string
     name: string
@@ -605,16 +623,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               </div>
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-              <span className="text-muted-foreground font-medium">License</span>
-              {model.license ? (
-                <a href={model.license.url} target="_blank" rel="noopener noreferrer">
-                  <Badge variant="outline" className="w-fit">{model.license.shortName}</Badge>
-                </a>
-              ) : (
-                <Badge variant="outline" className="w-fit">—</Badge>
-              )}
-            </div>
-            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-muted-foreground font-medium">Uploaded</span>
               <span className="text-sm">{formatDate(model.createdAt)}</span>
             </div>
@@ -672,6 +680,105 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </CardContent>
           </Card>
         )}
+
+        {/* Attribution & License */}
+        <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Attribution & License
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Verification Status — always rendered */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground font-medium">Status:</span>
+              <Badge variant="secondary" className="text-xs capitalize">
+                {model.verificationStatus === 'unverified' && '⊘ Unverified'}
+                {model.verificationStatus === 'author_tested' && '✓ Author Tested'}
+                {model.verificationStatus === 'community_validated' && '✓✓ Community Validated'}
+                {model.verificationStatus === 'certified' && '✓✓✓ Certified'}
+              </Badge>
+            </div>
+
+            {/* Source Attribution — only rendered when a source URL is present */}
+            {model.sourceUrl && isValidHttpUrl(model.sourceUrl) && (
+              <div className="space-y-3 border-t border-border-subtle pt-3">
+                {model.sourcePlatform && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
+                    <span className="text-sm capitalize font-medium">{model.sourcePlatform}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground font-medium">Original Post</span>
+                  <a
+                    href={model.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {model.sourcePlatform ? `View on ${model.sourcePlatform}` : 'View original post'}
+                  </a>
+                </div>
+
+                {model.originalAuthor && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Original Author</span>
+                    {model.originalAuthorUrl && isValidHttpUrl(model.originalAuthorUrl) ? (
+                      <a
+                        href={model.originalAuthorUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        {model.originalAuthor}
+                      </a>
+                    ) : (
+                      <span className="text-sm font-medium">{model.originalAuthor}</span>
+                    )}
+                  </div>
+                )}
+
+                {model.sourceLicense && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Source License</span>
+                    <a
+                      href={model.sourceLicense.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                    >
+                      <Badge variant="outline">{model.sourceLicense.shortName}</Badge>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CP License — always rendered for all origin types */}
+            <div className="border-t border-border-subtle pt-3">
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
+                {model.license ? (
+                  <a
+                    href={model.license.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  >
+                    <Badge variant="outline">{model.license.shortName}</Badge>
+                  </a>
+                ) : (
+                  <Badge variant="outline">—</Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Compatible Product */}
         {model.product && (

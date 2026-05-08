@@ -48,7 +48,24 @@ export async function GET(
           notes,
           created_at,
           updated_at,
+          origin_type,
+          verification_status,
+          source_url,
+          source_platform,
+          original_author,
+          original_author_url,
           licenses!models_license_id_fkey(
+            id,
+            spdx_id,
+            name,
+            short_name,
+            url,
+            allows_redistribution,
+            requires_attribution,
+            allows_commercial,
+            is_copyleft
+          ),
+          source_licenses:licenses!models_source_license_id_fkey(
             id,
             spdx_id,
             name,
@@ -169,6 +186,7 @@ export async function GET(
     const category = first(model.categories)
     const brand = first(model.brands)
     const license = first(model.licenses)
+    const sourceLicense = first(model.source_licenses)
     const productBrand = product ? first(product.brands) : null
 
     return NextResponse.json({
@@ -206,6 +224,23 @@ export async function GET(
           requiresAttribution: license.requires_attribution,
           allowsCommercial: license.allows_commercial,
           isCopyleft: license.is_copyleft,
+        } : null,
+        originType: model.origin_type,
+        verificationStatus: model.verification_status,
+        sourcePlatform: model.source_platform,
+        sourceUrl: model.source_url,
+        originalAuthor: model.original_author,
+        originalAuthorUrl: model.original_author_url,
+        sourceLicense: sourceLicense ? {
+          id: sourceLicense.id,
+          spdxId: sourceLicense.spdx_id,
+          name: sourceLicense.name,
+          shortName: sourceLicense.short_name,
+          url: sourceLicense.url,
+          allowsRedistribution: sourceLicense.allows_redistribution,
+          requiresAttribution: sourceLicense.requires_attribution,
+          allowsCommercial: sourceLicense.allows_commercial,
+          isCopyleft: sourceLicense.is_copyleft,
         } : null,
         instructions: model.instructions,
         notes: model.notes,
