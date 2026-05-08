@@ -52,6 +52,23 @@ export function isValidUrl(url: string): boolean {
 }
 
 /**
+ * Validates that a URL uses only http or https scheme.
+ * Rejects javascript:, data:, and any other scheme to prevent XSS
+ * when user-supplied URLs are rendered as anchor href values.
+ *
+ * @param url - URL to validate
+ * @returns True only for http/https URLs
+ */
+export function isValidHttpUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+  } catch {
+    return false
+  }
+}
+
+/**
  * Password strength validation
  * @param password - Password to validate
  * @returns Validation result with strength level and requirements
