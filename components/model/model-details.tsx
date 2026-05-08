@@ -307,6 +307,19 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     }).format(new Date(dateString))
   }
 
+  /**
+   * Returns true only for http/https URLs.
+   * Rejects javascript:, data:, and any other scheme to prevent XSS via user-supplied href values.
+   */
+  const isValidHttpUrl = (url: string): boolean => {
+    try {
+      const parsed = new URL(url)
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
+    } catch {
+      return false
+    }
+  }
+
   if (loading) {
     return (
       <div className={cn("w-full", className)}>
@@ -691,7 +704,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Verification Status Badge */}
+            {/* Verification Status — always rendered */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground font-medium">Status:</span>
               <Badge variant="secondary" className="text-xs capitalize">
@@ -702,106 +715,80 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               </Badge>
             </div>
 
-            {/* Original Contribution (no source attribution) */}
-            {model.originType === 'original' && (
-              <>
-                <div className="border-t border-border-subtle pt-3">
+            {/* Source Attribution — only rendered when a source URL is present */}
+            {model.sourceUrl && isValidHttpUrl(model.sourceUrl) && (
+              <div className="space-y-3 border-t border-border-subtle pt-3">
+                {model.sourcePlatform && (
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
-                    {model.license ? (
-                      <a 
-                        href={model.license.url} 
-                        target="_blank" 
+                    <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
+                    <span className="text-sm capitalize font-medium">{model.sourcePlatform}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground font-medium">Original Post</span>
+                  <a
+                    href={model.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {model.sourcePlatform ? `View on ${model.sourcePlatform}` : 'View original post'}
+                  </a>
+                </div>
+
+                {model.originalAuthor && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Original Author</span>
+                    {model.originalAuthorUrl && isValidHttpUrl(model.originalAuthorUrl) ? (
+                      <a
+                        href={model.originalAuthorUrl}
+                        target="_blank"
                         rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                        className="text-sm font-medium text-primary hover:underline"
                       >
-                        <Badge variant="outline">{model.license.shortName}</Badge>
+                        {model.originalAuthor}
                       </a>
                     ) : (
-                      <Badge variant="outline">—</Badge>
+                      <span className="text-sm font-medium">{model.originalAuthor}</span>
                     )}
                   </div>
-                </div>
-              </>
-            )}
+                )}
 
-            {/* Curated Content (with source attribution) */}
-            {(model.originType === 'curated' || model.originType === 'manufacturer') && model.sourceUrl && (
-              <>
-                <div className="space-y-3 border-t border-border-subtle pt-3">
-                  {model.sourcePlatform && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                      <span className="text-sm capitalize font-medium">{model.sourcePlatform}</span>
-                    </div>
-                  )}
-
-                  {model.sourceUrl && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-muted-foreground font-medium">Original Post</span>
-                      <a 
-                        href={model.sourceUrl} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="text-sm text-primary hover:underline break-all"
-                      >
-                        View on {model.sourcePlatform}
-                      </a>
-                    </div>
-                  )}
-
-                  {model.originalAuthor && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-muted-foreground font-medium">Original Author</span>
-                      {model.originalAuthorUrl ? (
-                        <a 
-                          href={model.originalAuthorUrl} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="text-sm font-medium text-primary hover:underline"
-                        >
-                          {model.originalAuthor}
-                        </a>
-                      ) : (
-                        <span className="text-sm font-medium">{model.originalAuthor}</span>
-                      )}
-                    </div>
-                  )}
-
-                  {model.sourceLicense && (
-                    <div className="flex flex-col gap-2">
-                      <span className="text-sm text-muted-foreground font-medium">Source License</span>
-                      <a 
-                        href={model.sourceLicense.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 hover:opacity-80 transition"
-                      >
-                        <Badge variant="outline">{model.sourceLicense.shortName}</Badge>
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <div className="border-t border-border-subtle pt-3">
+                {model.sourceLicense && (
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
-                    {model.license ? (
-                      <a 
-                        href={model.license.url} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 hover:opacity-80 transition"
-                      >
-                        <Badge variant="outline">{model.license.shortName}</Badge>
-                      </a>
-                    ) : (
-                      <Badge variant="outline">—</Badge>
-                    )}
+                    <span className="text-sm text-muted-foreground font-medium">Source License</span>
+                    <a
+                      href={model.sourceLicense.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                    >
+                      <Badge variant="outline">{model.sourceLicense.shortName}</Badge>
+                    </a>
                   </div>
-                </div>
-              </>
+                )}
+              </div>
             )}
+
+            {/* CP License — always rendered for all origin types */}
+            <div className="border-t border-border-subtle pt-3">
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
+                {model.license ? (
+                  <a
+                    href={model.license.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  >
+                    <Badge variant="outline">{model.license.shortName}</Badge>
+                  </a>
+                ) : (
+                  <Badge variant="outline">—</Badge>
+                )}
+              </div>
+            </div>
           </CardContent>
         </Card>
 
