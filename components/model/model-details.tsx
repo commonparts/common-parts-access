@@ -4,6 +4,7 @@ import * as React from "react"
 import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
+import { isValidHttpUrl } from "@/lib/utils/validation"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -305,19 +306,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
       month: 'long',
       day: 'numeric'
     }).format(new Date(dateString))
-  }
-
-  /**
-   * Returns true only for http/https URLs.
-   * Rejects javascript:, data:, and any other scheme to prevent XSS via user-supplied href values.
-   */
-  const isValidHttpUrl = (url: string): boolean => {
-    try {
-      const parsed = new URL(url)
-      return parsed.protocol === 'http:' || parsed.protocol === 'https:'
-    } catch {
-      return false
-    }
   }
 
   if (loading) {
