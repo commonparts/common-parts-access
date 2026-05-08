@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { Logo } from "@/components/layout/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MobileMenu } from "@/components/layout/mobile-menu";
 
 export default async function Navbar() {
   const {
@@ -18,6 +19,7 @@ export default async function Navbar() {
       <div className="mx-auto flex h-16 max-w-container-xl items-center justify-between px-md">
         <Logo asLink />
 
+        {/* Desktop nav — hidden on mobile */}
         <div className="hidden items-center gap-sm md:flex">
           {menuLinks.map((item) => (
             <Button
@@ -45,6 +47,9 @@ export default async function Navbar() {
             <Link href="/upload">Publish a Part</Link>
           </Button>
         </div>
+
+        {/* Mobile nav — hamburger menu, hidden on md+ */}
+        <MobileMenu menuLinks={menuLinks} isLoggedIn={!!user} />
       </div>
     </nav>
   );
