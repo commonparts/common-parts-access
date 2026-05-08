@@ -35,6 +35,11 @@ If a quick fix violates them, flag it and propose the right implementation inste
 - Before creating anything new, check `components/ui/`, `components/layout/`, and `lib/` for existing solutions.
 - Props must be typed with interfaces. Components must be composable — accept `className` and spread remaining props where it makes sense.
 - Data-fetching logic always lives in `lib/supabase/queries/` — never inline in a component or API route.
+- **Helper placement** — before writing any helper function (validator, formatter, URL utility, slug util, etc.) inside a component or API route, you must:
+  1. Check `lib/utils/` for an existing file that already owns that domain (e.g. `validation.ts` for validators, `formatters.ts` for formatters, `url.ts` for URL helpers).
+  2. If a suitable file exists, add the function there and import it — never define it inline.
+  3. If no suitable file exists, create the appropriate `lib/utils/[domain].ts` file and place the function there.
+  A helper is **never** scoped to a single file unless it is a one-off transformation with zero reuse potential anywhere in the codebase.
 
 ```tsx
 // Reusable — accepts composition
