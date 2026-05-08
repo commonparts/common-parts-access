@@ -109,33 +109,49 @@ jobs:
         id: release_notes
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          # Large multiline values are passed via env to avoid bash injection when
+          # ${{ }} expressions are expanded inline — commit messages can contain
+          # $(...), backticks, or other shell-special characters that would cause
+          # a parse error if interpolated directly into the run script.
+          COMMITS: ${{ steps.commits.outputs.commits }}
+          COMMIT_LIST: ${{ steps.commits.outputs.commit_list }}
         run: |
+          # Fail fast if the API key is missing
+          if [ -z "$MISTRAL_API_KEY" ]; then
+            echo "ERROR: MISTRAL_API_KEY secret is not set. Aborting." >&2
+            exit 1
+          fi
+
           VERSION="${{ steps.semver.outputs.version }}"
-          COMMITS="${{ steps.commits.outputs.commits }}"
-          COMMIT_LIST="${{ steps.commits.outputs.commit_list }}"
+
+          # Build JSON payload using jq --arg — values from env vars are never
+          # re-interpreted by the shell, so special characters are safe.
+          jq -n \
+            --arg version "$VERSION" \
+            --arg commits "$COMMITS" \
+            --arg commit_list "$COMMIT_LIST" \
+            '{
+              model: "mistral-medium-latest",
+              max_tokens: 1000,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are Agent Docs for Common Parts Access, a public-interest institution that governs standards and protocols for digital spare parts. You write precise, institutional technical documentation. No startup language. No emotional framing. Write in English. Present tense for states, past tense for changes."
+                },
+                {
+                  role: "user",
+                  content: ("Generate release notes for version " + $version + " of Common Parts Access.\n\nCommits since last release:\n" + $commits + "\n\nFormat your response as follows — output ONLY the markdown, no preamble:\n\n## What changed\n\n[2-4 sentences in plain English describing what this release brings. Focus on effect, not implementation. Institutional tone. If only fixes, say so plainly.]\n\n## Changes\n\n" + $commit_list + "\n\n## Technical details\n\n[1-2 sentences on architectural impact if relevant. Omit this section entirely if the release is purely a bug fix or minor improvement.]")
+                }
+              ]
+            }' > /tmp/mistral_release_payload.json
+
+          # Validate payload before sending — catches jq encoding failures early
+          jq . /tmp/mistral_release_payload.json > /dev/null
 
           RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $MISTRAL_API_KEY" \
-            -d "$(jq -n \
-              --arg version "$VERSION" \
-              --arg commits "$COMMITS" \
-              --arg commit_list "$COMMIT_LIST" \
-              '{
-                model: "mistral-medium-latest",
-                max_tokens: 1000,
-                messages: [
-                  {
-                    role: "system",
-                    content: "You are Agent Docs for Common Parts Access, a public-interest institution that governs standards and protocols for digital spare parts. You write precise, institutional technical documentation. No startup language. No emotional framing. Write in English. Present tense for states, past tense for changes."
-                  },
-                  {
-                    role: "user",
-                    content: ("Generate release notes for version " + $version + " of Common Parts Access.\n\nCommits since last release:\n" + $commits + "\n\nFormat your response as follows — output ONLY the markdown, no preamble:\n\n## What changed\n\n[2-4 sentences in plain English describing what this release brings. Focus on effect, not implementation. Institutional tone. If only fixes, say so plainly.]\n\n## Changes\n\n" + $commit_list + "\n\n## Technical details\n\n[1-2 sentences on architectural impact if relevant. Omit this section entirely if the release is purely a bug fix or minor improvement.]")
-                  }
-                ]
-              }' \
-            )")
+            --data @/tmp/mistral_release_payload.json)
 
           # Extract text content — fail the job if Mistral returns nothing
           RELEASE_BODY=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // empty')
@@ -143,6 +159,10 @@ jobs:
             echo "ERROR: Mistral API returned no content for release notes. Aborting." >&2
             exit 1
           fi
+
+          # Write to file for use in subsequent steps — avoids ${{ }} injection
+          # when consuming the output in later run scripts.
+          echo "$RELEASE_BODY" > /tmp/release_body.txt
 
           echo "release_body<<EOF" >> $GITHUB_OUTPUT
           echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
@@ -159,17 +179,19 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION="${{ steps.semver.outputs.version }}"
-          RELEASE_BODY="${{ steps.release_notes.outputs.release_body }}"
 
+          # Read release body from file written by the previous step — avoids
+          # ${{ }} injection for multiline Mistral-generated content.
           gh release create "$VERSION" \
             --title "$VERSION" \
-            --notes "$RELEASE_BODY"
+            --notes-file /tmp/release_body.txt
 
       - name: Update CHANGELOG.md
         run: |
           VERSION="${{ steps.semver.outputs.version }}"
           DATE=$(date +%Y-%m-%d)
-          RELEASE_BODY="${{ steps.release_notes.outputs.release_body }}"
+          # Read release body from file — avoids ${{ }} injection for multiline content.
+          RELEASE_BODY=$(cat /tmp/release_body.txt)
 
           # Build new changelog entry
           NEW_ENTRY="# ${VERSION} — ${DATE}\n\n${RELEASE_BODY}\n\n---\n\n"
@@ -245,42 +267,60 @@ jobs:
         id: doc_analysis
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
+          # Large multiline values are passed via env to avoid bash injection — same
+          # reason as in the release-notes job: diffs and doc files can contain any
+          # shell-special characters.
+          DIFF: ${{ steps.diff.outputs.diff }}
+          DEV_STRATEGY: ${{ steps.diff.outputs.dev_strategy }}
+          DEV_AGENT: ${{ steps.diff.outputs.dev_agent }}
+          DOCS_AGENT: ${{ steps.diff.outputs.docs_agent }}
+          COPILOT: ${{ steps.diff.outputs.copilot }}
         run: |
-          DIFF="${{ steps.diff.outputs.diff }}"
-          DEV_STRATEGY="${{ steps.diff.outputs.dev_strategy }}"
-          DEV_AGENT="${{ steps.diff.outputs.dev_agent }}"
-          DOCS_AGENT="${{ steps.diff.outputs.docs_agent }}"
-          COPILOT="${{ steps.diff.outputs.copilot }}"
+          # Fail fast if the API key is missing
+          if [ -z "$MISTRAL_API_KEY" ]; then
+            echo "ERROR: MISTRAL_API_KEY secret is not set. Aborting." >&2
+            exit 1
+          fi
+
+          # Build JSON payload using jq --arg — values from env vars are safe.
+          jq -n \
+            --arg diff "$DIFF" \
+            --arg dev_strategy "$DEV_STRATEGY" \
+            --arg dev_agent "$DEV_AGENT" \
+            --arg docs_agent "$DOCS_AGENT" \
+            --arg copilot "$COPILOT" \
+            '{
+              model: "mistral-medium-latest",
+              max_tokens: 1000,
+              messages: [
+                {
+                  role: "system",
+                  content: "You are Agent Docs for Common Parts Access. You analyse code diffs and decide whether technical documentation needs updating. You only document facts visible in the diff. You never invent or guess. When in doubt, output needs_update false. You respond only in the JSON format requested — no markdown, no explanation, valid JSON only."
+                },
+                {
+                  role: "user",
+                  content: ("Analyse this diff and decide if any documentation file needs updating.\n\nDIFF:\n" + $diff + "\n\nCurrent docs/DEV_STRATEGY.md:\n" + $dev_strategy + "\n\nCurrent .github/agents/dev.agent.md:\n" + $dev_agent + "\n\nCurrent .github/agents/docs.agent.md:\n" + $docs_agent + "\n\nCurrent .github/copilot-instructions.md:\n" + $copilot + "\n\nUpdate docs ONLY if the diff contains: new/changed agent pipeline, branch structure change, CI workflow change, new Supabase table or column, new enforced convention, file structure change, or deprecation of a documented pattern. Do NOT update for: UI changes, bug fixes without architectural impact, dependency updates, styling changes.\n\nRespond with ONLY valid JSON, no markdown fences, no explanation:\n{\n  \"needs_update\": true,\n  \"reason\": \"one sentence explaining why\",\n  \"updates\": [\n    {\n      \"file\": \"relative path to file\",\n      \"section\": \"name of the section to update\",\n      \"current_content\": \"exact current text of the section\",\n      \"new_content\": \"exact replacement text\",\n      \"explanation\": \"one sentence on what changed and why\"\n    }\n  ]\n}")
+                }
+              ]
+            }' > /tmp/mistral_docs_payload.json
+
+          # Validate payload before sending
+          jq . /tmp/mistral_docs_payload.json > /dev/null
 
           RESPONSE=$(curl -s https://api.mistral.ai/v1/chat/completions \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $MISTRAL_API_KEY" \
-            -d "$(jq -n \
-              --arg diff "$DIFF" \
-              --arg dev_strategy "$DEV_STRATEGY" \
-              --arg dev_agent "$DEV_AGENT" \
-              --arg docs_agent "$DOCS_AGENT" \
-              --arg copilot "$COPILOT" \
-              '{
-                model: "mistral-medium-latest",
-                max_tokens: 1000,
-                messages: [
-                  {
-                    role: "system",
-                    content: "You are Agent Docs for Common Parts Access. You analyse code diffs and decide whether technical documentation needs updating. You only document facts visible in the diff. You never invent or guess. When in doubt, output needs_update false. You respond only in the JSON format requested — no markdown, no explanation, valid JSON only."
-                  },
-                  {
-                    role: "user",
-                    content: ("Analyse this diff and decide if any documentation file needs updating.\n\nDIFF:\n" + $diff + "\n\nCurrent docs/DEV_STRATEGY.md:\n" + $dev_strategy + "\n\nCurrent .github/agents/dev.agent.md:\n" + $dev_agent + "\n\nCurrent .github/agents/docs.agent.md:\n" + $docs_agent + "\n\nCurrent .github/copilot-instructions.md:\n" + $copilot + "\n\nUpdate docs ONLY if the diff contains: new/changed agent pipeline, branch structure change, CI workflow change, new Supabase table or column, new enforced convention, file structure change, or deprecation of a documented pattern. Do NOT update for: UI changes, bug fixes without architectural impact, dependency updates, styling changes.\n\nRespond with ONLY valid JSON, no markdown fences, no explanation:\n{\n  \"needs_update\": true,\n  \"reason\": \"one sentence explaining why\",\n  \"updates\": [\n    {\n      \"file\": \"relative path to file\",\n      \"section\": \"name of the section to update\",\n      \"current_content\": \"exact current text of the section\",\n      \"new_content\": \"exact replacement text\",\n      \"explanation\": \"one sentence on what changed and why\"\n    }\n  ]\n}")
-                  }
-                ]
-              }' \
-            )")
+            --data @/tmp/mistral_docs_payload.json)
 
           ANALYSIS=$(echo "$RESPONSE" | jq -r '.choices[0].message.content // "{\"needs_update\": false, \"reason\": \"API error\"}"')
 
           # Strip markdown fences if Mistral wraps the JSON anyway
           ANALYSIS=$(echo "$ANALYSIS" | sed 's/^```json//;s/^```//;s/```$//')
+
+          # Write to file for use in subsequent steps — avoids ${{ }} injection
+          # when consuming the output; single quotes around ${{ }} do not help
+          # because GitHub Actions expands expressions before bash runs.
+          echo "$ANALYSIS" > /tmp/doc_analysis.json
 
           echo "analysis=$ANALYSIS" >> $GITHUB_OUTPUT
 
@@ -291,7 +331,9 @@ jobs:
         id: apply_updates
         if: steps.doc_analysis.outputs.needs_update == 'true'
         run: |
-          ANALYSIS='${{ steps.doc_analysis.outputs.analysis }}'
+          # Read from file — ${{ }} injection is not safe here because the JSON
+          # can contain single quotes that would break bash single-quoting.
+          ANALYSIS=$(cat /tmp/doc_analysis.json)
           VERSION=$(git describe --tags --abbrev=0)
 
           # Create a branch for the doc PR
@@ -344,7 +386,8 @@ jobs:
         run: |
           VERSION=$(git describe --tags --abbrev=0)
           BRANCH="docs/update-${VERSION}"
-          ANALYSIS='${{ steps.doc_analysis.outputs.analysis }}'
+          # Read from file — same injection concern as in apply_updates step.
+          ANALYSIS=$(cat /tmp/doc_analysis.json)
           REASON=$(echo "$ANALYSIS" | jq -r '.reason')
 
           # Build file list for PR description
