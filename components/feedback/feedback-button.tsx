@@ -18,7 +18,7 @@ export function FeedbackButton() {
         className="fixed bottom-lg right-lg z-50"
         aria-label="Send feedback"
       >
-        <MessageSquare className="h-5 w-5" aria-hidden="true" />
+        <MessageSquare aria-hidden="true" />
       </Button>
 
       {open && (
