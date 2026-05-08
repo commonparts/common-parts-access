@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FeedbackForm } from './feedback-form'
@@ -11,12 +12,13 @@ export function FeedbackButton() {
   return (
     <>
       <Button
-        variant="outline"
-        size="sm"
+        variant="default"
+        size="icon"
         onClick={() => setOpen(true)}
-        className="fixed bottom-lg right-lg z-50 shadow-none"
+        className="fixed bottom-lg right-lg z-50"
+        aria-label="Send feedback"
       >
-        Feedback
+        <MessageSquare aria-hidden="true" />
       </Button>
 
       {open && (
