@@ -40,18 +40,23 @@ export function CreateProductModal({
     <div className="fixed inset-0 z-50 overflow-y-auto bg-background/70 px-sm py-sm backdrop-blur-sm">
       <div className="flex min-h-full w-full items-start justify-center">
         <div className="w-full max-w-3xl">
-        <Card className="flex max-h-dvh w-full flex-col border-muted shadow-2xl">
-          <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0">
-            <div className="space-y-1">
-              <CardTitle>Create new product</CardTitle>
-              <p className="text-sm text-muted-foreground">Prefilled from your current brand and category selections.</p>
-            </div>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              Cancel
-            </Button>
-          </CardHeader>
+          <Card
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-product-modal-title"
+            className="flex max-h-dvh w-full flex-col border-muted shadow-2xl"
+          >
+            <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0">
+              <div className="space-y-1">
+                <CardTitle id="create-product-modal-title">Create new product</CardTitle>
+                <p className="text-sm text-muted-foreground">Prefilled from your current brand and category selections.</p>
+              </div>
+              <Button variant="ghost" size="sm" onClick={onClose}>
+                Cancel
+              </Button>
+            </CardHeader>
 
-          <CardContent className="flex-1 space-y-4 overflow-y-auto">
+            <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
             {error && (
               <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
                 {error}
