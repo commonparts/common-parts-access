@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Menu, X } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, Menu, Trash2, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { signOut } from "@/lib/supabase/queries/auth.client";
 
 interface NavLink {
   label: string;
@@ -24,14 +26,26 @@ interface MobileMenuProps {
  */
 export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
 
   const close = () => setIsOpen(false);
+
+  const handleSignOut = async () => {
+    await signOut();
+    setIsOpen(false);
+    router.push("/logout-success");
+  };
+
+  const handleDeleteAccount = () => {
+    setIsOpen(false);
+    router.push("/delete-account");
+  };
 
   // Dismiss on Escape key
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") setIsOpen(false);
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
@@ -85,15 +99,37 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
               <div className="my-xs border-t border-border-subtle" />
 
               {isLoggedIn ? (
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className="w-full justify-start font-medium"
-                  onClick={close}
-                >
-                  <Link href="/dashboard">My dashboard</Link>
-                </Button>
+                <>
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start font-medium"
+                    onClick={close}
+                  >
+                    <Link href="/dashboard">My dashboard</Link>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start font-medium"
+                    onClick={handleSignOut}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    <span>Logout</span>
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start font-medium text-destructive hover:text-destructive"
+                    onClick={handleDeleteAccount}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <span>Delete account</span>
+                  </Button>
+                </>
               ) : (
                 <Button
                   asChild
