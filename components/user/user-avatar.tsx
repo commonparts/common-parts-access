@@ -51,18 +51,20 @@ export function UserProfileMenu() {
 					}
 
 					const Icon = item.icon;
-					const isDeleteAction = item.action === "deleteAccount";
 					return (
 						<DropdownMenuItem
 							key={item.key}
 							className={item.destructive ? "text-destructive focus:text-destructive" : undefined}
 							onSelect={(event) => {
 								event.preventDefault();
-								if (isDeleteAction) {
-									handleDeleteAccount();
-									return;
+								switch (item.action) {
+									case "deleteAccount":
+										handleDeleteAccount();
+										break;
+									case "logout":
+										void handleLogout();
+										break;
 								}
-								handleLogout();
 							}}
 						>
 							<Icon className="h-4 w-4" />
