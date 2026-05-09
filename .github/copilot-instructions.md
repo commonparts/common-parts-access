@@ -50,6 +50,13 @@ stay silent on it.
 - Flag any Supabase query written inline in a component or API route
   instead of extracted to a function in `lib/supabase/queries/`.
 
+- Flag any utility function (validator, formatter, URL helper, slug util,
+  or any other general-purpose helper) defined inside a component or API
+  route file instead of extracted to the appropriate file under `lib/utils/`.
+  Validators belong in `lib/utils/validation.ts`, formatters in
+  `lib/utils/formatters.ts`, and so on. The only exception is a one-off
+  transformation with zero reuse potential anywhere in the codebase.
+
 - Flag any use of the `any` type in TypeScript.
 
 - Flag any `'use server'` directive — this project uses API routes only,
