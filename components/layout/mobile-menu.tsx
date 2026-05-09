@@ -27,13 +27,21 @@ interface MobileMenuProps {
  */
 export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const router = useRouter();
 
-  const close = () => setIsOpen(false);
+  const close = () => {
+    setIsOpen(false);
+    setSignOutError(null);
+  };
 
   const handleSignOut = async () => {
-    await signOut();
-    setIsOpen(false);
+    const { error } = await signOut();
+    if (error) {
+      setSignOutError("Sign out failed. Please try again.");
+      return;
+    }
+    close();
     router.push("/logout-success");
   };
 
@@ -67,7 +75,10 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
         aria-label={isOpen ? "Close menu" : "Open menu"}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-panel"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={() => {
+          setSignOutError(null);
+          setIsOpen((prev) => !prev);
+        }}
         className="rounded-md p-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
       >
         {isOpen ? (
@@ -89,7 +100,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
           {/* Nav panel — top-full anchors to the bottom of the sticky nav */}
           <div
             id="mobile-nav-panel"
-            className="absolute left-0 top-full z-50 max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
+            className="absolute left-0 top-full z-50 max-h-[calc(100dvh-100%)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
           >
             <div className="flex flex-col gap-xs">
               {menuLinks.map((item) => (
@@ -153,6 +164,12 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                       </Button>
                     );
                   })}
+
+                  {signOutError && (
+                    <p className="rounded-md border border-border-default bg-bg-muted px-sm py-xs text-sm text-destructive">
+                      {signOutError}
+                    </p>
+                  )}
                 </>
               ) : (
                 <Button
