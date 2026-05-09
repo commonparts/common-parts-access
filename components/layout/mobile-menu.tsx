@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, Trash2, X } from "lucide-react";
+import { LogOut, Menu, Trash2, UploadCloud, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/supabase/queries/auth.client";
@@ -107,7 +107,10 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                     className="w-full justify-start font-medium"
                     onClick={close}
                   >
-                    <Link href="/dashboard">My dashboard</Link>
+                    <Link href="/upload" className="flex w-full items-center gap-md">
+                      <UploadCloud className="h-4 w-4" />
+                      <span>Publish a part</span>
+                    </Link>
                   </Button>
 
                   <Button
@@ -129,6 +132,8 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                     <Trash2 className="h-4 w-4" />
                     <span>Delete account</span>
                   </Button>
+
+                    <div className="my-xs border-t border-border-subtle" />
                 </>
               ) : (
                 <Button
@@ -142,15 +147,17 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                 </Button>
               )}
 
-              <Button
-                asChild
-                variant="default"
-                size="sm"
-                className="w-full font-medium"
-                onClick={close}
-              >
-                <Link href="/upload">Publish a Part</Link>
-              </Button>
+              {!isLoggedIn && (
+                <Button
+                  asChild
+                  variant="default"
+                  size="sm"
+                  className="w-full font-medium"
+                  onClick={close}
+                >
+                  <Link href="/upload">Publish a part</Link>
+                </Button>
+              )}
             </div>
           </div>
         </>
