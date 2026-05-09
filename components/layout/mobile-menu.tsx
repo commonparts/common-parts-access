@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Menu, Trash2, UploadCloud, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { USER_PROFILE_MENU_ITEMS, UserProfileMenuAction } from "@/components/user/profile-menu-items";
 import { signOut } from "@/lib/supabase/queries/auth.client";
 
 interface NavLink {
@@ -39,6 +40,14 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
   const handleDeleteAccount = () => {
     setIsOpen(false);
     router.push("/delete-account");
+  };
+
+  const handleUserMenuAction = async (action: UserProfileMenuAction) => {
+    if (action === "deleteAccount") {
+      handleDeleteAccount();
+      return;
+    }
+    await handleSignOut();
   };
 
   // Dismiss on Escape key
@@ -100,40 +109,50 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
 
               {isLoggedIn ? (
                 <>
-                  <Button
-                    asChild
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start font-medium"
-                    onClick={close}
-                  >
-                    <Link href="/upload" className="flex w-full items-center gap-md">
-                      <UploadCloud className="h-4 w-4" />
-                      <span>Publish a part</span>
-                    </Link>
-                  </Button>
+                  {USER_PROFILE_MENU_ITEMS.map((item) => {
+                    if (item.type === "separator") {
+                      return (
+                        <div
+                          key={item.key}
+                          className="my-xs border-t border-border-subtle"
+                        />
+                      );
+                    }
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start font-medium"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    <span>Logout</span>
-                  </Button>
+                    const Icon = item.icon;
+                    if (item.type === "link") {
+                      return (
+                        <Button
+                          key={item.key}
+                          asChild
+                          variant="ghost"
+                          size="sm"
+                          className="w-full justify-start font-medium"
+                          onClick={close}
+                        >
+                          <Link href={item.href} className="flex w-full items-center gap-md">
+                            <Icon className="h-4 w-4" />
+                            <span>{item.label}</span>
+                          </Link>
+                        </Button>
+                      );
+                    }
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full justify-start font-medium text-destructive hover:text-destructive"
-                    onClick={handleDeleteAccount}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Delete account</span>
-                  </Button>
-
-                    <div className="my-xs border-t border-border-subtle" />
+                    return (
+                      <Button
+                        key={item.key}
+                        variant="ghost"
+                        size="sm"
+                        className={`w-full justify-start font-medium ${item.destructive ? "text-destructive hover:text-destructive" : ""}`}
+                        onClick={() => {
+                          void handleUserMenuAction(item.action);
+                        }}
+                      >
+                        <Icon className="h-4 w-4" />
+                        <span>{item.label}</span>
+                      </Button>
+                    );
+                  })}
                 </>
               ) : (
                 <Button
