@@ -164,10 +164,6 @@ jobs:
           # when consuming the output in later run scripts.
           echo "$RELEASE_BODY" > /tmp/release_body.txt
 
-          echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          echo "$RELEASE_BODY" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
       - name: Create Git tag
         run: |
           VERSION="${{ steps.semver.outputs.version }}"
@@ -321,8 +317,6 @@ jobs:
           # when consuming the output; single quotes around ${{ }} do not help
           # because GitHub Actions expands expressions before bash runs.
           echo "$ANALYSIS" > /tmp/doc_analysis.json
-
-          echo "analysis=$ANALYSIS" >> $GITHUB_OUTPUT
 
           NEEDS_UPDATE=$(echo "$ANALYSIS" | jq -r '.needs_update // false')
           echo "needs_update=$NEEDS_UPDATE" >> $GITHUB_OUTPUT
