@@ -36,8 +36,8 @@ export function FeedbackButton() {
             aria-labelledby="feedback-panel-title"
             className="fixed left-lg right-lg top-lg bottom-lg z-50 sm:left-auto sm:right-lg sm:w-full sm:max-w-sm"
           >
-            <Card className="flex h-full max-h-full flex-col shadow-none">
-              <CardHeader className="flex-row items-center justify-between pb-xs">
+            <Card className="flex max-h-full flex-col shadow-none">
+              <CardHeader className="shrink-0 flex-row items-center justify-between pb-xs">
                 <CardTitle id="feedback-panel-title" className="text-heading-sm font-semibold text-text-primary">
                   Send feedback
                 </CardTitle>
@@ -52,7 +52,7 @@ export function FeedbackButton() {
                   </svg>
                 </button>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto pt-0">
+              <CardContent className="min-h-0 flex-1 overflow-y-auto pt-0">
                 <FeedbackForm onClose={() => setOpen(false)} />
               </CardContent>
             </Card>
