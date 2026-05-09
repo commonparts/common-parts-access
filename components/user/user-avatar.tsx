@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { LogOut, Trash2, UploadCloud } from "lucide-react";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
+import { USER_PROFILE_MENU_ITEMS } from "@/components/user/profile-menu-items";
 import { signOut } from "@/lib/supabase/queries/auth.client";
 
 export function UserProfileMenu() {
@@ -33,35 +33,45 @@ export function UserProfileMenu() {
 			</DropdownMenuTrigger>
 
 			<DropdownMenuContent align="end" className="w-56">
-				<DropdownMenuItem asChild>
-					<Link href="/upload" className="flex w-full items-center gap-md">
-						<UploadCloud className="h-4 w-4" />
-						<span>Publish a part</span>
-					</Link>
-				</DropdownMenuItem>
+				{USER_PROFILE_MENU_ITEMS.map((item) => {
+					if (item.type === "separator") {
+						return <DropdownMenuSeparator key={item.key} />;
+					}
 
-				<DropdownMenuItem
-					onSelect={(event) => {
-						event.preventDefault();
-						handleLogout();
-					}}
-				>
-					<LogOut className="h-4 w-4" />
-					<span>Logout</span>
-				</DropdownMenuItem>
+					if (item.type === "link") {
+						const Icon = item.icon;
+						return (
+							<DropdownMenuItem key={item.key} asChild>
+								<Link href={item.href} className="flex w-full items-center gap-md">
+									<Icon className="h-4 w-4" />
+									<span>{item.label}</span>
+								</Link>
+							</DropdownMenuItem>
+						);
+					}
 
-				<DropdownMenuSeparator />
-
-				<DropdownMenuItem
-					className="text-destructive focus:text-destructive"
-					onSelect={(event) => {
-						event.preventDefault();
-						handleDeleteAccount();
-					}}
-				>
-					<Trash2 className="h-4 w-4" />
-					<span>Delete account</span>
-				</DropdownMenuItem>
+					const Icon = item.icon;
+					return (
+						<DropdownMenuItem
+							key={item.key}
+							className={item.destructive ? "text-destructive focus:text-destructive" : undefined}
+							onSelect={(event) => {
+								event.preventDefault();
+								switch (item.action) {
+									case "deleteAccount":
+										handleDeleteAccount();
+										break;
+									case "logout":
+										void handleLogout();
+										break;
+								}
+							}}
+						>
+							<Icon className="h-4 w-4" />
+							<span>{item.label}</span>
+						</DropdownMenuItem>
+					);
+				})}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);
