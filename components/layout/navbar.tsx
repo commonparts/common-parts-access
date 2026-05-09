@@ -15,7 +15,7 @@ export default async function Navbar() {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border-default bg-bg-surface/95 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 w-full border-b border-border-default bg-bg-surface">
       <div className="mx-auto flex h-16 max-w-container-xl items-center justify-between px-md">
         <Logo asLink />
 
