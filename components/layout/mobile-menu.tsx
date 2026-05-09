@@ -70,8 +70,9 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
 
   return (
     <div className="flex items-center md:hidden">
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="icon"
         aria-label={isOpen ? "Close menu" : "Open menu"}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-panel"
@@ -79,14 +80,13 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
           setSignOutError(null);
           setIsOpen((prev) => !prev);
         }}
-        className="rounded-md p-xs text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
       >
         {isOpen ? (
-          <X className="h-6 w-6" aria-hidden="true" />
+          <X aria-hidden="true" />
         ) : (
-          <Menu className="h-6 w-6" aria-hidden="true" />
+          <Menu aria-hidden="true" />
         )}
-      </button>
+      </Button>
 
       {isOpen && (
         <>
@@ -97,10 +97,11 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
             onClick={close}
           />
 
-          {/* Nav panel — top-full anchors to the bottom of the sticky nav */}
+          {/* Nav panel — fixed below the navbar (h-16 = 4rem) so positioning is
+               always relative to the viewport, not an ancestor's layout box. */}
           <div
             id="mobile-nav-panel"
-            className="absolute left-0 top-full z-50 max-h-[calc(100dvh-100%)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
+            className="fixed left-0 top-16 z-50 max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
           >
             <div className="flex flex-col gap-xs">
               {menuLinks.map((item) => (
