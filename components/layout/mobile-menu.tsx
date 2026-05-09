@@ -80,7 +80,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
           {/* Nav panel — top-full anchors to the bottom of the sticky nav */}
           <div
             id="mobile-nav-panel"
-            className="absolute left-0 top-full z-50 w-full border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
+            className="absolute left-0 top-full z-50 max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
           >
             <div className="flex flex-col gap-xs">
               {menuLinks.map((item) => (
