@@ -15,7 +15,6 @@ interface ComboboxProps<T extends ComboboxOption> {
   label?: string;
   placeholder?: string;
   options: T[];
-  value?: string;
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSelect: (option: T) => void;
@@ -35,7 +34,6 @@ export function Combobox<T extends ComboboxOption>({
   label,
   placeholder = "Type to search...",
   options,
-  value,
   searchTerm,
   onSearchChange,
   onSelect,

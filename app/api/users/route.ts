@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/users - List users (admin only)
-export async function GET(_request: NextRequest) {
+export async function GET() {
   // TODO: Implement user listing (admin only)
   return NextResponse.json({ message: "Users API endpoint" });
 }
@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 }
 
 // DELETE /api/users - Delete current user account
-export async function DELETE(_request: NextRequest) {
+export async function DELETE() {
   const supabase = await createClient();
   const {
     data: { user },

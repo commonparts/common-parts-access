@@ -33,7 +33,7 @@ const SECTION_ORDER: FileCategory[] = ["model", "documentation", "image"]
 
 const SECTION_CONFIG = {
   model: {
-    label: "3D MODELS",
+    label: "PART FILES",
     iconWrapperClass: "bg-primary/10 text-primary",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
