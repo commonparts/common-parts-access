@@ -15,7 +15,6 @@ interface ComboboxProps<T extends ComboboxOption> {
   label?: string;
   placeholder?: string;
   options: T[];
-  value?: string;
   searchTerm: string;
   onSearchChange: (value: string) => void;
   onSelect: (option: T) => void;

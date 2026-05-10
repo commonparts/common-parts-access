@@ -159,7 +159,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 id="brand"
                 placeholder={loadingMeta ? 'Loading brands...' : 'Search or select a brand'}
                 options={brands.map((b) => ({ id: b.id, name: b.name }))}
-                value={formData.brandId}
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
@@ -187,7 +186,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
                   categoryId: p.category_id ?? ''
                 }))}
-                value={formData.productId}
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {

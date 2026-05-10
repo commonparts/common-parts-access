@@ -123,7 +123,7 @@ export default function BrowsePage() {
       setModels(modelsWithDates)
       setPagination(data.pagination)
     } catch (err) {
-      console.error('Error fetching models:', err)
+      console.error('Error fetching parts:', err)
       setError(err instanceof Error ? err.message : 'Failed to load parts')
     } finally {
       setLoading(false)
