@@ -78,7 +78,7 @@ export interface ModelDimensions {
   length?: number;
   width?: number;
   height?: number;
-  unit: string; // e.g. "mm", "cm", "in"
+  unit?: 'mm' | 'cm' | 'in';
 }
 
 export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
