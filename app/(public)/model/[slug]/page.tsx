@@ -40,7 +40,7 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
 
     if (error || !model) {
       return {
-        title: 'Model Not Found',
+        title: 'Part Not Found',
         description: 'The requested part could not be found.'
       }
     }
@@ -117,7 +117,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
           items={[
             { label: 'Home', href: '/' },
             { label: 'Browse', href: '/browse' },
-            { label: 'Model' },
+            { label: 'Part' },
           ]}
           className="text-text-secondary"
         />
@@ -130,7 +130,7 @@ export default async function ModelPage({ params }: ModelPageProps) {
               <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
               </svg>
-              Browse more models
+              Browse more parts
             </Link>
           </Button>
         </div>

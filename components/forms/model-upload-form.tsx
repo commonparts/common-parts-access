@@ -94,11 +94,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label htmlFor="title">Model Title *</Label>
+            <Label htmlFor="title">Part Title *</Label>
             <Input
               id="title"
               type="text"
-              placeholder="Enter model title"
+              placeholder="Enter part title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
@@ -215,7 +215,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label htmlFor="tags">Add tags to help others find your model</Label>
+            <Label htmlFor="tags">Add tags to help others find your part</Label>
             <div className="flex gap-sm">
               <Input
                 id="tags"
@@ -263,7 +263,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       {/* File Upload */}
       <Card>
         <CardHeader>
-          <CardTitle>Model Files</CardTitle>
+          <CardTitle>Part Files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">

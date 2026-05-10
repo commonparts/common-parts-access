@@ -110,7 +110,7 @@ export default function BrowsePage() {
       const response = await fetch(`/api/models?${params.toString()}`)
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.statusText}`)
+        throw new Error(`Failed to fetch parts: ${response.statusText}`)
       }
 
       const data: ModelsResponse = await response.json()
@@ -124,7 +124,7 @@ export default function BrowsePage() {
       setPagination(data.pagination)
     } catch (err) {
       console.error('Error fetching models:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load models')
+      setError(err instanceof Error ? err.message : 'Failed to load parts')
     } finally {
       setLoading(false)
     }
@@ -149,7 +149,7 @@ export default function BrowsePage() {
             </svg>
           </div>
           <div className="space-y-xs">
-            <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load models</h3>
+            <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
             <p className="text-body text-text-secondary">{error}</p>
           </div>
           <Button onClick={() => fetchModels()}>Try again</Button>
