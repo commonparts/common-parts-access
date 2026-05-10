@@ -110,7 +110,7 @@ jobs:
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
           # Large multiline values are passed via env to avoid bash injection when
-          # ${{ }} expressions are expanded inline — commit messages can contain
+          # GitHub Actions expressions are expanded inline — commit messages can contain
           # $(...), backticks, or other shell-special characters that would cause
           # a parse error if interpolated directly into the run script.
           COMMITS: ${{ steps.commits.outputs.commits }}
@@ -160,7 +160,7 @@ jobs:
             exit 1
           fi
 
-          # Write to file for use in subsequent steps — avoids ${{ }} injection
+          # Write to file for use in subsequent steps — avoids expression injection
           # when consuming the output in later run scripts.
           echo "$RELEASE_BODY" > /tmp/release_body.txt
 
@@ -177,7 +177,7 @@ jobs:
           VERSION="${{ steps.semver.outputs.version }}"
 
           # Read release body from file written by the previous step — avoids
-          # ${{ }} injection for multiline Mistral-generated content.
+          # expression injection for multiline Mistral-generated content.
           gh release create "$VERSION" \
             --title "$VERSION" \
             --notes-file /tmp/release_body.txt
@@ -186,7 +186,7 @@ jobs:
         run: |
           VERSION="${{ steps.semver.outputs.version }}"
           DATE=$(date +%Y-%m-%d)
-          # Read release body from file — avoids ${{ }} injection for multiline content.
+          # Read release body from file — avoids expression injection for multiline content.
           RELEASE_BODY=$(cat /tmp/release_body.txt)
 
           # Build new changelog entry
@@ -313,8 +313,8 @@ jobs:
           # Strip markdown fences if Mistral wraps the JSON anyway
           ANALYSIS=$(echo "$ANALYSIS" | sed 's/^```json//;s/^```//;s/```$//')
 
-          # Write to file for use in subsequent steps — avoids ${{ }} injection
-          # when consuming the output; single quotes around ${{ }} do not help
+          # Write to file for use in subsequent steps — avoids expression injection
+          # when consuming the output; single quotes around expressions do not help
           # because GitHub Actions expands expressions before bash runs.
           echo "$ANALYSIS" > /tmp/doc_analysis.json
 
@@ -325,7 +325,7 @@ jobs:
         id: apply_updates
         if: steps.doc_analysis.outputs.needs_update == 'true'
         run: |
-          # Read from file — ${{ }} injection is not safe here because the JSON
+          # Read from file — expression injection is not safe here because the JSON
           # can contain single quotes that would break bash single-quoting.
           ANALYSIS=$(cat /tmp/doc_analysis.json)
           VERSION=$(git describe --tags --abbrev=0)
