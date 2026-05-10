@@ -19,7 +19,7 @@ interface CreateProductModalProps {
   data: CreateProductFormData
   error?: string | null
   loading?: boolean
-  onChange: (field: keyof CreateProductFormData, value: any) => void
+  onChange: <K extends keyof CreateProductFormData>(field: K, value: CreateProductFormData[K]) => void
   onSubmit: () => void
 }
 
