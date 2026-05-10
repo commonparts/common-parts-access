@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { isSafeRedirect } from "@/lib/utils/validation";
 
@@ -25,7 +25,6 @@ export function LoginForm({
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = (() => {
     const raw = searchParams.get("redirect");
@@ -41,8 +40,11 @@ export function LoginForm({
       const { data, error } = await signInWithPassword(email, password);
       if (error) throw error;
       // Redirect to the originally requested page if present
-      router.push(redirectPath || "/");
-      router.refresh();
+      // Use a full page navigation so the browser sends the freshly-written
+      // session cookie on the next HTTP request. A soft router.push can race
+      // with the cookie being flushed, causing the edge proxy to see no session
+      // and redirect back to /login even though the user just authenticated.
+      window.location.href = redirectPath || "/";
     } catch (error: unknown) {
       console.error("[LoginForm] Login error:", error);
       setError(error instanceof Error ? error.message : "An error occurred");
