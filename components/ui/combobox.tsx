@@ -35,7 +35,6 @@ export function Combobox<T extends ComboboxOption>({
   label,
   placeholder = "Type to search...",
   options,
-  value,
   searchTerm,
   onSearchChange,
   onSelect,
