@@ -93,10 +93,10 @@ export interface Model {
   part_number?: string | null;
   material?: string | null;
   color?: string | null;
-  dimensions?: Record<string, any> | null; // {length: 50, width: 30, height: 10, unit: "mm"}
+  dimensions?: Record<string, unknown> | null; // {length: 50, width: 30, height: 10, unit: "mm"}
   
   // 3D Print settings
-  print_settings?: Record<string, any> | null; // {layer_height: 0.2, infill: 20, supports: true}
+  print_settings?: Record<string, unknown> | null; // {layer_height: 0.2, infill: 20, supports: true}
   estimated_print_time?: number | null; // minutes
   estimated_material_usage?: number | null; // grams (stored as DECIMAL)
   
