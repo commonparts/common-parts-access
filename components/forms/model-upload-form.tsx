@@ -94,11 +94,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label htmlFor="title">Model Title *</Label>
+            <Label htmlFor="title">Part Title *</Label>
             <Input
               id="title"
               type="text"
-              placeholder="Enter model title"
+              placeholder="Enter part title"
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               required
@@ -110,7 +110,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             <Textarea
               id="description"
               rows={4}
-              placeholder="Describe your 3D model..."
+              placeholder="Describe your part..."
               maxLength={DESCRIPTION_MAX}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -159,7 +159,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 id="brand"
                 placeholder={loadingMeta ? 'Loading brands...' : 'Search or select a brand'}
                 options={brands.map((b) => ({ id: b.id, name: b.name }))}
-                value={formData.brandId}
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
@@ -187,7 +186,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
                   categoryId: p.category_id ?? ''
                 }))}
-                value={formData.productId}
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {
@@ -215,7 +213,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label htmlFor="tags">Add tags to help others find your model</Label>
+            <Label htmlFor="tags">Add tags to help others find your part</Label>
             <div className="flex gap-sm">
               <Input
                 id="tags"
@@ -263,11 +261,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
       {/* File Upload */}
       <Card>
         <CardHeader>
-          <CardTitle>Model Files</CardTitle>
+          <CardTitle>Part Files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label>3D Model Files *</Label>
+            <Label>Part Files *</Label>
             <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
             <FileUploader
               accept=".stl,.obj,.stp,.step"

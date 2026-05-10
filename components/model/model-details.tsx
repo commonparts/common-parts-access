@@ -285,13 +285,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     }
   }, [model, likePending, adjustLikes, syncLikes])
 
-  const formatFileSize = (bytes: number) => {
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    if (bytes === 0) return '0 Bytes'
-    const i = Math.floor(Math.log(bytes) / Math.log(1024))
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i]
-  }
-
   const formatPrintTime = (minutes?: number) => {
     if (!minutes) return 'Not specified'
     if (minutes < 60) return `${minutes}m`
