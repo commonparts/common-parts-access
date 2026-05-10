@@ -162,9 +162,9 @@ export default function BrowsePage() {
     <Section>
       <Container size="xl" className="space-y-lg">
         <div className="space-y-xs">
-          <h1 className="text-heading-md font-heading font-semibold text-text-primary">Browse 3D Models</h1>
+          <h1 className="text-heading-md font-heading font-semibold text-text-primary">Browse Parts</h1>
           <p className="text-body text-text-secondary">
-            Discover and download 3D models and replacement parts from our community
+            Discover and download parts and replacement components from our community
           </p>
         </div>
 

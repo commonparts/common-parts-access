@@ -110,7 +110,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             <Textarea
               id="description"
               rows={4}
-              placeholder="Describe your 3D model..."
+              placeholder="Describe your part..."
               maxLength={DESCRIPTION_MAX}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -267,7 +267,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label>3D Model Files *</Label>
+            <Label>Part Files *</Label>
             <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
             <FileUploader
               accept=".stl,.obj,.stp,.step"

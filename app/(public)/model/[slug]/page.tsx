@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
     if (error || !model) {
       return {
         title: 'Model Not Found',
-        description: 'The requested 3D model could not be found.'
+        description: 'The requested part could not be found.'
       }
     }
 
@@ -49,12 +49,12 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
     const authorName = userProfile?.display_name || userProfile?.username || 'Unknown'
     
     return {
-      title: `${model.name} - 3D Model by ${authorName}`,
-      description: model.description || `Download ${model.name}, a 3D model created by ${authorName}. Find replacement parts and 3D printable models.`,
+      title: `${model.name} - Part by ${authorName}`,
+      description: model.description || `Download ${model.name}, a part created by ${authorName}. Find replacement parts and printable components.`,
       keywords: model.tags ? model.tags.join(', ') : undefined,
       openGraph: {
-        title: `${model.name} - 3D Model`,
-        description: model.description || `3D model created by ${authorName}`,
+        title: `${model.name} - Part`,
+        description: model.description || `Part created by ${authorName}`,
         images: model.thumbnail_url ? [
           {
             url: model.thumbnail_url,
@@ -67,16 +67,16 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${model.name} - 3D Model`,
-        description: model.description || `3D model created by ${authorName}`,
+        title: `${model.name} - Part`,
+        description: model.description || `Part created by ${authorName}`,
         images: model.thumbnail_url ? [model.thumbnail_url] : undefined
       }
     }
   } catch (error) {
     console.error('Error generating metadata:', error)
     return {
-      title: 'Common Parts Access — 3D Models',
-      description: 'Browse and download verified 3D models and repair parts.'
+      title: 'Common Parts Access — Parts',
+      description: 'Browse and download verified parts and repair components.'
     }
   }
 }
