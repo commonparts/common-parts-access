@@ -71,6 +71,25 @@ export interface Product {
 }
 
 // ============================================================================
+// Model JSONB column shapes
+// ============================================================================
+
+export interface ModelDimensions {
+  length?: number;
+  width?: number;
+  height?: number;
+  unit: string; // e.g. "mm", "cm", "in"
+}
+
+export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
+
+export interface ModelPrintSettings {
+  layer_height?: number; // mm, non-negative
+  infill?: number;       // 0–100 %
+  supports?: SupportType;
+}
+
+// ============================================================================
 // Model enum types — declared before Model so the interface can reference them
 // ============================================================================
 
@@ -93,10 +112,10 @@ export interface Model {
   part_number?: string | null;
   material?: string | null;
   color?: string | null;
-  dimensions?: Record<string, unknown> | null; // {length: 50, width: 30, height: 10, unit: "mm"}
+  dimensions?: ModelDimensions | null;
   
   // 3D Print settings
-  print_settings?: Record<string, unknown> | null; // {layer_height: 0.2, infill: 20, supports: true}
+  print_settings?: ModelPrintSettings | null;
   estimated_print_time?: number | null; // minutes
   estimated_material_usage?: number | null; // grams (stored as DECIMAL)
   
