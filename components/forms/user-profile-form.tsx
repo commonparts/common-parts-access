@@ -81,7 +81,7 @@ export function UserProfileForm({
     }
   }
 
-  const updateField = <K extends keyof UserProfileData>(field: K, value: UserProfileData[K]) => {
+  function updateField<K extends keyof UserProfileData>(field: K, value: UserProfileData[K]) {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 

@@ -36,7 +36,7 @@ export function BrandForm({ initialData, onSubmit, loading = false, className }:
     onSubmit(formData)
   }
 
-  const updateField = <K extends keyof BrandFormData>(field: K, value: BrandFormData[K]) => {
+  function updateField<K extends keyof BrandFormData>(field: K, value: BrandFormData[K]) {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
