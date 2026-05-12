@@ -29,10 +29,18 @@ type ApiRequestBody =
   | URLSearchParams
   | Blob
   | ArrayBuffer
-  | ArrayBufferView
+  | ArrayBufferView<ArrayBuffer>
   | string
 
-function isBodyInitCompatible(body: ApiRequestBody): body is Exclude<ApiRequestBody, JsonValue> {
+type BodyCompatibleRequestBody =
+  | FormData
+  | URLSearchParams
+  | Blob
+  | ArrayBuffer
+  | ArrayBufferView<ArrayBuffer>
+  | string
+
+function isBodyInitCompatible(body: ApiRequestBody): body is BodyCompatibleRequestBody {
   return (
     typeof body === 'string' ||
     body instanceof FormData ||
