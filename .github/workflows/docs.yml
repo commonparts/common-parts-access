@@ -35,8 +35,9 @@ jobs:
       - name: Determine next semver
         id: semver
         run: |
-          # Get the latest tag; empty string means this is the first release
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Use the latest version tag that is reachable from HEAD.
+          # This avoids selecting orphan tags that are not in main history.
+          LATEST_TAG=$(git tag --merged HEAD --list 'v*' --sort=-version:refname | head -n 1)
           echo "Latest tag: ${LATEST_TAG:-none}"
 
           if [ -z "$LATEST_TAG" ]; then
@@ -71,24 +72,22 @@ jobs:
         id: commits
         run: |
           LATEST_TAG="${{ steps.semver.outputs.latest_tag }}"
+          COMMITS_FILE="/tmp/agent_docs_commits.txt"
+          COMMIT_LIST_FILE="/tmp/agent_docs_commit_list.txt"
+          MAX_COMMITS=200
 
-          # Get commits — if no previous tag, list all commits
+          # Build commit payload from a bounded set to avoid oversized env/output values.
           if [ -n "$LATEST_TAG" ]; then
-            COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s%n  %b")
-            COMMIT_LIST=$(git log ${LATEST_TAG}..HEAD --pretty=format:"%s")
+            git log ${LATEST_TAG}..HEAD --pretty=format:"- %s%n  %b" -n ${MAX_COMMITS} > "$COMMITS_FILE"
+            git log ${LATEST_TAG}..HEAD --pretty=format:"%s" -n ${MAX_COMMITS} > "$COMMIT_LIST_FILE"
           else
-            COMMITS=$(git log --pretty=format:"- %s%n  %b")
-            COMMIT_LIST=$(git log --pretty=format:"%s")
+            # First release on this branch history: cap to latest commits only.
+            git log --pretty=format:"- %s%n  %b" -n ${MAX_COMMITS} > "$COMMITS_FILE"
+            git log --pretty=format:"%s" -n ${MAX_COMMITS} > "$COMMIT_LIST_FILE"
           fi
 
-          # Escape for multiline output
-          echo "commits<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMITS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-
-          echo "commit_list<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMMIT_LIST" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "commits_file=$COMMITS_FILE" >> $GITHUB_OUTPUT
+          echo "commit_list_file=$COMMIT_LIST_FILE" >> $GITHUB_OUTPUT
 
       - name: Get full diff for documentation analysis
         id: diff
@@ -109,12 +108,6 @@ jobs:
         id: release_notes
         env:
           MISTRAL_API_KEY: ${{ secrets.MISTRAL_API_KEY }}
-          # Large multiline values are passed via env to avoid bash injection when
-          # GitHub Actions expressions are expanded inline — commit messages can contain
-          # $(...), backticks, or other shell-special characters that would cause
-          # a parse error if interpolated directly into the run script.
-          COMMITS: ${{ steps.commits.outputs.commits }}
-          COMMIT_LIST: ${{ steps.commits.outputs.commit_list }}
         run: |
           # Fail fast if the API key is missing
           if [ -z "$MISTRAL_API_KEY" ]; then
@@ -123,6 +116,8 @@ jobs:
           fi
 
           VERSION="${{ steps.semver.outputs.version }}"
+          COMMITS=$(cat "${{ steps.commits.outputs.commits_file }}")
+          COMMIT_LIST=$(cat "${{ steps.commits.outputs.commit_list_file }}")
 
           # Build JSON payload using jq --arg — values from env vars are never
           # re-interpreted by the shell, so special characters are safe.
