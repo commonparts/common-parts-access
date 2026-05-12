@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { fetchCategoriesTree } from '@/lib/supabase/queries/categories'
 
 // GET /api/categories - Hierarchical list ordered by path
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const categories = await fetchCategoriesTree()
     return NextResponse.json({ categories })

@@ -1,23 +1,34 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/users - List users (admin only)
-export async function GET(_request: NextRequest) {
-  // TODO: Implement user listing (admin only)
-  return NextResponse.json({ message: "Users API endpoint" });
+export async function GET() {
+  return NextResponse.json(
+    {
+      error: "Not implemented",
+      message:
+        "Admin user listing is not implemented yet. Track this work in a GitHub issue.",
+    },
+    { status: 501 },
+  );
 }
 
 // POST /api/users - Create user
-export async function POST(request: NextRequest) {
-  // TODO: Implement user creation
-  const body = await request.json();
-  return NextResponse.json({ message: "User created", user: body }, { status: 201 });
+export async function POST() {
+  return NextResponse.json(
+    {
+      error: "Not implemented",
+      message:
+        "Admin user creation is not implemented yet. Track this work in a GitHub issue.",
+    },
+    { status: 501 },
+  );
 }
 
 // DELETE /api/users - Delete current user account
-export async function DELETE(_request: NextRequest) {
+export async function DELETE() {
   const supabase = await createClient();
   const {
     data: { user },

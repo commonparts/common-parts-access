@@ -1,9 +1,10 @@
-type TokenValue = string | number | Record<string, any>
+type TokenGroup = {
+  [key: string]: TokenValue
+}
 
-function flattenTokens(
-  obj: Record<string, TokenValue>,
-  prefix = "--"
-): Record<string, string> {
+type TokenValue = string | number | TokenGroup
+
+function flattenTokens(obj: TokenGroup, prefix = "--"): Record<string, string> {
   const result: Record<string, string> = {}
 
   for (const [key, value] of Object.entries(obj)) {
@@ -17,6 +18,6 @@ function flattenTokens(
   return result
 }
 
-export function themeToCSSVars(theme: Record<string, any>) {
+export function themeToCSSVars(theme: TokenGroup): Record<string, string> {
   return flattenTokens(theme)
 }
