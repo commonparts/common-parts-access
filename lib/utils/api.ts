@@ -13,10 +13,49 @@ export const HTTP_METHODS = {
   DELETE: 'DELETE'
 } as const
 
+type QueryParamPrimitive = string | number | boolean
+type QueryParamValue = QueryParamPrimitive | QueryParamPrimitive[] | null | undefined
+
+type JsonPrimitive = string | number | boolean | null
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[]
+
+interface JsonObject {
+  [key: string]: JsonValue
+}
+
+type ApiRequestBody =
+  | JsonValue
+  | FormData
+  | URLSearchParams
+  | Blob
+  | ArrayBuffer
+  | ArrayBufferView
+  | string
+
+function isBodyInitCompatible(body: ApiRequestBody): body is Exclude<ApiRequestBody, JsonValue> {
+  return (
+    typeof body === 'string' ||
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    ArrayBuffer.isView(body)
+  )
+}
+
+function extractErrorMessage(value: JsonValue | string | undefined): string | null {
+  if (typeof value !== 'object' || value === null || !('message' in value)) {
+    return null
+  }
+
+  const maybeMessage = (value as { message?: JsonValue }).message
+  return typeof maybeMessage === 'string' ? maybeMessage : null
+}
+
 /**
  * API response wrapper interface
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = JsonValue | string> {
   data?: T
   error?: string
   message?: string
@@ -45,7 +84,7 @@ export class ApiError extends Error {
 export interface RequestConfig {
   method?: keyof typeof HTTP_METHODS
   headers?: Record<string, string>
-  body?: any
+  body?: ApiRequestBody
   timeout?: number
   signal?: AbortSignal
 }
@@ -56,7 +95,7 @@ export interface RequestConfig {
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function apiClient<T = any>(
+export async function apiClient<T = JsonValue | string>(
   url: string,
   config: RequestConfig = {}
 ): Promise<ApiResponse<T>> {
@@ -76,18 +115,28 @@ export async function apiClient<T = any>(
   const requestSignal = signal || controller.signal
 
   try {
+    const requestHeaders: Record<string, string> = {
+      ...headers
+    }
+
+    const hasContentTypeHeader =
+      'Content-Type' in requestHeaders || 'content-type' in requestHeaders
+
+    if (!hasContentTypeHeader && !(body instanceof FormData)) {
+      requestHeaders['Content-Type'] = 'application/json'
+    }
+
     const requestOptions: RequestInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
+      headers: requestHeaders,
       signal: requestSignal
     }
 
     // Add body for POST/PUT/PATCH requests
-    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      requestOptions.body = typeof body === 'string' ? body : JSON.stringify(body)
+    if (body !== undefined && body !== null && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      requestOptions.body = isBodyInitCompatible(body)
+        ? body
+        : JSON.stringify(body)
     }
 
     const response = await fetch(url, requestOptions)
@@ -95,26 +144,27 @@ export async function apiClient<T = any>(
     clearTimeout(timeoutId)
 
     // Parse response
-    let data: T | undefined
+    let parsedData: JsonValue | string | undefined
     const contentType = response.headers.get('content-type')
 
     if (contentType?.includes('application/json')) {
-      data = await response.json()
+      parsedData = (await response.json()) as JsonValue
     } else {
-      data = (await response.text()) as T
+      parsedData = await response.text()
     }
 
     // Handle HTTP errors
     if (!response.ok) {
-      const errorMessage = typeof data === 'object' && data && 'message' in data 
-        ? (data as any).message 
+      const extractedMessage = extractErrorMessage(parsedData)
+      const errorMessage = extractedMessage
+        ? extractedMessage
         : `HTTP ${response.status}: ${response.statusText}`
       
       throw new ApiError(errorMessage, response.status)
     }
 
     return {
-      data,
+      data: parsedData as T,
       success: true,
       status: response.status
     }
@@ -151,7 +201,7 @@ export async function apiClient<T = any>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function get<T = any>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function get<T = JsonValue | string>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'GET' })
 }
 
@@ -162,7 +212,7 @@ export async function get<T = any>(url: string, config?: Omit<RequestConfig, 'me
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function post<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function post<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'POST', body })
 }
 
@@ -173,7 +223,7 @@ export async function post<T = any>(url: string, body?: any, config?: Omit<Reque
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function put<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function put<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PUT', body })
 }
 
@@ -184,7 +234,7 @@ export async function put<T = any>(url: string, body?: any, config?: Omit<Reques
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function patch<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function patch<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PATCH', body })
 }
 
@@ -194,7 +244,7 @@ export async function patch<T = any>(url: string, body?: any, config?: Omit<Requ
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function del<T = any>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function del<T = JsonValue | string>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'DELETE' })
 }
 
@@ -205,7 +255,7 @@ export async function del<T = any>(url: string, config?: Omit<RequestConfig, 'me
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFile<T = any>(
+export async function uploadFile<T = JsonValue | string>(
   url: string,
   file: File,
   config?: Omit<RequestConfig, 'method' | 'body'>
@@ -228,7 +278,7 @@ export async function uploadFile<T = any>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFiles<T = any>(
+export async function uploadFiles<T = JsonValue | string>(
   url: string,
   files: File[],
   fieldName: string = 'files',
@@ -252,7 +302,7 @@ export async function uploadFiles<T = any>(
  * @param params - Query parameters object
  * @returns Query string
  */
-export function createQueryString(params: Record<string, any>): string {
+export function createQueryString(params: Record<string, QueryParamValue>): string {
   const searchParams = new URLSearchParams()
   
   Object.entries(params).forEach(([key, value]) => {
@@ -274,7 +324,7 @@ export function createQueryString(params: Record<string, any>): string {
  * @param params - Query parameters
  * @returns Complete URL with query string
  */
-export function buildUrl(baseUrl: string, params?: Record<string, any>): string {
+export function buildUrl(baseUrl: string, params?: Record<string, QueryParamValue>): string {
   if (!params) return baseUrl
   
   const queryString = createQueryString(params)
