@@ -110,7 +110,7 @@ export default function BrowsePage() {
       const response = await fetch(`/api/models?${params.toString()}`)
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch models: ${response.statusText}`)
+        throw new Error(`Failed to fetch parts: ${response.statusText}`)
       }
 
       const data: ModelsResponse = await response.json()
@@ -123,8 +123,8 @@ export default function BrowsePage() {
       setModels(modelsWithDates)
       setPagination(data.pagination)
     } catch (err) {
-      console.error('Error fetching models:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load models')
+      console.error('Error fetching parts:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load parts')
     } finally {
       setLoading(false)
     }
@@ -149,7 +149,7 @@ export default function BrowsePage() {
             </svg>
           </div>
           <div className="space-y-xs">
-            <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load models</h3>
+            <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
             <p className="text-body text-text-secondary">{error}</p>
           </div>
           <Button onClick={() => fetchModels()}>Try again</Button>
@@ -162,9 +162,9 @@ export default function BrowsePage() {
     <Section>
       <Container size="xl" className="space-y-lg">
         <div className="space-y-xs">
-          <h1 className="text-heading-md font-heading font-semibold text-text-primary">Browse 3D Models</h1>
+          <h1 className="text-heading-md font-heading font-semibold text-text-primary">Browse Parts</h1>
           <p className="text-body text-text-secondary">
-            Discover and download 3D models and replacement parts from our community
+            Discover and download parts and replacement components from our community
           </p>
         </div>
 

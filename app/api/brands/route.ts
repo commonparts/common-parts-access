@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { fetchBrands } from '@/lib/supabase/queries/brands'
 
 // GET /api/brands - List brands ordered by name
-export async function GET(_request: NextRequest) {
+export async function GET() {
   try {
     const brands = await fetchBrands()
     return NextResponse.json({ brands })
