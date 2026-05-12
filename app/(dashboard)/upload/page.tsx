@@ -13,6 +13,75 @@ interface UploadIssue {
   message?: string
 }
 
+interface FileMetadata {
+  name: string
+  size: number
+}
+
+interface DimensionsMetadata {
+  unit: string
+  length?: number
+  width?: number
+  height?: number
+}
+
+interface PrintSettingsMetadata {
+  layer_height?: number
+  infill?: number
+  supports?: string
+}
+
+interface CreateModelMetadataPayload {
+  title: string
+  description: string
+  category: string
+  license_id: string
+  isPublic: boolean
+  origin_type: string
+  verification_status: string
+  tags: string[]
+  modelFiles: FileMetadata[]
+  thumbnails: FileMetadata[]
+  brand?: string
+  product?: string
+  source_url?: string
+  source_platform?: string
+  original_author?: string
+  original_author_url?: string
+  source_license_id?: string
+  material?: string
+  color?: string
+  dimensions?: string
+  print_settings?: string
+  estimated_print_time?: string
+  estimated_material_usage?: string
+}
+
+interface CreateModelSuccessResponse {
+  modelId: string
+  slug: string
+  userId: string
+  intendedStatus: string
+}
+
+interface UploadErrorResponse {
+  error?: string
+  issues?: UploadIssue[]
+}
+
+function isCreateModelSuccessResponse(data: CreateModelSuccessResponse | UploadErrorResponse): data is CreateModelSuccessResponse {
+  return (
+    'modelId' in data &&
+    typeof data.modelId === 'string' &&
+    'slug' in data &&
+    typeof data.slug === 'string' &&
+    'userId' in data &&
+    typeof data.userId === 'string' &&
+    'intendedStatus' in data &&
+    typeof data.intendedStatus === 'string'
+  )
+}
+
 export default function UploadPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -39,7 +108,7 @@ export default function UploadPage() {
 
     try {
       // --- Build metadata payload (no file bytes) ---
-      const metadata: Record<string, unknown> = {
+      const metadata: CreateModelMetadataPayload = {
         title: payload.title,
         description: payload.description || '',
         category: payload.categoryId,
@@ -75,7 +144,7 @@ export default function UploadPage() {
         (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') ||
         (payload.dimensionsHeight != null && payload.dimensionsHeight !== '')
       if (hasDimensions) {
-        const dimensions: Record<string, unknown> = { unit: payload.dimensionsUnit || 'mm' }
+        const dimensions: DimensionsMetadata = { unit: payload.dimensionsUnit || 'mm' }
         if (payload.dimensionsLength != null && payload.dimensionsLength !== '') {
           dimensions.length = parseFloat(payload.dimensionsLength)
         }
@@ -93,7 +162,7 @@ export default function UploadPage() {
         (payload.infill != null && payload.infill !== '') ||
         (payload.supports != null && payload.supports !== '')
       if (hasPrintSettings) {
-        const settings: Record<string, unknown> = {}
+        const settings: PrintSettingsMetadata = {}
         if (payload.layerHeight != null && payload.layerHeight !== '') {
           settings.layer_height = parseFloat(payload.layerHeight)
         }
@@ -112,7 +181,9 @@ export default function UploadPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
       })
-      const createData = await createResponse.json().catch(() => ({}))
+      const createData: CreateModelSuccessResponse | UploadErrorResponse = await createResponse
+        .json()
+        .catch((): UploadErrorResponse => ({}))
 
       if (!createResponse.ok) {
         setError(createData?.error || 'Failed to create model record')
@@ -120,17 +191,12 @@ export default function UploadPage() {
         return
       }
 
-      const { modelId, slug, userId, intendedStatus } = createData as {
-        modelId: string
-        slug: string
-        userId: string
-        intendedStatus: string
-      }
-
-      if (!modelId || !slug || !userId || typeof modelId !== 'string' || typeof slug !== 'string' || typeof userId !== 'string') {
+      if (!isCreateModelSuccessResponse(createData)) {
         setError('Invalid response from server — missing model data')
         return
       }
+
+      const { modelId, slug, userId, intendedStatus } = createData
 
       // --- Phase 2: Upload files directly to Supabase Storage ---
       setProgressText('Uploading files…')
@@ -158,7 +224,9 @@ export default function UploadPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: allFiles, intendedStatus }),
       })
-      const registerData = await registerResponse.json().catch(() => ({}))
+      const registerData: UploadErrorResponse = await registerResponse
+        .json()
+        .catch((): UploadErrorResponse => ({}))
 
       if (!registerResponse.ok) {
         // Best-effort cleanup of orphaned storage files
