@@ -64,6 +64,14 @@ jobs:
             NEXT_VERSION="v${MAJOR}.${MINOR}.${PATCH}"
           fi
 
+          # Fail fast if the computed tag already exists in the repository.
+          # This avoids collisions when older/non-merged tags share the same version.
+          if git rev-parse -q --verify "refs/tags/$NEXT_VERSION" >/dev/null; then
+            echo "ERROR: Computed version $NEXT_VERSION already exists as a tag." >&2
+            echo "Please create a new higher version baseline before rerunning." >&2
+            exit 1
+          fi
+
           echo "Next version: $NEXT_VERSION"
           echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
           echo "latest_tag=${LATEST_TAG}" >> $GITHUB_OUTPUT
@@ -116,15 +124,15 @@ jobs:
           fi
 
           VERSION="${{ steps.semver.outputs.version }}"
-          COMMITS=$(cat "${{ steps.commits.outputs.commits_file }}")
-          COMMIT_LIST=$(cat "${{ steps.commits.outputs.commit_list_file }}")
+          COMMITS_FILE="${{ steps.commits.outputs.commits_file }}"
+          COMMIT_LIST_FILE="${{ steps.commits.outputs.commit_list_file }}"
 
-          # Build JSON payload using jq --arg — values from env vars are never
-          # re-interpreted by the shell, so special characters are safe.
+          # Build JSON payload by loading commit content directly from files.
+          # This avoids large shell variables and keeps payload construction robust.
           jq -n \
             --arg version "$VERSION" \
-            --arg commits "$COMMITS" \
-            --arg commit_list "$COMMIT_LIST" \
+            --rawfile commits "$COMMITS_FILE" \
+            --rawfile commit_list "$COMMIT_LIST_FILE" \
             '{
               model: "mistral-medium-latest",
               max_tokens: 1000,
