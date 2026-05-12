@@ -32,6 +32,17 @@ type ApiRequestBody =
   | ArrayBufferView
   | string
 
+function isBodyInitCompatible(body: ApiRequestBody): body is Exclude<ApiRequestBody, JsonValue> {
+  return (
+    typeof body === 'string' ||
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    ArrayBuffer.isView(body)
+  )
+}
+
 function extractErrorMessage(value: JsonValue | string | undefined): string | null {
   if (typeof value !== 'object' || value === null || !('message' in value)) {
     return null
@@ -104,18 +115,28 @@ export async function apiClient<T = JsonValue | string>(
   const requestSignal = signal || controller.signal
 
   try {
+    const requestHeaders: Record<string, string> = {
+      ...headers
+    }
+
+    const hasContentTypeHeader =
+      'Content-Type' in requestHeaders || 'content-type' in requestHeaders
+
+    if (!hasContentTypeHeader && !(body instanceof FormData)) {
+      requestHeaders['Content-Type'] = 'application/json'
+    }
+
     const requestOptions: RequestInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
+      headers: requestHeaders,
       signal: requestSignal
     }
 
     // Add body for POST/PUT/PATCH requests
-    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      requestOptions.body = typeof body === 'string' ? body : JSON.stringify(body)
+    if (body !== undefined && body !== null && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      requestOptions.body = isBodyInitCompatible(body)
+        ? body
+        : JSON.stringify(body)
     }
 
     const response = await fetch(url, requestOptions)
