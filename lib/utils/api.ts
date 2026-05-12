@@ -33,27 +33,12 @@ type ApiRequestBody =
   | string
 
 function extractErrorMessage(value: JsonValue | string | undefined): string | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+  if (typeof value !== 'object' || value === null || !('message' in value)) {
     return null
   }
 
-  const maybeMessage = value['message']
+  const maybeMessage = (value as { message?: JsonValue }).message
   return typeof maybeMessage === 'string' ? maybeMessage : null
-}
-
-function shouldStringifyBody(body: ApiRequestBody): boolean {
-  return !(
-    typeof body === 'string' ||
-    body instanceof FormData ||
-    body instanceof URLSearchParams ||
-    body instanceof Blob ||
-    body instanceof ArrayBuffer ||
-    ArrayBuffer.isView(body)
-  )
-}
-
-function serializeRequestBody(body: ApiRequestBody): BodyInit {
-  return shouldStringifyBody(body) ? JSON.stringify(body) : (body as BodyInit)
 }
 
 /**
@@ -119,23 +104,18 @@ export async function apiClient<T = JsonValue | string>(
   const requestSignal = signal || controller.signal
 
   try {
-    const requestHeaders: Record<string, string> = {
-      ...headers
-    }
-
-    if (!('Content-Type' in requestHeaders) && !(body instanceof FormData)) {
-      requestHeaders['Content-Type'] = 'application/json'
-    }
-
     const requestOptions: RequestInit = {
       method,
-      headers: requestHeaders,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
       signal: requestSignal
     }
 
     // Add body for POST/PUT/PATCH requests
-    if (body !== undefined && body !== null && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      requestOptions.body = serializeRequestBody(body)
+    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      requestOptions.body = typeof body === 'string' ? body : JSON.stringify(body)
     }
 
     const response = await fetch(url, requestOptions)
