@@ -13,10 +13,26 @@ export const HTTP_METHODS = {
   DELETE: 'DELETE'
 } as const
 
+type QueryParamPrimitive = string | number | boolean
+type QueryParamValue = QueryParamPrimitive | QueryParamPrimitive[] | null | undefined
+
+interface ErrorWithMessage {
+  message: string
+}
+
+function hasErrorMessage(value: unknown): value is ErrorWithMessage {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'message' in value &&
+    typeof (value as { message?: unknown }).message === 'string'
+  )
+}
+
 /**
  * API response wrapper interface
  */
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   data?: T
   error?: string
   message?: string
@@ -45,7 +61,7 @@ export class ApiError extends Error {
 export interface RequestConfig {
   method?: keyof typeof HTTP_METHODS
   headers?: Record<string, string>
-  body?: any
+  body?: unknown
   timeout?: number
   signal?: AbortSignal
 }
@@ -56,7 +72,7 @@ export interface RequestConfig {
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function apiClient<T = any>(
+export async function apiClient<T = unknown>(
   url: string,
   config: RequestConfig = {}
 ): Promise<ApiResponse<T>> {
@@ -106,8 +122,8 @@ export async function apiClient<T = any>(
 
     // Handle HTTP errors
     if (!response.ok) {
-      const errorMessage = typeof data === 'object' && data && 'message' in data 
-        ? (data as any).message 
+      const errorMessage = hasErrorMessage(data)
+        ? data.message
         : `HTTP ${response.status}: ${response.statusText}`
       
       throw new ApiError(errorMessage, response.status)
@@ -151,7 +167,7 @@ export async function apiClient<T = any>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function get<T = any>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function get<T = unknown>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'GET' })
 }
 
@@ -162,7 +178,7 @@ export async function get<T = any>(url: string, config?: Omit<RequestConfig, 'me
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function post<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function post<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'POST', body })
 }
 
@@ -173,7 +189,7 @@ export async function post<T = any>(url: string, body?: any, config?: Omit<Reque
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function put<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function put<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PUT', body })
 }
 
@@ -184,7 +200,7 @@ export async function put<T = any>(url: string, body?: any, config?: Omit<Reques
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function patch<T = any>(url: string, body?: any, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function patch<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PATCH', body })
 }
 
@@ -194,7 +210,7 @@ export async function patch<T = any>(url: string, body?: any, config?: Omit<Requ
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function del<T = any>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function del<T = unknown>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'DELETE' })
 }
 
@@ -205,7 +221,7 @@ export async function del<T = any>(url: string, config?: Omit<RequestConfig, 'me
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFile<T = any>(
+export async function uploadFile<T = unknown>(
   url: string,
   file: File,
   config?: Omit<RequestConfig, 'method' | 'body'>
@@ -228,7 +244,7 @@ export async function uploadFile<T = any>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFiles<T = any>(
+export async function uploadFiles<T = unknown>(
   url: string,
   files: File[],
   fieldName: string = 'files',
@@ -252,7 +268,7 @@ export async function uploadFiles<T = any>(
  * @param params - Query parameters object
  * @returns Query string
  */
-export function createQueryString(params: Record<string, any>): string {
+export function createQueryString(params: Record<string, QueryParamValue>): string {
   const searchParams = new URLSearchParams()
   
   Object.entries(params).forEach(([key, value]) => {
@@ -274,7 +290,7 @@ export function createQueryString(params: Record<string, any>): string {
  * @param params - Query parameters
  * @returns Complete URL with query string
  */
-export function buildUrl(baseUrl: string, params?: Record<string, any>): string {
+export function buildUrl(baseUrl: string, params?: Record<string, QueryParamValue>): string {
   if (!params) return baseUrl
   
   const queryString = createQueryString(params)
