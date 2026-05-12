@@ -186,8 +186,9 @@ export default function UploadPage() {
         .catch((): UploadErrorResponse => ({}))
 
       if (!createResponse.ok) {
-        setError(createData?.error || 'Failed to create model record')
-        setIssues(Array.isArray(createData?.issues) ? createData.issues : [])
+        const errorData = createData as UploadErrorResponse
+        setError(errorData.error || 'Failed to create model record')
+        setIssues(Array.isArray(errorData.issues) ? errorData.issues : [])
         return
       }
 
