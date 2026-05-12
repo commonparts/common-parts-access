@@ -16,23 +16,50 @@ export const HTTP_METHODS = {
 type QueryParamPrimitive = string | number | boolean
 type QueryParamValue = QueryParamPrimitive | QueryParamPrimitive[] | null | undefined
 
-interface ErrorWithMessage {
-  message: string
+type JsonPrimitive = string | number | boolean | null
+type JsonValue = JsonPrimitive | JsonObject | JsonValue[]
+
+interface JsonObject {
+  [key: string]: JsonValue
 }
 
-function hasErrorMessage(value: unknown): value is ErrorWithMessage {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'message' in value &&
-    typeof (value as { message?: unknown }).message === 'string'
+type ApiRequestBody =
+  | JsonValue
+  | FormData
+  | URLSearchParams
+  | Blob
+  | ArrayBuffer
+  | ArrayBufferView
+  | string
+
+function extractErrorMessage(value: JsonValue | string | undefined): string | null {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return null
+  }
+
+  const maybeMessage = value['message']
+  return typeof maybeMessage === 'string' ? maybeMessage : null
+}
+
+function shouldStringifyBody(body: ApiRequestBody): boolean {
+  return !(
+    typeof body === 'string' ||
+    body instanceof FormData ||
+    body instanceof URLSearchParams ||
+    body instanceof Blob ||
+    body instanceof ArrayBuffer ||
+    ArrayBuffer.isView(body)
   )
+}
+
+function serializeRequestBody(body: ApiRequestBody): BodyInit {
+  return shouldStringifyBody(body) ? JSON.stringify(body) : (body as BodyInit)
 }
 
 /**
  * API response wrapper interface
  */
-export interface ApiResponse<T = unknown> {
+export interface ApiResponse<T = JsonValue | string> {
   data?: T
   error?: string
   message?: string
@@ -61,7 +88,7 @@ export class ApiError extends Error {
 export interface RequestConfig {
   method?: keyof typeof HTTP_METHODS
   headers?: Record<string, string>
-  body?: unknown
+  body?: ApiRequestBody
   timeout?: number
   signal?: AbortSignal
 }
@@ -72,7 +99,7 @@ export interface RequestConfig {
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function apiClient<T = unknown>(
+export async function apiClient<T = JsonValue | string>(
   url: string,
   config: RequestConfig = {}
 ): Promise<ApiResponse<T>> {
@@ -92,18 +119,23 @@ export async function apiClient<T = unknown>(
   const requestSignal = signal || controller.signal
 
   try {
+    const requestHeaders: Record<string, string> = {
+      ...headers
+    }
+
+    if (!('Content-Type' in requestHeaders) && !(body instanceof FormData)) {
+      requestHeaders['Content-Type'] = 'application/json'
+    }
+
     const requestOptions: RequestInit = {
       method,
-      headers: {
-        'Content-Type': 'application/json',
-        ...headers
-      },
+      headers: requestHeaders,
       signal: requestSignal
     }
 
     // Add body for POST/PUT/PATCH requests
-    if (body && ['POST', 'PUT', 'PATCH'].includes(method)) {
-      requestOptions.body = typeof body === 'string' ? body : JSON.stringify(body)
+    if (body !== undefined && body !== null && ['POST', 'PUT', 'PATCH'].includes(method)) {
+      requestOptions.body = serializeRequestBody(body)
     }
 
     const response = await fetch(url, requestOptions)
@@ -111,26 +143,27 @@ export async function apiClient<T = unknown>(
     clearTimeout(timeoutId)
 
     // Parse response
-    let data: T | undefined
+    let parsedData: JsonValue | string | undefined
     const contentType = response.headers.get('content-type')
 
     if (contentType?.includes('application/json')) {
-      data = await response.json()
+      parsedData = (await response.json()) as JsonValue
     } else {
-      data = (await response.text()) as T
+      parsedData = await response.text()
     }
 
     // Handle HTTP errors
     if (!response.ok) {
-      const errorMessage = hasErrorMessage(data)
-        ? data.message
+      const extractedMessage = extractErrorMessage(parsedData)
+      const errorMessage = extractedMessage
+        ? extractedMessage
         : `HTTP ${response.status}: ${response.statusText}`
       
       throw new ApiError(errorMessage, response.status)
     }
 
     return {
-      data,
+      data: parsedData as T,
       success: true,
       status: response.status
     }
@@ -167,7 +200,7 @@ export async function apiClient<T = unknown>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function get<T = unknown>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function get<T = JsonValue | string>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'GET' })
 }
 
@@ -178,7 +211,7 @@ export async function get<T = unknown>(url: string, config?: Omit<RequestConfig,
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function post<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function post<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'POST', body })
 }
 
@@ -189,7 +222,7 @@ export async function post<T = unknown>(url: string, body?: unknown, config?: Om
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function put<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function put<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PUT', body })
 }
 
@@ -200,7 +233,7 @@ export async function put<T = unknown>(url: string, body?: unknown, config?: Omi
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function patch<T = unknown>(url: string, body?: unknown, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
+export async function patch<T = JsonValue | string>(url: string, body?: ApiRequestBody, config?: Omit<RequestConfig, 'method'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'PATCH', body })
 }
 
@@ -210,7 +243,7 @@ export async function patch<T = unknown>(url: string, body?: unknown, config?: O
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function del<T = unknown>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
+export async function del<T = JsonValue | string>(url: string, config?: Omit<RequestConfig, 'method' | 'body'>): Promise<ApiResponse<T>> {
   return apiClient<T>(url, { ...config, method: 'DELETE' })
 }
 
@@ -221,7 +254,7 @@ export async function del<T = unknown>(url: string, config?: Omit<RequestConfig,
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFile<T = unknown>(
+export async function uploadFile<T = JsonValue | string>(
   url: string,
   file: File,
   config?: Omit<RequestConfig, 'method' | 'body'>
@@ -244,7 +277,7 @@ export async function uploadFile<T = unknown>(
  * @param config - Request configuration
  * @returns Promise with API response
  */
-export async function uploadFiles<T = unknown>(
+export async function uploadFiles<T = JsonValue | string>(
   url: string,
   files: File[],
   fieldName: string = 'files',
