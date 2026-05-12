@@ -69,16 +69,14 @@ interface UploadErrorResponse {
   issues?: UploadIssue[]
 }
 
-function isCreateModelSuccessResponse(data: CreateModelSuccessResponse | UploadErrorResponse): data is CreateModelSuccessResponse {
+function isCreateModelSuccessResponse(data: unknown): data is CreateModelSuccessResponse {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) return false
+  const obj = data as Record<string, unknown>
   return (
-    'modelId' in data &&
-    typeof data.modelId === 'string' &&
-    'slug' in data &&
-    typeof data.slug === 'string' &&
-    'userId' in data &&
-    typeof data.userId === 'string' &&
-    'intendedStatus' in data &&
-    typeof data.intendedStatus === 'string'
+    typeof obj.modelId === 'string' &&
+    typeof obj.slug === 'string' &&
+    typeof obj.userId === 'string' &&
+    typeof obj.intendedStatus === 'string'
   )
 }
 
@@ -181,9 +179,7 @@ export default function UploadPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(metadata),
       })
-      const createData: CreateModelSuccessResponse | UploadErrorResponse = await createResponse
-        .json()
-        .catch((): UploadErrorResponse => ({}))
+      const createData: unknown = await createResponse.json().catch(() => ({}))
 
       if (!createResponse.ok) {
         const errorData = createData as UploadErrorResponse
