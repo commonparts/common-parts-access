@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
 import { recordModelDownload } from '@/lib/supabase/queries/model-metrics'
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export const runtime = 'nodejs'
 
@@ -51,7 +52,7 @@ export async function POST(
     })
 
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json(
         { error: 'Model not found' },
         { status: 404 }

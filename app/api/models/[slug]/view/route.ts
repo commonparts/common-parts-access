@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { recordModelView } from '@/lib/supabase/queries/model-metrics'
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export const runtime = 'nodejs'
 
@@ -37,7 +38,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, views: result.estimatedViews })
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
     console.error('View tracking error:', error)

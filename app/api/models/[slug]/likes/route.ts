@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { addLike, getLikeState, removeLike } from '@/lib/supabase/queries/model-metrics'
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export async function GET(
   _request: NextRequest,
@@ -17,7 +18,7 @@ export async function GET(
       liked: likeState.liked
     })
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
     console.error('Like status error:', error)
@@ -45,7 +46,7 @@ export async function POST(
       likes: result.likes
     })
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
     console.error('Like creation error:', error)
@@ -73,7 +74,7 @@ export async function DELETE(
       likes: result.likes
     })
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
     console.error('Like deletion error:', error)
