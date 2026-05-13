@@ -1,9 +1,11 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { DropdownInput } from "@/components/ui/dropdown-input"
 import { FileUploader } from "@/components/ui/file-uploader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import type { BrandOption, CreateProductFormData } from "@/hooks/use-model-upload-form-state"
 
 interface FlatCategoryOption {
@@ -87,46 +89,45 @@ export function CreateProductModal({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="create-brand">Brand *</Label>
-                  <select
+                  <DropdownInput
+                    as="select"
                     id="create-brand"
-                    className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                     value={data.brandId}
                     onChange={(e) => onChange("brandId", e.target.value)}
                     required
                   >
                     <option value="">Select brand</option>
-                    {brands.map((b) => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>{brand.name}</option>
                     ))}
-                  </select>
+                  </DropdownInput>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="create-category">Category *</Label>
-                  <select
+                  <DropdownInput
+                    as="select"
                     id="create-category"
-                    className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                     value={data.categoryId}
                     onChange={(e) => onChange("categoryId", e.target.value)}
                     required
                   >
                     <option value="">Select category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.label}</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>{category.label}</option>
                     ))}
-                  </select>
+                  </DropdownInput>
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="create-description">Description</Label>
-                <textarea
+                <Textarea
                   id="create-description"
                   rows={3}
-                  className="control w-full border border-border-subtle bg-bg-surface text-text-primary shadow-surface placeholder:text-text-secondary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:text-text-disabled"
                   value={data.description || ""}
                   onChange={(e) => onChange("description", e.target.value)}
                   placeholder="Briefly describe the product"
