@@ -25,13 +25,15 @@ export * from './utils/api'
  * @param wait - Wait time in milliseconds
  * @returns Debounced function
  */
-export function debounce<T extends (...args: never[]) => void>(
-  func: T,
+export function debounce<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   wait: number
-): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout
-  return (...args: Parameters<T>) => {
-    clearTimeout(timeout)
+): (...args: TArgs) => void {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  return (...args: TArgs) => {
+    if (timeout !== undefined) {
+      clearTimeout(timeout)
+    }
     timeout = setTimeout(() => func(...args), wait)
   }
 }
@@ -42,12 +44,12 @@ export function debounce<T extends (...args: never[]) => void>(
  * @param limit - Time limit in milliseconds
  * @returns Throttled function
  */
-export function throttle<T extends (...args: never[]) => void>(
-  func: T,
+export function throttle<TArgs extends unknown[]>(
+  func: (...args: TArgs) => void,
   limit: number
-): (...args: Parameters<T>) => void {
-  let inThrottle: boolean
-  return (...args: Parameters<T>) => {
+): (...args: TArgs) => void {
+  let inThrottle = false
+  return (...args: TArgs) => {
     if (!inThrottle) {
       func(...args)
       inThrottle = true
