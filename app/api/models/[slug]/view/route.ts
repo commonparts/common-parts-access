@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { createClient } from '@/lib/supabase/server'
 import { recordModelView } from '@/lib/supabase/queries/model-metrics'
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export const runtime = 'nodejs'
 
@@ -10,19 +11,6 @@ const RECENT_WINDOW_MINUTES = 30
 
 function hashFingerprint(ip: string, userAgent: string) {
   return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
-}
-
-function isModelNotFoundError(error: unknown): boolean {
-  if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
-    return true
-  }
-
-  if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code?: unknown }).code
-    return code === 'MODEL_NOT_FOUND'
-  }
-
-  return false
 }
 
 export async function POST(

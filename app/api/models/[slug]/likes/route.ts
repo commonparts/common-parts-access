@@ -1,19 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { addLike, getLikeState, removeLike } from '@/lib/supabase/queries/model-metrics'
-
-function isModelNotFoundError(error: unknown): boolean {
-  if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
-    return true
-  }
-
-  if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code?: unknown }).code
-    return code === 'MODEL_NOT_FOUND'
-  }
-
-  return false
-}
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export async function GET(
   _request: NextRequest,

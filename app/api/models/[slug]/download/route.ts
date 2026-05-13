@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import crypto from 'crypto'
 import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
 import { recordModelDownload } from '@/lib/supabase/queries/model-metrics'
+import { isModelNotFoundError } from '@/lib/utils/errors'
 
 export const runtime = 'nodejs'
 
@@ -13,19 +14,6 @@ function hashFingerprint(ip: string, userAgent: string) {
 interface DownloadTrackingData {
   fileId: string
   filename: string
-}
-
-function isModelNotFoundError(error: unknown): boolean {
-  if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
-    return true
-  }
-
-  if (typeof error === 'object' && error !== null && 'code' in error) {
-    const code = (error as { code?: unknown }).code
-    return code === 'MODEL_NOT_FOUND'
-  }
-
-  return false
 }
 
 // POST /api/models/[slug]/download - Track model download
