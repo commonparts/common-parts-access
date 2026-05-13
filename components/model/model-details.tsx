@@ -245,7 +245,8 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           signal: controller.signal,
         })
       } catch (err) {
-        if (err instanceof Error && err.name === 'AbortError') return
+        // DOMException from AbortController is not an Error subclass, so check safely
+        if (typeof err === 'object' && err !== null && 'name' in err && (err as { name?: unknown }).name === 'AbortError') return
         console.error('View tracking failed:', err)
       }
     }
