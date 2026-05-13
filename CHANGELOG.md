@@ -1,3 +1,37 @@
+# v1.0.2 — 2026-05-13
+
+```markdown
+## Common Parts Access v1.0.2 Release Notes
+
+### What changed
+
+This release improves type safety across API and UI modules, hardens CI workflows, and resolves minor UI inconsistencies in form controls and model interactions. No breaking changes are introduced. Error handling for abort operations and content-type detection is now more robust.
+
+### Changes
+
+- **Type Safety & API**
+  - Corrected TypeScript types for API request/response bodies, including proper `Content-Type` handling for JSON vs. binary/form data.
+  - Replaced `any` types with explicit interfaces in model routes, utilities, and upload workflows.
+  - Tightened utility typings for `debounce`, `throttle`, and request body guards.
+  - Fixed abort error detection to handle `DOMException` (non-`Error` subclass).
+
+- **UI & Forms**
+  - Added loading indicator to the *Download Files* button in model views.
+  - Resolved mobile input overflow in form controls.
+  - Standardized product form controls using shared primitives.
+  - Replaced empty avatar interfaces with concrete types.
+
+- **CI & Linting**
+  - Hardened documentation workflow release baseline.
+  - Enforced stricter linting rules for `unknown`/`any` usage in utilities and model details.
+
+### Technical details
+
+The refactoring of API body guards and request payload alignment introduces stricter compile-time checks for route handlers, reducing runtime type errors. No changes to the public interface or data schemas were made.
+```
+
+---
+
 # Changelog
 
 All notable changes to Common Parts Access are documented in this file.
