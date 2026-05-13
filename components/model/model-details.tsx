@@ -462,14 +462,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               disabled={downloadPending}
               aria-busy={downloadPending}
               onClick={async () => {
-                if (downloadPending) {
-                  return
-                }
-
-                const { downloadAllModelFiles } = await import('@/lib/storage/download')
-
+                setDownloadPending(true)
                 try {
-                  setDownloadPending(true)
+                  const { downloadAllModelFiles } = await import('@/lib/storage/download')
                   const result = await downloadAllModelFiles(model.files, model.slug, model.name)
                   if (!result.success && !result.requiresAuth) {
                     console.error('Download failed:', result.error)
