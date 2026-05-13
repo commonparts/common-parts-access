@@ -296,6 +296,9 @@ export function useModelUploadFormState() {
     }
 
     loadProducts()
+    return () => {
+      cancelled = true
+    }
   }, [formData.brandId, formData.categoryId])
 
   React.useEffect(() => {
@@ -404,11 +407,7 @@ export function useModelUploadFormState() {
         imageUrl = publicData.publicUrl
       } catch (uploadErr) {
         const fallback = "Failed to upload image"
-        const message = uploadErr instanceof Error
-          ? uploadErr.message
-          : (typeof uploadErr === "object" && uploadErr !== null && "message" in uploadErr
-            ? String((uploadErr as any).message)
-            : fallback)
+        const message = uploadErr instanceof Error ? uploadErr.message : fallback
         console.error("Product image upload failed", uploadErr)
         setCreateProductError(message)
         setCreatingProduct(false)
@@ -479,7 +478,7 @@ export function useModelUploadFormState() {
     }
   }
 
-  const updateCreateField = (field: keyof CreateProductFormData, value: any) => {
+  const updateCreateField = <K extends keyof CreateProductFormData>(field: K, value: CreateProductFormData[K]) => {
     setCreateProductData(prev => ({ ...prev, [field]: value }))
   }
 
