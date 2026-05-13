@@ -64,9 +64,9 @@ interface ModelData {
     partNumber?: string
     material?: string
     color?: string
-    dimensions?: PartDimensions | string
+    dimensions?: PartDimensions | string | null
   }
-  printSettings?: PrintSettings
+  printSettings?: PrintSettings | null
   estimatedPrintTime?: number
   estimatedMaterialUsage?: number
   thumbnailUrl?: string
