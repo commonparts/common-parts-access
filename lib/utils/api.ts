@@ -29,7 +29,7 @@ type ApiRequestBody =
   | URLSearchParams
   | Blob
   | ArrayBuffer
-  | ArrayBufferView<ArrayBuffer>
+  | ArrayBufferView
   | string
 
 type BodyCompatibleRequestBody =
@@ -37,7 +37,7 @@ type BodyCompatibleRequestBody =
   | URLSearchParams
   | Blob
   | ArrayBuffer
-  | ArrayBufferView<ArrayBuffer>
+  | ArrayBufferView
   | string
 
 function isBodyInitCompatible(body: ApiRequestBody): body is BodyCompatibleRequestBody {
@@ -130,8 +130,24 @@ export async function apiClient<T = JsonValue | string>(
     const hasContentTypeHeader =
       'Content-Type' in requestHeaders || 'content-type' in requestHeaders
 
-    if (!hasContentTypeHeader && !(body instanceof FormData)) {
-      requestHeaders['Content-Type'] = 'application/json'
+    // Only default to JSON for plain JSON values/objects, not for binary or form-encoded bodies
+    if (!hasContentTypeHeader && body !== undefined && body !== null) {
+      const isJsonSerializable =
+        typeof body === 'string' ||
+        typeof body === 'number' ||
+        typeof body === 'boolean' ||
+        body === null ||
+        (typeof body === 'object' && !(
+          body instanceof FormData ||
+          body instanceof URLSearchParams ||
+          body instanceof Blob ||
+          body instanceof ArrayBuffer ||
+          ArrayBuffer.isView(body)
+        ))
+      
+      if (isJsonSerializable) {
+        requestHeaders['Content-Type'] = 'application/json'
+      }
     }
 
     const requestOptions: RequestInit = {
@@ -187,7 +203,8 @@ export async function apiClient<T = JsonValue | string>(
       }
     }
 
-    if (error instanceof Error && error.name === 'AbortError') {
+    // DOMException from AbortController is not an Error subclass, so check safely
+    if (typeof error === 'object' && error !== null && 'name' in error && (error as { name?: unknown }).name === 'AbortError') {
       return {
         error: 'Request timeout',
         success: false,
