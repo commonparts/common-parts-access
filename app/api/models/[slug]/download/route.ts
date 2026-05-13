@@ -15,6 +15,19 @@ interface DownloadTrackingData {
   filename: string
 }
 
+function isModelNotFoundError(error: unknown): boolean {
+  if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
+    return true
+  }
+
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code
+    return code === 'MODEL_NOT_FOUND'
+  }
+
+  return false
+}
+
 // POST /api/models/[slug]/download - Track model download
 export async function POST(
   request: NextRequest,
@@ -51,7 +64,7 @@ export async function POST(
     })
 
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json(
         { error: 'Model not found' },
         { status: 404 }

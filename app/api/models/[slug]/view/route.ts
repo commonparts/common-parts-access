@@ -12,6 +12,19 @@ function hashFingerprint(ip: string, userAgent: string) {
   return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
 }
 
+function isModelNotFoundError(error: unknown): boolean {
+  if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
+    return true
+  }
+
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const code = (error as { code?: unknown }).code
+    return code === 'MODEL_NOT_FOUND'
+  }
+
+  return false
+}
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -37,7 +50,7 @@ export async function POST(
 
     return NextResponse.json({ success: true, views: result.estimatedViews })
   } catch (error) {
-    if ((error as any)?.code === 'MODEL_NOT_FOUND' || (error as Error).message === 'MODEL_NOT_FOUND') {
+    if (isModelNotFoundError(error)) {
       return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
     console.error('View tracking error:', error)
