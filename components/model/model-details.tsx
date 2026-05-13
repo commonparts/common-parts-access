@@ -28,6 +28,17 @@ interface ModelFile {
   created_at: string
 }
 
+interface PartDimensions {
+  length?: number
+  width?: number
+  height?: number
+  diameter?: number
+  thickness?: number
+  unit?: string
+}
+
+type PrintSettings = Record<string, string | number | boolean | null>
+
 // ModelComment interface hidden for MVP
 // interface ModelComment {
 //   id: string
@@ -53,9 +64,9 @@ interface ModelData {
     partNumber?: string
     material?: string
     color?: string
-    dimensions?: any
+    dimensions?: PartDimensions | string
   }
-  printSettings?: any
+  printSettings?: PrintSettings
   estimatedPrintTime?: number
   estimatedMaterialUsage?: number
   thumbnailUrl?: string
@@ -233,7 +244,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           signal: controller.signal,
         })
       } catch (err) {
-        if ((err as any)?.name === 'AbortError') return
+        if (err instanceof Error && err.name === 'AbortError') return
         console.error('View tracking failed:', err)
       }
     }
