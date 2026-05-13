@@ -268,7 +268,7 @@ export function useModelUploadFormState() {
   }, [])
 
   React.useEffect(() => {
-    const cancelled = false
+    let cancelled = false
 
     async function loadProducts() {
       if (!formData.brandId && !formData.categoryId) {
@@ -296,6 +296,9 @@ export function useModelUploadFormState() {
     }
 
     loadProducts()
+    return () => {
+      cancelled = true
+    }
   }, [formData.brandId, formData.categoryId])
 
   React.useEffect(() => {
