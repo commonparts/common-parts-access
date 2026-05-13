@@ -17,12 +17,12 @@ type DropdownInputProps = InputProps | SelectProps;
 const DropdownInput = React.forwardRef<HTMLElement, DropdownInputProps>(
   ({ className, isOpen = false, disabled, as = "input", ...props }, ref) => {
     return (
-      <div className="relative">
+      <div className="relative w-full min-w-0">
         {as === "select" ? (
           <select
             ref={ref as React.Ref<HTMLSelectElement>}
             className={cn(
-              "flex w-full appearance-none rounded-lg border border-border-subtle bg-bg-surface px-md py-2xs text-sm text-text-primary shadow-none transition-colors placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:border-border-subtle disabled:text-text-disabled pr-10 cursor-pointer",
+              "flex w-full min-w-0 appearance-none rounded-lg border border-border-subtle bg-bg-surface px-md py-2xs text-sm text-text-primary shadow-none transition-colors placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:border-border-subtle disabled:text-text-disabled pr-10 cursor-pointer",
               disabled && "cursor-not-allowed",
               className,
             )}
