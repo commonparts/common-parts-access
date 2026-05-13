@@ -34,8 +34,16 @@ const footerColumns: FooterColumn[] = [
     title: "Resources",
     links: [
       { label: "Documentation", href: null },
-      { label: "Contact", href: null },
+      { label: "Contact", href: "mailto:contact@commonparts.org" },
       { label: "Press", href: null },
+    ],
+  },
+  {
+    title: "Legal",
+    links: [
+      { label: "Privacy Policy", href: "/legal/privacy" },
+      { label: "Terms of Use", href: "/legal/terms" },
+      { label: "Legal Notice", href: "/legal/legal-notice" },
     ],
   },
 ];
@@ -94,7 +102,7 @@ export function Footer() {
             Infrastructure.
           </p>
           <p className="font-mono text-micro text-text-tertiary">
-            © {new Date().getFullYear()} Common Parts Foundation
+            © {new Date().getFullYear()} Common Parts
           </p>
         </div>
       </div>
