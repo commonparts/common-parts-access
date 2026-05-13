@@ -148,13 +148,13 @@ export function Combobox<T extends ComboboxOption>({
   };
 
   return (
-    <div className={cn("space-y-sm", className)}>
+    <div className={cn("w-full min-w-0 space-y-sm", className)}>
       {label && (
         <Label htmlFor={id} className="text-text-secondary font-medium">
           {label}
         </Label>
       )}
-      <div className="relative" ref={dropdownRef}>
+      <div className="relative w-full min-w-0" ref={dropdownRef}>
         <Input
           id={id}
           type="text"
