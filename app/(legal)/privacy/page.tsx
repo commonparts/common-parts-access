@@ -106,7 +106,7 @@ export default function PrivacyPage() {
               tracking, or analytics cookies are used.
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Cookie name: sb-[project-ref]-auth-token</li>
+              <li>Cookie name: Supabase authentication token cookie (sb-*-auth-token pattern)</li>
               <li>Purpose: Stores your authenticated session to keep you logged in.</li>
               <li>Type: Strictly necessary. This cookie is essential for the service to function and does not require your consent.</li>
               <li>Provider: Supabase, Inc. (our authentication infrastructure provider).</li>
@@ -121,13 +121,11 @@ export default function PrivacyPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">6. Third-Party Processors</h2>
             <p className="text-text-secondary">
-              We use the following sub-processors to operate Common Parts Access. All sub-processors are bound by data
-              processing agreements consistent with GDPR requirements.
+              We use the following sub-processors to operate Common Parts Access.
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>
-                Supabase, Inc. - Database, authentication, and file storage infrastructure. Data may be stored in EU
-                or US regions depending on project configuration. Supabase is SOC 2 Type II certified.
+                Supabase, Inc. - Database, authentication, and file storage infrastructure. Supabase is SOC 2 Type II certified.
               </li>
             </ul>
             <p className="text-text-secondary">
