@@ -1,0 +1,112 @@
+'use client'
+
+import { useEffect, useRef } from 'react'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+export interface ConfirmationDialogProps {
+  open: boolean
+  title: string
+  description?: string
+  confirmLabel?: string
+  cancelLabel?: string
+  onConfirm: () => void
+  onCancel: () => void
+  loading?: boolean
+  className?: string
+}
+
+/**
+ * A simple confirmation dialog rendered as a modal overlay.
+ * Closes on Escape key or backdrop click. Traps focus to the dialog container.
+ * Uses no external dialog library — relies on conditional rendering + ARIA.
+ */
+export function ConfirmationDialog({
+  open,
+  title,
+  description,
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
+  onConfirm,
+  onCancel,
+  loading = false,
+  className,
+}: ConfirmationDialogProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (open) {
+      containerRef.current?.focus()
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [open, onCancel])
+
+  if (!open) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="confirmation-dialog-title"
+      aria-describedby={description ? 'confirmation-dialog-description' : undefined}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50"
+        onClick={onCancel}
+        aria-hidden="true"
+      />
+      {/* Dialog panel */}
+      <div
+        ref={containerRef}
+        tabIndex={-1}
+        className={cn(
+          'relative z-10 w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-lg shadow-lg focus:outline-none',
+          className
+        )}
+      >
+        <h2
+          id="confirmation-dialog-title"
+          className="text-sm font-semibold text-text-primary"
+        >
+          {title}
+        </h2>
+        {description && (
+          <p
+            id="confirmation-dialog-description"
+            className="mt-xs text-sm text-text-secondary"
+          >
+            {description}
+          </p>
+        )}
+        <div className="mt-lg flex justify-end gap-sm">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onCancel}
+            disabled={loading}
+          >
+            {cancelLabel}
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            onClick={onConfirm}
+            disabled={loading}
+          >
+            {loading ? 'Deleting…' : confirmLabel}
+          </Button>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -4,6 +4,8 @@ import type {
   ModelCardRow,
   ModelListOptions,
   ModelListResult,
+  MyModelListItem,
+  MyModelListResult,
 } from '@/types/models';
 
 const MODEL_SELECT = `
@@ -142,4 +144,82 @@ export async function fetchFeaturedModelCards(limit = 8) {
   }
 
   return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+}
+
+const MY_MODEL_SELECT = 'id, name, slug, created_at, thumbnail_url, status' as const;
+
+/**
+ * Fetches models owned by a specific user, ordered by creation date descending.
+ * Returns a paginated list suitable for the "My Models" dashboard.
+ */
+export async function fetchUserModels(
+  userId: string,
+  options: { page?: number; limit?: number; status?: string } = {}
+): Promise<MyModelListResult> {
+  const page = Math.max(1, options.page || 1);
+  const limit = Math.max(1, Math.min(100, options.limit || 20));
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('models')
+    .select(MY_MODEL_SELECT, { count: 'exact' })
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range((page - 1) * limit, page * limit - 1);
+
+  if (options.status) {
+    query = query.eq('status', options.status);
+  }
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  const total = count || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return {
+    models: (data ?? []).map(
+      (row: { id: string; name: string; slug: string; created_at: string | null; thumbnail_url: string | null; status: string | null }): MyModelListItem => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        createdAt: row.created_at ?? '',
+        thumbnailUrl: row.thumbnail_url ?? null,
+        status: (row.status ?? 'draft') as MyModelListItem['status'],
+      })
+    ),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+}
+
+/**
+ * Deletes a model by slug after verifying the caller is the owner.
+ * Throws 'Model not found' if not found, 'Forbidden' if not owner.
+ */
+export async function deleteModel(slug: string, userId: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: model, error: fetchError } = await supabase
+    .from('models')
+    .select('id, user_id')
+    .eq('slug', slug)
+    .single();
+
+  if (fetchError || !model) throw new Error('Model not found');
+  if (model.user_id !== userId) throw new Error('Forbidden');
+
+  const { error } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', model.id)
+    .eq('user_id', userId);
+
+  if (error) throw error;
 }

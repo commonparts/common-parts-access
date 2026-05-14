@@ -1,4 +1,4 @@
-import type { Brand, Category, Model, Product, UserProfile } from './database';
+import type { Brand, Category, Model, ModelStatus, Product, UserProfile } from './database';
 
 export type ModelCardRow = Pick<
 	Model,
@@ -54,6 +54,28 @@ export interface ModelListOptions {
 
 export interface ModelListResult {
 	models: ModelCardData[];
+	pagination: {
+		page: number;
+		limit: number;
+		total: number;
+		totalPages: number;
+		hasNext: boolean;
+		hasPrev: boolean;
+	};
+}
+
+/** Minimal model data used in the authenticated user's "My Models" dashboard list. */
+export interface MyModelListItem {
+	id: string;
+	name: string;
+	slug: string;
+	createdAt: string;
+	thumbnailUrl: string | null;
+	status: ModelStatus;
+}
+
+export interface MyModelListResult {
+	models: MyModelListItem[];
 	pagination: {
 		page: number;
 		limit: number;
