@@ -138,12 +138,12 @@ export default function PrivacyPage() {
             <h2 className="text-h3">7. Data Retention</h2>
             <p className="text-text-secondary">
               We retain your personal data for as long as your account remains active. If you delete your account, your
-              personal data will be deleted within 30 days, except where retention is required by law or necessary to
+              personal data will be deleted immediately, except where retention is required by law or necessary to
               resolve disputes.
             </p>
             <p className="text-text-secondary">
-              Content you have published to the platform (spare part models and associated metadata) may remain
-              available after account deletion if other users have downloaded or referenced it, unless you request full
+              Content you have published to the platform (spare part models and associated metadata) will be anonymized and remain
+              available after account deletion, unless you request full
               removal.
             </p>
           </section>
@@ -168,7 +168,7 @@ export default function PrivacyPage() {
             <p className="text-text-secondary">
               To exercise any of these rights, contact us at contact@commonparts.org. We will respond within 30 days.
               If you believe your rights have not been respected, you have the right to lodge a complaint with your
-              national data protection authority (in France: the CNIL - www.cnil.fr).
+              national data protection authority.
             </p>
           </section>
 
@@ -182,25 +182,7 @@ export default function PrivacyPage() {
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">10. Minors</h2>
-            <p className="text-text-secondary">
-              Common Parts Access is not directed at children under the age of 16. We do not knowingly collect personal
-              data from minors. If you believe a minor has created an account, please contact us at
-              contact@commonparts.org and we will delete the account promptly.
-            </p>
-          </section>
-
-          <section className="space-y-sm">
-            <h2 className="text-h3">11. Changes to This Policy</h2>
-            <p className="text-text-secondary">
-              We may update this Privacy Policy from time to time. When we do, the effective date at the top of this
-              document will be updated. If changes are material, we will notify registered users by email. Continued
-              use of Common Parts Access after any change constitutes acceptance of the updated policy.
-            </p>
-          </section>
-
-          <section className="space-y-sm">
-            <h2 className="text-h3">12. Contact</h2>
+            <h2 className="text-h3">10. Contact</h2>
             <p className="text-text-secondary">
               For any questions, requests, or concerns regarding this Privacy Policy or the processing of your personal
               data:
