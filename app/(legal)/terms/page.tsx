@@ -165,7 +165,7 @@ export default function TermsPage() {
               </li>
               <li>Impersonating any person, manufacturer, or institution</li>
               <li>
-                Attempting to reverse-engineer, decompile, or interfere with the platform's technical infrastructure
+                Attempting to reverse-engineer, decompile, or interfere with the platform&rsquo;s technical infrastructure
               </li>
             </ul>
           </section>
@@ -227,7 +227,7 @@ export default function TermsPage() {
               interruption.
             </p>
             <p className="text-text-secondary">
-              Common Parts' total aggregate liability for any claim arising under these Terms shall not exceed the
+              Common Parts&rsquo; total aggregate liability for any claim arising under these Terms shall not exceed the
               amount paid by the user to Common Parts in the twelve months preceding the claim.
             </p>
           </section>
@@ -263,7 +263,7 @@ export default function TermsPage() {
               cannot be resolved within 30 days, it shall be submitted to the competent courts of France.
             </p>
             <p className="text-text-secondary">
-              If you are a consumer resident in the European Union, you may also use the European Commission's Online
+              If you are a consumer resident in the European Union, you may also use the European Commission&rsquo;s Online
               Dispute Resolution platform at https://ec.europa.eu/consumers/odr.
             </p>
           </section>
