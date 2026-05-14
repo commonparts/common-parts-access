@@ -80,7 +80,7 @@ export function ModelCard({
         </Link>
         <CardContent className="space-y-1 p-3">
           <Link href={`/model/${model.slug}`}>
-            <h3 className="line-clamp-2 font-heading text-sm font-semibold text-text-primary transition-colors hover:text-primary">
+            <h3 className="line-clamp-2 min-h-[2lh] font-heading text-sm font-semibold text-text-primary transition-colors hover:text-primary">
               {model.title}
             </h3>
           </Link>
@@ -133,7 +133,7 @@ export function ModelCard({
 
       <CardHeader className="pb-2">
         <Link href={`/model/${model.slug}`}>
-          <h3 className="line-clamp-2 font-heading text-heading-sm font-semibold text-text-primary transition-colors hover:text-primary">
+          <h3 className="line-clamp-2 min-h-[2lh] font-heading text-heading-sm font-semibold text-text-primary transition-colors hover:text-primary">
             {model.title}
           </h3>
         </Link>
