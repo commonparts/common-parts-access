@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
+import { STORAGE_BUCKETS } from '@/constants/app';
+import { extractBucketStoragePath } from '@/lib/storage/path-utils';
 import type { ModelStatus } from '@/types/database';
 import type {
   ModelCardData,
@@ -202,16 +204,17 @@ export async function fetchUserModels(
 
 /**
  * Deletes a model by slug after verifying the caller is the owner.
+ * Removes associated storage objects (model files + thumbnail) before
+ * deleting the database row. Storage cleanup is best-effort — failures
+ * are logged but do not abort the deletion.
  * Throws 'MODEL_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
- * Child rows (comments, downloads, likes, views, files) are removed
- * automatically via ON DELETE CASCADE FK constraints.
  */
 export async function deleteModel(slug: string, userId: string): Promise<void> {
   const supabase = await createClient();
 
   const { data: model, error: fetchError } = await supabase
     .from('models')
-    .select('id, user_id')
+    .select('id, user_id, thumbnail_url, model_files(upload_path)')
     .eq('slug', slug)
     .single();
 
@@ -221,6 +224,33 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
   }
   if (!model) throw new Error('MODEL_NOT_FOUND');
   if (model.user_id !== userId) throw new Error('FORBIDDEN');
+
+  // Best-effort storage cleanup — failures are logged but never block the DB delete.
+  const filePaths = (model.model_files as { upload_path: string }[])
+    .map((f) => f.upload_path)
+    .filter(Boolean);
+
+  if (filePaths.length > 0) {
+    const { error: filesError } = await supabase.storage
+      .from(STORAGE_BUCKETS.MODEL_FILES)
+      .remove(filePaths);
+    if (filesError) {
+      console.error('Storage cleanup failed for model-files:', filesError);
+    }
+  }
+
+  const thumbnailPath = extractBucketStoragePath(
+    model.thumbnail_url,
+    STORAGE_BUCKETS.MODEL_THUMBNAILS
+  );
+  if (thumbnailPath) {
+    const { error: thumbError } = await supabase.storage
+      .from(STORAGE_BUCKETS.MODEL_THUMBNAILS)
+      .remove([thumbnailPath]);
+    if (thumbError) {
+      console.error('Storage cleanup failed for thumbnail:', thumbError);
+    }
+  }
 
   const { error } = await supabase
     .from('models')

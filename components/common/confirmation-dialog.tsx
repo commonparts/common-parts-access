@@ -10,6 +10,8 @@ export interface ConfirmationDialogProps {
   description?: string
   confirmLabel?: string
   cancelLabel?: string
+  /** Label shown on the confirm button while loading. Defaults to confirmLabel. */
+  loadingLabel?: string
   onConfirm: () => void
   onCancel: () => void
   loading?: boolean
@@ -31,6 +33,7 @@ export function ConfirmationDialog({
   description,
   confirmLabel = 'Confirm',
   cancelLabel = 'Cancel',
+  loadingLabel,
   onConfirm,
   onCancel,
   loading = false,
@@ -110,7 +113,7 @@ export function ConfirmationDialog({
         ref={containerRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-lg shadow-lg focus:outline-none',
+          'relative z-10 w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-lg shadow-overlay focus:outline-none',
           className
         )}
       >
@@ -143,7 +146,7 @@ export function ConfirmationDialog({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? 'Deleting…' : confirmLabel}
+            {loading ? (loadingLabel ?? confirmLabel) : confirmLabel}
           </Button>
         </div>
       </div>

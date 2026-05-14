@@ -12,7 +12,7 @@ export default function TermsPage() {
       <Container size="md">
         <div className="space-y-lg">
           <div>
-            <h1 className="text-h1">Terms of Use</h1>
+            <h1 className="text-h1">Terms of use</h1>
             <p className="mt-md text-text-secondary">Common Parts Access</p>
           </div>
 

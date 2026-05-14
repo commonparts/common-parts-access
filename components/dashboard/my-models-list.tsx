@@ -51,6 +51,7 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
         window.location.href = url.toString()
       }
     } catch (err) {
+      setPendingDelete(null)
       setDeleteError(err instanceof Error ? err.message : 'An unexpected error occurred.')
     } finally {
       setDeleting(false)
@@ -156,6 +157,7 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
         title="Delete part"
         description={`Are you sure you want to delete "${pendingDelete?.name}"? This action cannot be undone.`}
         confirmLabel="Delete"
+        loadingLabel="Deleting…"
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           if (!deleting) setPendingDelete(null)
