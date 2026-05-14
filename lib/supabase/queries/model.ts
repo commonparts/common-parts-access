@@ -1,9 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
+import type { ModelStatus } from '@/types/database';
 import type {
   ModelCardData,
   ModelCardRow,
   ModelListOptions,
   ModelListResult,
+  MyModelListItem,
+  MyModelListResult,
 } from '@/types/models';
 
 const MODEL_SELECT = `
@@ -142,4 +145,88 @@ export async function fetchFeaturedModelCards(limit = 8) {
   }
 
   return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+}
+
+const MY_MODEL_SELECT = 'id, name, slug, created_at, thumbnail_url, status' as const;
+
+/**
+ * Fetches models owned by a specific user, ordered by creation date descending.
+ * Returns a paginated list suitable for the "My Models" dashboard.
+ */
+export async function fetchUserModels(
+  userId: string,
+  options: { page?: number; limit?: number; status?: ModelStatus } = {}
+): Promise<MyModelListResult> {
+  const page = Math.max(1, options.page || 1);
+  const limit = Math.max(1, Math.min(100, options.limit || 20));
+  const supabase = await createClient();
+
+  let query = supabase
+    .from('models')
+    .select(MY_MODEL_SELECT, { count: 'exact' })
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .range((page - 1) * limit, page * limit - 1);
+
+  if (options.status) {
+    query = query.eq('status', options.status);
+  }
+
+  const { data, error, count } = await query;
+  if (error) throw error;
+
+  const total = count || 0;
+  const totalPages = Math.ceil(total / limit) || 1;
+
+  return {
+    models: (data ?? []).map(
+      (row: { id: string; name: string; slug: string; created_at: string | null; thumbnail_url: string | null; status: string | null }): MyModelListItem => ({
+        id: row.id,
+        name: row.name,
+        slug: row.slug,
+        createdAt: row.created_at ?? null,
+        thumbnailUrl: row.thumbnail_url ?? null,
+        status: (row.status ?? 'draft') as MyModelListItem['status'],
+      })
+    ),
+    pagination: {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrev: page > 1,
+    },
+  };
+}
+
+/**
+ * Deletes a model by slug after verifying the caller is the owner.
+ * Throws 'MODEL_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
+ * Child rows (comments, downloads, likes, views, files) are removed
+ * automatically via ON DELETE CASCADE FK constraints.
+ */
+export async function deleteModel(slug: string, userId: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { data: model, error: fetchError } = await supabase
+    .from('models')
+    .select('id, user_id')
+    .eq('slug', slug)
+    .single();
+
+  if (fetchError) {
+    if (fetchError.code === 'PGRST116') throw new Error('MODEL_NOT_FOUND');
+    throw fetchError;
+  }
+  if (!model) throw new Error('MODEL_NOT_FOUND');
+  if (model.user_id !== userId) throw new Error('FORBIDDEN');
+
+  const { error } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', model.id)
+    .eq('user_id', userId);
+
+  if (error) throw error;
 }
