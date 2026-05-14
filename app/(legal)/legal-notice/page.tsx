@@ -13,9 +13,7 @@ export default function LegalNoticePage() {
         <div className="space-y-lg">
           <div>
             <h1 className="text-h1">Legal Notice</h1>
-            <p className="mt-md text-text-secondary">
-              Coming soon.
-            </p>
+            <p className="mt-md text-text-secondary">Coming soon.</p>
           </div>
         </div>
       </Container>
