@@ -204,9 +204,8 @@ export async function fetchUserModels(
 
 /**
  * Deletes a model by slug after verifying the caller is the owner.
- * Removes associated storage objects (model files + thumbnail) before
- * deleting the database row. Storage cleanup is best-effort — failures
- * are logged but do not abort the deletion.
+ * Deletes the database row first, then removes associated storage objects
+ * (model files + thumbnail) as a best-effort cleanup step.
  * Throws 'MODEL_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
  */
 export async function deleteModel(slug: string, userId: string): Promise<void> {
@@ -225,11 +224,24 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
   if (!model) throw new Error('MODEL_NOT_FOUND');
   if (model.user_id !== userId) throw new Error('FORBIDDEN');
 
-  // Best-effort storage cleanup — failures are logged but never block the DB delete.
   const filePaths = (model.model_files as { upload_path: string }[])
     .map((f) => f.upload_path)
     .filter(Boolean);
 
+  const thumbnailPath = extractBucketStoragePath(
+    model.thumbnail_url,
+    STORAGE_BUCKETS.MODEL_THUMBNAILS
+  );
+
+  const { error } = await supabase
+    .from('models')
+    .delete()
+    .eq('id', model.id)
+    .eq('user_id', userId);
+
+  if (error) throw error;
+
+  // Best-effort storage cleanup — failures are logged but never block the DB delete.
   if (filePaths.length > 0) {
     const { error: filesError } = await supabase.storage
       .from(STORAGE_BUCKETS.MODEL_FILES)
@@ -239,10 +251,6 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
     }
   }
 
-  const thumbnailPath = extractBucketStoragePath(
-    model.thumbnail_url,
-    STORAGE_BUCKETS.MODEL_THUMBNAILS
-  );
   if (thumbnailPath) {
     const { error: thumbError } = await supabase.storage
       .from(STORAGE_BUCKETS.MODEL_THUMBNAILS)
@@ -251,12 +259,4 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
       console.error('Storage cleanup failed for thumbnail:', thumbError);
     }
   }
-
-  const { error } = await supabase
-    .from('models')
-    .delete()
-    .eq('id', model.id)
-    .eq('user_id', userId);
-
-  if (error) throw error;
 }
