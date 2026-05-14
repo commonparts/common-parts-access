@@ -202,10 +202,8 @@ export async function fetchUserModels(
 /**
  * Deletes a model by slug after verifying the caller is the owner.
  * Throws 'Model not found' if not found, 'Forbidden' if not owner.
- *
- * Manually removes rows in child tables that carry NO ACTION FK constraints
- * (model_comments, model_downloads, model_likes, model_views) before deleting
- * the model itself. model_files and collection_models are covered by CASCADE.
+ * Child rows (comments, downloads, likes, views, files) are removed
+ * automatically via ON DELETE CASCADE FK constraints.
  */
 export async function deleteModel(slug: string, userId: string): Promise<void> {
   const supabase = await createClient();
@@ -218,19 +216,6 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
 
   if (fetchError || !model) throw new Error('Model not found');
   if (model.user_id !== userId) throw new Error('Forbidden');
-
-  // These child tables have NO ACTION delete rules and must be cleared first.
-  const childTables = [
-    'model_comments',
-    'model_downloads',
-    'model_likes',
-    'model_views',
-  ] as const;
-
-  for (const table of childTables) {
-    const { error } = await supabase.from(table).delete().eq('model_id', model.id);
-    if (error) throw error;
-  }
 
   const { error } = await supabase
     .from('models')
