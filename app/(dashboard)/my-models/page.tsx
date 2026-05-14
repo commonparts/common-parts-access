@@ -15,7 +15,8 @@ export default async function MyModelsPage({ searchParams }: PageProps) {
   if (!user) redirect('/login')
 
   const { page: pageParam } = await searchParams
-  const page = Math.max(1, parseInt(pageParam || '1', 10))
+  const rawPage = parseInt(pageParam || '1', 10)
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1
 
   const { models, pagination } = await fetchUserModels(user.id, {
     page,

@@ -58,6 +58,30 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
   }
 
   if (models.length === 0) {
+    if (currentPage > 1) {
+      return (
+        <div className="space-y-md">
+          <div className="rounded-lg border border-border-subtle bg-bg-surface p-lg text-sm text-text-secondary">
+            No published parts on this page.
+          </div>
+          <div className="flex items-center justify-between">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const url = new URL(window.location.href)
+                url.searchParams.set('page', String(currentPage - 1))
+                window.location.href = url.toString()
+              }}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-text-secondary">Page {currentPage}</span>
+            <div />
+          </div>
+        </div>
+      )
+    }
     return (
       <div className="rounded-lg border border-border-subtle bg-bg-surface p-lg text-sm text-text-secondary">
         You have no published parts yet.

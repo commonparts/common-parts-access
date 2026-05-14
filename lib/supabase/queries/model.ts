@@ -215,7 +215,11 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
     .eq('slug', slug)
     .single();
 
-  if (fetchError || !model) throw new Error('MODEL_NOT_FOUND');
+  if (fetchError) {
+    if (fetchError.code === 'PGRST116') throw new Error('MODEL_NOT_FOUND');
+    throw fetchError;
+  }
+  if (!model) throw new Error('MODEL_NOT_FOUND');
   if (model.user_id !== userId) throw new Error('FORBIDDEN');
 
   const { error } = await supabase
