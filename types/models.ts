@@ -69,7 +69,7 @@ export interface MyModelListItem {
 	id: string;
 	name: string;
 	slug: string;
-	createdAt: string;
+	createdAt: string | null;
 	thumbnailUrl: string | null;
 	status: ModelStatus;
 }

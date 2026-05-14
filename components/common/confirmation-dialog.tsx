@@ -16,9 +16,13 @@ export interface ConfirmationDialogProps {
   className?: string
 }
 
+const FOCUSABLE_SELECTORS =
+  'button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
+
 /**
- * A simple confirmation dialog rendered as a modal overlay.
- * Closes on Escape key or backdrop click. Traps focus to the dialog container.
+ * A confirmation dialog rendered as a modal overlay.
+ * Traps Tab/Shift+Tab focus within the dialog panel, restores focus to the
+ * previously active element on close, and closes on Escape or backdrop click.
  * Uses no external dialog library — relies on conditional rendering + ARIA.
  */
 export function ConfirmationDialog({
@@ -33,18 +37,53 @@ export function ConfirmationDialog({
   className,
 }: ConfirmationDialogProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const previousFocusRef = useRef<Element | null>(null)
 
+  // Store the element that was focused before the dialog opened so we can
+  // restore it when the dialog closes.
   useEffect(() => {
     if (open) {
+      previousFocusRef.current = document.activeElement
       containerRef.current?.focus()
+    } else if (previousFocusRef.current instanceof HTMLElement) {
+      previousFocusRef.current.focus()
+      previousFocusRef.current = null
     }
   }, [open])
 
+  // Close on Escape; trap Tab/Shift+Tab within the dialog.
   useEffect(() => {
     if (!open) return
+
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onCancel()
+      if (e.key === 'Escape') {
+        onCancel()
+        return
+      }
+
+      if (e.key !== 'Tab' || !containerRef.current) return
+
+      const focusable = Array.from(
+        containerRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTORS)
+      )
+      if (focusable.length === 0) return
+
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
+
+      if (e.shiftKey) {
+        if (document.activeElement === first || document.activeElement === containerRef.current) {
+          e.preventDefault()
+          last.focus()
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault()
+          first.focus()
+        }
+      }
     }
+
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open, onCancel])

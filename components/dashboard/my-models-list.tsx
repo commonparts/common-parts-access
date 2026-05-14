@@ -73,7 +73,7 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
             <div className="min-w-0 space-y-xs">
               <p className="truncate text-sm font-medium text-text-primary">{model.name}</p>
               <p className="text-xs text-text-secondary">
-                Published {formatDate(model.createdAt, 'medium')}
+                {model.createdAt ? `Published ${formatDate(model.createdAt, 'medium')}` : 'Publication date unknown'}
               </p>
             </div>
             <Button

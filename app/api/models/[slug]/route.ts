@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { deleteModel } from '@/lib/supabase/queries/model'
+import { isValidSlug } from '@/lib/utils/slug'
 
 // GET /api/models/[slug] - Get model by slug
 // Not yet implemented — tracked in GitHub issues
@@ -33,14 +34,18 @@ export async function DELETE(
     }
 
     const { slug } = await context.params
+    if (!isValidSlug(slug)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
+
     await deleteModel(slug, user.id)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'Model not found') {
+      if (error.message === 'MODEL_NOT_FOUND') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
-      if (error.message === 'Forbidden') {
+      if (error.message === 'FORBIDDEN') {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

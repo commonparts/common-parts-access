@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import type { ModelStatus } from '@/types/database';
 import type {
   ModelCardData,
   ModelCardRow,
@@ -154,7 +155,7 @@ const MY_MODEL_SELECT = 'id, name, slug, created_at, thumbnail_url, status' as c
  */
 export async function fetchUserModels(
   userId: string,
-  options: { page?: number; limit?: number; status?: string } = {}
+  options: { page?: number; limit?: number; status?: ModelStatus } = {}
 ): Promise<MyModelListResult> {
   const page = Math.max(1, options.page || 1);
   const limit = Math.max(1, Math.min(100, options.limit || 20));
@@ -183,7 +184,7 @@ export async function fetchUserModels(
         id: row.id,
         name: row.name,
         slug: row.slug,
-        createdAt: row.created_at ?? '',
+        createdAt: row.created_at ?? null,
         thumbnailUrl: row.thumbnail_url ?? null,
         status: (row.status ?? 'draft') as MyModelListItem['status'],
       })
@@ -201,7 +202,7 @@ export async function fetchUserModels(
 
 /**
  * Deletes a model by slug after verifying the caller is the owner.
- * Throws 'Model not found' if not found, 'Forbidden' if not owner.
+ * Throws 'MODEL_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
  * Child rows (comments, downloads, likes, views, files) are removed
  * automatically via ON DELETE CASCADE FK constraints.
  */
@@ -214,8 +215,8 @@ export async function deleteModel(slug: string, userId: string): Promise<void> {
     .eq('slug', slug)
     .single();
 
-  if (fetchError || !model) throw new Error('Model not found');
-  if (model.user_id !== userId) throw new Error('Forbidden');
+  if (fetchError || !model) throw new Error('MODEL_NOT_FOUND');
+  if (model.user_id !== userId) throw new Error('FORBIDDEN');
 
   const { error } = await supabase
     .from('models')
