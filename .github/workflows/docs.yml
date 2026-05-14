@@ -29,8 +29,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "Agent Docs"
-          git config user.email "agent-docs@commonparts.org"
+          git config user.name "Agent Docs[bot]"
+          git config user.email "agent-docs[bot]@users.noreply.github.com"
 
       - name: Determine next semver
         id: semver
@@ -227,8 +227,8 @@ jobs:
 
       - name: Configure Git
         run: |
-          git config user.name "Agent Docs"
-          git config user.email "agent-docs@commonparts.org"
+          git config user.name "Agent Docs[bot]"
+          git config user.email "agent-docs[bot]@users.noreply.github.com"
 
       - name: Get diff of relevant files
         id: diff
