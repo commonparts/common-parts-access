@@ -32,10 +32,10 @@ export type UserProfileMenuItem =
 
 export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
   {
-    key: "my-models",
+    key: "my-parts",
     type: "link",
-    label: "My models",
-    href: "/my-models",
+    label: "My parts",
+    href: "/my-parts",
     icon: LayoutDashboard,
   },
   {

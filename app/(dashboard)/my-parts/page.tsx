@@ -25,7 +25,7 @@ export default async function MyModelsPage({ searchParams }: PageProps) {
 
   return (
     <DashboardShell
-      title="My Models"
+      title="My parts"
       description="Manage your published parts."
     >
       <Grid columns={12}>
