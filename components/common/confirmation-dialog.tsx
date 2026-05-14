@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -38,6 +38,7 @@ export function ConfirmationDialog({
 }: ConfirmationDialogProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<Element | null>(null)
+  const dialogId = useId()
 
   // Store the element that was focused before the dialog opened so we can
   // restore it when the dialog closes.
@@ -57,7 +58,7 @@ export function ConfirmationDialog({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onCancel()
+        if (!loading) onCancel()
         return
       }
 
@@ -86,7 +87,7 @@ export function ConfirmationDialog({
 
     document.addEventListener('keydown', handleKeyDown)
     return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [open, onCancel])
+  }, [open, onCancel, loading])
 
   if (!open) return null
 
@@ -95,13 +96,13 @@ export function ConfirmationDialog({
       className="fixed inset-0 z-50 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
-      aria-labelledby="confirmation-dialog-title"
-      aria-describedby={description ? 'confirmation-dialog-description' : undefined}
+      aria-labelledby={`${dialogId}-title`}
+      aria-describedby={description ? `${dialogId}-description` : undefined}
     >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/50"
-        onClick={onCancel}
+        onClick={loading ? undefined : onCancel}
         aria-hidden="true"
       />
       {/* Dialog panel */}
@@ -114,14 +115,14 @@ export function ConfirmationDialog({
         )}
       >
         <h2
-          id="confirmation-dialog-title"
+          id={`${dialogId}-title`}
           className="text-sm font-semibold text-text-primary"
         >
           {title}
         </h2>
         {description && (
           <p
-            id="confirmation-dialog-description"
+            id={`${dialogId}-description`}
             className="mt-xs text-sm text-text-secondary"
           >
             {description}

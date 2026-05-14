@@ -25,12 +25,13 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
   async function handleConfirmDelete() {
-    if (!pendingDelete) return
+    const target = pendingDelete
+    if (!target) return
     setDeleting(true)
     setDeleteError(null)
 
     try {
-      const response = await fetch(`/api/models/${pendingDelete.slug}`, {
+      const response = await fetch(`/api/models/${target.slug}`, {
         method: 'DELETE',
       })
 
@@ -39,8 +40,16 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
         throw new Error(body.error || 'Delete failed. Please try again.')
       }
 
-      setModels(prev => prev.filter(m => m.id !== pendingDelete.id))
+      const updated = models.filter(m => m.id !== target.id)
+      setModels(updated)
       setPendingDelete(null)
+
+      // Navigate to the previous page when deleting the last item on page > 1.
+      if (updated.length === 0 && currentPage > 1) {
+        const url = new URL(window.location.href)
+        url.searchParams.set('page', String(currentPage - 1))
+        window.location.href = url.toString()
+      }
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : 'An unexpected error occurred.')
     } finally {
@@ -73,7 +82,7 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
             <div className="min-w-0 space-y-xs">
               <p className="truncate text-sm font-medium text-text-primary">{model.name}</p>
               <p className="text-xs text-text-secondary">
-                {model.createdAt ? `Published ${formatDate(model.createdAt, 'medium')}` : 'Publication date unknown'}
+                {model.createdAt ? `Uploaded ${formatDate(model.createdAt, 'medium')}` : 'Upload date unknown'}
               </p>
             </div>
             <Button
