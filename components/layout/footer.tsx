@@ -13,21 +13,21 @@ interface FooterColumn {
 
 const footerColumns: FooterColumn[] = [
   {
-    title: "Resources",
-    links: [
-      { label: "Contact", href: "mailto:contact@commonparts.org" },
-      { label: "Privacy Policy", href: "/legal/privacy" },
-      { label: "Terms of Use", href: "/legal/terms" },
-      { label: "Legal Notice", href: "/legal/legal-notice" },
-    ],
-  },
-  {
     title: "Platform",
     links: [
       { label: "Browse Parts", href: "/browse" },
       { label: "Publish a Part", href: "/upload" },
       { label: "Common Parts", href: "https://commonparts.org" },
       { label: "GitHub", href: "https://github.com/commonparts" },
+    ],
+  },
+  {
+    title: "Resources",
+    links: [
+      { label: "Contact", href: "mailto:contact@commonparts.org" },
+      { label: "Privacy Policy", href: "/legal/privacy" },
+      { label: "Terms of Use", href: "/legal/terms" },
+      { label: "Legal Notice", href: "/legal/legal-notice" },
     ],
   },
 ];
@@ -39,7 +39,7 @@ export function Footer() {
         {/* Columns */}
         <div className="mb-xl grid grid-cols-2 gap-xl md:grid-cols-[2fr_1fr_1fr_1fr]">
           {/* Brand column */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-2">
             <div className="mb-xs">
               <Logo showInterface={false} />
             </div>
