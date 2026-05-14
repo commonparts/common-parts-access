@@ -2,14 +2,14 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
-import { MyModelsList } from '@/components/dashboard/my-models-list'
+import { MyPartsList } from '@/components/dashboard/my-parts-list'
 import { fetchUserModels } from '@/lib/supabase/queries/model'
 
 interface PageProps {
   searchParams: Promise<{ page?: string }>
 }
 
-export default async function MyModelsPage({ searchParams }: PageProps) {
+export default async function MyPartsPage({ searchParams }: PageProps) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
@@ -30,7 +30,7 @@ export default async function MyModelsPage({ searchParams }: PageProps) {
     >
       <Grid columns={12}>
         <div className="col-span-12 space-y-md">
-          <MyModelsList
+          <MyPartsList
             initialModels={models}
             hasNextPage={pagination.hasNext}
             currentPage={pagination.page}
