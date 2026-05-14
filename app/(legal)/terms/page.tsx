@@ -28,7 +28,7 @@ export default function TermsPage() {
             </p>
             <p className="text-text-secondary">
               Common Parts reserves the right to update these Terms at any time. Continued use of Common Parts Access
-              after any modification constitutes acceptance of the updated terms. We will notify registered users of
+              after any modification constitutes acceptance of the updated terms. Registered users will be notified of
               material changes by email.
             </p>
           </section>
@@ -36,20 +36,16 @@ export default function TermsPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">2. Description of the Service</h2>
             <p className="text-text-secondary">
-              Common Parts Access is an open platform for publishing and accessing digital spare parts, operated as an
-              official interface of the Common Parts Infrastructure.
+              Common Parts Access is an open platform for publishing and accessing digital spare parts. It is an
+              official interface of the Common Parts Infrastructure, operating as a structured registry where spare
+              part files can be published, discovered, and downloaded.
             </p>
-            <p className="text-text-secondary">In its current phase of development, Common Parts Access allows users to:</p>
+            <p className="text-text-secondary">Common Parts Access allows users to:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Browse and download digital spare part files (3D models in formats including STL, 3MF, and STEP)</li>
-              <li>Publish original or openly licensed spare part models with associated metadata</li>
-              <li>Contribute structured metadata to improve the discoverability and usability of published parts</li>
+              <li>Browse and download digital spare part files in standard formats, including STL, 3MF, and STEP</li>
+              <li>Publish original or openly licensed spare part models with associated structured metadata</li>
+              <li>Contribute metadata to improve the discoverability and usability of published parts</li>
             </ul>
-            <p className="text-text-secondary">
-              Current status: Common Parts Access is an open platform, not a certified part distribution system. The
-              Common Parts Secure Print Protocol (CPSP) and manufacturer certification features are in development and
-              not yet available. No commercial transactions are processed through Common Parts Access at this time.
-            </p>
           </section>
 
           <section className="space-y-sm">
@@ -58,7 +54,7 @@ export default function TermsPage() {
             <p className="text-text-secondary">
               Creating an account requires a valid email address. You are responsible for maintaining the
               confidentiality of your credentials and for all activity that occurs under your account. You must notify
-              Common Parts immediately at contact@commonparts.org if you suspect unauthorized use of your account.
+              Common Parts immediately at contact@commonparts.org if you suspect unauthorised use of your account.
             </p>
             <p className="text-text-secondary">
               You may not create an account on behalf of another person without their explicit consent, or use a false
@@ -88,10 +84,10 @@ export default function TermsPage() {
               publishing a part, you represent and warrant that:
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>You are the original author of the file, or you hold sufficient rights to publish it under an open license</li>
+              <li>You are the original author of the file, or you hold sufficient rights to publish it under an open licence</li>
               <li>
-                The file does not reproduce proprietary designs protected by industrial property rights (patent,
-                registered design right, copyright) without authorization from the rights holder
+                The file does not reproduce proprietary designs protected by industrial property rights - including
+                patents, registered design rights, or copyright - without authorisation from the rights holder
               </li>
               <li>
                 The published content does not constitute counterfeiting, passing off, or any other form of
@@ -101,35 +97,39 @@ export default function TermsPage() {
             </ul>
             <p className="text-text-secondary">
               Important: Publishing a spare part model that reproduces a design protected by a registered patent or
-              design right without authorization from the manufacturer is an infringement of industrial property law.
+              design right without authorisation from the rights holder is an infringement of industrial property law.
               Common Parts does not verify the intellectual property status of submitted files. You bear full legal
               responsibility for the content you publish.
             </p>
 
-            <h3 className="text-h4">4.2 Licensing of published content</h3>
-            <p className="text-text-secondary">When publishing a file on Common Parts Access, you must select one of the following open licenses:</p>
+            <h3 className="text-h4">4.2 Licences for published content</h3>
+            <p className="text-text-secondary">When publishing a file on Common Parts Access, you must select one of the following licences:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
+              <li>Creative Commons Zero 1.0 Universal (CC0 1.0) - public domain dedication</li>
               <li>Creative Commons Attribution 4.0 International (CC BY 4.0)</li>
               <li>Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)</li>
               <li>Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)</li>
+              <li>Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International (CC BY-NC-SA 4.0)</li>
               <li>MIT Licence</li>
+              <li>GNU General Public License v3.0 (GPL-3.0)</li>
             </ul>
             <p className="text-text-secondary">
-              By selecting a license, you grant Common Parts and all users of the platform the rights specified in
-              that license with respect to the published file. You retain authorship and ownership of your work.
+              By selecting a licence, you grant Common Parts and all users of the platform the rights specified in
+              that licence with respect to the published file. You retain authorship and ownership of your work.
               Common Parts does not acquire any transfer of intellectual property rights over your content.
             </p>
             <p className="text-text-secondary">
-              Metadata associated with published parts (title, description, category, material, print settings,
-              dimensions) is published under the Creative Commons Zero (CC0) license and enters the public domain. By
-              submitting metadata, you waive any related rights to the fullest extent permitted by applicable law.
+              Metadata associated with published parts - including title, description, category, material, print
+              settings, and dimensions - is published under the Creative Commons Zero (CC0) licence and enters the
+              public domain. By submitting metadata, you waive any related rights to the fullest extent permitted by
+              applicable law.
             </p>
 
             <h3 className="text-h4">4.3 Licence granted to Common Parts</h3>
             <p className="text-text-secondary">
               By publishing content on Common Parts Access, you grant Common Parts a worldwide, royalty-free,
-              non-exclusive license to host, display, index, distribute, and make available your published file and
-              associated metadata, for the purpose of operating and improving the platform. This license persists for
+              non-exclusive licence to host, display, index, distribute, and make available your published file and
+              associated metadata, for the purpose of operating and improving the platform. This licence persists for
               as long as the content remains published on the platform.
             </p>
             <p className="text-text-secondary">
@@ -139,10 +139,9 @@ export default function TermsPage() {
 
             <h3 className="text-h4">4.4 Attribution of curated content</h3>
             <p className="text-text-secondary">
-              Common Parts Access may include parts curated from third-party open-source repositories (such as
-              Printables, Thingiverse, and equivalent platforms). Such parts are published under their original
-              license, with full attribution to the original author and a link to the original source. Common Parts
-              does not modify the license of any file it does not author.
+              Common Parts Access includes parts curated from third-party open-source repositories. Such parts are
+              published under their original open licence, with full attribution to the original author and a link to
+              the original source. Common Parts does not modify the licence of any file it does not author.
             </p>
           </section>
 
@@ -159,10 +158,7 @@ export default function TermsPage() {
                 Publishing files that contain malicious code or that are designed to damage devices or infrastructure
               </li>
               <li>Publishing content that is unlawful, defamatory, obscene, or harmful</li>
-              <li>
-                Attempting to access, scrape, or extract platform data in ways that circumvent the public API or
-                overload the platform infrastructure
-              </li>
+              <li>Scraping or extracting platform data in ways that circumvent the public API or that overload platform infrastructure</li>
               <li>
                 Using automated means to create accounts, publish content, or interact with the platform in a
                 misleading way
@@ -178,22 +174,21 @@ export default function TermsPage() {
             <h2 className="text-h3">6. Intellectual Property</h2>
             <h3 className="text-h4">6.1 Common Parts platform</h3>
             <p className="text-text-secondary">
-              The Common Parts Access platform - including its source code, interface design, typography, and visual
-              identity - is published under the MIT Licence and is available at the official Common Parts GitHub
-              repository.
+              The Common Parts Access platform - including its source code, interface design, and visual identity - is
+              published under the MIT Licence and is available at the official Common Parts GitHub repository.
             </p>
             <p className="text-text-secondary">
-              The Common Parts name, symbol, and certification marks are protected. No license to use these marks is
-              granted by these Terms. Use of Common Parts marks requires prior written authorization from Common Parts.
+              The Common Parts name, symbol, and certification marks are protected. No licence to use these marks is
+              granted by these Terms. Use of Common Parts marks requires prior written authorisation from Common Parts.
             </p>
 
             <h3 className="text-h4">6.2 User content</h3>
             <p className="text-text-secondary">
-              Each published part belongs to its author, subject to the open license selected at the time of
+              Each published part belongs to its author, subject to the open licence selected at the time of
               publication. Common Parts claims no ownership over user-published content.
             </p>
 
-            <h3 className="text-h4">6.3 Third-party rights</h3>
+            <h3 className="text-h4">6.3 Third-party rights - takedown requests</h3>
             <p className="text-text-secondary">
               Common Parts does not verify whether published parts infringe third-party intellectual property rights. If
               you believe that content published on Common Parts Access infringes your rights, please contact
@@ -207,9 +202,9 @@ export default function TermsPage() {
             <h2 className="text-h3">7. Disclaimers and Limitation of Liability</h2>
             <h3 className="text-h4">7.1 No warranty on published parts</h3>
             <p className="text-text-secondary">
-              Common Parts Access is a registry platform. It does not test, validate, or certify user-published parts
-              unless explicitly indicated by a verification status. Parts marked as unverified have not been reviewed
-              by Common Parts.
+              Common Parts Access operates as a registry platform. Parts are published by their authors and may carry
+              a verification status reflecting the level of review performed by the community or by Common Parts.
+              Parts without a verified status have not been independently reviewed.
             </p>
             <p className="text-text-secondary">
               Common Parts makes no warranty, express or implied, as to the fitness, safety, dimensional accuracy, or
@@ -220,8 +215,8 @@ export default function TermsPage() {
             <h3 className="text-h4">7.2 Platform availability</h3>
             <p className="text-text-secondary">
               Common Parts Access is provided on an as-is and as-available basis. Common Parts does not warrant
-              uninterrupted or error-free access to the platform. We reserve the right to suspend the service for
-              maintenance, updates, or in response to security incidents, without prior notice where urgency requires.
+              uninterrupted or error-free access to the platform and reserves the right to suspend the service for
+              maintenance or security reasons without prior notice where urgency requires.
             </p>
 
             <h3 className="text-h4">7.3 Limitation of liability</h3>
@@ -233,18 +228,16 @@ export default function TermsPage() {
             </p>
             <p className="text-text-secondary">
               Common Parts' total aggregate liability for any claim arising under these Terms shall not exceed the
-              amount paid by the user to Common Parts in the twelve months preceding the claim. As Common Parts Access
-              is currently provided free of charge, this amount is zero.
+              amount paid by the user to Common Parts in the twelve months preceding the claim.
             </p>
           </section>
 
           <section className="space-y-sm">
             <h2 className="text-h3">8. Third-Party Links and Content</h2>
             <p className="text-text-secondary">
-              Common Parts Access may reference or link to third-party platforms (such as original source repositories
-              for curated parts). These links are provided for attribution and convenience only. Common Parts is not
-              responsible for the content, availability, or practices of third-party websites and does not endorse
-              them.
+              Common Parts Access may reference or link to third-party platforms, including original source
+              repositories for curated parts. These links are provided for attribution and reference only. Common Parts
+              is not responsible for the content, availability, or practices of third-party websites.
             </p>
           </section>
 
@@ -252,9 +245,9 @@ export default function TermsPage() {
             <h2 className="text-h3">9. Modifications to the Service</h2>
             <p className="text-text-secondary">
               Common Parts reserves the right to modify, suspend, or discontinue any part of Common Parts Access at any
-              time. We will provide reasonable advance notice of significant changes affecting registered users where
-              practicable. Common Parts shall not be liable to you or any third party for any modification, suspension,
-              or discontinuation of the service.
+              time. Reasonable advance notice will be provided to registered users where practicable. Common Parts
+              shall not be liable to you or any third party for any modification, suspension, or discontinuation of the
+              service.
             </p>
           </section>
 
