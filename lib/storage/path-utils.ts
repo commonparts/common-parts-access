@@ -4,6 +4,22 @@ const CLEAN_SEGMENT_REGEX = /[\0-\x1F<>:"|?*\\]/g
 const DUPLICATE_DOTS_REGEX = /\.\.+/g
 
 /**
+ * Extracts the storage path (relative to a given bucket) from a Supabase
+ * public object URL. Strips query params (e.g. signed URL tokens).
+ * Returns null when the URL does not contain the expected bucket segment.
+ */
+export function extractBucketStoragePath(
+  url: string | null | undefined,
+  bucketName: string
+): string | null {
+  if (!url) return null
+  const marker = `/storage/v1/object/public/${bucketName}/`
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return url.slice(idx + marker.length).split('?')[0] || null
+}
+
+/**
  * Attempts to extract a storage path relative to the model-files bucket.
  * Accepts absolute URLs, signed URLs, or already-relative paths.
  */

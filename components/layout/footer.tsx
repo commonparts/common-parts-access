@@ -15,8 +15,8 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
-      { label: "Browse Parts", href: "/browse" },
-      { label: "Publish a Part", href: "/upload" },
+      { label: "Browse parts", href: "/browse" },
+      { label: "Publish a part", href: "/upload" },
       { label: "Common Parts", href: "https://commonparts.org" },
       { label: "GitHub", href: "https://github.com/commonparts" },
     ],
@@ -25,9 +25,9 @@ const footerColumns: FooterColumn[] = [
     title: "Resources",
     links: [
       { label: "Contact", href: "mailto:contact@commonparts.org" },
-      { label: "Privacy Policy", href: "/privacy" },
-      { label: "Terms of Use", href: "/terms" },
-      { label: "Legal Notice", href: "/legal-notice" },
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of use", href: "/terms" },
+      { label: "Legal notice", href: "/legal-notice" },
     ],
   },
 ];
