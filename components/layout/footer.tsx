@@ -13,30 +13,21 @@ interface FooterColumn {
 
 const footerColumns: FooterColumn[] = [
   {
-    title: "Platform",
-    links: [
-      { label: "Browse Parts", href: "/browse" },
-      { label: "Publish a Part", href: "/upload" },
-      { label: "Common Parts Access", href: "https://access.commonparts.org" },
-      { label: "GitHub", href: "https://github.com/commonparts" },
-    ],
-  },
-  {
-    title: "Institution",
-    links: [
-      { label: "About Common Parts", href: null },
-      { label: "Governance", href: null },
-      { label: "CPSP Protocol", href: null },
-      { label: "Certification", href: null },
-    ],
-  },
-  {
     title: "Resources",
     links: [
       { label: "Contact", href: "mailto:contact@commonparts.org" },
       { label: "Privacy Policy", href: "/legal/privacy" },
       { label: "Terms of Use", href: "/legal/terms" },
       { label: "Legal Notice", href: "/legal/legal-notice" },
+    ],
+  },
+  {
+    title: "Platform",
+    links: [
+      { label: "Browse Parts", href: "/browse" },
+      { label: "Publish a Part", href: "/upload" },
+      { label: "Common Parts", href: "https://commonparts.org" },
+      { label: "GitHub", href: "https://github.com/commonparts" },
     ],
   },
 ];
