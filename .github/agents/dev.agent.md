@@ -346,6 +346,14 @@ export async function GET(request: NextRequest) {
 
 Read `docs/DESIGN_SYSTEM.md` before building any UI. The rules below are the minimum.
 
+### Text casing — use sentence case for UI microcopy
+
+- Titles, buttons, tabs, chips, and short labels must use sentence case.
+- Capitalize only the first word (and proper nouns/acronyms), not every word.
+- Always preserve official proper nouns exactly as written (for example: `Common Parts Access`, `Common Parts`).
+- Correct: `Browse parts`, `Upload model`, `My collections`
+- Wrong: `Browse Parts`, `Upload Model`, `My Collections`
+
 ### Colors — always use semantic tokens, never hex
 
 ```tsx
@@ -492,6 +500,9 @@ When in doubt, propose and wait for confirmation. A wrong implementation costs m
 You have direct access to the following MCP servers. Use them actively — never ask the human to fetch information you can get yourself.
 
 ### GitHub MCP
+- Default owner: `wooduf2000`
+- Default repo: `common-parts-access`
+- Use these values for GitHub MCP calls unless explicitly overridden by the human
 - Read the issue before starting any work — never rely on the human's summary alone
 - Check existing PRs to avoid duplicating work in progress
 - After completing work, open a PR toward `dev` with a structured description

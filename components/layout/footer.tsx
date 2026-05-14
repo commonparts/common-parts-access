@@ -15,27 +15,19 @@ const footerColumns: FooterColumn[] = [
   {
     title: "Platform",
     links: [
-      { label: "Browse Parts", href: "/browse" },
-      { label: "Publish a Part", href: "/upload" },
-      { label: "Registry", href: null },
-      { label: "API", href: null },
-    ],
-  },
-  {
-    title: "Institution",
-    links: [
-      { label: "About Common Parts", href: null },
-      { label: "Governance", href: null },
-      { label: "CPSP Protocol", href: null },
-      { label: "Certification", href: null },
+      { label: "Browse parts", href: "/browse" },
+      { label: "Publish a part", href: "/upload" },
+      { label: "Common Parts", href: "https://commonparts.org" },
+      { label: "GitHub", href: "https://github.com/commonparts" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: null },
-      { label: "Contact", href: null },
-      { label: "Press", href: null },
+      { label: "Contact", href: "mailto:contact@commonparts.org" },
+      { label: "Privacy policy", href: "/privacy" },
+      { label: "Terms of use", href: "/terms" },
+      { label: "Legal notice", href: "/legal-notice" },
     ],
   },
 ];
@@ -47,7 +39,7 @@ export function Footer() {
         {/* Columns */}
         <div className="mb-xl grid grid-cols-2 gap-xl md:grid-cols-[2fr_1fr_1fr_1fr]">
           {/* Brand column */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-2">
             <div className="mb-xs">
               <Logo showInterface={false} />
             </div>
@@ -94,7 +86,7 @@ export function Footer() {
             Infrastructure.
           </p>
           <p className="font-mono text-micro text-text-tertiary">
-            © {new Date().getFullYear()} Common Parts Foundation
+            © {new Date().getFullYear()} Common Parts
           </p>
         </div>
       </div>

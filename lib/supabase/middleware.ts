@@ -11,7 +11,7 @@ const PROTECTED_ROUTE_PREFIXES = [
   "/collections",
   "/downloads",
   "/likes",
-  "/my-models",
+  "/my-parts",
   "/notifications",
   "/settings",
 ];

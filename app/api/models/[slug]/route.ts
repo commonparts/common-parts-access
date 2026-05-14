@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { deleteModel } from '@/lib/supabase/queries/model'
+import { isValidSlug } from '@/lib/utils/slug'
 
 // GET /api/models/[slug] - Get model by slug
 // Not yet implemented — tracked in GitHub issues
@@ -18,11 +21,35 @@ export async function PUT(
   return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
 }
 
-// DELETE /api/models/[slug] - Delete model
-// Not yet implemented — tracked in GitHub issues
+// DELETE /api/models/[slug] - Delete model (authenticated owner only)
 export async function DELETE(
   _request: NextRequest,
-  _context: { params: Promise<{ slug: string }> }
+  context: { params: Promise<{ slug: string }> }
 ) {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { slug } = await context.params
+    if (!isValidSlug(slug)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
+
+    await deleteModel(slug, user.id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'MODEL_NOT_FOUND') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      if (error.message === 'FORBIDDEN') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+    console.error('Failed to delete model:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
 }
