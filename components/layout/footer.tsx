@@ -17,17 +17,8 @@ const footerColumns: FooterColumn[] = [
     links: [
       { label: "Browse Parts", href: "/browse" },
       { label: "Publish a Part", href: "/upload" },
-      { label: "Common Parts Access", href: "https://access.commonparts.org" },
+      { label: "Common Parts", href: "https://commonparts.org" },
       { label: "GitHub", href: "https://github.com/commonparts" },
-    ],
-  },
-  {
-    title: "Institution",
-    links: [
-      { label: "About Common Parts", href: null },
-      { label: "Governance", href: null },
-      { label: "CPSP Protocol", href: null },
-      { label: "Certification", href: null },
     ],
   },
   {
@@ -48,7 +39,7 @@ export function Footer() {
         {/* Columns */}
         <div className="mb-xl grid grid-cols-2 gap-xl md:grid-cols-[2fr_1fr_1fr_1fr]">
           {/* Brand column */}
-          <div className="col-span-2 md:col-span-1">
+          <div className="col-span-2 md:col-span-2">
             <div className="mb-xs">
               <Logo showInterface={false} />
             </div>
