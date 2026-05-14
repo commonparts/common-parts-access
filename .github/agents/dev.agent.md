@@ -492,6 +492,9 @@ When in doubt, propose and wait for confirmation. A wrong implementation costs m
 You have direct access to the following MCP servers. Use them actively — never ask the human to fetch information you can get yourself.
 
 ### GitHub MCP
+- Default owner: `wooduf2000`
+- Default repo: `common-parts-access`
+- Use these values for GitHub MCP calls unless explicitly overridden by the human
 - Read the issue before starting any work — never rely on the human's summary alone
 - Check existing PRs to avoid duplicating work in progress
 - After completing work, open a PR toward `dev` with a structured description
