@@ -7,18 +7,18 @@ import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { formatDate } from '@/lib/utils/formatters'
 import type { MyModelListItem } from '@/types/models'
 
-interface MyModelsListProps {
+interface MyPartsListProps {
   initialModels: MyModelListItem[]
   hasNextPage: boolean
   currentPage: number
 }
 
 /**
- * Client component for the "My Models" dashboard.
+ * Client component for the "My parts" dashboard.
  * Renders a paginated list of the user's published parts with per-row delete actions.
  * Deletion is confirmed via a modal dialog before the API call is made.
  */
-export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyModelsListProps) {
+export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyPartsListProps) {
   const [models, setModels] = useState<MyModelListItem[]>(initialModels)
   const [pendingDelete, setPendingDelete] = useState<MyModelListItem | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -36,16 +36,20 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
       })
 
       if (!response.ok) {
-        const body = await response.json() as { error?: string }
+        const body = (await response.json()) as { error?: string }
         throw new Error(body.error || 'Delete failed. Please try again.')
       }
 
-      const updated = models.filter(m => m.id !== target.id)
-      setModels(updated)
+      let updatedCount = 0
+      setModels((currentModels) => {
+        const updatedModels = currentModels.filter((model) => model.id !== target.id)
+        updatedCount = updatedModels.length
+        return updatedModels
+      })
       setPendingDelete(null)
 
       // Navigate to the previous page when deleting the last item on page > 1.
-      if (updated.length === 0 && currentPage > 1) {
+      if (updatedCount === 0 && currentPage > 1) {
         const url = new URL(window.location.href)
         url.searchParams.set('page', String(currentPage - 1))
         window.location.href = url.toString()
@@ -99,7 +103,7 @@ export function MyModelsList({ initialModels, hasNextPage, currentPage }: MyMode
       )}
 
       <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-bg-surface">
-        {models.map(model => (
+        {models.map((model) => (
           <li
             key={model.id}
             className="flex items-center justify-between gap-md px-lg py-sm"
