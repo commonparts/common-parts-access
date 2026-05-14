@@ -346,6 +346,14 @@ export async function GET(request: NextRequest) {
 
 Read `docs/DESIGN_SYSTEM.md` before building any UI. The rules below are the minimum.
 
+### Text casing — use sentence case for UI microcopy
+
+- Titles, buttons, tabs, chips, and short labels must use sentence case.
+- Capitalize only the first word (and proper nouns/acronyms), not every word.
+- Always preserve official proper nouns exactly as written (for example: `Common Parts Access`, `Common Parts`).
+- Correct: `Browse parts`, `Upload model`, `My collections`
+- Wrong: `Browse Parts`, `Upload Model`, `My Collections`
+
 ### Colors — always use semantic tokens, never hex
 
 ```tsx
