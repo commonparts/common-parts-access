@@ -1,3 +1,41 @@
+# v1.1.0 — 2026-05-14
+
+```markdown
+## Common Parts Access v1.1.0 Release Notes
+
+### What changed
+
+This release introduces a user dashboard for managing published parts, adds static legal pages (Privacy Policy, Terms of Use, Legal Notice), and implements workflow improvements for part deletion and UI consistency. The footer and navigation elements have been updated to reflect the project's current phase, and backend validations have been strengthened.
+
+### Changes
+
+#### Features
+- **Dashboard**: Added "My Parts" section with delete functionality for published models (#149)
+- **Legal**: Implemented static legal pages at `/privacy`, `/terms`, and `/legal-notice` (#148)
+- **UI**: Standardized sentence case for all UI microcopy and normalized card title heights (#151, #150)
+
+#### Improvements
+- **Footer**: Restructured footer content for Phase 0, removing institutional references (#145, #146)
+- **Workflow**: Added GitHub MCP defaults for agent documentation workflows (#147)
+- **Validation**: Enforced 200-character limit for model titles matching database constraints
+
+#### Documentation
+- Aligned public positioning and contribution model in README (#155)
+- Updated contribution policy to match public model (#154)
+- Standardized commit message format for agent-docs workflow (#143)
+
+#### Fixes
+- **UI**: Fixed card title overflow by limiting to 2 lines (#150)
+- **Navigation**: Removed broken links from footer and navbar
+- **Backend**: Addressed review feedback on PR #158 and related validation improvements
+
+### Technical details
+
+The dashboard implementation introduces a new route group under `/dashboard` with Row-Level Security (RLS) policies ensuring users only access their own models. Legal pages are served as static routes without the `/legal` prefix for better discoverability. UI components now enforce consistent sentence casing through centralized validation utilities.
+```
+
+---
+
 # v1.0.2 — 2026-05-13
 
 ```markdown
