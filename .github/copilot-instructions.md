@@ -68,6 +68,11 @@ stay silent on it.
 - Flag any direct push pattern toward `main` or `staging` — all changes
   must go through a PR toward `dev`.
 
+- Flag UI microcopy in Title Case (titles, buttons, tabs, chips, short labels).
+  Use sentence case instead; only proper nouns/acronyms stay capitalized
+  (for example: `Browse parts` is correct, `Browse Parts` is wrong, and
+  `Common Parts Access` / `Common Parts` must keep their capitalization).
+
 ## 4. Performance
 
 - Flag any list query without `.limit()` or `.range()` — unbounded
