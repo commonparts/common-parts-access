@@ -2,20 +2,18 @@ import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 
 export const metadata = {
-  title: 'Legal Notice',
-  description: 'Legal Notice for Common Parts Access',
+  title: 'Terms of Use',
+  description: 'Terms of Use for Common Parts Access',
 }
 
-export default function LegalNoticePage() {
+export default function TermsPage() {
   return (
     <Section>
       <Container size="md">
         <div className="space-y-lg">
           <div>
-            <h1 className="text-h1">Legal Notice</h1>
-            <p className="mt-md text-text-secondary">
-              Coming soon.
-            </p>
+            <h1 className="text-h1">Terms of Use</h1>
+            <p className="mt-md text-text-secondary">Coming soon.</p>
           </div>
         </div>
       </Container>
