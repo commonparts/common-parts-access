@@ -11,7 +11,8 @@ export default async function Navbar() {
   } = await getCurrentUser();
 
   const menuLinks = [
-    { label: "Browse Parts", href: "/browse" },
+    { label: "Browse parts", href: "/browse" },
+    { label: "Contribute", href: "/contributing" },
   ];
 
   return (
@@ -44,7 +45,7 @@ export default async function Navbar() {
           )}
 
           <Button asChild variant="default" size="sm" className="font-medium">
-            <Link href="/upload">Publish a Part</Link>
+            <Link href="/upload">Publish a part</Link>
           </Button>
         </div>
 
