@@ -56,7 +56,7 @@ export default function ContributingPage() {
             <div className="space-y-xs">
               <h3 className="text-h4">The file is usable.</h3>
               <p className="text-text-secondary">
-                We accept STL, 3MF, and STEP formats. The file must be openable and geometrically sound — not
+                We accept STL, OBJ, STP, and STEP formats. The file must be openable and geometrically sound — not
                 corrupted, not arbitrarily scaled.
               </p>
             </div>
@@ -133,11 +133,6 @@ export default function ContributingPage() {
                 </tbody>
               </table>
             </div>
-
-            <p className="text-text-secondary">
-              We never use the word &ldquo;certified&rdquo; for Index parts. Certification is reserved for parts in the
-              Common Parts Registry, which follows a separate institutional process.
-            </p>
           </section>
 
           <section className="space-y-sm">
@@ -150,7 +145,7 @@ export default function ContributingPage() {
                 <li>Confirm the license is compatible (see above)</li>
                 <li>
                   Submit via{' '}
-                  <Link href="https://access.commonparts.org" className="underline" target="_blank" rel="noreferrer">
+                  <Link href="/upload" className="underline" target="_blank" rel="noreferrer">
                     Common Parts Access
                   </Link>{' '}
                   using the upload form — select &ldquo;Curated from an external source&rdquo; and fill in the source URL
@@ -194,7 +189,7 @@ export default function ContributingPage() {
             <h2 className="text-h3">Questions</h2>
             <p className="text-text-secondary">
               If you are unsure whether a part qualifies, or if you want to contribute in bulk (for example, as a
-              Repair Cafe importing a set of validated models), contact us at{' '}
+              Repair Café importing a set of validated models), contact us at{' '}
               <Link href="mailto:contact@commonparts.org" className="underline">
                 contact@commonparts.org
               </Link>
