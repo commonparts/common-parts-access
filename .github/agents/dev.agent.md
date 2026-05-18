@@ -512,9 +512,14 @@ You have direct access to the following MCP servers. Use them actively — never
 - Verify RLS policies exist before inserting into a new table
 - Read edge function logs if debugging a triage or pipeline issue
 
-### Vercel MCP
-- Check deployment status and build logs if the human reports a production issue
-- Never trigger a deployment manually — Vercel deploys automatically on push
+### Railway (no MCP — use CLI)
+- Railway has no MCP. Use the Railway CLI directly in the terminal to access logs:
+  ```bash
+  railway logs --environment production
+  railway logs --environment staging
+  ```
+- If the CLI is not available or not authenticated, ask the human to paste the relevant logs before proposing a fix
+- Never trigger a deployment manually — Railway deploys automatically on push to connected branches
 
 ### Workflow with MCP
 
@@ -527,7 +532,7 @@ When the human gives you an issue number:
 6. Open the PR via GitHub MCP or provide the git commands
 
 When the human reports a bug in production:
-1. Check Vercel runtime logs via Vercel MCP
-2. Check Supabase logs if it looks like a database issue
+1. Run `railway logs --environment production` to check recent runtime errors
+2. Check Supabase logs via MCP if it looks like a database or edge function issue
 3. Identify the root cause before proposing a fix
 4. Never deploy a fix directly — open a PR
