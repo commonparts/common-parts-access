@@ -8,10 +8,6 @@ This document explains how contributions work and what is expected.
 
 ## Code contributions
 
-**The codebase is not open to external contributions at this stage.**
-
-Common Parts Access is maintained by the core team. The source code is public because transparency is foundational to what Common Parts is — anyone can read, verify, and understand how the platform works. For an infrastructure project built on trust, open source is not optional.
-
 If you identify a security vulnerability, please contact us at [contact@commonparts.org](mailto:contact@commonparts.org) rather than opening a public issue.
 
 ---
