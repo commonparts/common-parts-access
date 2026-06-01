@@ -39,6 +39,26 @@ interface PartDimensions {
 
 type PrintSettings = Record<string, string | number | boolean | null>
 
+interface CompatibleProduct {
+  id: string
+  name: string
+  slug: string
+  modelNumber?: string
+  description?: string
+  releaseYear?: number
+  discontinued: boolean
+  image?: string
+  brand?: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    logo?: string
+    website?: string
+    verified: boolean
+  } | null
+}
+
 // ModelComment interface hidden for MVP
 // interface ModelComment {
 //   id: string
@@ -122,25 +142,8 @@ interface ModelData {
     verifiedMaker: boolean
     memberSince: string
   } | null
-  product?: {
-    id: string
-    name: string
-    slug: string
-    modelNumber?: string
-    description?: string
-    releaseYear?: number
-    discontinued: boolean
-    image?: string
-    brand?: {
-      id: string
-      name: string
-      slug: string
-      description?: string
-      logo?: string
-      website?: string
-      verified: boolean
-    }
-  }
+  product?: CompatibleProduct | null
+  compatibleProducts: CompatibleProduct[]
   category?: {
     id: string
     name: string
@@ -170,6 +173,12 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
   const [likePending, setLikePending] = useState(false)
   const [downloadPending, setDownloadPending] = useState(false)
   const viewTrackedRef = useRef(false)
+
+  const compatibleProducts = model?.compatibleProducts?.length
+    ? model.compatibleProducts
+    : model?.product
+      ? [model.product]
+      : []
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setModel(prev => {
@@ -796,53 +805,61 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Compatible Product */}
-        {model.product && (
+        {/* Compatible products */}
+        {compatibleProducts.length > 0 && (
           <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
-                Compatible Product
+                Compatible with
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-3">
-                {model.product.image && (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                    <Image
-                      src={model.product.image}
-                      alt={model.product.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium line-clamp-2">
-                    {model.product.name}
-                  </div>
-                  {model.product.modelNumber && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Model: <span className="font-mono">{model.product.modelNumber}</span>
-                    </p>
+            <CardContent className="space-y-sm">
+              {compatibleProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className={cn(
+                    'flex items-start gap-sm',
+                    index > 0 && 'border-t border-border-subtle pt-sm'
                   )}
-                  {model.product.brand && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm font-medium">
-                        {model.product.brand.name}
-                      </span>
-                      {model.product.brand.verified && (
-                        <Badge variant="secondary" className="text-xs">
-                          ✓ Verified
-                        </Badge>
-                      )}
+                >
+                  {product.image && (
+                    <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border border-border-subtle bg-bg-subtle">
+                      <Image
+                        src={product.image}
+                        alt={product.name}
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
                   )}
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium line-clamp-2 text-text-primary">
+                      {product.name}
+                    </div>
+                    {product.modelNumber && (
+                      <p className="mt-1 text-sm text-text-secondary">
+                        Model: <span className="font-mono">{product.modelNumber}</span>
+                      </p>
+                    )}
+                    {product.brand && (
+                      <div className="mt-2 flex items-center gap-sm">
+                        <span className="text-sm font-medium text-text-primary">
+                          {product.brand.name}
+                        </span>
+                        {product.brand.verified && (
+                          <Badge variant="secondary" className="text-xs">
+                            Verified
+                          </Badge>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
+              ))}
             </CardContent>
           </Card>
         )}

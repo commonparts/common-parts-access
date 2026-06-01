@@ -39,10 +39,11 @@ export const Hero: React.FC = () => {
 
   const handleSearch = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!formData.productId) return;
+    const selectedProductId = formData.productIds[0];
+    if (!selectedProductId) return;
 
     const params = new URLSearchParams();
-    params.set("productId", formData.productId);
+    params.set("productId", selectedProductId);
 
     const href = `/browse?${params.toString()}`;
     router.push(href);
@@ -50,7 +51,7 @@ export const Hero: React.FC = () => {
 
   const resetFilters = () => {
     handleCategorySelect(0, "");
-    setFormData((prev) => ({ ...prev, brandId: "", productId: "", categoryId: "" }));
+    setFormData((prev) => ({ ...prev, brandId: "", productIds: [], categoryId: "" }));
     setBrandSearch("");
     setProductSearch("");
   };
@@ -112,8 +113,9 @@ export const Hero: React.FC = () => {
                       searchTerm={brandSearch}
                       onSearchChange={setBrandSearch}
                       onSelect={(option) => {
-                        setFormData((prev) => ({ ...prev, brandId: option.id, productId: "" }));
+                        setFormData((prev) => ({ ...prev, brandId: option.id, productIds: [] }));
                         setBrandSearch(option.name);
+                        setProductSearch("");
                       }}
                       isOpen={brandOpen}
                       onOpenChange={setBrandOpen}
@@ -169,7 +171,7 @@ export const Hero: React.FC = () => {
                       searchTerm={productSearch}
                       onSearchChange={setProductSearch}
                       onSelect={(option) => {
-                        setFormData((prev) => ({ ...prev, productId: option.id }));
+                        setFormData((prev) => ({ ...prev, productIds: [option.id] }));
                         setProductSearch(option.name);
                         setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId);
                       }}
@@ -185,7 +187,7 @@ export const Hero: React.FC = () => {
                     <Button type="button" variant="outline" onClick={resetFilters}>
                       Reset
                     </Button>
-                    <Button type="submit" disabled={!formData.productId}>
+                    <Button type="submit" disabled={formData.productIds.length === 0}>
                       Find parts
                     </Button>
                   </div>

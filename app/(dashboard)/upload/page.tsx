@@ -43,7 +43,7 @@ interface CreateModelMetadataPayload {
   modelFiles: FileMetadata[]
   thumbnails: FileMetadata[]
   brand?: string
-  product?: string
+  product_ids?: string[]
   source_url?: string
   source_platform?: string
   original_author?: string
@@ -121,7 +121,7 @@ export default function UploadPage() {
       }
 
       if (payload.brandId) metadata.brand = payload.brandId
-      if (payload.productId) metadata.product = payload.productId
+      if (payload.productIds.length > 0) metadata.product_ids = payload.productIds
       if (payload.sourceUrl) metadata.source_url = payload.sourceUrl
       if (payload.sourcePlatform) metadata.source_platform = payload.sourcePlatform
       if (payload.originalAuthor) metadata.original_author = payload.originalAuthor

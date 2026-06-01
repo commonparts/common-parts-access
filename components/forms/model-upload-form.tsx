@@ -54,11 +54,13 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     handleCreateProductSubmit,
     createProductError,
     creatingProduct,
-    setCategoryPathFromCategoryId,
     handleFilesSelect,
     handleThumbnailsSelect,
     addTag,
     removeTag,
+    selectedProducts,
+    addSelectedProduct,
+    removeSelectedProduct,
   } = useModelUploadFormState()
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -162,8 +164,9 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, brandId: option.id, productId: '' }))
+                  setFormData(prev => ({ ...prev, brandId: option.id, productIds: [] }))
                   setBrandSearch(option.name)
+                  setProductSearch('')
                 }}
                 isOpen={brandOpen}
                 onOpenChange={setBrandOpen}
@@ -173,15 +176,17 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
 
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="product">Product (Optional)</Label>
+              <Label htmlFor="product">Compatible products (Optional)</Label>
               <Combobox
                 id="product"
                 placeholder={loadingProducts
                   ? 'Loading products...'
                   : (!formData.brandId && !formData.categoryId)
                     ? 'Select brand/category to filter products'
-                    : 'Search or select a product'}
-                options={products.map((p) => ({
+                    : 'Search and add a compatible product'}
+                options={products
+                  .filter((product) => !formData.productIds.includes(product.id))
+                  .map((p) => ({
                   id: p.id,
                   name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
                   categoryId: p.category_id ?? ''
@@ -189,9 +194,9 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, productId: option.id }))
-                  setProductSearch(option.name)
-                  setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
+                  const selectedProduct = products.find((product) => product.id === option.id)
+                  if (!selectedProduct) return
+                  addSelectedProduct(selectedProduct)
                 }}
                 allowCreate={true}
                 onCreate={handleOpenCreateProduct}
@@ -199,8 +204,34 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 isOpen={productOpen}
                 onOpenChange={setProductOpen}
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
-                emptyMessage={productSearch ? 'No matching products' : 'No products found'}
+                emptyMessage={productSearch ? 'No matching products' : 'No more products found'}
               />
+
+              {selectedProducts.length > 0 && (
+                <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-sm">
+                  <p className="text-sm text-text-secondary">Selected compatible products</p>
+                  <div className="flex flex-wrap gap-sm">
+                    {selectedProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="inline-flex items-center gap-xs rounded-lg border border-border-subtle bg-bg-surface px-sm py-2xs text-sm text-text-primary"
+                      >
+                        <span>{product.model_number ? `${product.name} (${product.model_number})` : product.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedProduct(product.id)}
+                          className="text-text-secondary transition-colors hover:text-text-primary"
+                          aria-label={`Remove ${product.name}`}
+                        >
+                          <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </Grid>
         </CardContent>

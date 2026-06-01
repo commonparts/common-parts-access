@@ -198,6 +198,11 @@ export interface ModelComment {
   updated_at?: string;
 }
 
+export interface ModelProduct {
+  model_id: string;
+  product_id: string;
+}
+
 export interface Collection {
   id: string;
   name: string; // max 200 chars
@@ -224,6 +229,7 @@ export interface ModelWithRelations extends Model {
   brands?: Brand | Brand[];
   categories?: Category | Category[];
   products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
+  model_products?: ModelProduct[];
   licenses?: License | License[];
 }
 

@@ -122,6 +122,12 @@ interface ValidPrintSettings {
   supports?: string
 }
 
+interface ProductCompatibilityRow {
+  id: string
+  brand_id: string | null
+  category_id: string | null
+}
+
 function parseNonNegativeInt(value: string, field: string): ParseResult<number> {
   const parsed = Number(value)
   if (!Number.isInteger(parsed)) return { ok: false, error: `${field} must be a valid integer` }
@@ -134,6 +140,23 @@ function parseNonNegativeFloat(value: string, field: string): ParseResult<number
   if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid number` }
   if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
   return { ok: true, data: parsed }
+}
+
+function parseCompatibleProductIds(payload: Record<string, unknown>): string[] {
+  const rawIds = Array.isArray(payload.product_ids)
+    ? payload.product_ids
+    : typeof payload.product === 'string'
+      ? [payload.product]
+      : []
+
+  const uniqueIds = new Set<string>()
+  for (const rawId of rawIds) {
+    if (typeof rawId !== 'string') continue
+    const productId = rawId.trim()
+    if (productId) uniqueIds.add(productId)
+  }
+
+  return [...uniqueIds]
 }
 
 /**
@@ -228,7 +251,7 @@ export async function POST(request: NextRequest) {
     const description = typeof payload.description === 'string' ? payload.description.trim() || null : null
     const categoryId = typeof payload.category === 'string' ? payload.category.trim() || null : null
     const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
-    const productId = typeof payload.product === 'string' ? payload.product.trim() || null : null
+    const productIds = parseCompatibleProductIds(payload)
     const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
     const isPublic = typeof payload.isPublic === 'boolean' ? payload.isPublic : true
 
@@ -293,7 +316,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
-    if (productId && !brandId) {
+    if (productIds.length > 0 && !brandId) {
       return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
     }
 
@@ -361,15 +384,14 @@ export async function POST(request: NextRequest) {
       estimatedMaterialUsage = result.data
     }
 
-    const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
+    const [categoryRow, brandRow, productRows, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      productId
+      productIds.length > 0
         ? supabase
           .from('products')
           .select('id, brand_id, category_id')
-          .eq('id', productId)
-          .maybeSingle()
+          .in('id', productIds)
         : Promise.resolve({ data: null, error: null }),
       licenseId ? supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sourceLicenseId ? supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
@@ -391,16 +413,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
     }
 
-    if (productId) {
-      if (productRow.error || !productRow.data) {
+    if (productIds.length > 0) {
+      if (productRows.error) {
         return NextResponse.json({ error: 'Invalid product selected' }, { status: 400 })
       }
-      const prod = productRow.data
-      if (brandId && prod.brand_id && prod.brand_id !== brandId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected brand' }, { status: 400 })
+
+      const validatedProducts = (productRows.data ?? []) as ProductCompatibilityRow[]
+      if (validatedProducts.length !== productIds.length) {
+        return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
       }
-      if (prod.category_id && prod.category_id !== categoryId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected category' }, { status: 400 })
+
+      for (const product of validatedProducts) {
+        if (brandId && product.brand_id && product.brand_id !== brandId) {
+          return NextResponse.json({ error: 'Product does not belong to the selected brand' }, { status: 400 })
+        }
+        if (product.category_id && product.category_id !== categoryId) {
+          return NextResponse.json({ error: 'Product does not belong to the selected category' }, { status: 400 })
+        }
       }
     }
 
@@ -416,7 +445,7 @@ export async function POST(request: NextRequest) {
         description,
         category_id: categoryId,
         brand_id: brandId || null,
-        product_id: productId || null,
+        product_id: productIds[0] || null,
         tags,
         license_id: licenseId,
         status: 'draft',
@@ -454,6 +483,18 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'A model with this source URL already exists' }, { status: 409 })
       }
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
+    }
+
+    if (productIds.length > 0) {
+      const { error: modelProductsError } = await supabase
+        .from('model_products')
+        .insert(productIds.map((productId) => ({ model_id: model.id, product_id: productId })))
+
+      if (modelProductsError) {
+        console.error('Failed to insert model_products rows', modelProductsError)
+        await supabase.from('models').delete().eq('id', model.id).eq('user_id', user.id)
+        return NextResponse.json({ error: 'Failed to create model compatibility links' }, { status: 500 })
+      }
     }
 
     return NextResponse.json({

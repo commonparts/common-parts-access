@@ -64,7 +64,7 @@ export interface ModelFormData {
   categoryId: string
   tags: string[]
   brandId?: string
-  productId?: string
+  productIds: string[]
   files: File[]
   thumbnails: File[]
   isPublic: boolean
@@ -108,7 +108,7 @@ export function useModelUploadFormState() {
     categoryId: "",
     tags: [],
     brandId: "",
-    productId: "",
+    productIds: [],
     files: [],
     thumbnails: [],
     isPublic: true,
@@ -210,6 +210,14 @@ export function useModelUploadFormState() {
     }
     return ""
   }, [categoryPath])
+
+  const selectedProducts = React.useMemo(() => {
+    if (formData.productIds.length === 0) return []
+
+    return formData.productIds
+      .map((productId) => products.find((product) => product.id === productId) ?? null)
+      .filter((product): product is ProductOption => product !== null)
+  }, [formData.productIds, products])
 
   React.useEffect(() => {
     let cancelled = false
@@ -331,15 +339,6 @@ export function useModelUploadFormState() {
   }, [formData.brandId, brands])
 
   React.useEffect(() => {
-    if (!formData.productId) {
-      setProductSearch("")
-      return
-    }
-    const match = products.find(p => p.id === formData.productId)
-    if (match) setProductSearch(match.model_number ? `${match.name} (${match.model_number})` : match.name)
-  }, [formData.productId, products])
-
-  React.useEffect(() => {
     if (showCreateProduct) {
       setProductOpen(false)
     }
@@ -351,7 +350,8 @@ export function useModelUploadFormState() {
       next[level] = value
       return next.slice(0, level + 1)
     })
-    setFormData(prev => ({ ...prev, productId: "" }))
+    setFormData(prev => ({ ...prev, productIds: [] }))
+    setProductSearch("")
   }
 
   const handleOpenCreateProduct = (name: string) => {
@@ -441,8 +441,6 @@ export function useModelUploadFormState() {
 
       const product = json?.product as ProductOption | undefined
       if (product?.id) {
-        const displayName = product.model_number ? `${product.name} (${product.model_number})` : product.name
-
         setProducts(prev => {
           const next = [
             ...prev.filter((p) => p.id !== product.id),
@@ -462,10 +460,12 @@ export function useModelUploadFormState() {
           ...prev,
           brandId: product.brand_id ?? prev.brandId,
           categoryId: product.category_id ?? prev.categoryId,
-          productId: product.id,
+          productIds: prev.productIds.includes(product.id)
+            ? prev.productIds
+            : [...prev.productIds, product.id],
         }))
 
-        setProductSearch(displayName)
+        setProductSearch("")
         setCategoryPathFromCategoryId(product.category_id)
         setShowCreateProduct(false)
         setPendingProductName("")
@@ -507,6 +507,24 @@ export function useModelUploadFormState() {
     }))
   }
 
+  const addSelectedProduct = (product: ProductOption) => {
+    setFormData(prev => ({
+      ...prev,
+      productIds: prev.productIds.includes(product.id)
+        ? prev.productIds
+        : [...prev.productIds, product.id],
+    }))
+    setCategoryPathFromCategoryId(product.category_id)
+    setProductSearch("")
+  }
+
+  const removeSelectedProduct = (productId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      productIds: prev.productIds.filter((id) => id !== productId),
+    }))
+  }
+
   return {
     formData,
     setFormData,
@@ -544,5 +562,8 @@ export function useModelUploadFormState() {
     handleThumbnailsSelect,
     addTag,
     removeTag,
+    selectedProducts,
+    addSelectedProduct,
+    removeSelectedProduct,
   }
 }

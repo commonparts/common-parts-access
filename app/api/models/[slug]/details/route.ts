@@ -9,6 +9,64 @@ function first<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value
 }
 
+function asArray<T>(value: T | T[] | null | undefined): T[] {
+  if (!value) return []
+  return Array.isArray(value) ? value : [value]
+}
+
+interface ProductBrandRecord {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  logo_url: string | null
+  website_url: string | null
+  verified: boolean
+}
+
+interface ProductRecord {
+  id: string
+  name: string
+  slug: string
+  model_number: string | null
+  description: string | null
+  release_year: number | null
+  discontinued: boolean | null
+  image_url: string | null
+  brands?: ProductBrandRecord | ProductBrandRecord[] | null
+}
+
+interface ModelProductLinkRecord {
+  product_id: string
+  products?: ProductRecord | ProductRecord[] | null
+}
+
+function mapCompatibleProduct(product: ProductRecord | null) {
+  if (!product) return null
+
+  const productBrand = first(product.brands)
+
+  return {
+    id: product.id,
+    name: product.name,
+    slug: product.slug,
+    modelNumber: product.model_number,
+    description: product.description,
+    releaseYear: product.release_year,
+    discontinued: Boolean(product.discontinued),
+    image: resolveStorageUrl(product.image_url),
+    brand: productBrand ? {
+      id: productBrand.id,
+      name: productBrand.name,
+      slug: productBrand.slug,
+      description: productBrand.description,
+      logo: productBrand.logo_url,
+      website: productBrand.website_url,
+      verified: productBrand.verified,
+    } : null,
+  }
+}
+
 // GET /api/models/[slug]/details - Get detailed model information by slug
 export async function GET(
   _request: NextRequest,
@@ -107,6 +165,28 @@ export async function GET(
               verified
             )
           ),
+          compatible_links:model_products(
+            product_id,
+            products(
+              id,
+              name,
+              slug,
+              model_number,
+              description,
+              release_year,
+              discontinued,
+              image_url,
+              brands(
+                id,
+                name,
+                slug,
+                description,
+                logo_url,
+                website_url,
+                verified
+              )
+            )
+          ),
           categories(
             id,
             name,
@@ -182,12 +262,20 @@ export async function GET(
     if (likeError) console.error('Error checking like status:', likeError)
 
     const author = first(model.user_profiles)
-    const product = first(model.products)
+    const product = first(model.products) as ProductRecord | null
     const category = first(model.categories)
     const brand = first(model.brands)
     const license = first(model.licenses)
     const sourceLicense = first(model.source_licenses)
-    const productBrand = product ? first(product.brands) : null
+    const compatibleProducts = asArray(model.compatible_links as ModelProductLinkRecord[] | null)
+      .map((link) => mapCompatibleProduct(first(link.products)))
+      .filter((item): item is NonNullable<ReturnType<typeof mapCompatibleProduct>> => item !== null)
+    const legacyProduct = mapCompatibleProduct(product)
+    const resolvedCompatibleProducts = compatibleProducts.length > 0
+      ? compatibleProducts
+      : legacyProduct
+        ? [legacyProduct]
+        : []
 
     return NextResponse.json({
       model: {
@@ -258,25 +346,8 @@ export async function GET(
           verifiedMaker: author.verified_maker,
           memberSince: author.created_at,
         } : null,
-        product: product ? {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          modelNumber: product.model_number,
-          description: product.description,
-          releaseYear: product.release_year,
-          discontinued: product.discontinued,
-          image: resolveStorageUrl(product.image_url),
-          brand: productBrand ? {
-            id: productBrand.id,
-            name: productBrand.name,
-            slug: productBrand.slug,
-            description: productBrand.description,
-            logo: productBrand.logo_url,
-            website: productBrand.website_url,
-            verified: productBrand.verified,
-          } : null,
-        } : null,
+        product: resolvedCompatibleProducts[0] ?? null,
+        compatibleProducts: resolvedCompatibleProducts,
         category: category ? {
           id: category.id,
           name: category.name,
