@@ -18,9 +18,17 @@ where product_id is not null;
 -- RLS
 alter table model_products enable row level security;
 
-create policy "Public read"
+-- Allow public access to associations for published models;
+-- owners can always see their own model's associations regardless of status.
+create policy "Public or owner read"
   on model_products for select
-  using (true);
+  using (
+    exists (
+      select 1 from models
+      where id = model_id
+        and (status = 'published' or user_id = auth.uid())
+    )
+  );
 
 create policy "Owner insert"
   on model_products for insert

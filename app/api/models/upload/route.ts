@@ -229,7 +229,9 @@ export async function POST(request: NextRequest) {
     const categoryId = typeof payload.category === 'string' ? payload.category.trim() || null : null
     const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
     const productIds: string[] = Array.isArray(payload.products)
-      ? payload.products.filter((id): id is string => typeof id === 'string' && id.trim().length > 0).map((id) => id.trim())
+      ? [...new Set(
+          payload.products.filter((id): id is string => typeof id === 'string' && id.trim().length > 0).map((id) => id.trim())
+        )]
       : []
     const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
     const isPublic = typeof payload.isPublic === 'boolean' ? payload.isPublic : true
@@ -405,6 +407,9 @@ export async function POST(request: NextRequest) {
       for (const prod of productRows) {
         if (brandId && prod.brand_id && prod.brand_id !== brandId) {
           return NextResponse.json({ error: 'One or more products do not belong to the selected brand' }, { status: 400 })
+        }
+        if (categoryId && prod.category_id && prod.category_id !== categoryId) {
+          return NextResponse.json({ error: 'One or more products do not belong to the selected category' }, { status: 400 })
         }
       }
 

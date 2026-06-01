@@ -164,7 +164,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, brandId: option.id, productId: '' }))
+                  setFormData(prev => ({ ...prev, brandId: option.id, productIds: [] }))
                   setBrandSearch(option.name)
                 }}
                 isOpen={brandOpen}
