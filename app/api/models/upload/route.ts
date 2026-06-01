@@ -233,6 +233,9 @@ export async function POST(request: NextRequest) {
           payload.products.filter((id): id is string => typeof id === 'string' && id.trim().length > 0).map((id) => id.trim())
         )]
       : []
+    if (productIds.length > VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) {
+      return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT})` }, { status: 400 })
+    }
     const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
     const isPublic = typeof payload.isPublic === 'boolean' ? payload.isPublic : true
 
@@ -413,7 +416,10 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      validatedProductIds = productRows.map((p) => p.id)
+      // Preserve the user's original selection order so validatedProductIds[0]
+      // reliably points at their first-chosen product (used for backward-compat product_id).
+      const foundIds = new Set(productRows.map((p) => p.id))
+      validatedProductIds = productIds.filter((id) => foundIds.has(id))
     }
 
     const slug = await ensureUniqueSlug(name, supabase)
@@ -477,8 +483,9 @@ export async function POST(request: NextRequest) {
 
       if (mpError) {
         console.error('Failed to insert model_products rows', mpError)
-        // Non-fatal: the model record is created and product_id is set for backward-compat.
-        // model_products rows can be repaired manually if needed.
+        // Rollback — delete the orphaned model row so the client can safely retry.
+        await supabase.from('models').delete().eq('id', model.id)
+        return NextResponse.json({ error: 'Failed to link products to model' }, { status: 500 })
       }
     }
 

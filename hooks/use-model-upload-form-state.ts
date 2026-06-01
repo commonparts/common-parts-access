@@ -464,7 +464,6 @@ export function useModelUploadFormState() {
             : [...prev.productIds, product.id],
         }))
 
-        setProductSearch(displayName)
         setCategoryPathFromCategoryId(product.category_id)
         setShowCreateProduct(false)
         setPendingProductName("")

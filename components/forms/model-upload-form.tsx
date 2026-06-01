@@ -2,6 +2,7 @@ import * as React from "react"
 import { CreateProductModal } from "@/components/forms/create-product-modal"
 import { useModelUploadFormState, type ModelFormData } from "@/hooks/use-model-upload-form-state"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
 import { FileUploader } from "@/components/ui/file-uploader"
@@ -212,22 +213,19 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                       ? (p.model_number ? `${p.name} (${p.model_number})` : p.name)
                       : pid
                     return (
-                      <span
-                        key={pid}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-accent text-accent-foreground"
-                      >
+                      <Badge key={pid} variant="secondary">
                         {label}
                         <button
                           type="button"
                           onClick={() => removeProduct(pid)}
-                          className="ml-2 hover:text-destructive"
+                          className="hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface rounded-full"
                           aria-label={`Remove ${label}`}
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
-                      </span>
+                      </Badge>
                     )
                   })}
                 </div>
