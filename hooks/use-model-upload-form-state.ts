@@ -64,7 +64,7 @@ export interface ModelFormData {
   categoryId: string
   tags: string[]
   brandId?: string
-  productId?: string
+  productIds: string[]
   files: File[]
   thumbnails: File[]
   isPublic: boolean
@@ -108,7 +108,7 @@ export function useModelUploadFormState() {
     categoryId: "",
     tags: [],
     brandId: "",
-    productId: "",
+    productIds: [],
     files: [],
     thumbnails: [],
     isPublic: true,
@@ -330,14 +330,11 @@ export function useModelUploadFormState() {
     if (match) setBrandSearch(match.name)
   }, [formData.brandId, brands])
 
+  // Clear product search when the product list reloads so stale text doesn't
+  // falsely suggest an active selection.
   React.useEffect(() => {
-    if (!formData.productId) {
-      setProductSearch("")
-      return
-    }
-    const match = products.find(p => p.id === formData.productId)
-    if (match) setProductSearch(match.model_number ? `${match.name} (${match.model_number})` : match.name)
-  }, [formData.productId, products])
+    setProductSearch("")
+  }, [products])
 
   React.useEffect(() => {
     if (showCreateProduct) {
@@ -351,7 +348,7 @@ export function useModelUploadFormState() {
       next[level] = value
       return next.slice(0, level + 1)
     })
-    setFormData(prev => ({ ...prev, productId: "" }))
+    setFormData(prev => ({ ...prev, productIds: [] }))
   }
 
   const handleOpenCreateProduct = (name: string) => {
@@ -462,7 +459,9 @@ export function useModelUploadFormState() {
           ...prev,
           brandId: product.brand_id ?? prev.brandId,
           categoryId: product.category_id ?? prev.categoryId,
-          productId: product.id,
+          productIds: prev.productIds.includes(product.id)
+            ? prev.productIds
+            : [...prev.productIds, product.id],
         }))
 
         setProductSearch(displayName)
@@ -488,6 +487,21 @@ export function useModelUploadFormState() {
 
   const handleThumbnailsSelect = (thumbnails: File[]) => {
     setFormData(prev => ({ ...prev, thumbnails }))
+  }
+
+  const addProduct = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      productIds: prev.productIds.includes(id) ? prev.productIds : [...prev.productIds, id],
+    }))
+    setProductSearch("")
+  }
+
+  const removeProduct = (id: string) => {
+    setFormData(prev => ({
+      ...prev,
+      productIds: prev.productIds.filter(pid => pid !== id),
+    }))
   }
 
   const addTag = (tag: string) => {
@@ -542,6 +556,8 @@ export function useModelUploadFormState() {
     setCategoryPathFromCategoryId,
     handleFilesSelect,
     handleThumbnailsSelect,
+    addProduct,
+    removeProduct,
     addTag,
     removeTag,
   }

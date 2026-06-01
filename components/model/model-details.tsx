@@ -122,7 +122,7 @@ interface ModelData {
     verifiedMaker: boolean
     memberSince: string
   } | null
-  product?: {
+  products?: {
     id: string
     name: string
     slug: string
@@ -140,7 +140,7 @@ interface ModelData {
       website?: string
       verified: boolean
     }
-  }
+  }[]
   category?: {
     id: string
     name: string
@@ -796,52 +796,52 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Compatible Product */}
-        {model.product && (
+        {/* Compatible products */}
+        {model.products && model.products.length > 0 && (
           <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
-                Compatible Product
+                Compatible with
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-start gap-3">
-                {model.product.image && (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                    <Image
-                      src={model.product.image}
-                      alt={model.product.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium line-clamp-2">
-                    {model.product.name}
-                  </div>
-                  {model.product.modelNumber && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Model: <span className="font-mono">{model.product.modelNumber}</span>
-                    </p>
-                  )}
-                  {model.product.brand && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm font-medium">
-                        {model.product.brand.name}
-                      </span>
-                      {model.product.brand.verified && (
-                        <Badge variant="secondary" className="text-xs">
-                          ✓ Verified
-                        </Badge>
+              <div className="space-y-md">
+                {model.products.map((p) => (
+                  <div key={p.id} className="flex items-start gap-3">
+                    {p.image && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium line-clamp-2">{p.name}</div>
+                      {p.modelNumber && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Model: <span className="font-mono">{p.modelNumber}</span>
+                        </p>
+                      )}
+                      {p.brand && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-sm font-medium">{p.brand.name}</span>
+                          {p.brand.verified && (
+                            <Badge variant="secondary" className="text-xs">
+                              ✓ Verified
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

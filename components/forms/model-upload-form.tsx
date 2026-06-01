@@ -57,6 +57,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setCategoryPathFromCategoryId,
     handleFilesSelect,
     handleThumbnailsSelect,
+    addProduct,
+    removeProduct,
     addTag,
     removeTag,
   } = useModelUploadFormState()
@@ -173,24 +175,25 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
 
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="product">Product (Optional)</Label>
+              <Label htmlFor="product">Compatible products (optional)</Label>
               <Combobox
                 id="product"
                 placeholder={loadingProducts
                   ? 'Loading products...'
                   : (!formData.brandId && !formData.categoryId)
                     ? 'Select brand/category to filter products'
-                    : 'Search or select a product'}
-                options={products.map((p) => ({
-                  id: p.id,
-                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
-                  categoryId: p.category_id ?? ''
-                }))}
+                    : 'Search and add a product'}
+                options={products
+                  .filter((p) => !formData.productIds.includes(p.id))
+                  .map((p) => ({
+                    id: p.id,
+                    name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                    categoryId: p.category_id ?? ''
+                  }))}
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, productId: option.id }))
-                  setProductSearch(option.name)
+                  addProduct(option.id)
                   setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
                 }}
                 allowCreate={true}
@@ -201,6 +204,34 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                 emptyMessage={productSearch ? 'No matching products' : 'No products found'}
               />
+              {formData.productIds.length > 0 && (
+                <div className="flex flex-wrap gap-sm mt-sm">
+                  {formData.productIds.map((pid) => {
+                    const p = products.find((x) => x.id === pid)
+                    const label = p
+                      ? (p.model_number ? `${p.name} (${p.model_number})` : p.name)
+                      : pid
+                    return (
+                      <span
+                        key={pid}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-accent text-accent-foreground"
+                      >
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(pid)}
+                          className="ml-2 hover:text-destructive"
+                          aria-label={`Remove ${label}`}
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </Grid>
         </CardContent>
