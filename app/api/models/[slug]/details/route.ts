@@ -88,25 +88,6 @@ export async function GET(
             verified_maker,
             created_at
           ),
-          products(
-            id,
-            name,
-            slug,
-            model_number,
-            description,
-            release_year,
-            discontinued,
-            image_url,
-            brands(
-              id,
-              name,
-              slug,
-              description,
-              logo_url,
-              website_url,
-              verified
-            )
-          ),
           categories(
             id,
             name,
@@ -142,6 +123,7 @@ export async function GET(
       { data: files, error: filesError },
       { data: comments, error: commentsError },
       { data: likeRow, error: likeError },
+      { data: modelProducts, error: modelProductsError },
     ] = await Promise.all([
       supabase
         .from('model_files')
@@ -175,19 +157,47 @@ export async function GET(
             .eq('user_id', user.id)
             .maybeSingle()
         : Promise.resolve({ data: null, error: null }),
+      supabase
+        .from('model_products')
+        .select(`
+          products(
+            id,
+            name,
+            slug,
+            model_number,
+            description,
+            release_year,
+            discontinued,
+            image_url,
+            brands(
+              id,
+              name,
+              slug,
+              description,
+              logo_url,
+              website_url,
+              verified
+            )
+          )
+        `)
+        .eq('model_id', model.id),
     ])
 
     if (filesError) console.error('Error fetching model files:', filesError)
     if (commentsError) console.error('Error fetching comments:', commentsError)
     if (likeError) console.error('Error checking like status:', likeError)
+    if (modelProductsError) console.error('Error fetching model products:', modelProductsError)
 
     const author = first(model.user_profiles)
-    const product = first(model.products)
     const category = first(model.categories)
     const brand = first(model.brands)
     const license = first(model.licenses)
     const sourceLicense = first(model.source_licenses)
-    const productBrand = product ? first(product.brands) : null
+
+    /** All products linked via the model_products junction table. */
+    const compatibleProducts = (modelProducts ?? [])
+      .map((row) => first(row.products))
+      .filter((p): p is NonNullable<typeof p> => p !== null)
 
     return NextResponse.json({
       model: {
@@ -258,25 +268,28 @@ export async function GET(
           verifiedMaker: author.verified_maker,
           memberSince: author.created_at,
         } : null,
-        product: product ? {
-          id: product.id,
-          name: product.name,
-          slug: product.slug,
-          modelNumber: product.model_number,
-          description: product.description,
-          releaseYear: product.release_year,
-          discontinued: product.discontinued,
-          image: resolveStorageUrl(product.image_url),
-          brand: productBrand ? {
-            id: productBrand.id,
-            name: productBrand.name,
-            slug: productBrand.slug,
-            description: productBrand.description,
-            logo: productBrand.logo_url,
-            website: productBrand.website_url,
-            verified: productBrand.verified,
-          } : null,
-        } : null,
+        products: compatibleProducts.map((p) => {
+          const pBrand = first(p.brands)
+          return {
+            id: p.id,
+            name: p.name,
+            slug: p.slug,
+            modelNumber: p.model_number,
+            description: p.description,
+            releaseYear: p.release_year,
+            discontinued: p.discontinued,
+            image: resolveStorageUrl(p.image_url),
+            brand: pBrand ? {
+              id: pBrand.id,
+              name: pBrand.name,
+              slug: pBrand.slug,
+              description: pBrand.description,
+              logo: pBrand.logo_url,
+              website: pBrand.website_url,
+              verified: pBrand.verified,
+            } : null,
+          }
+        }),
         category: category ? {
           id: category.id,
           name: category.name,

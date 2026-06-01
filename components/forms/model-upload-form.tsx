@@ -2,6 +2,7 @@ import * as React from "react"
 import { CreateProductModal } from "@/components/forms/create-product-modal"
 import { useModelUploadFormState, type ModelFormData } from "@/hooks/use-model-upload-form-state"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
 import { FileUploader } from "@/components/ui/file-uploader"
@@ -57,6 +58,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setCategoryPathFromCategoryId,
     handleFilesSelect,
     handleThumbnailsSelect,
+    addProduct,
+    removeProduct,
     addTag,
     removeTag,
   } = useModelUploadFormState()
@@ -162,7 +165,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, brandId: option.id, productId: '' }))
+                  setFormData(prev => ({ ...prev, brandId: option.id, productIds: [] }))
                   setBrandSearch(option.name)
                 }}
                 isOpen={brandOpen}
@@ -173,24 +176,25 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
 
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="product">Product (Optional)</Label>
+              <Label htmlFor="product">Compatible products (optional)</Label>
               <Combobox
                 id="product"
                 placeholder={loadingProducts
                   ? 'Loading products...'
                   : (!formData.brandId && !formData.categoryId)
                     ? 'Select brand/category to filter products'
-                    : 'Search or select a product'}
-                options={products.map((p) => ({
-                  id: p.id,
-                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
-                  categoryId: p.category_id ?? ''
-                }))}
+                    : 'Search and add a product'}
+                options={products
+                  .filter((p) => !formData.productIds.includes(p.id))
+                  .map((p) => ({
+                    id: p.id,
+                    name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                    categoryId: p.category_id ?? ''
+                  }))}
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, productId: option.id }))
-                  setProductSearch(option.name)
+                  addProduct(option.id)
                   setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
                 }}
                 allowCreate={true}
@@ -201,6 +205,31 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                 emptyMessage={productSearch ? 'No matching products' : 'No products found'}
               />
+              {formData.productIds.length > 0 && (
+                <div className="flex flex-wrap gap-sm mt-sm">
+                  {formData.productIds.map((pid) => {
+                    const p = products.find((x) => x.id === pid)
+                    const label = p
+                      ? (p.model_number ? `${p.name} (${p.model_number})` : p.name)
+                      : pid
+                    return (
+                      <Badge key={pid} variant="secondary">
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(pid)}
+                          className="hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface rounded-full"
+                          aria-label={`Remove ${label}`}
+                        >
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </Grid>
         </CardContent>
