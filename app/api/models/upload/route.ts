@@ -255,6 +255,16 @@ export async function POST(request: NextRequest) {
         ? (rawFileHostingType as ModelFileHostingType)
         : 'hosted'
 
+    // Link-out creation is not yet supported via this endpoint.
+    // This route assumes hosted files (upload + register flow).
+    // Reject early to prevent inconsistent rows until a dedicated link-out flow exists.
+    if (fileHostingType === 'link_out') {
+      return NextResponse.json(
+        { error: 'Link-out models cannot be created via this endpoint' },
+        { status: 400 },
+      )
+    }
+
     // Advanced — print metadata fields
     const material = typeof payload.material === 'string' ? payload.material.trim() || null : null
     const color = typeof payload.color === 'string' ? payload.color.trim() || null : null
