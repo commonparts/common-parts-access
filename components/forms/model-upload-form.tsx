@@ -32,6 +32,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setTagInput,
     brands,
     licenses,
+    sourcePlatforms,
     products,
     loadingProducts,
     loadingMeta,
@@ -552,12 +553,10 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 onChange={(e) => setFormData(prev => ({ ...prev, sourcePlatform: e.target.value }))}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
-                <option value="">Not specified</option>
-                <option value="printables">Printables</option>
-                <option value="thingiverse">Thingiverse</option>
-                <option value="cults3d">Cults3D</option>
-                <option value="github">GitHub</option>
-                <option value="other">Other</option>
+                <option value="">{loadingMeta ? 'Loading...' : 'Not specified'}</option>
+                {sourcePlatforms.map((p) => (
+                  <option key={p.slug} value={p.slug}>{p.name}</option>
+                ))}
               </DropdownInput>
             </div>
           </Grid>

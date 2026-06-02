@@ -2,6 +2,7 @@ import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { createClient } from "@/lib/supabase/client"
 import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import type { SourcePlatform } from "@/types/models"
 
 export interface CategoryOption {
   id: string
@@ -138,6 +139,7 @@ export function useModelUploadFormState() {
   const [categories, setCategories] = React.useState<CategoryOption[]>([])
   const [brands, setBrands] = React.useState<BrandOption[]>([])
   const [licenses, setLicenses] = React.useState<LicenseOption[]>([])
+  const [sourcePlatforms, setSourcePlatforms] = React.useState<SourcePlatform[]>([])
   const [products, setProducts] = React.useState<ProductOption[]>([])
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
@@ -217,19 +219,22 @@ export function useModelUploadFormState() {
     async function loadMetadata() {
       setLoadingMeta(true)
       try {
-        const [catRes, brandRes, licenseRes] = await Promise.all([
+        const [catRes, brandRes, licenseRes, platformRes] = await Promise.all([
           fetch("/api/categories"),
           fetch("/api/brands"),
           fetch("/api/licenses"),
+          fetch("/api/source-platforms"),
         ])
 
         const catJson = await catRes.json().catch(() => ({ categories: [] }))
         const brandJson = await brandRes.json().catch(() => ({ brands: [] }))
         const licenseJson = await licenseRes.json().catch(() => ({ licenses: [] }))
+        const platformJson = await platformRes.json().catch(() => ({ platforms: [] }))
 
         if (!cancelled) {
           setCategories(Array.isArray(catJson.categories) ? catJson.categories : [])
           setBrands(Array.isArray(brandJson.brands) ? brandJson.brands : [])
+          setSourcePlatforms(Array.isArray(platformJson.platforms) ? platformJson.platforms : [])
           const rawLicenses: LicenseOption[] = Array.isArray(licenseJson.licenses)
             ? licenseJson.licenses.map((l: RawLicenseRow) => ({
                 id: l.id,
@@ -251,10 +256,11 @@ export function useModelUploadFormState() {
           }
         }
       } catch (error) {
-        console.error("Failed to load categories/brands", error)
+        console.error("Failed to load form metadata", error)
         if (!cancelled) {
           setCategories([])
           setBrands([])
+          setSourcePlatforms([])
         }
       } finally {
         if (!cancelled) setLoadingMeta(false)
@@ -528,6 +534,7 @@ export function useModelUploadFormState() {
     categories,
     brands,
     licenses,
+    sourcePlatforms,
     products,
     loadingProducts,
     loadingMeta,
