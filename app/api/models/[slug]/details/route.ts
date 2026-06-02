@@ -53,6 +53,7 @@ export async function GET(
           verification_status,
           source_url,
           source_platform,
+          file_hosting_type,
           original_author,
           original_author_url,
           licenses!models_license_id_fkey(
@@ -242,6 +243,7 @@ export async function GET(
         } : null,
         originType: model.origin_type,
         verificationStatus: model.verification_status,
+        fileHostingType: model.file_hosting_type ?? 'hosted',
         sourcePlatform: model.source_platform,
         sourcePlatformName: platformData?.name ?? null,
         sourcePlatformBaseUrl: platformData?.base_url ?? null,

@@ -91,6 +91,7 @@ interface ModelData {
   } | null
   originType: 'original' | 'curated' | 'manufacturer'
   verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
+  fileHostingType: 'hosted' | 'link_out'
   sourcePlatform?: string | null
   sourcePlatformName?: string | null
   sourcePlatformBaseUrl?: string | null
