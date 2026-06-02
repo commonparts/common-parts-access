@@ -22,10 +22,11 @@ export async function getActiveSourcePlatforms(): Promise<SourcePlatform[]> {
  */
 export async function getSourcePlatformBySlug(slug: string): Promise<SourcePlatform | null> {
   const supabase = await createClient()
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('source_platforms')
     .select('id, slug, name, base_url, logo_url, import_supported, active')
     .eq('slug', slug)
     .maybeSingle()
+  if (error) throw error
   return data ?? null
 }

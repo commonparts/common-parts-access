@@ -256,7 +256,7 @@ export function useModelUploadFormState() {
           }
         }
       } catch (error) {
-        console.error("Failed to load categories/brands", error)
+        console.error("Failed to load form metadata", error)
         if (!cancelled) {
           setCategories([])
           setBrands([])

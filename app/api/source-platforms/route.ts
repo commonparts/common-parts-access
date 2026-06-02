@@ -9,6 +9,6 @@ export async function GET() {
     return NextResponse.json({ platforms })
   } catch (error) {
     console.error('Failed to fetch source platforms:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to fetch source platforms' }, { status: 500 })
   }
 }
