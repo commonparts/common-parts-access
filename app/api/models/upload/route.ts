@@ -4,6 +4,7 @@ import { slugify } from '@/lib/utils/slug'
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import type { ModelFileHostingType } from '@/types/database'
 
 export const runtime = 'nodejs'
 
@@ -104,6 +105,7 @@ async function ensureUniqueSlug(name: string, supabase: Awaited<ReturnType<typeo
 
 const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
 const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
+const VALID_FILE_HOSTING_TYPES = ['hosted', 'link_out'] as const
 const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
 const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
 
@@ -247,6 +249,11 @@ export async function POST(request: NextRequest) {
     const originalAuthorUrl = typeof payload.original_author_url === 'string' ? payload.original_author_url.trim() || null : null
     const sourceLicenseId = typeof payload.source_license_id === 'string' ? payload.source_license_id.trim() || null : null
     const verificationStatus = typeof payload.verification_status === 'string' ? payload.verification_status.trim() : 'unverified'
+    const rawFileHostingType = typeof payload.file_hosting_type === 'string' ? payload.file_hosting_type.trim() : ''
+    const fileHostingType: ModelFileHostingType =
+      (VALID_FILE_HOSTING_TYPES as readonly string[]).includes(rawFileHostingType)
+        ? (rawFileHostingType as ModelFileHostingType)
+        : 'hosted'
 
     // Advanced — print metadata fields
     const material = typeof payload.material === 'string' ? payload.material.trim() || null : null
@@ -448,6 +455,7 @@ export async function POST(request: NextRequest) {
         original_author_url: originalAuthorUrl,
         source_license_id: sourceLicenseId,
         verification_status: verificationStatus,
+        file_hosting_type: fileHostingType,
         // Print metadata
         material,
         color,
