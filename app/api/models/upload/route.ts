@@ -472,6 +472,15 @@ export async function POST(request: NextRequest) {
       if (isSourceUrlUniqueViolation) {
         return NextResponse.json({ error: 'A model with this source URL already exists' }, { status: 409 })
       }
+      const isInvalidPlatform =
+        modelError?.code === '23503' &&
+        (
+          modelError?.message?.includes('models_source_platform_fkey') ||
+          modelError?.details?.includes('source_platform')
+        )
+      if (isInvalidPlatform) {
+        return NextResponse.json({ error: 'Invalid source platform' }, { status: 400 })
+      }
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
     }
 

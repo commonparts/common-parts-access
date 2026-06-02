@@ -92,6 +92,8 @@ interface ModelData {
   originType: 'original' | 'curated' | 'manufacturer'
   verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
   sourcePlatform?: string | null
+  sourcePlatformName?: string | null
+  sourcePlatformBaseUrl?: string | null
   sourceUrl?: string | null
   originalAuthor?: string | null
   originalAuthorUrl?: string | null
@@ -725,7 +727,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 {model.sourcePlatform && (
                   <div className="flex flex-col gap-2">
                     <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                    <span className="text-sm capitalize font-medium">{model.sourcePlatform}</span>
+                    <span className="text-sm font-medium">{model.sourcePlatformName ?? model.sourcePlatform}</span>
                   </div>
                 )}
 
@@ -737,7 +739,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                     rel="noopener noreferrer"
                     className="text-sm text-primary hover:underline break-all"
                   >
-                    {model.sourcePlatform ? `View on ${model.sourcePlatform}` : 'View original post'}
+                    {model.sourcePlatform ? `View on ${model.sourcePlatformName ?? model.sourcePlatform}` : 'View original post'}
                   </a>
                 </div>
 

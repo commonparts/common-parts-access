@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveStorageUrl } from '@/lib/storage/url'
+import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
 
 // Supabase returns joined rows as T | T[] depending on cardinality.
 // This helper normalises both shapes to a single record or null.
@@ -124,6 +125,7 @@ export async function GET(
       { data: comments, error: commentsError },
       { data: likeRow, error: likeError },
       { data: modelProducts, error: modelProductsError },
+      platformData,
     ] = await Promise.all([
       supabase
         .from('model_files')
@@ -181,6 +183,9 @@ export async function GET(
           )
         `)
         .eq('model_id', model.id),
+      model.source_platform
+        ? getSourcePlatformBySlug(model.source_platform)
+        : Promise.resolve(null),
     ])
 
     if (filesError) console.error('Error fetching model files:', filesError)
@@ -238,6 +243,8 @@ export async function GET(
         originType: model.origin_type,
         verificationStatus: model.verification_status,
         sourcePlatform: model.source_platform,
+        sourcePlatformName: platformData?.name ?? null,
+        sourcePlatformBaseUrl: platformData?.base_url ?? null,
         sourceUrl: model.source_url,
         originalAuthor: model.original_author,
         originalAuthorUrl: model.original_author_url,
