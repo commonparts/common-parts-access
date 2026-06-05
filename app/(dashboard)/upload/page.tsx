@@ -6,6 +6,7 @@ import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
 import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
+import type { ModelFileHostingType } from '@/types/database'
 import type { ModelFormData } from '@/hooks/use-model-upload-form-state'
 
 interface UploadIssue {
@@ -49,6 +50,7 @@ interface CreateModelMetadataPayload {
   original_author?: string
   original_author_url?: string
   source_license_id?: string
+  file_hosting_type?: ModelFileHostingType
   material?: string
   color?: string
   dimensions?: string
@@ -115,6 +117,7 @@ export default function UploadPage() {
         origin_type: payload.originType || 'original',
         verification_status: payload.verificationStatus || 'unverified',
         tags: payload.tags || [],
+        file_hosting_type: payload.fileHostingType || 'hosted',
         // File metadata for server-side validation (names/sizes only)
         modelFiles: payload.files.map((f) => ({ name: f.name, size: f.size })),
         thumbnails: payload.thumbnails.map((f) => ({ name: f.name, size: f.size })),
@@ -194,6 +197,13 @@ export default function UploadPage() {
       }
 
       const { modelId, slug, userId, intendedStatus } = createData
+
+      // Link-out models have no files to upload or register
+      if (payload.fileHostingType === 'link_out') {
+        const params = new URLSearchParams({ slug })
+        router.push(`/upload/success?${params.toString()}`)
+        return
+      }
 
       // --- Phase 2: Upload files directly to Supabase Storage ---
       setProgressText('Uploading files…')
