@@ -298,6 +298,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
     }
 
+    if (fileHostingType === 'link_out' && originType !== 'curated') {
+      return NextResponse.json(
+        { error: 'Link-out hosting is only available for curated models' },
+        { status: 400 },
+      )
+    }
+
     if (fileHostingType !== 'link_out') {
       const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
       if (!fileValidation.ok) {
@@ -429,18 +436,17 @@ export async function POST(request: NextRequest) {
       if (!platform) {
         return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
       }
-      if (!platform.base_url) {
-        return NextResponse.json({ error: 'Selected platform has no base URL configured' }, { status: 400 })
-      }
 
       try {
         const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
-        const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
-        if (sourceHost !== platformHost) {
-          return NextResponse.json(
-            { error: 'Source URL domain does not match the selected platform' },
-            { status: 400 },
-          )
+        if (platform.base_url) {
+          const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
+          if (sourceHost !== platformHost) {
+            return NextResponse.json(
+              { error: 'Source URL domain does not match the selected platform' },
+              { status: 400 },
+            )
+          }
         }
       } catch {
         return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
