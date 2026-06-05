@@ -22,7 +22,7 @@ Common Parts Access is an official interface of the [Common Parts](https://commo
 
 - **Framework:** Next.js (App Router) · TypeScript
 - **Database:** Supabase (PostgreSQL + Auth + Edge Functions)
-- **Deployment:** Vercel
+- **Deployment:** Railway
 - **CI:** GitHub Actions (type check + lint on push to `dev`, and on every PR)
 
 ---
@@ -37,7 +37,7 @@ Common Parts Access is an official interface of the [Common Parts](https://commo
 ### Setup
 
 ```bash
-git clone https://github.com/wooduf2000/common-parts-access.git
+git clone https://github.com/commonparts/common-parts-access.git
 cd common-parts-access
 npm install
 cp .env.example .env.local

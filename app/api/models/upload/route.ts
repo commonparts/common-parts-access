@@ -4,6 +4,7 @@ import { slugify } from '@/lib/utils/slug'
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import type { ModelFileHostingType } from '@/types/database'
 
 export const runtime = 'nodejs'
 
@@ -104,6 +105,7 @@ async function ensureUniqueSlug(name: string, supabase: Awaited<ReturnType<typeo
 
 const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
 const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
+const VALID_FILE_HOSTING_TYPES = ['hosted', 'link_out'] as const
 const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
 const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
 
@@ -228,7 +230,14 @@ export async function POST(request: NextRequest) {
     const description = typeof payload.description === 'string' ? payload.description.trim() || null : null
     const categoryId = typeof payload.category === 'string' ? payload.category.trim() || null : null
     const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
-    const productId = typeof payload.product === 'string' ? payload.product.trim() || null : null
+    const productIds: string[] = Array.isArray(payload.products)
+      ? [...new Set(
+          payload.products.filter((id): id is string => typeof id === 'string' && id.trim().length > 0).map((id) => id.trim())
+        )]
+      : []
+    if (productIds.length > VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) {
+      return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT})` }, { status: 400 })
+    }
     const licenseId = typeof payload.license_id === 'string' ? payload.license_id.trim() || null : null
     const isPublic = typeof payload.isPublic === 'boolean' ? payload.isPublic : true
 
@@ -240,6 +249,11 @@ export async function POST(request: NextRequest) {
     const originalAuthorUrl = typeof payload.original_author_url === 'string' ? payload.original_author_url.trim() || null : null
     const sourceLicenseId = typeof payload.source_license_id === 'string' ? payload.source_license_id.trim() || null : null
     const verificationStatus = typeof payload.verification_status === 'string' ? payload.verification_status.trim() : 'unverified'
+    const rawFileHostingType = typeof payload.file_hosting_type === 'string' ? payload.file_hosting_type.trim() : ''
+    const fileHostingType: ModelFileHostingType =
+      (VALID_FILE_HOSTING_TYPES as readonly string[]).includes(rawFileHostingType)
+        ? (rawFileHostingType as ModelFileHostingType)
+        : 'hosted'
 
     // Advanced — print metadata fields
     const material = typeof payload.material === 'string' ? payload.material.trim() || null : null
@@ -284,16 +298,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
     }
 
-    const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
-    if (!fileValidation.ok) {
-      return NextResponse.json({ error: 'Validation failed', issues: fileValidation.issues }, { status: 400 })
+    if (fileHostingType === 'link_out' && originType !== 'curated') {
+      return NextResponse.json(
+        { error: 'Link-out hosting is only available for curated models' },
+        { status: 400 },
+      )
+    }
+
+    if (fileHostingType !== 'link_out') {
+      const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
+      if (!fileValidation.ok) {
+        return NextResponse.json({ error: 'Validation failed', issues: fileValidation.issues }, { status: 400 })
+      }
     }
 
     if (!categoryId) {
       return NextResponse.json({ error: 'Category is required' }, { status: 400 })
     }
 
-    if (productId && !brandId) {
+    if (productIds.length > 0 && !brandId) {
       return NextResponse.json({ error: 'Brand is required when selecting a product' }, { status: 400 })
     }
 
@@ -315,6 +338,14 @@ export async function POST(request: NextRequest) {
       if (!sourceLicenseId) {
         return NextResponse.json({ error: 'Source license is required for curated models' }, { status: 400 })
       }
+    }
+
+    if (fileHostingType === 'link_out' && !sourcePlatform) {
+      return NextResponse.json({ error: 'Source platform is required for link-out models' }, { status: 400 })
+    }
+
+    if (fileHostingType === 'link_out' && !sourceUrl) {
+      return NextResponse.json({ error: 'Source URL is required for link-out models' }, { status: 400 })
     }
 
     if (sourceUrl && sourceUrl.length > 2048) {
@@ -361,17 +392,10 @@ export async function POST(request: NextRequest) {
       estimatedMaterialUsage = result.data
     }
 
-    const [categoryRow, brandRow, productRow, licenseRow, sourceLicenseRow] = await Promise.all([
+    const [categoryRow, brandRow, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      productId
-        ? supabase
-          .from('products')
-          .select('id, brand_id, category_id')
-          .eq('id', productId)
-          .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-      licenseId ? supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
+      licenseId ? supabase.from('licenses').select('id, allows_commercial, allows_redistribution').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sourceLicenseId ? supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
     ])
 
@@ -387,27 +411,84 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
     }
 
+    if (fileHostingType === 'hosted' && licenseId && licenseRow.data) {
+      const { allows_commercial, allows_redistribution } = licenseRow.data as { id: string; allows_commercial: boolean; allows_redistribution: boolean }
+      if (!allows_commercial || !allows_redistribution) {
+        return NextResponse.json({ error: 'Hosted models require an open license (commercial use and redistribution must be allowed)' }, { status: 400 })
+      }
+    }
+
     if (sourceLicenseId && (sourceLicenseRow.error || !sourceLicenseRow.data)) {
       return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
     }
 
-    if (productId) {
-      if (productRow.error || !productRow.data) {
-        return NextResponse.json({ error: 'Invalid product selected' }, { status: 400 })
+    // For link-out models, verify the source URL domain matches the selected platform
+    if (fileHostingType === 'link_out' && sourcePlatform && sourceUrl) {
+      const { data: platform, error: platformLookupError } = await supabase
+        .from('source_platforms')
+        .select('base_url')
+        .eq('slug', sourcePlatform)
+        .maybeSingle()
+
+      if (platformLookupError) {
+        return NextResponse.json({ error: 'Failed to validate source platform' }, { status: 500 })
       }
-      const prod = productRow.data
-      if (brandId && prod.brand_id && prod.brand_id !== brandId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected brand' }, { status: 400 })
+      if (!platform) {
+        return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
       }
-      if (prod.category_id && prod.category_id !== categoryId) {
-        return NextResponse.json({ error: 'Product does not belong to the selected category' }, { status: 400 })
+
+      try {
+        const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
+        if (platform.base_url) {
+          const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
+          if (sourceHost !== platformHost) {
+            return NextResponse.json(
+              { error: 'Source URL domain does not match the selected platform' },
+              { status: 400 },
+            )
+          }
+        }
+      } catch {
+        return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
       }
+    }
+
+    // Validate all submitted product IDs exist and belong to the selected brand/category.
+    let validatedProductIds: string[] = []
+    if (productIds.length > 0) {
+      const { data: productRows, error: productLookupError } = await supabase
+        .from('products')
+        .select('id, brand_id, category_id')
+        .in('id', productIds)
+
+      if (productLookupError) {
+        return NextResponse.json({ error: 'Failed to validate products' }, { status: 500 })
+      }
+
+      if (!productRows || productRows.length !== productIds.length) {
+        return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
+      }
+
+      for (const prod of productRows) {
+        if (brandId && prod.brand_id && prod.brand_id !== brandId) {
+          return NextResponse.json({ error: 'One or more products do not belong to the selected brand' }, { status: 400 })
+        }
+        if (categoryId && prod.category_id && prod.category_id !== categoryId) {
+          return NextResponse.json({ error: 'One or more products do not belong to the selected category' }, { status: 400 })
+        }
+      }
+
+      // Preserve the user's original selection order so validatedProductIds[0]
+      // reliably points at their first-chosen product (used for backward-compat product_id).
+      const foundIds = new Set(productRows.map((p) => p.id))
+      validatedProductIds = productIds.filter((id) => foundIds.has(id))
     }
 
     const slug = await ensureUniqueSlug(name, supabase)
     const intendedStatus = isPublic ? 'published' : 'draft'
 
-    // Always create as draft — status is promoted after files are registered
+    // Hosted: always draft — promoted to intendedStatus after file registration.
+    // Link-out: no file-registration step, go live immediately.
     const { data: model, error: modelError } = await supabase
       .from('models')
       .insert({
@@ -416,10 +497,11 @@ export async function POST(request: NextRequest) {
         description,
         category_id: categoryId,
         brand_id: brandId || null,
-        product_id: productId || null,
+        // Backward-compat: keep product_id pointing at the first selected product.
+        product_id: validatedProductIds[0] ?? null,
         tags,
         license_id: licenseId,
-        status: 'draft',
+        status: fileHostingType === 'link_out' ? intendedStatus : 'draft',
         user_id: user.id,
         // Attribution & origin
         origin_type: originType,
@@ -429,6 +511,7 @@ export async function POST(request: NextRequest) {
         original_author_url: originalAuthorUrl,
         source_license_id: sourceLicenseId,
         verification_status: verificationStatus,
+        file_hosting_type: fileHostingType,
         // Print metadata
         material,
         color,
@@ -453,7 +536,30 @@ export async function POST(request: NextRequest) {
       if (isSourceUrlUniqueViolation) {
         return NextResponse.json({ error: 'A model with this source URL already exists' }, { status: 409 })
       }
+      const isInvalidPlatform =
+        modelError?.code === '23503' &&
+        (
+          modelError?.message?.includes('models_source_platform_fkey') ||
+          modelError?.details?.includes('source_platform')
+        )
+      if (isInvalidPlatform) {
+        return NextResponse.json({ error: 'Invalid source platform' }, { status: 400 })
+      }
       return NextResponse.json({ error: 'Failed to create model' }, { status: 500 })
+    }
+
+    // Link model to all selected products via the junction table.
+    if (validatedProductIds.length > 0) {
+      const { error: mpError } = await supabase
+        .from('model_products')
+        .insert(validatedProductIds.map((pid) => ({ model_id: model.id, product_id: pid })))
+
+      if (mpError) {
+        console.error('Failed to insert model_products rows', mpError)
+        // Rollback — delete the orphaned model row so the client can safely retry.
+        await supabase.from('models').delete().eq('id', model.id)
+        return NextResponse.json({ error: 'Failed to link products to model' }, { status: 500 })
+      }
     }
 
     return NextResponse.json({

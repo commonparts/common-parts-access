@@ -2,6 +2,7 @@ import * as React from "react"
 import { CreateProductModal } from "@/components/forms/create-product-modal"
 import { useModelUploadFormState, type ModelFormData } from "@/hooks/use-model-upload-form-state"
 import { cn } from "@/lib/utils"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
 import { FileUploader } from "@/components/ui/file-uploader"
@@ -31,6 +32,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setTagInput,
     brands,
     licenses,
+    sourcePlatforms,
     products,
     loadingProducts,
     loadingMeta,
@@ -57,6 +59,8 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
     setCategoryPathFromCategoryId,
     handleFilesSelect,
     handleThumbnailsSelect,
+    addProduct,
+    removeProduct,
     addTag,
     removeTag,
   } = useModelUploadFormState()
@@ -162,7 +166,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 searchTerm={brandSearch}
                 onSearchChange={setBrandSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, brandId: option.id, productId: '' }))
+                  setFormData(prev => ({ ...prev, brandId: option.id, productIds: [] }))
                   setBrandSearch(option.name)
                 }}
                 isOpen={brandOpen}
@@ -173,24 +177,25 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
 
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="product">Product (Optional)</Label>
+              <Label htmlFor="product">Compatible products (optional)</Label>
               <Combobox
                 id="product"
                 placeholder={loadingProducts
                   ? 'Loading products...'
                   : (!formData.brandId && !formData.categoryId)
                     ? 'Select brand/category to filter products'
-                    : 'Search or select a product'}
-                options={products.map((p) => ({
-                  id: p.id,
-                  name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
-                  categoryId: p.category_id ?? ''
-                }))}
+                    : 'Search and add a product'}
+                options={products
+                  .filter((p) => !formData.productIds.includes(p.id))
+                  .map((p) => ({
+                    id: p.id,
+                    name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                    categoryId: p.category_id ?? ''
+                  }))}
                 searchTerm={productSearch}
                 onSearchChange={setProductSearch}
                 onSelect={(option) => {
-                  setFormData(prev => ({ ...prev, productId: option.id }))
-                  setProductSearch(option.name)
+                  addProduct(option.id)
                   setCategoryPathFromCategoryId((option as { categoryId?: string }).categoryId)
                 }}
                 allowCreate={true}
@@ -201,6 +206,31 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
                 emptyMessage={productSearch ? 'No matching products' : 'No products found'}
               />
+              {formData.productIds.length > 0 && (
+                <div className="flex flex-wrap gap-sm mt-sm">
+                  {formData.productIds.map((pid) => {
+                    const p = products.find((x) => x.id === pid)
+                    const label = p
+                      ? (p.model_number ? `${p.name} (${p.model_number})` : p.name)
+                      : pid
+                    return (
+                      <Badge key={pid} variant="secondary">
+                        {label}
+                        <button
+                          type="button"
+                          onClick={() => removeProduct(pid)}
+                          className="hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface rounded-full"
+                          aria-label={`Remove ${label}`}
+                        >
+                          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </Badge>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </Grid>
         </CardContent>
@@ -258,43 +288,78 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardContent>
       </Card>
 
-      {/* File Upload */}
+      {/* File upload */}
       <Card>
         <CardHeader>
-          <CardTitle>Part Files</CardTitle>
+          <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          <div className="space-y-sm">
-            <Label>Part Files *</Label>
-            <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
-            <FileUploader
-              accept=".stl,.obj,.stp,.step"
-              onFilesSelect={handleFilesSelect}
-              multiple={true}
-              maxSize={50 * 1024 * 1024} // 50MB
-            />
-            {formData.files.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {formData.files.map(f => f.name).join(', ')}
-              </div>
-            )}
-          </div>
+          {formData.originType === 'curated' && (
+            <div className="flex gap-md">
+              <label className="flex items-center gap-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="fileHostingType"
+                  value="hosted"
+                  checked={formData.fileHostingType === 'hosted'}
+                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
+                  className="accent-primary"
+                />
+                <span className="text-sm font-medium text-text-primary">Host file</span>
+              </label>
+              <label className="flex items-center gap-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="fileHostingType"
+                  value="link_out"
+                  checked={formData.fileHostingType === 'link_out'}
+                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
+                  className="accent-primary"
+                />
+                <span className="text-sm font-medium text-text-primary">Link to source</span>
+              </label>
+            </div>
+          )}
 
-          <div className="space-y-sm">
-            <Label>Thumbnail Images (Optional)</Label>
-            <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
-            <FileUploader
-              accept=".jpg,.jpeg,.png,.webp"
-              onFilesSelect={handleThumbnailsSelect}
-              multiple={true}
-              maxSize={5 * 1024 * 1024} // 5MB
-            />
-            {formData.thumbnails.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+          {formData.fileHostingType === 'link_out' ? (
+            <p className="text-sm text-text-secondary">
+              No file upload needed. The download button on the model page will redirect visitors to the source URL you provide below.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-sm">
+                <Label>Part files *</Label>
+                <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
+                <FileUploader
+                  accept=".stl,.obj,.stp,.step"
+                  onFilesSelect={handleFilesSelect}
+                  multiple={true}
+                  maxSize={50 * 1024 * 1024} // 50MB
+                />
+                {formData.files.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {formData.files.map(f => f.name).join(', ')}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              <div className="space-y-sm">
+                <Label>Thumbnail images (optional)</Label>
+                <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
+                <FileUploader
+                  accept=".jpg,.jpeg,.png,.webp"
+                  onFilesSelect={handleThumbnailsSelect}
+                  multiple={true}
+                  maxSize={5 * 1024 * 1024} // 5MB
+                />
+                {formData.thumbnails.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
 
@@ -477,7 +542,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 as="select"
                 id="originType"
                 value={formData.originType}
-                onChange={(e) => setFormData(prev => ({ ...prev, originType: e.target.value as ModelOriginType }))}
+                onChange={(e) => {
+                  const next = e.target.value as ModelOriginType
+                  setFormData(prev => ({
+                    ...prev,
+                    originType: next,
+                    fileHostingType: next === 'curated' ? prev.fileHostingType : 'hosted',
+                  }))
+                }}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="original">Original — I created this model</option>
@@ -515,20 +587,19 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               />
             </div>
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="sourcePlatform">Source platform</Label>
+              <Label htmlFor="sourcePlatform">Source platform{formData.fileHostingType === 'link_out' ? ' *' : ''}</Label>
               <DropdownInput
                 as="select"
                 id="sourcePlatform"
                 value={formData.sourcePlatform}
                 onChange={(e) => setFormData(prev => ({ ...prev, sourcePlatform: e.target.value }))}
+                required={formData.fileHostingType === 'link_out'}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
-                <option value="">Not specified</option>
-                <option value="printables">Printables</option>
-                <option value="thingiverse">Thingiverse</option>
-                <option value="cults3d">Cults3D</option>
-                <option value="github">GitHub</option>
-                <option value="other">Other</option>
+                <option value="">{loadingMeta ? 'Loading...' : 'Not specified'}</option>
+                {sourcePlatforms.map((p) => (
+                  <option key={p.slug} value={p.slug}>{p.name}</option>
+                ))}
               </DropdownInput>
             </div>
           </Grid>
@@ -569,7 +640,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
-                {licenses.map((l) => (
+                {(formData.fileHostingType === 'link_out' ? licenses : licenses.filter(l => l.allowsCommercial && l.allowsRedistribution)).map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.shortName}
                   </option>
@@ -621,7 +692,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
       {/* Submit */}
       <div className="flex justify-end gap-sm">
-        <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || formData.files.length === 0}>
+        <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || (formData.fileHostingType !== 'link_out' && formData.files.length === 0)}>
           {loading ? "Uploading..." : "Upload Model"}
         </Button>
       </div>
