@@ -14,7 +14,7 @@ import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -288,47 +288,80 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardContent>
       </Card>
 
-      {/* File upload — hidden for link-out models */}
-      {formData.fileHostingType !== 'link_out' && (
+      {/* File upload */}
       <Card>
         <CardHeader>
           <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          <div className="space-y-sm">
-            <Label>Part files *</Label>
-            <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
-            <FileUploader
-              accept=".stl,.obj,.stp,.step"
-              onFilesSelect={handleFilesSelect}
-              multiple={true}
-              maxSize={50 * 1024 * 1024} // 50MB
-            />
-            {formData.files.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {formData.files.map(f => f.name).join(', ')}
-              </div>
-            )}
-          </div>
+          {formData.originType === 'curated' && (
+            <div className="flex gap-md">
+              <label className="flex items-center gap-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="fileHostingType"
+                  value="hosted"
+                  checked={formData.fileHostingType === 'hosted'}
+                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
+                  className="accent-primary"
+                />
+                <span className="text-sm font-medium text-text-primary">Host file</span>
+              </label>
+              <label className="flex items-center gap-xs cursor-pointer">
+                <input
+                  type="radio"
+                  name="fileHostingType"
+                  value="link_out"
+                  checked={formData.fileHostingType === 'link_out'}
+                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
+                  className="accent-primary"
+                />
+                <span className="text-sm font-medium text-text-primary">Link to source</span>
+              </label>
+            </div>
+          )}
 
-          <div className="space-y-sm">
-            <Label>Thumbnail Images (Optional)</Label>
-            <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
-            <FileUploader
-              accept=".jpg,.jpeg,.png,.webp"
-              onFilesSelect={handleThumbnailsSelect}
-              multiple={true}
-              maxSize={5 * 1024 * 1024} // 5MB
-            />
-            {formData.thumbnails.length > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+          {formData.fileHostingType === 'link_out' ? (
+            <p className="text-sm text-text-secondary">
+              No file upload needed. The download button on the model page will redirect visitors to the source URL you provide below.
+            </p>
+          ) : (
+            <>
+              <div className="space-y-sm">
+                <Label>Part files *</Label>
+                <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
+                <FileUploader
+                  accept=".stl,.obj,.stp,.step"
+                  onFilesSelect={handleFilesSelect}
+                  multiple={true}
+                  maxSize={50 * 1024 * 1024} // 50MB
+                />
+                {formData.files.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {formData.files.map(f => f.name).join(', ')}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+
+              <div className="space-y-sm">
+                <Label>Thumbnail images (optional)</Label>
+                <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
+                <FileUploader
+                  accept=".jpg,.jpeg,.png,.webp"
+                  onFilesSelect={handleThumbnailsSelect}
+                  multiple={true}
+                  maxSize={5 * 1024 * 1024} // 5MB
+                />
+                {formData.thumbnails.length > 0 && (
+                  <div className="text-sm text-muted-foreground">
+                    Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
-      )}
 
       {/* Advanced — collapsed by default */}
       <Card>
@@ -540,22 +573,6 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               </DropdownInput>
             </div>
           </Grid>
-
-          {formData.originType === 'curated' && (
-            <div className="space-y-sm">
-              <Label htmlFor="fileHostingType">File hosting</Label>
-              <DropdownInput
-                as="select"
-                id="fileHostingType"
-                value={formData.fileHostingType}
-                onChange={(e) => setFormData(prev => ({ ...prev, fileHostingType: e.target.value as ModelFileHostingType }))}
-                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
-              >
-                <option value="hosted">Host file — upload files to Common Parts</option>
-                <option value="link_out">Link to source — file stays on the original platform</option>
-              </DropdownInput>
-            </div>
-          )}
 
           <Grid columns={12}>
             <div className="col-span-12 space-y-sm md:col-span-6">
