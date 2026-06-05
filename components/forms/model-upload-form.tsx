@@ -296,7 +296,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
-            <Label>Part Files *</Label>
+            <Label>Part files *</Label>
             <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
             <FileUploader
               accept=".stl,.obj,.stp,.step"

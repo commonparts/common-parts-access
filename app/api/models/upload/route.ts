@@ -337,6 +337,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Source platform is required for link-out models' }, { status: 400 })
     }
 
+    if (fileHostingType === 'link_out' && !sourceUrl) {
+      return NextResponse.json({ error: 'Source URL is required for link-out models' }, { status: 400 })
+    }
+
     if (sourceUrl && sourceUrl.length > 2048) {
       return NextResponse.json({ error: 'Source URL is too long (max 2048 characters)' }, { status: 400 })
     }
@@ -406,25 +410,33 @@ export async function POST(request: NextRequest) {
 
     // For link-out models, verify the source URL domain matches the selected platform
     if (fileHostingType === 'link_out' && sourcePlatform && sourceUrl) {
-      const { data: platform } = await supabase
+      const { data: platform, error: platformLookupError } = await supabase
         .from('source_platforms')
         .select('base_url')
         .eq('slug', sourcePlatform)
         .maybeSingle()
 
-      if (platform?.base_url) {
-        try {
-          const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
-          const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
-          if (sourceHost !== platformHost) {
-            return NextResponse.json(
-              { error: 'Source URL domain does not match the selected platform' },
-              { status: 400 },
-            )
-          }
-        } catch {
-          return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
+      if (platformLookupError) {
+        return NextResponse.json({ error: 'Failed to validate source platform' }, { status: 500 })
+      }
+      if (!platform) {
+        return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+      }
+      if (!platform.base_url) {
+        return NextResponse.json({ error: 'Selected platform has no base URL configured' }, { status: 400 })
+      }
+
+      try {
+        const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
+        const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
+        if (sourceHost !== platformHost) {
+          return NextResponse.json(
+            { error: 'Source URL domain does not match the selected platform' },
+            { status: 400 },
+          )
         }
+      } catch {
+        return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
       }
     }
 

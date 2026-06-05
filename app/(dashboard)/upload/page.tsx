@@ -6,6 +6,7 @@ import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
 import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
+import type { ModelFileHostingType } from '@/types/database'
 import type { ModelFormData } from '@/hooks/use-model-upload-form-state'
 
 interface UploadIssue {
@@ -49,7 +50,7 @@ interface CreateModelMetadataPayload {
   original_author?: string
   original_author_url?: string
   source_license_id?: string
-  file_hosting_type?: string
+  file_hosting_type?: ModelFileHostingType
   material?: string
   color?: string
   dimensions?: string
