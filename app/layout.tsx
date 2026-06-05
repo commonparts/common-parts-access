@@ -6,7 +6,18 @@ import { FeedbackButton } from "@/components/feedback/feedback-button";
 
 const lightThemeCSSVars = themeToCSSVars(lightTheme);
 
-const defaultUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+function resolveAppUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL;
+  if (!raw) return "http://localhost:3000";
+  try {
+    return new URL(raw).href;
+  } catch {
+    // Bare hostname without scheme — add https://
+    return `https://${raw}`;
+  }
+}
+
+const defaultUrl = resolveAppUrl();
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
