@@ -15,9 +15,10 @@ export default function ContributingPage() {
           <div>
             <h1 className="text-h1">Contributing a part to the Common Parts Index</h1>
             <p className="mt-md text-text-secondary">
-              The Common Parts Index is a public catalog of open-licensed spare part models — curated, structured,
-              and maintained to help people repair the objects they own. Anyone can contribute. This guide explains
-              what we accept, how to submit, and what happens after.
+              The Common Parts Index is a public catalog of spare part models — curated, structured, and maintained
+              to help people repair the objects they own. Anyone can contribute. Some parts are hosted directly on
+              Common Parts; others are referenced here with a link to the original platform. This guide explains what
+              we accept, how to submit, and what happens after.
             </p>
           </div>
 
@@ -45,11 +46,22 @@ export default function ContributingPage() {
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">It carries a compatible open license.</h3>
+              <h3 className="text-h4">It has a known license and identifiable author.</h3>
               <p className="text-text-secondary">
-                The original model must be published under one of the following licenses: CC0, CC BY, CC BY-SA, MIT,
-                or GPL. Models published under a Non-Commercial (NC) clause are excluded. If you are the original
-                author and the model has no license, you can declare one at the time of submission.
+                The original model must be published under a known license and attributed to an identifiable author
+                — a name or pseudonym with a link to the original publication. Anonymous republications without a
+                traceable source are not accepted.
+              </p>
+              <p className="text-text-secondary">
+                For <strong className="font-medium text-text-primary">hosted parts</strong> — where the file is
+                stored and served directly by Common Parts — the license must be open: CC0, CC BY, CC BY-SA, MIT, or
+                GPL. If you are the original author and the model has no license, you can declare one at submission.
+              </p>
+              <p className="text-text-secondary">
+                For <strong className="font-medium text-text-primary">referenced parts</strong> — where the file
+                stays on the original platform and we link to it — any license is accepted, including NC, ND, or
+                proprietary licenses. Since Common Parts only links to the file and does not redistribute it, these
+                restrictions do not apply.
               </p>
             </div>
 
@@ -57,16 +69,8 @@ export default function ContributingPage() {
               <h3 className="text-h4">The file is usable.</h3>
               <p className="text-text-secondary">
                 We accept STL, OBJ, STP, and STEP formats. The file must be openable and geometrically sound — not
-                corrupted, not arbitrarily scaled.
-              </p>
-            </div>
-
-            <div className="space-y-xs">
-              <h3 className="text-h4">The author is identifiable.</h3>
-              <p className="text-text-secondary">
-                We require a name or pseudonym and a link to the original publication (Printables, Thingiverse,
-                GitHub, etc.) so we can attribute the work correctly. Anonymous republications without a traceable
-                source are not accepted.
+                corrupted, not arbitrarily scaled. For referenced parts, the file must be accessible at the source
+                URL at the time of submission.
               </p>
             </div>
           </section>
@@ -77,9 +81,12 @@ export default function ContributingPage() {
               <li>Decorative or cosmetic parts with no repair function</li>
               <li>Repair tools (a tool that helps you repair something is not a spare part)</li>
               <li>Parts with no identifiable product target</li>
-              <li>Models under CC NC or CC ND licenses</li>
+              <li>
+                Models under CC NC or CC ND licenses <strong className="font-medium text-text-primary">hosted directly on Common Parts</strong> —
+                these licenses are incompatible with file redistribution. They may still be added as referenced parts.
+              </li>
               <li>Files that cannot be opened or are manifestly broken</li>
-              <li>Exact duplicates of an already-indexed model from the same source</li>
+              <li>Verbatim republications of an already-indexed model from the same source with no added value</li>
             </ul>
             <p className="text-text-secondary">
               Multiple versions of the same part for the same product are welcome — different materials, different
@@ -139,35 +146,61 @@ export default function ContributingPage() {
             <h2 className="text-h3">How to submit</h2>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you are curating an existing model from another platform</h3>
-              <ol className="list-decimal space-y-xs pl-md text-text-secondary">
-                <li>Find the original publication (Printables, Thingiverse, GitHub, etc.)</li>
-                <li>Confirm the license is compatible (see above)</li>
-                <li>
-                  Submit via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noreferrer">
-                    Common Parts Access
-                  </Link>{' '}
-                  using the upload form — select &ldquo;Curated from an external source&rdquo; and fill in the source URL
-                  and original author fields
-                </li>
-                <li>Add the product metadata: brand, model(s), and category</li>
-                <li>Add print settings if you have them — infill, supports, recommended material</li>
-              </ol>
-            </div>
-
-            <div className="space-y-xs">
               <h3 className="text-h4">If you are publishing an original model you designed</h3>
               <ol className="list-decimal space-y-xs pl-md text-text-secondary">
                 <li>
                   Upload your file via{' '}
-                  <Link href="https://access.commonparts.org" className="underline" target="_blank" rel="noreferrer">
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
                     Common Parts Access
                   </Link>
                 </li>
                 <li>Declare the license you want to apply</li>
                 <li>Fill in the product metadata and print settings</li>
                 <li>If you have printed and tested the part yourself, mark it as author-tested</li>
+              </ol>
+            </div>
+
+            <div className="space-y-xs">
+              <h3 className="text-h4">If you are curating an open-license model from another platform</h3>
+              <p className="text-text-secondary">
+                Use this flow for models published under CC0, CC BY, CC BY-SA, MIT, or GPL. The file will be hosted
+                on Common Parts.
+              </p>
+              <ol className="list-decimal space-y-xs pl-md text-text-secondary">
+                <li>Find the original publication (Printables, Thingiverse, GitHub, etc.)</li>
+                <li>Confirm the license is open (see above)</li>
+                <li>
+                  Submit via{' '}
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
+                    Common Parts Access
+                  </Link>{' '}
+                  — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
+                  <em>Host file</em>
+                </li>
+                <li>Review the pre-filled fields and complete what is missing</li>
+                <li>Add the product metadata: brand, model(s), and category</li>
+                <li>Add print settings if you have them — infill, supports, recommended material</li>
+              </ol>
+            </div>
+
+            <div className="space-y-xs">
+              <h3 className="text-h4">If you are referencing a model published under a restrictive license</h3>
+              <p className="text-text-secondary">
+                Use this flow for models published under NC, ND, or other non-open licenses. The file stays on the
+                original platform — Common Parts hosts the metadata and links to the source.
+              </p>
+              <ol className="list-decimal space-y-xs pl-md text-text-secondary">
+                <li>Find the original publication and confirm it is publicly accessible</li>
+                <li>
+                  Submit via{' '}
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
+                    Common Parts Access
+                  </Link>{' '}
+                  — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
+                  <em>Link to source</em>
+                </li>
+                <li>Review the pre-filled fields and complete what is missing</li>
+                <li>Add the product metadata: brand, model(s), and category</li>
               </ol>
             </div>
           </section>
