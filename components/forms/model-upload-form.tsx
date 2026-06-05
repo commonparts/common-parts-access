@@ -623,7 +623,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
-                {(formData.fileHostingType === 'link_out' ? licenses : licenses.filter(l => l.allowsCommercial)).map((l) => (
+                {(formData.fileHostingType === 'link_out' ? licenses : licenses.filter(l => l.allowsCommercial && l.allowsRedistribution)).map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.shortName}
                   </option>

@@ -388,7 +388,7 @@ export async function POST(request: NextRequest) {
     const [categoryRow, brandRow, licenseRow, sourceLicenseRow] = await Promise.all([
       supabase.from('categories').select('id').eq('id', categoryId).maybeSingle(),
       brandId ? supabase.from('brands').select('id').eq('id', brandId).maybeSingle() : Promise.resolve({ data: null, error: null }),
-      licenseId ? supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
+      licenseId ? supabase.from('licenses').select('id, allows_commercial, allows_redistribution').eq('id', licenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
       sourceLicenseId ? supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle() : Promise.resolve({ data: null, error: null }),
     ])
 
@@ -402,6 +402,13 @@ export async function POST(request: NextRequest) {
 
     if (licenseId && (licenseRow.error || !licenseRow.data)) {
       return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+    }
+
+    if (fileHostingType === 'hosted' && licenseId && licenseRow.data) {
+      const { allows_commercial, allows_redistribution } = licenseRow.data as { id: string; allows_commercial: boolean; allows_redistribution: boolean }
+      if (!allows_commercial || !allows_redistribution) {
+        return NextResponse.json({ error: 'Hosted models require an open license (commercial use and redistribution must be allowed)' }, { status: 400 })
+      }
     }
 
     if (sourceLicenseId && (sourceLicenseRow.error || !sourceLicenseRow.data)) {

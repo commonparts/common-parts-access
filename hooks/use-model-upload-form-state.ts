@@ -26,6 +26,7 @@ export interface LicenseOption {
   url: string
   requiresAttribution: boolean
   allowsCommercial: boolean
+  allowsRedistribution: boolean
   isCopyleft: boolean
 }
 
@@ -37,6 +38,7 @@ interface RawLicenseRow {
   url: string
   requires_attribution: boolean
   allows_commercial: boolean
+  allows_redistribution: boolean
   is_copyleft: boolean
 }
 
@@ -246,6 +248,7 @@ export function useModelUploadFormState() {
                 url: l.url,
                 requiresAttribution: l.requires_attribution,
                 allowsCommercial: l.allows_commercial,
+                allowsRedistribution: l.allows_redistribution,
                 isCopyleft: l.is_copyleft,
               }))
             : []
