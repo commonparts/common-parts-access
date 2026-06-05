@@ -14,7 +14,7 @@ If you identify a security vulnerability, please contact us at [contact@commonpa
 
 ## How to contribute
 
-There are three meaningful ways to contribute to Common Parts:
+There are two meaningful ways to contribute to Common Parts:
 
 ### 1. Publish a spare part
 

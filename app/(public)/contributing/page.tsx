@@ -59,8 +59,9 @@ export default function ContributingPage() {
               </p>
               <p className="text-text-secondary">
                 For <strong className="font-medium text-text-primary">referenced parts</strong> — where the file
-                stays on the original platform and we link to it — any freely available license is accepted,
-                including NC or ND clauses. We add value through metadata and curation, not file redistribution.
+                stays on the original platform and we link to it — any license is accepted, including NC, ND, or
+                proprietary licenses. Since Common Parts only links to the file and does not redistribute it, these
+                restrictions do not apply.
               </p>
             </div>
 
@@ -82,7 +83,7 @@ export default function ContributingPage() {
               <li>Parts with no identifiable product target</li>
               <li>
                 Models under CC NC or CC ND licenses <strong className="font-medium text-text-primary">hosted directly on Common Parts</strong> —
-                these licenses are incompatible with file redistribution. They may still be referenced as linked parts.
+                these licenses are incompatible with file redistribution. They may still be added as referenced parts.
               </li>
               <li>Files that cannot be opened or are manifestly broken</li>
               <li>Verbatim republications of an already-indexed model from the same source with no added value</li>
@@ -149,7 +150,7 @@ export default function ContributingPage() {
               <ol className="list-decimal space-y-xs pl-md text-text-secondary">
                 <li>
                   Upload your file via{' '}
-                  <Link href="https://access.commonparts.org" className="underline" target="_blank" rel="noreferrer">
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
                     Common Parts Access
                   </Link>
                 </li>
@@ -170,7 +171,7 @@ export default function ContributingPage() {
                 <li>Confirm the license is open (see above)</li>
                 <li>
                   Submit via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noreferrer">
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
                     Common Parts Access
                   </Link>{' '}
                   — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
@@ -192,7 +193,7 @@ export default function ContributingPage() {
                 <li>Find the original publication and confirm it is publicly accessible</li>
                 <li>
                   Submit via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noreferrer">
+                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
                     Common Parts Access
                   </Link>{' '}
                   — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
