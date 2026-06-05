@@ -255,16 +255,6 @@ export async function POST(request: NextRequest) {
         ? (rawFileHostingType as ModelFileHostingType)
         : 'hosted'
 
-    // Link-out creation is not yet supported via this endpoint.
-    // This route assumes hosted files (upload + register flow).
-    // Reject early to prevent inconsistent rows until a dedicated link-out flow exists.
-    if (fileHostingType === 'link_out') {
-      return NextResponse.json(
-        { error: 'Link-out models cannot be created via this endpoint' },
-        { status: 400 },
-      )
-    }
-
     // Advanced — print metadata fields
     const material = typeof payload.material === 'string' ? payload.material.trim() || null : null
     const color = typeof payload.color === 'string' ? payload.color.trim() || null : null
@@ -308,9 +298,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
     }
 
-    const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
-    if (!fileValidation.ok) {
-      return NextResponse.json({ error: 'Validation failed', issues: fileValidation.issues }, { status: 400 })
+    if (fileHostingType !== 'link_out') {
+      const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
+      if (!fileValidation.ok) {
+        return NextResponse.json({ error: 'Validation failed', issues: fileValidation.issues }, { status: 400 })
+      }
     }
 
     if (!categoryId) {
@@ -339,6 +331,10 @@ export async function POST(request: NextRequest) {
       if (!sourceLicenseId) {
         return NextResponse.json({ error: 'Source license is required for curated models' }, { status: 400 })
       }
+    }
+
+    if (fileHostingType === 'link_out' && !sourcePlatform) {
+      return NextResponse.json({ error: 'Source platform is required for link-out models' }, { status: 400 })
     }
 
     if (sourceUrl && sourceUrl.length > 2048) {
@@ -408,6 +404,30 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
     }
 
+    // For link-out models, verify the source URL domain matches the selected platform
+    if (fileHostingType === 'link_out' && sourcePlatform && sourceUrl) {
+      const { data: platform } = await supabase
+        .from('source_platforms')
+        .select('base_url')
+        .eq('slug', sourcePlatform)
+        .maybeSingle()
+
+      if (platform?.base_url) {
+        try {
+          const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
+          const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
+          if (sourceHost !== platformHost) {
+            return NextResponse.json(
+              { error: 'Source URL domain does not match the selected platform' },
+              { status: 400 },
+            )
+          }
+        } catch {
+          return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
+        }
+      }
+    }
+
     // Validate all submitted product IDs exist and belong to the selected brand/category.
     let validatedProductIds: string[] = []
     if (productIds.length > 0) {
@@ -442,7 +462,8 @@ export async function POST(request: NextRequest) {
     const slug = await ensureUniqueSlug(name, supabase)
     const intendedStatus = isPublic ? 'published' : 'draft'
 
-    // Always create as draft — status is promoted after files are registered
+    // Hosted: always draft — promoted to intendedStatus after file registration.
+    // Link-out: no file-registration step, go live immediately.
     const { data: model, error: modelError } = await supabase
       .from('models')
       .insert({
@@ -455,7 +476,7 @@ export async function POST(request: NextRequest) {
         product_id: validatedProductIds[0] ?? null,
         tags,
         license_id: licenseId,
-        status: 'draft',
+        status: fileHostingType === 'link_out' ? intendedStatus : 'draft',
         user_id: user.id,
         // Attribution & origin
         origin_type: originType,

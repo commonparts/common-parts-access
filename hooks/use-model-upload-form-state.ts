@@ -1,7 +1,7 @@
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { createClient } from "@/lib/supabase/client"
-import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
 import type { SourcePlatform } from "@/types/models"
 
 export interface CategoryOption {
@@ -78,6 +78,7 @@ export interface ModelFormData {
   originalAuthorUrl: string
   sourceLicenseId: string
   verificationStatus: ModelVerificationStatus
+  fileHostingType: ModelFileHostingType
   // Advanced — print metadata
   material: string
   color: string
@@ -122,6 +123,7 @@ export function useModelUploadFormState() {
     originalAuthorUrl: "",
     sourceLicenseId: "",
     verificationStatus: "unverified",
+    fileHostingType: "hosted",
     // Advanced — print metadata
     material: "",
     color: "",

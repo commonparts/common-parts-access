@@ -14,7 +14,7 @@ import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -288,10 +288,11 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
         </CardContent>
       </Card>
 
-      {/* File Upload */}
+      {/* File upload — hidden for link-out models */}
+      {formData.fileHostingType !== 'link_out' && (
       <Card>
         <CardHeader>
-          <CardTitle>Part Files</CardTitle>
+          <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-sm">
@@ -327,6 +328,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Advanced — collapsed by default */}
       <Card>
@@ -507,7 +509,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 as="select"
                 id="originType"
                 value={formData.originType}
-                onChange={(e) => setFormData(prev => ({ ...prev, originType: e.target.value as ModelOriginType }))}
+                onChange={(e) => {
+                  const next = e.target.value as ModelOriginType
+                  setFormData(prev => ({
+                    ...prev,
+                    originType: next,
+                    fileHostingType: next === 'curated' ? prev.fileHostingType : 'hosted',
+                  }))
+                }}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="original">Original — I created this model</option>
@@ -532,6 +541,22 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
           </Grid>
 
+          {formData.originType === 'curated' && (
+            <div className="space-y-sm">
+              <Label htmlFor="fileHostingType">File hosting</Label>
+              <DropdownInput
+                as="select"
+                id="fileHostingType"
+                value={formData.fileHostingType}
+                onChange={(e) => setFormData(prev => ({ ...prev, fileHostingType: e.target.value as ModelFileHostingType }))}
+                className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
+              >
+                <option value="hosted">Host file — upload files to Common Parts</option>
+                <option value="link_out">Link to source — file stays on the original platform</option>
+              </DropdownInput>
+            </div>
+          )}
+
           <Grid columns={12}>
             <div className="col-span-12 space-y-sm md:col-span-6">
               <Label htmlFor="sourceUrl">Source URL{formData.originType === 'curated' ? ' *' : ''}</Label>
@@ -545,12 +570,13 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               />
             </div>
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="sourcePlatform">Source platform</Label>
+              <Label htmlFor="sourcePlatform">Source platform{formData.fileHostingType === 'link_out' ? ' *' : ''}</Label>
               <DropdownInput
                 as="select"
                 id="sourcePlatform"
                 value={formData.sourcePlatform}
                 onChange={(e) => setFormData(prev => ({ ...prev, sourcePlatform: e.target.value }))}
+                required={formData.fileHostingType === 'link_out'}
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="">{loadingMeta ? 'Loading...' : 'Not specified'}</option>
@@ -597,7 +623,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 className="bg-bg-surface border-border-subtle focus-visible:ring-border-focus focus-visible:border-border-focus"
               >
                 <option value="">{loadingMeta ? 'Loading licenses...' : 'No license specified'}</option>
-                {licenses.map((l) => (
+                {(formData.fileHostingType === 'link_out' ? licenses : licenses.filter(l => l.allowsCommercial)).map((l) => (
                   <option key={l.id} value={l.id}>
                     {l.shortName}
                   </option>
@@ -649,7 +675,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
       {/* Submit */}
       <div className="flex justify-end gap-sm">
-        <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || formData.files.length === 0}>
+        <Button type="submit" disabled={loading || !formData.title || !formData.categoryId || (formData.fileHostingType !== 'link_out' && formData.files.length === 0)}>
           {loading ? "Uploading..." : "Upload Model"}
         </Button>
       </div>
