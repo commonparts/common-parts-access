@@ -1,8 +1,9 @@
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
+import { VALIDATION_LIMITS } from "@/lib/utils/constants"
 import { createClient } from "@/lib/supabase/client"
 import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
-import type { SourcePlatform } from "@/types/models"
+import type { SourcePlatform } from "@/types/database"
 
 export interface CategoryOption {
   id: string
@@ -500,10 +501,13 @@ export function useModelUploadFormState() {
   }
 
   const addProduct = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      productIds: prev.productIds.includes(id) ? prev.productIds : [...prev.productIds, id],
-    }))
+    setFormData(prev => {
+      if (prev.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) return prev
+      return {
+        ...prev,
+        productIds: prev.productIds.includes(id) ? prev.productIds : [...prev.productIds, id],
+      }
+    })
     setProductSearch("")
   }
 

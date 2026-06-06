@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import type { SourcePlatform } from '@/types/models'
+import type { SourcePlatform } from '@/types/database'
 
 /**
  * Returns all active source platforms ordered by name.

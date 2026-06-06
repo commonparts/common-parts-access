@@ -1,15 +1,5 @@
 import type { Brand, Category, Model, ModelStatus, Product, UserProfile } from './database';
-
-export interface SourcePlatform {
-  id: string;
-  slug: string;
-  name: string;
-  base_url: string;
-  logo_url?: string | null;
-  import_supported: boolean;
-  active: boolean;
-  created_at?: string;
-}
+export type { SourcePlatform } from './database';
 
 export type ModelCardRow = Pick<
 	Model,
