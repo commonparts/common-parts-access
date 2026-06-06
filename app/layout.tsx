@@ -3,15 +3,12 @@ import { plexSans, plexMono } from "./fonts";
 import "./globals.css";
 import { lightTheme, themeToCSSVars } from "@/design-tokens";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
+import { APP_URL } from "@/lib/utils/constants";
 
 const lightThemeCSSVars = themeToCSSVars(lightTheme);
 
-const defaultUrl = process.env.VERCEL_URL
-  ? `https://${process.env.VERCEL_URL}`
-  : "http://localhost:3000";
-
 export const metadata: Metadata = {
-  metadataBase: new URL(defaultUrl),
+  metadataBase: new URL(APP_URL),
   title: "Common Parts Access — Open platform for digital spare parts",
   description:
     "Common Parts Access is an open platform for publishing and accessing digital spare parts, helping extend the life of everyday objects.",

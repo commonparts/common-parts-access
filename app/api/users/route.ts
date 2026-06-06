@@ -53,8 +53,8 @@ export async function DELETE() {
   } catch (err) {
     console.error("deleteUser admin client error", err);
     return NextResponse.json(
-      { error: "Account deletion is not configured." },
-      { status: 500 },
+      { error: "Automated account deletion is not available yet. To delete your account, please email contact@commonparts.org." },
+      { status: 503 },
     );
   }
 

@@ -5,8 +5,25 @@
 // Application metadata
 export const APP_NAME = 'Common Parts Access'
 export const APP_DESCRIPTION = 'Open platform for publishing and accessing digital spare parts for everyday repairs'
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 export const APP_VERSION = '1.0.0'
+
+/**
+ * Canonical application URL. Normalizes NEXT_PUBLIC_APP_URL so it is always
+ * an absolute URL (adds https:// when a bare hostname is supplied).
+ * Falls back to http://localhost:3000 when the env var is not set.
+ */
+function resolveAppUrl(): string {
+  const raw = process.env.NEXT_PUBLIC_APP_URL
+  if (!raw) return 'http://localhost:3000'
+  try {
+    return new URL(raw).href
+  } catch {
+    // Bare hostname supplied without scheme — default to https
+    return `https://${raw}`
+  }
+}
+
+export const APP_URL = resolveAppUrl()
 
 // File upload constraints
 export const FILE_UPLOAD = {
@@ -177,7 +194,8 @@ export const VALIDATION_LIMITS = {
     DESCRIPTION_MAX_LENGTH: 1000,
     TAGS_MAX_COUNT: 10,
     TAG_MIN_LENGTH: 2,
-    TAG_MAX_LENGTH: 20
+    TAG_MAX_LENGTH: 20,
+    PRODUCTS_MAX_COUNT: 10
   },
   USER: {
     USERNAME_MIN_LENGTH: 3,

@@ -7,7 +7,7 @@ export async function GET() {
     const supabase = await createClient()
     const { data, error } = await supabase
       .from('licenses')
-      .select('id, spdx_id, short_name, name, url, requires_attribution, allows_commercial, is_copyleft')
+      .select('id, spdx_id, short_name, name, url, requires_attribution, allows_commercial, allows_redistribution, is_copyleft')
       .order('short_name', { ascending: true })
 
     if (error) {

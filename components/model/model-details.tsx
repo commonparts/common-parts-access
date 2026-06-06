@@ -91,7 +91,10 @@ interface ModelData {
   } | null
   originType: 'original' | 'curated' | 'manufacturer'
   verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
+  fileHostingType: 'hosted' | 'link_out'
   sourcePlatform?: string | null
+  sourcePlatformName?: string | null
+  sourcePlatformBaseUrl?: string | null
   sourceUrl?: string | null
   originalAuthor?: string | null
   originalAuthorUrl?: string | null
@@ -122,7 +125,7 @@ interface ModelData {
     verifiedMaker: boolean
     memberSince: string
   } | null
-  product?: {
+  products?: {
     id: string
     name: string
     slug: string
@@ -140,7 +143,7 @@ interface ModelData {
       website?: string
       verified: boolean
     }
-  }
+  }[]
   category?: {
     id: string
     name: string
@@ -414,6 +417,23 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         <div className="col-span-12 lg:col-span-5 space-y-md">
           <div className="space-y-xs">
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{model.name}</h1>
+            {model.originType === 'curated' && model.originalAuthor && (
+              <p className="text-body text-text-secondary">
+                Original design by{' '}
+                {model.originalAuthorUrl && isValidHttpUrl(model.originalAuthorUrl) ? (
+                  <a
+                    href={model.originalAuthorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-text-primary hover:underline"
+                  >
+                    {model.originalAuthor}
+                  </a>
+                ) : (
+                  <span className="font-medium text-text-primary">{model.originalAuthor}</span>
+                )}
+              </p>
+            )}
             {model.partDetails.partName && (
               <p className="text-body text-text-secondary">Part: {model.partDetails.partName}</p>
             )}
@@ -457,68 +477,101 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             </div>
           )}
 
-          <div className="flex flex-wrap gap-sm">
-            <Button
-              className="inline-flex items-center gap-xs"
-              disabled={downloadPending}
-              aria-busy={downloadPending}
-              onClick={async () => {
-                setDownloadPending(true)
-                try {
-                  const { downloadAllModelFiles } = await import('@/lib/storage/download')
-                  const result = await downloadAllModelFiles(model.files, model.slug, model.name)
-                  if (!result.success && !result.requiresAuth) {
-                    console.error('Download failed:', result.error)
-                    alert(`Download failed: ${result.error}`)
-                  }
-                } catch (error) {
-                  console.error('Download error:', error)
-                  alert('Download failed. Please try again.')
-                } finally {
-                  setDownloadPending(false)
-                }
-              }}
-            >
-              {downloadPending ? (
-                <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+          <div className="space-y-sm">
+            <div className="flex flex-wrap gap-sm">
+              {model.fileHostingType === 'link_out' ? (
+                model.sourceUrl && isValidHttpUrl(model.sourceUrl) ? (
+                  <Button asChild className="inline-flex items-center gap-xs">
+                    <a
+                      href={model.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      View on {model.sourcePlatformName ?? 'the original source'}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="inline-flex items-center gap-xs" disabled>
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    View on {model.sourcePlatformName ?? 'the original source'}
+                  </Button>
+                )
               ) : (
-                <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              )}
-              {downloadPending ? 'Preparing Download...' : 'Download Files'}
-            </Button>
-            <Button
-              variant="outline"
-              className="inline-flex items-center gap-xs"
-              onClick={handleLikeToggle}
-              disabled={likePending}
-              aria-pressed={model.viewerHasLiked}
-            >
-              {likePending ? (
-                <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-              ) : (
-                <svg
-                  className="h-5 w-5"
-                  fill={model.viewerHasLiked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <Button
+                  className="inline-flex items-center gap-xs"
+                  disabled={downloadPending}
+                  aria-busy={downloadPending}
+                  onClick={async () => {
+                    setDownloadPending(true)
+                    try {
+                      const { downloadAllModelFiles } = await import('@/lib/storage/download')
+                      const result = await downloadAllModelFiles(model.files, model.slug, model.name)
+                      if (!result.success && !result.requiresAuth) {
+                        console.error('Download failed:', result.error)
+                        alert(`Download failed: ${result.error}`)
+                      }
+                    } catch (error) {
+                      console.error('Download error:', error)
+                      alert('Download failed. Please try again.')
+                    } finally {
+                      setDownloadPending(false)
+                    }
+                  }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                </svg>
+                  {downloadPending ? (
+                    <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  )}
+                  {downloadPending ? 'Preparing download...' : 'Download'}
+                </Button>
               )}
-              {model.viewerHasLiked ? 'Liked' : 'Like'}
-            </Button>
+              <Button
+                variant="outline"
+                className="inline-flex items-center gap-xs"
+                onClick={handleLikeToggle}
+                disabled={likePending}
+                aria-pressed={model.viewerHasLiked}
+              >
+                {likePending ? (
+                  <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    fill={model.viewerHasLiked ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                )}
+                {model.viewerHasLiked ? 'Liked' : 'Like'}
+              </Button>
+            </div>
+            {model.fileHostingType === 'link_out' && (
+              <p className="text-sm text-text-secondary">
+                This part is hosted on {model.sourcePlatformName ?? 'the original source'}. Common Parts provides the metadata and curation — download is handled by the original source.
+              </p>
+            )}
           </div>
 
           {model.author && (
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
-                <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">Created by</CardTitle>
+                <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
+                  {model.originType === 'curated' ? 'Curated by' : 'Created by'}
+                </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
                 <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted">
@@ -725,7 +778,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 {model.sourcePlatform && (
                   <div className="flex flex-col gap-2">
                     <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                    <span className="text-sm capitalize font-medium">{model.sourcePlatform}</span>
+                    <span className="text-sm font-medium">{model.sourcePlatformName ?? model.sourcePlatform}</span>
                   </div>
                 )}
 
@@ -737,7 +790,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                     rel="noopener noreferrer"
                     className="text-sm text-primary hover:underline break-all"
                   >
-                    {model.sourcePlatform ? `View on ${model.sourcePlatform}` : 'View original post'}
+                    {model.sourcePlatform ? `View on ${model.sourcePlatformName ?? model.sourcePlatform}` : 'View original post'}
                   </a>
                 </div>
 
@@ -796,58 +849,60 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* Compatible Product */}
-        {model.product && (
+        {/* Compatible products */}
+        {model.products && model.products.length > 0 && (
           <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                 </svg>
-                Compatible Product
+                Compatible with
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex items-start gap-3">
-                {model.product.image && (
-                  <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                    <Image
-                      src={model.product.image}
-                      alt={model.product.name}
-                      width={64}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium line-clamp-2">
-                    {model.product.name}
-                  </div>
-                  {model.product.modelNumber && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Model: <span className="font-mono">{model.product.modelNumber}</span>
-                    </p>
-                  )}
-                  {model.product.brand && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <span className="text-sm font-medium">
-                        {model.product.brand.name}
-                      </span>
-                      {model.product.brand.verified && (
-                        <Badge variant="secondary" className="text-xs">
-                          ✓ Verified
-                        </Badge>
+              <div className="space-y-md">
+                {model.products.map((p) => (
+                  <div key={p.id} className="flex items-start gap-3">
+                    {p.image && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium line-clamp-2">{p.name}</div>
+                      {p.modelNumber && (
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Model: <span className="font-mono">{p.modelNumber}</span>
+                        </p>
+                      )}
+                      {p.brand && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className="text-sm font-medium">{p.brand.name}</span>
+                          {p.brand.verified && (
+                            <Badge variant="secondary" className="text-xs">
+                              ✓ Verified
+                            </Badge>
+                          )}
+                        </div>
                       )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Files */}
+        {/* Files — only shown for hosted models */}
+        {model.fileHostingType !== 'link_out' && (
         <div className="col-span-12 lg:col-span-6 xl:col-span-8">
           <ModelFileList 
             files={model.files}
@@ -869,6 +924,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             }}
           />
         </div>
+        )}
 
         {model.instructions && (
           <Card className="col-span-12 lg:col-span-6 border-border-subtle">

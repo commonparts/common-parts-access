@@ -96,6 +96,7 @@ export interface ModelPrintSettings {
 export type ModelStatus = 'draft' | 'published' | 'archived';
 export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
 export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+export type ModelFileHostingType = 'hosted' | 'link_out';
 
 export interface Model {
   id: string;
@@ -132,8 +133,9 @@ export interface Model {
   // Origin tracking
   origin_type: ModelOriginType;
   source_url?: string | null;
-  source_platform?: string | null;   // 'printables', 'thingiverse', 'github', etc.
+  source_platform?: string | null;   // FK to source_platforms.slug
   source_published_at?: string | null;
+  file_hosting_type?: ModelFileHostingType;
 
   // Attribution (required when origin_type = 'curated')
   original_author?: string | null;
@@ -238,4 +240,15 @@ export interface ModelFilters {
   status?: ModelStatus;
   user_id?: string;
   tags?: string[];
+}
+
+export interface SourcePlatform {
+  id: string;
+  slug: string;
+  name: string;
+  base_url: string;
+  logo_url?: string | null;
+  import_supported: boolean;
+  active: boolean;
+  created_at?: string;
 }

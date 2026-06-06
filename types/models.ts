@@ -1,4 +1,5 @@
 import type { Brand, Category, Model, ModelStatus, Product, UserProfile } from './database';
+export type { SourcePlatform } from './database';
 
 export type ModelCardRow = Pick<
 	Model,
