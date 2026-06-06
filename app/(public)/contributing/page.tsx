@@ -137,6 +137,14 @@ export default function ContributingPage() {
                       One or more independent users confirmed a successful print and fit
                     </td>
                   </tr>
+                  <tr>
+                    <td className="border border-border-default px-sm py-xs align-top text-body font-medium text-text-primary">
+                      Certified
+                    </td>
+                    <td className="border border-border-default px-sm py-xs text-text-secondary">
+                      Reviewed and validated by the Common Parts team or a trusted partner network
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>

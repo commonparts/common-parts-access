@@ -2,6 +2,7 @@ import * as React from "react"
 import { CreateProductModal } from "@/components/forms/create-product-modal"
 import { useModelUploadFormState, type ModelFormData } from "@/hooks/use-model-upload-form-state"
 import { cn } from "@/lib/utils"
+import { VALIDATION_LIMITS } from "@/lib/utils/constants"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
@@ -177,14 +178,16 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
             </div>
 
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="product">Compatible products (optional)</Label>
+              <Label htmlFor="product">Compatible products</Label>
               <Combobox
                 id="product"
                 placeholder={loadingProducts
                   ? 'Loading products...'
-                  : (!formData.brandId && !formData.categoryId)
-                    ? 'Select brand/category to filter products'
-                    : 'Search and add a product'}
+                  : formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
+                    ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
+                    : (!formData.brandId && !formData.categoryId)
+                      ? 'Select brand/category to filter products'
+                      : 'Search and add a product'}
                 options={products
                   .filter((p) => !formData.productIds.includes(p.id))
                   .map((p) => ({
@@ -203,9 +206,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 createLabel={(value) => `Create product: ${value}`}
                 isOpen={productOpen}
                 onOpenChange={setProductOpen}
-                disabled={loadingProducts || (!formData.brandId && !formData.categoryId)}
+                disabled={
+                  loadingProducts ||
+                  formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT ||
+                  (!formData.brandId && !formData.categoryId)
+                }
                 emptyMessage={productSearch ? 'No matching products' : 'No products found'}
               />
+              <p className="text-caption text-text-secondary">At least one product is expected for the part to be discoverable.</p>
               {formData.productIds.length > 0 && (
                 <div className="flex flex-wrap gap-sm mt-sm">
                   {formData.productIds.map((pid) => {
