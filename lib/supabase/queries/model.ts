@@ -27,7 +27,7 @@ const MODEL_SELECT = `
     display_name,
     avatar_url
   ),
-  products(
+  products!models_product_id_fkey(
     name
   ),
   categories(
