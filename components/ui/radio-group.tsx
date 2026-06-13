@@ -55,7 +55,7 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
     const isDisabled = disabled ?? context.disabled;
 
     return (
-      <>
+      <label className={cn("cursor-pointer", isDisabled && "cursor-not-allowed")}>
         <input
           ref={ref}
           type="radio"
@@ -80,7 +80,7 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
         >
           {isChecked && <span className="size-2xs block rounded-full bg-bg-surface" />}
         </span>
-      </>
+      </label>
     );
   },
 );
