@@ -15,7 +15,8 @@ import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
@@ -302,30 +303,22 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          <div className="flex gap-md">
-            <label className="flex items-center gap-xs cursor-pointer">
-              <input
-                type="radio"
-                name="fileHostingType"
-                value="hosted"
-                checked={formData.fileHostingType === 'hosted'}
-                onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
-                className="accent-primary"
-              />
-              <span className="text-sm font-medium text-text-primary">Host file</span>
-            </label>
-            <label className="flex items-center gap-xs cursor-pointer">
-              <input
-                type="radio"
-                name="fileHostingType"
-                value="link_out"
-                checked={formData.fileHostingType === 'link_out'}
-                onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
-                className="accent-primary"
-              />
-              <span className="text-sm font-medium text-text-primary">Link to source</span>
-            </label>
-          </div>
+          <RadioGroup
+            value={formData.fileHostingType}
+            onValueChange={(value) =>
+              setFormData(prev => ({ ...prev, fileHostingType: value as ModelFileHostingType }))
+            }
+            className="flex flex-row gap-md"
+          >
+            <div className="flex items-center gap-xs">
+              <RadioGroupItem value="hosted" id="fileHostingType-hosted" />
+              <Label htmlFor="fileHostingType-hosted">Host file</Label>
+            </div>
+            <div className="flex items-center gap-xs">
+              <RadioGroupItem value="link_out" id="fileHostingType-link_out" />
+              <Label htmlFor="fileHostingType-link_out">Link to source</Label>
+            </div>
+          </RadioGroup>
 
           {formData.fileHostingType === 'link_out' ? (
             <p className="text-sm text-text-secondary">
