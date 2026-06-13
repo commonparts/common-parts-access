@@ -573,14 +573,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
           <Grid columns={12}>
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="sourceUrl">Source URL{formData.originType === 'curated' ? ' *' : ''}</Label>
+              <Label htmlFor="sourceUrl">Source URL{(formData.originType === 'curated' || formData.fileHostingType === 'link_out') ? ' *' : ''}</Label>
               <Input
                 id="sourceUrl"
                 type="url"
                 placeholder="https://www.printables.com/model/..."
                 value={formData.sourceUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
-                required={formData.originType === 'curated'}
+                required={formData.originType === 'curated' || formData.fileHostingType === 'link_out'}
               />
             </div>
             <div className="col-span-12 space-y-sm md:col-span-6">
