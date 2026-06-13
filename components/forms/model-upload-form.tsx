@@ -332,40 +332,38 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
               No file upload needed. The download button on the model page will redirect visitors to the source URL you provide below.
             </p>
           ) : (
-            <>
-              <div className="space-y-sm">
-                <Label>Part files *</Label>
-                <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
-                <FileUploader
-                  accept=".stl,.obj,.stp,.step"
-                  onFilesSelect={handleFilesSelect}
-                  multiple={true}
-                  maxSize={50 * 1024 * 1024} // 50MB
-                />
-                {formData.files.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Selected: {formData.files.map(f => f.name).join(', ')}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-sm">
-                <Label>Thumbnail images (optional)</Label>
-                <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
-                <FileUploader
-                  accept=".jpg,.jpeg,.png,.webp"
-                  onFilesSelect={handleThumbnailsSelect}
-                  multiple={true}
-                  maxSize={5 * 1024 * 1024} // 5MB
-                />
-                {formData.thumbnails.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Selected: {formData.thumbnails.map(f => f.name).join(', ')}
-                  </div>
-                )}
-              </div>
-            </>
+            <div className="space-y-sm">
+              <Label>Part files *</Label>
+              <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
+              <FileUploader
+                accept=".stl,.obj,.stp,.step"
+                onFilesSelect={handleFilesSelect}
+                multiple={true}
+                maxSize={50 * 1024 * 1024} // 50MB
+              />
+              {formData.files.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: {formData.files.map(f => f.name).join(', ')}
+                </div>
+              )}
+            </div>
           )}
+
+          <div className="space-y-sm">
+            <Label>Thumbnail images (optional)</Label>
+            <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
+            <FileUploader
+              accept=".jpg,.jpeg,.png,.webp"
+              onFilesSelect={handleThumbnailsSelect}
+              multiple={true}
+              maxSize={5 * 1024 * 1024} // 5MB
+            />
+            {formData.thumbnails.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
