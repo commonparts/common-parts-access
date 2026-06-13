@@ -298,13 +298,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
     }
 
-    if (fileHostingType === 'link_out' && originType !== 'curated') {
-      return NextResponse.json(
-        { error: 'Link-out hosting is only available for curated models' },
-        { status: 400 },
-      )
-    }
-
     if (fileHostingType !== 'link_out') {
       const fileValidation = validateFileMetadata(modelFileInfos, thumbnailInfos)
       if (!fileValidation.ok) {
