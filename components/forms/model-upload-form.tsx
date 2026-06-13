@@ -302,32 +302,30 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          {formData.originType === 'curated' && (
-            <div className="flex gap-md">
-              <label className="flex items-center gap-xs cursor-pointer">
-                <input
-                  type="radio"
-                  name="fileHostingType"
-                  value="hosted"
-                  checked={formData.fileHostingType === 'hosted'}
-                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
-                  className="accent-primary"
-                />
-                <span className="text-sm font-medium text-text-primary">Host file</span>
-              </label>
-              <label className="flex items-center gap-xs cursor-pointer">
-                <input
-                  type="radio"
-                  name="fileHostingType"
-                  value="link_out"
-                  checked={formData.fileHostingType === 'link_out'}
-                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
-                  className="accent-primary"
-                />
-                <span className="text-sm font-medium text-text-primary">Link to source</span>
-              </label>
-            </div>
-          )}
+          <div className="flex gap-md">
+            <label className="flex items-center gap-xs cursor-pointer">
+              <input
+                type="radio"
+                name="fileHostingType"
+                value="hosted"
+                checked={formData.fileHostingType === 'hosted'}
+                onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
+                className="accent-primary"
+              />
+              <span className="text-sm font-medium text-text-primary">Host file</span>
+            </label>
+            <label className="flex items-center gap-xs cursor-pointer">
+              <input
+                type="radio"
+                name="fileHostingType"
+                value="link_out"
+                checked={formData.fileHostingType === 'link_out'}
+                onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
+                className="accent-primary"
+              />
+              <span className="text-sm font-medium text-text-primary">Link to source</span>
+            </label>
+          </div>
 
           {formData.fileHostingType === 'link_out' ? (
             <p className="text-sm text-text-secondary">
