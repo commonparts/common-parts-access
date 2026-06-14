@@ -24,8 +24,6 @@ interface ModelUploadFormProps {
   className?: string
 }
 
-const DESCRIPTION_MAX = 8000
-
 export function ModelUploadForm({ onSubmit, loading = false, className }: ModelUploadFormProps) {
   const {
     formData,
@@ -112,17 +110,32 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
 
           <div className="space-y-sm">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Short description</Label>
             <Textarea
               id="description"
-              rows={4}
-              placeholder="Describe your part..."
-              maxLength={DESCRIPTION_MAX}
+              rows={3}
+              placeholder="Briefly describe your part..."
+              maxLength={VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
             <div className="flex justify-end text-caption text-text-secondary">
-              <span>{formData.description.length}/{DESCRIPTION_MAX}</span>
+              <span>{formData.description.length}/{VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}</span>
+            </div>
+          </div>
+
+          <div className="space-y-sm">
+            <Label htmlFor="instructions">Instructions</Label>
+            <Textarea
+              id="instructions"
+              rows={6}
+              placeholder="Print settings, assembly steps, tips..."
+              maxLength={VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+              value={formData.instructions}
+              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
+            />
+            <div className="flex justify-end text-caption text-text-secondary">
+              <span>{formData.instructions.length}/{VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}</span>
             </div>
           </div>
 
