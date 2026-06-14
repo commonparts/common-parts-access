@@ -35,6 +35,7 @@ interface PrintSettingsMetadata {
 interface CreateModelMetadataPayload {
   title: string
   description: string
+  instructions?: string
   category: string
   license_id: string
   isPublic: boolean
@@ -123,6 +124,7 @@ export default function UploadPage() {
         thumbnails: payload.thumbnails.map((f) => ({ name: f.name, size: f.size })),
       }
 
+      if (payload.instructions) metadata.instructions = payload.instructions
       if (payload.brandId) metadata.brand = payload.brandId
       if (payload.productIds && payload.productIds.length > 0) metadata.products = payload.productIds
       if (payload.sourceUrl) metadata.source_url = payload.sourceUrl
