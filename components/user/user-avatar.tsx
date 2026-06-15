@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
 import { USER_PROFILE_MENU_ITEMS } from "@/components/user/profile-menu-items";
 import { signOut } from "@/lib/supabase/queries/auth.client";
+import { useCurrentUserName } from "@/hooks/use-current-user-name";
 
 export function UserProfileMenu() {
 	const router = useRouter();
+	const name = useCurrentUserName();
 
 	const handleLogout = async () => {
 		await signOut();
@@ -28,11 +30,19 @@ export function UserProfileMenu() {
 					className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 					aria-label="Open profile menu"
 				>
-					<CurrentUserAvatar className="h-lg w-lg" />
+					<CurrentUserAvatar className="h-lg w-lg" name={name} />
 				</button>
 			</DropdownMenuTrigger>
 
 			<DropdownMenuContent align="end" className="w-56">
+				{name && (
+					<>
+						<DropdownMenuLabel className="normal-case tracking-normal text-sm font-medium text-text-primary">
+							{name}
+						</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+					</>
+				)}
 				{USER_PROFILE_MENU_ITEMS.map((item) => {
 					if (item.type === "separator") {
 						return <DropdownMenuSeparator key={item.key} />;
