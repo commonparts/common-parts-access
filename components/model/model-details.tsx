@@ -557,11 +557,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 {model.viewerHasLiked ? 'Liked' : 'Like'}
               </Button>
             </div>
-            {model.fileHostingType === 'link_out' && (
-              <p className="text-sm text-text-secondary">
-                This part is hosted on {model.sourcePlatformName ?? 'the original source'}. Common Parts provides the metadata and curation — download is handled by the original source.
-              </p>
-            )}
+
           </div>
 
           {model.author && (
