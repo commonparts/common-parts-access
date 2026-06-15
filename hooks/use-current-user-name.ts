@@ -6,16 +6,37 @@ export const useCurrentUserName = () => {
 
   useEffect(() => {
     const fetchProfileName = async () => {
-      const { data, error } = await createClient().auth.getSession()
-      if (error) {
-        console.error(error)
+      const supabase = createClient()
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession()
+
+      if (sessionError) {
+        console.error(sessionError)
+        return
       }
 
-      setName(data.session?.user.user_metadata.full_name ?? '?')
+      const user = sessionData.session?.user
+      if (!user) {
+        setName(null)
+        return
+      }
+
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('username')
+        .eq('id', user.id)
+        .maybeSingle()
+
+      if (profileError) {
+        console.error(profileError)
+        setName(null)
+        return
+      }
+
+      setName(profile?.username ?? null)
     }
 
     fetchProfileName()
   }, [])
 
-  return name || '?'
+  return name
 }
