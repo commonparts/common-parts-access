@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
 import { USER_PROFILE_MENU_ITEMS } from "@/components/user/profile-menu-items";
 import { signOut } from "@/lib/supabase/queries/auth.client";
+import { useCurrentUserName } from "@/hooks/use-current-user-name";
 
 export function UserProfileMenu() {
 	const router = useRouter();
+	const name = useCurrentUserName();
 
 	const handleLogout = async () => {
 		await signOut();
@@ -33,6 +35,12 @@ export function UserProfileMenu() {
 			</DropdownMenuTrigger>
 
 			<DropdownMenuContent align="end" className="w-56">
+				{name && (
+					<>
+						<DropdownMenuLabel>{name}</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+					</>
+				)}
 				{USER_PROFILE_MENU_ITEMS.map((item) => {
 					if (item.type === "separator") {
 						return <DropdownMenuSeparator key={item.key} />;
