@@ -357,10 +357,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return null
   }
 
-  const allImages = [
-    ...(model.thumbnailUrl ? [model.thumbnailUrl] : []),
-    ...model.images,
-  ].filter(Boolean)
+  const allImages = model.images.filter(Boolean)
 
   // File filtering is now handled by ModelFileList component
 
