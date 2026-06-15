@@ -293,7 +293,8 @@ export async function POST(
       const existingImages = Array.isArray(model.images)
         ? model.images.filter((img): img is string => typeof img === 'string')
         : []
-      const merged = [...new Set([...existingImages, ...newImageUrls])]
+      const existingThumbnail = typeof model.thumbnail_url === 'string' && model.thumbnail_url ? [model.thumbnail_url] : []
+      const merged = [...new Set([...existingThumbnail, ...existingImages, ...newImageUrls])]
       const sortedImages = sortImageUrls(merged)
       modelUpdate.images = sortedImages
       modelUpdate.thumbnail_url = sortedImages[0]
