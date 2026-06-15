@@ -35,6 +35,7 @@ interface PrintSettingsMetadata {
 interface CreateModelMetadataPayload {
   title: string
   description: string
+  instructions?: string
   category: string
   license_id: string
   isPublic: boolean
@@ -123,6 +124,7 @@ export default function UploadPage() {
         thumbnails: payload.thumbnails.map((f) => ({ name: f.name, size: f.size })),
       }
 
+      if (payload.instructions) metadata.instructions = payload.instructions
       if (payload.brandId) metadata.brand = payload.brandId
       if (payload.productIds && payload.productIds.length > 0) metadata.products = payload.productIds
       if (payload.sourceUrl) metadata.source_url = payload.sourceUrl
@@ -198,8 +200,8 @@ export default function UploadPage() {
 
       const { modelId, slug, userId, intendedStatus } = createData
 
-      // Link-out models have no files to upload or register
-      if (payload.fileHostingType === 'link_out') {
+      // Link-out models with no thumbnails have no files to upload or register
+      if (payload.fileHostingType === 'link_out' && payload.thumbnails.length === 0) {
         const params = new URLSearchParams({ slug })
         router.push(`/upload/success?${params.toString()}`)
         return
@@ -217,7 +219,7 @@ export default function UploadPage() {
       const uploads = await uploadFilesFromClient({
         userId,
         modelId,
-        modelFiles: payload.files,
+        modelFiles: payload.fileHostingType === 'link_out' ? [] : payload.files,
         thumbnails: payload.thumbnails,
         onProgress: handleProgress,
       })
@@ -226,10 +228,15 @@ export default function UploadPage() {
       setProgressText('Finalizing upload…')
 
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
+      // Link-out models are already published after phase 1; omitting intendedStatus
+      // avoids the files endpoint's "model file required to publish" guard.
+      const registerBody = payload.fileHostingType === 'link_out'
+        ? { files: allFiles }
+        : { files: allFiles, intendedStatus }
       const registerResponse = await fetch(`/api/models/${encodeURIComponent(slug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files: allFiles, intendedStatus }),
+        body: JSON.stringify(registerBody),
       })
       const registerData: UploadErrorResponse = await registerResponse
         .json()

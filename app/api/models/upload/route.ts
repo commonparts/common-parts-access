@@ -228,6 +228,7 @@ export async function POST(request: NextRequest) {
 
     const name = typeof payload.title === 'string' ? payload.title.trim() : ''
     const description = typeof payload.description === 'string' ? payload.description.trim() || null : null
+    const instructions = typeof payload.instructions === 'string' ? payload.instructions.trim() || null : null
     const categoryId = typeof payload.category === 'string' ? payload.category.trim() || null : null
     const brandId = typeof payload.brand === 'string' ? payload.brand.trim() || null : null
     const productIds: string[] = Array.isArray(payload.products)
@@ -291,18 +292,18 @@ export async function POST(request: NextRequest) {
           .map((f) => ({ name: String(f.name ?? ''), size: Number(f.size ?? 0) }))
       : []
 
+    if (description && description.length > VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH) {
+      return NextResponse.json({ error: `Short description must be at most ${VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH} characters` }, { status: 400 })
+    }
+    if (instructions && instructions.length > VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH) {
+      return NextResponse.json({ error: `Instructions must be at most ${VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH} characters` }, { status: 400 })
+    }
+
     if (!name || name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at least ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} characters` }] }, { status: 400 })
     }
     if (name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
       return NextResponse.json({ error: 'Validation failed', issues: [{ field: 'title', message: `Title must be at most ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` }] }, { status: 400 })
-    }
-
-    if (fileHostingType === 'link_out' && originType !== 'curated') {
-      return NextResponse.json(
-        { error: 'Link-out hosting is only available for curated models' },
-        { status: 400 },
-      )
     }
 
     if (fileHostingType !== 'link_out') {
@@ -495,6 +496,7 @@ export async function POST(request: NextRequest) {
         name,
         slug,
         description,
+        instructions,
         category_id: categoryId,
         brand_id: brandId || null,
         // Backward-compat: keep product_id pointing at the first selected product.

@@ -65,6 +65,7 @@ export interface CreateProductFormData {
 export interface ModelFormData {
   title: string
   description: string
+  instructions: string
   categoryId: string
   tags: string[]
   brandId?: string
@@ -110,6 +111,7 @@ export function useModelUploadFormState() {
   const [formData, setFormData] = React.useState<ModelFormData>({
     title: "",
     description: "",
+    instructions: "",
     categoryId: "",
     tags: [],
     brandId: "",
