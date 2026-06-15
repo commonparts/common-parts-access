@@ -34,7 +34,7 @@ export function UserProfileMenu() {
 				</button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent align="end" className="w-56">
+			<DropdownMenuContent align="end" className="w-56 p-0">
 				{name && (
 					<>
 						<DropdownMenuLabel>{name}</DropdownMenuLabel>
