@@ -358,10 +358,10 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return null
   }
 
-  const allImages = sortImageUrls([
+  const allImages = sortImageUrls([...new Set([
     ...(model.thumbnailUrl ? [model.thumbnailUrl] : []),
     ...model.images,
-  ].filter(Boolean))
+  ].filter(Boolean))])
 
   // File filtering is now handled by ModelFileList component
 
