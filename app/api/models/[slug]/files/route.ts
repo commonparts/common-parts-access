@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { sortImageUrls } from '@/lib/utils/images'
 
 export const runtime = 'nodejs'
 
@@ -292,9 +293,10 @@ export async function POST(
       const existingImages = Array.isArray(model.images)
         ? model.images.filter((img): img is string => typeof img === 'string')
         : []
-      const mergedImages = [...new Set([...existingImages, ...newImageUrls])]
-      modelUpdate.thumbnail_url = model.thumbnail_url || newImageUrls[0]
-      modelUpdate.images = mergedImages
+      const merged = [...new Set([...existingImages, ...newImageUrls])]
+      const sortedImages = sortImageUrls(merged)
+      modelUpdate.images = sortedImages
+      modelUpdate.thumbnail_url = sortedImages[0]
     }
 
     if (intendedStatus === 'published') {
