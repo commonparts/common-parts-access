@@ -30,14 +30,16 @@ export function UserProfileMenu() {
 					className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 					aria-label="Open profile menu"
 				>
-					<CurrentUserAvatar className="h-lg w-lg" />
+					<CurrentUserAvatar className="h-lg w-lg" name={name} />
 				</button>
 			</DropdownMenuTrigger>
 
-			<DropdownMenuContent align="end" className="w-56 p-0">
+			<DropdownMenuContent align="end" className="w-56">
 				{name && (
 					<>
-						<DropdownMenuLabel>{name}</DropdownMenuLabel>
+						<DropdownMenuLabel className="normal-case tracking-normal text-sm font-medium text-text-primary">
+							{name}
+						</DropdownMenuLabel>
 						<DropdownMenuSeparator />
 					</>
 				)}
