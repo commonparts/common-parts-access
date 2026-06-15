@@ -292,9 +292,14 @@ export async function POST(
       const existingImages = Array.isArray(model.images)
         ? model.images.filter((img): img is string => typeof img === 'string')
         : []
-      const mergedImages = [...new Set([...existingImages, ...newImageUrls])]
-      modelUpdate.thumbnail_url = model.thumbnail_url || newImageUrls[0]
-      modelUpdate.images = mergedImages
+      const merged = [...new Set([...existingImages, ...newImageUrls])]
+      const sortedImages = merged.sort((a, b) => {
+        const fa = a.split('/').pop() ?? a
+        const fb = b.split('/').pop() ?? b
+        return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: 'base' })
+      })
+      modelUpdate.images = sortedImages
+      modelUpdate.thumbnail_url = sortedImages[0]
     }
 
     if (intendedStatus === 'published') {

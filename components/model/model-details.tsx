@@ -357,7 +357,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return null
   }
 
-  const allImages = model.images.filter(Boolean)
+  const allImages = model.images.filter(Boolean).sort((a, b) => {
+    const fa = a.split('/').pop() ?? a
+    const fb = b.split('/').pop() ?? b
+    return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: 'base' })
+  })
 
   // File filtering is now handled by ModelFileList component
 
