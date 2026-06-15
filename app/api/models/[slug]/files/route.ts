@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { sortImageUrls } from '@/lib/utils/images'
 
 export const runtime = 'nodejs'
 
@@ -293,11 +294,7 @@ export async function POST(
         ? model.images.filter((img): img is string => typeof img === 'string')
         : []
       const merged = [...new Set([...existingImages, ...newImageUrls])]
-      const sortedImages = merged.sort((a, b) => {
-        const fa = a.split('/').pop() ?? a
-        const fb = b.split('/').pop() ?? b
-        return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: 'base' })
-      })
+      const sortedImages = sortImageUrls(merged)
       modelUpdate.images = sortedImages
       modelUpdate.thumbnail_url = sortedImages[0]
     }

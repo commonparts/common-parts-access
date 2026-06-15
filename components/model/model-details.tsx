@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
+import { sortImageUrls } from "@/lib/utils/images"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -357,11 +358,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return null
   }
 
-  const allImages = model.images.filter(Boolean).sort((a, b) => {
-    const fa = a.split('/').pop() ?? a
-    const fb = b.split('/').pop() ?? b
-    return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: 'base' })
-  })
+  const allImages = sortImageUrls(model.images.filter(Boolean))
 
   // File filtering is now handled by ModelFileList component
 
