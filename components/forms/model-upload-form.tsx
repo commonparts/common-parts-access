@@ -15,15 +15,14 @@ import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Textarea } from "@/components/ui/textarea"
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible"
-import type { ModelOriginType, ModelVerificationStatus } from "@/types/database"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import type { ModelFileHostingType, ModelOriginType, ModelVerificationStatus } from "@/types/database"
 
 interface ModelUploadFormProps {
   onSubmit: (data: ModelFormData) => void
   loading?: boolean
   className?: string
 }
-
-const DESCRIPTION_MAX = 8000
 
 export function ModelUploadForm({ onSubmit, loading = false, className }: ModelUploadFormProps) {
   const {
@@ -111,17 +110,32 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           </div>
 
           <div className="space-y-sm">
-            <Label htmlFor="description">Description</Label>
+            <Label htmlFor="description">Short description</Label>
             <Textarea
               id="description"
-              rows={4}
-              placeholder="Describe your part..."
-              maxLength={DESCRIPTION_MAX}
+              rows={3}
+              placeholder="Briefly describe your part..."
+              maxLength={VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
               value={formData.description}
               onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
             />
             <div className="flex justify-end text-caption text-text-secondary">
-              <span>{formData.description.length}/{DESCRIPTION_MAX}</span>
+              <span>{formData.description.length}/{VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}</span>
+            </div>
+          </div>
+
+          <div className="space-y-sm">
+            <Label htmlFor="instructions">Instructions</Label>
+            <Textarea
+              id="instructions"
+              rows={6}
+              placeholder="Print settings, assembly steps, tips..."
+              maxLength={VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+              value={formData.instructions}
+              onChange={(e) => setFormData(prev => ({ ...prev, instructions: e.target.value }))}
+            />
+            <div className="flex justify-end text-caption text-text-secondary">
+              <span>{formData.instructions.length}/{VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}</span>
             </div>
           </div>
 
@@ -302,72 +316,60 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
           <CardTitle>Part files</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
-          {formData.originType === 'curated' && (
-            <div className="flex gap-md">
-              <label className="flex items-center gap-xs cursor-pointer">
-                <input
-                  type="radio"
-                  name="fileHostingType"
-                  value="hosted"
-                  checked={formData.fileHostingType === 'hosted'}
-                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'hosted' }))}
-                  className="accent-primary"
-                />
-                <span className="text-sm font-medium text-text-primary">Host file</span>
-              </label>
-              <label className="flex items-center gap-xs cursor-pointer">
-                <input
-                  type="radio"
-                  name="fileHostingType"
-                  value="link_out"
-                  checked={formData.fileHostingType === 'link_out'}
-                  onChange={() => setFormData(prev => ({ ...prev, fileHostingType: 'link_out' }))}
-                  className="accent-primary"
-                />
-                <span className="text-sm font-medium text-text-primary">Link to source</span>
-              </label>
+          <RadioGroup
+            value={formData.fileHostingType}
+            onValueChange={(value) =>
+              setFormData(prev => ({ ...prev, fileHostingType: value as ModelFileHostingType }))
+            }
+            className="flex flex-row gap-md"
+          >
+            <div className="flex items-center gap-xs">
+              <RadioGroupItem value="hosted" id="fileHostingType-hosted" />
+              <Label htmlFor="fileHostingType-hosted">Host file</Label>
             </div>
-          )}
+            <div className="flex items-center gap-xs">
+              <RadioGroupItem value="link_out" id="fileHostingType-link_out" />
+              <Label htmlFor="fileHostingType-link_out">Link to source</Label>
+            </div>
+          </RadioGroup>
 
           {formData.fileHostingType === 'link_out' ? (
             <p className="text-sm text-text-secondary">
               No file upload needed. The download button on the model page will redirect visitors to the source URL you provide below.
             </p>
           ) : (
-            <>
-              <div className="space-y-sm">
-                <Label>Part files *</Label>
-                <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
-                <FileUploader
-                  accept=".stl,.obj,.stp,.step"
-                  onFilesSelect={handleFilesSelect}
-                  multiple={true}
-                  maxSize={50 * 1024 * 1024} // 50MB
-                />
-                {formData.files.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Selected: {formData.files.map(f => f.name).join(', ')}
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-sm">
-                <Label>Thumbnail images (optional)</Label>
-                <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
-                <FileUploader
-                  accept=".jpg,.jpeg,.png,.webp"
-                  onFilesSelect={handleThumbnailsSelect}
-                  multiple={true}
-                  maxSize={5 * 1024 * 1024} // 5MB
-                />
-                {formData.thumbnails.length > 0 && (
-                  <div className="text-sm text-muted-foreground">
-                    Selected: {formData.thumbnails.map(f => f.name).join(', ')}
-                  </div>
-                )}
-              </div>
-            </>
+            <div className="space-y-sm">
+              <Label>Part files *</Label>
+              <p className="text-sm text-muted-foreground">Accepted: STL, OBJ, STP, STEP (max 50MB each)</p>
+              <FileUploader
+                accept=".stl,.obj,.stp,.step"
+                onFilesSelect={handleFilesSelect}
+                multiple={true}
+                maxSize={50 * 1024 * 1024} // 50MB
+              />
+              {formData.files.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: {formData.files.map(f => f.name).join(', ')}
+                </div>
+              )}
+            </div>
           )}
+
+          <div className="space-y-sm">
+            <Label>Thumbnail images (optional)</Label>
+            <p className="text-sm text-muted-foreground">Accepted: JPG, JPEG, PNG, WEBP (max 5MB each)</p>
+            <FileUploader
+              accept=".jpg,.jpeg,.png,.webp"
+              onFilesSelect={handleThumbnailsSelect}
+              multiple={true}
+              maxSize={5 * 1024 * 1024} // 5MB
+            />
+            {formData.thumbnails.length > 0 && (
+              <div className="text-sm text-muted-foreground">
+                Selected: {formData.thumbnails.map(f => f.name).join(', ')}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
 
@@ -584,14 +586,14 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
 
           <Grid columns={12}>
             <div className="col-span-12 space-y-sm md:col-span-6">
-              <Label htmlFor="sourceUrl">Source URL{formData.originType === 'curated' ? ' *' : ''}</Label>
+              <Label htmlFor="sourceUrl">Source URL{(formData.originType === 'curated' || formData.fileHostingType === 'link_out') ? ' *' : ''}</Label>
               <Input
                 id="sourceUrl"
                 type="url"
                 placeholder="https://www.printables.com/model/..."
                 value={formData.sourceUrl}
                 onChange={(e) => setFormData(prev => ({ ...prev, sourceUrl: e.target.value }))}
-                required={formData.originType === 'curated'}
+                required={formData.originType === 'curated' || formData.fileHostingType === 'link_out'}
               />
             </div>
             <div className="col-span-12 space-y-sm md:col-span-6">

@@ -1,6 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Product } from '@/types/database'
-import { generateUniqueSlug, slugify } from '@/lib/utils/slug'
 
 export interface FetchProductsParams {
   brandId?: string
@@ -103,19 +102,10 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
     throw new Error('Category is required')
   }
 
-  const base = slugify(name) || 'product'
-  const { data: existingSlugs } = await supabase
-    .from('products')
-    .select('slug')
-    .ilike('slug', `${base}%`)
-
-  const slug = generateUniqueSlug(name, (existingSlugs ?? []).map((p) => p.slug))
-
   const { data, error } = await supabase
     .from('products')
     .insert({
       name,
-      slug,
       brand_id: input.brandId,
       category_id: input.categoryId,
       model_number: input.modelNumber?.trim() || null,

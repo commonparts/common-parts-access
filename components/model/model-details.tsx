@@ -5,6 +5,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
+import { sortImageUrls } from "@/lib/utils/images"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -357,10 +358,10 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     return null
   }
 
-  const allImages = [
+  const allImages = sortImageUrls([...new Set([
     ...(model.thumbnailUrl ? [model.thumbnailUrl] : []),
     ...model.images,
-  ].filter(Boolean)
+  ].filter(Boolean))])
 
   // File filtering is now handled by ModelFileList component
 
@@ -559,11 +560,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 {model.viewerHasLiked ? 'Liked' : 'Like'}
               </Button>
             </div>
-            {model.fileHostingType === 'link_out' && (
-              <p className="text-sm text-text-secondary">
-                This part is hosted on {model.sourcePlatformName ?? 'the original source'}. Common Parts provides the metadata and curation — download is handled by the original source.
-              </p>
-            )}
+
           </div>
 
           {model.author && (
@@ -612,6 +609,24 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
       </Grid>
 
       <Grid columns={12} className="items-start gap-lg">
+        {model.instructions && (
+          <Card className="col-span-12 lg:col-span-8 border-border-subtle">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{model.instructions}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
@@ -924,24 +939,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             }}
           />
         </div>
-        )}
-
-        {model.instructions && (
-          <Card className="col-span-12 lg:col-span-6 border-border-subtle">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Instructions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="prose prose-sm max-w-none">
-                <p className="whitespace-pre-wrap text-sm leading-relaxed">{model.instructions}</p>
-              </div>
-            </CardContent>
-          </Card>
         )}
 
         {/* Notes */}
