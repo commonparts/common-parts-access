@@ -83,19 +83,19 @@ export const spacingPrimitives = {
 
 export const radiusPrimitives = {
   none: "0",
-  sm: "4px",
-  md: "6px",
-  lg: "8px",
-  xl: "10px",
-  "2xl": "12px",
-  "3xl": "14px",
+  sm: "2px",
+  md: "3px",
+  lg: "4px",
+  xl: "4px",
+  "2xl": "6px",
+  "3xl": "6px",
   full: "9999px",
 } as const
 
 export const elevationPrimitives = {
   none: "none",
-  xs: "0 1px 2px rgba(26, 26, 26, 0.04)",
-  sm: "0 2px 4px rgba(26, 26, 26, 0.06)",
+  xs: "none",
+  sm: "none",
   md: "0 4px 8px rgba(26, 26, 26, 0.08)",
   lg: "0 8px 16px rgba(26, 26, 26, 0.10)",
   xl: "0 16px 32px rgba(26, 26, 26, 0.12)",
