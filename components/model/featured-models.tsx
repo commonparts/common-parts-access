@@ -86,7 +86,7 @@ export function FeaturedModels() {
   return (
     <Section>
       <Container size="xl" className="space-y-lg">
-        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most Downloaded Parts</h2>
+        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most downloaded parts</h2>
 
         <ModelGrid 
           models={models}
@@ -101,7 +101,7 @@ export function FeaturedModels() {
           <div className="text-center">
             <Button asChild variant="outline">
               <Link href="/browse">
-                View More Parts
+                View more parts
               </Link>
             </Button>
           </div>

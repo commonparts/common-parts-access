@@ -19,22 +19,22 @@ interface SortOptionsProps {
 const sortOptions: SortOption[] = [
   {
     key: 'popularity',
-    label: 'Most Popular',
+    label: 'Most popular',
     description: 'Most downloaded models'
   },
   {
     key: 'newest',
-    label: 'Newest First',
+    label: 'Newest first',
     description: 'Recently uploaded'
   },
   {
     key: 'likes',
-    label: 'Most Liked',
+    label: 'Most liked',
     description: 'Community favorites'
   },
   {
     key: 'views',
-    label: 'Most Viewed',
+    label: 'Most viewed',
     description: 'Trending models'
   }
 ]
