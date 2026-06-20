@@ -44,4 +44,61 @@ body {
     font-family: var(--font-mono);
     font-size: var(--typography-size-caption);
   }
+
+  /* Field label: the technical "key" of a key/value pair.
+  Reuses your "section labels" tracking (caps, 0.1em). */
+  .label-field {
+    font-family: var(--typography-font-mono, ui-monospace, monospace);
+    font-size: var(--typography-size-micro, 11px);
+    letter-spacing: var(--typography-letterSpacing-caps, 0.1em);
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+ 
+  /* Overline: a section sur-title, e.g. "01 — PHYSICAL".
+  Reuses your "overlines" tracking (0.08em). */
+  .overline {
+    font-family: var(--typography-font-mono, ui-monospace, monospace);
+    font-size: var(--typography-size-micro, 11px);
+    letter-spacing: var(--typography-letterSpacing-mono, 0.08em);
+    text-transform: uppercase;
+    color: var(--color-text-secondary);
+  }
+ 
+  /* Mono value: references, dimensions, hashes, units.
+  tabular-nums keeps numeric columns aligned like a real datasheet. */
+  .value-mono {
+    font-family: var(--typography-font-mono, ui-monospace, monospace);
+    font-size: var(--typography-size-caption, 13px);
+    color: var(--color-text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+ 
+  /* Key/value row with a hairline rule, as in a spec table. */
+  .spec-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+  .spec-row:last-child {
+    border-bottom: 0;
+  }
+ 
+  /* Section header bar: strong top rule + tracked label. */
+  .section-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid var(--color-text-primary);
+    padding-top: 8px;
+    margin: 18px 0 8px;
+  }
+ 
+  /* Thin divider. */
+  .rule {
+    border-top: 1px solid var(--color-border-subtle);
+  }
 }
