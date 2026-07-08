@@ -180,6 +180,7 @@ export default function BrowsePage() {
 
           <div className="col-span-12 md:col-span-6">
             <SearchBar
+              autocomplete={false}
               value={currentSearch}
               onChange={handleSearchChange}
               onClear={clearSearch}
