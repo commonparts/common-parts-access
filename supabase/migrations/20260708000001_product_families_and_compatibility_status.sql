@@ -31,7 +31,10 @@ begin
       check (product_kind in ('standalone', 'family', 'variant'));
   end if;
 
-  -- A variant must belong to a family; a family is always a root.
+  -- A variant must belong to a family; families and standalones are roots.
+  -- parent_id is the signal queries use for "variant of a family", so only
+  -- variants may carry one — prevents a product left on the default
+  -- 'standalone' kind from silently behaving as a variant.
   if not exists (
     select 1 from pg_constraint
     where conname = 'products_kind_parent_consistency'
@@ -41,8 +44,7 @@ begin
       add constraint products_kind_parent_consistency
       check (
         (product_kind = 'variant' and parent_id is not null)
-        or (product_kind = 'family' and parent_id is null)
-        or product_kind = 'standalone'
+        or (product_kind in ('standalone', 'family') and parent_id is null)
       );
   end if;
 end
