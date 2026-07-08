@@ -30,11 +30,12 @@ as $func$
     from params p
   ),
   -- Products: name + model number + parent family name + brand name; carries
-  -- the category name for display.
+  -- the category name and the denormalized parts_count (trigger-maintained by
+  -- #227, already family-aware) for display — no per-row count subquery.
   product_docs as (
     select
       pr.id, pr.name, pr.slug, pr.model_number, pr.product_kind, pr.image_url,
-      c.name as category,
+      pr.parts_count, c.name as category,
       concat_ws(' ', pr.name, pr.model_number, fam.name, b.name) as doc
     from public.products pr
     left join public.products fam on fam.id = pr.parent_id
@@ -43,7 +44,7 @@ as $func$
   ),
   product_hits as (
     select
-      d.id, d.name, d.slug, d.model_number, d.product_kind, d.image_url, d.category,
+      d.id, d.name, d.slug, d.model_number, d.product_kind, d.image_url, d.category, d.parts_count,
       ts_rank(to_tsvector('english', d.doc), q.tsq) * 4
         + word_similarity(q.raw, d.doc) as score
     from product_docs d, query q
@@ -54,20 +55,6 @@ as $func$
       )
     order by score desc
     limit (select lim from params)
-  ),
-  product_results as (
-    select
-      h.id, h.name, h.slug, h.model_number, h.product_kind, h.image_url, h.category, h.score,
-      (
-        select count(distinct mp.model_id)
-        from public.model_products mp
-        join public.models m on m.id = mp.model_id and m.status = 'published'
-        where mp.product_id = h.id
-          or mp.product_id in (
-            select v.id from public.products v where v.parent_id = h.id
-          )
-      ) as parts_count
-    from product_hits h
   ),
   -- Models: own fields + linked product / family / brand names for matching;
   -- carries one representative linked product name, the author username and the
@@ -128,11 +115,19 @@ as $func$
     order by score desc
     limit (select lim from params)
   ),
+  -- Count products per matched brand in a single grouped pass (restricted to the
+  -- <= lim matched brands) rather than a correlated subquery per row.
   brand_results as (
     select
       h.id, h.name, h.slug, h.logo_url, h.score,
-      (select count(*) from public.products p where p.brand_id = h.id) as product_count
+      coalesce(pc.product_count, 0) as product_count
     from brand_hits h
+    left join (
+      select p.brand_id, count(*)::int as product_count
+      from public.products p
+      where p.brand_id in (select id from brand_hits)
+      group by p.brand_id
+    ) pc on pc.brand_id = h.id
   )
   select jsonb_build_object(
     'products', coalesce((
@@ -146,7 +141,7 @@ as $func$
         'category', category,
         'parts_count', parts_count
       ) order by score desc)
-      from product_results
+      from product_hits
     ), '[]'::jsonb),
     'models', coalesce((
       select jsonb_agg(jsonb_build_object(
