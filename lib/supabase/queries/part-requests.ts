@@ -91,9 +91,12 @@ export function validatePartRequestInput(body: unknown): PartRequestValidation {
  * session (null for anonymous submissions) so callers cannot spoof attribution
  * — the insert RLS policy also enforces that a null `user_id` is only allowed
  * when there is no session, and otherwise `user_id = auth.uid()`.
- * Returns the new row id only; no row-level data is ever read back publicly.
+ *
+ * The insert intentionally does NOT chain `.select()`: part_requests has no
+ * SELECT policy (no public row-level read), so requesting the row back would be
+ * rejected by RLS. Nothing is read back — callers only need success/failure.
  */
-export async function createPartRequest(value: ValidatedPartRequest): Promise<string> {
+export async function createPartRequest(value: ValidatedPartRequest): Promise<void> {
   const supabase = await createClient()
 
   // Attribute to the signed-in user when there is one. A genuinely anonymous
@@ -105,24 +108,18 @@ export async function createPartRequest(value: ValidatedPartRequest): Promise<st
     console.error('createPartRequest: failed to resolve authenticated user', authError)
   }
 
-  const { data, error } = await supabase
-    .from('part_requests')
-    .insert({
-      product_id: value.product_id,
-      raw_query: value.raw_query,
-      description: value.description,
-      page_url: value.page_url,
-      user_id: authData?.user?.id ?? null,
-    })
-    .select('id')
-    .single()
+  const { error } = await supabase.from('part_requests').insert({
+    product_id: value.product_id,
+    raw_query: value.raw_query,
+    description: value.description,
+    page_url: value.page_url,
+    user_id: authData?.user?.id ?? null,
+  })
 
   if (error) {
     console.error('createPartRequest: insert failed', error)
     throw new Error(error.message || 'Failed to create part request')
   }
-
-  return data.id
 }
 
 /**

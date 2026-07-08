@@ -50,3 +50,42 @@ export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LI
     brands: results.brands ?? [],
   }
 }
+
+export interface BrandSuggestion {
+  name: string
+  slug: string
+}
+
+/**
+ * Conservative empty-state suggestion: returns a brand only when the whole
+ * query or one of its tokens is an EXACT (case-insensitive) match for a brand
+ * name — never a fuzzy/partial match. Used on the /search zero-result state to
+ * point at a real brand page (e.g. query "magimix blender" → the Magimix brand).
+ * Tokens are sanitized to [a-z0-9-] before building the filter.
+ */
+export async function findExactBrandMatch(query: string): Promise<BrandSuggestion | null> {
+  const tokens = Array.from(
+    new Set(
+      [query, ...query.split(/\s+/)]
+        .map((t) => t.trim().toLowerCase().replace(/[^a-z0-9-]/g, ''))
+        .filter((t) => t.length >= 2),
+    ),
+  )
+  if (tokens.length === 0) return null
+
+  const supabase = await createClient()
+  // `name.ilike.<token>` with no wildcards is a case-insensitive exact match.
+  const orFilter = tokens.map((t) => `name.ilike.${t}`).join(',')
+  const { data, error } = await supabase
+    .from('brands')
+    .select('name, slug')
+    .or(orFilter)
+    .limit(1)
+
+  if (error) {
+    console.error('findExactBrandMatch: query failed', error)
+    return null
+  }
+
+  return (data?.[0] as BrandSuggestion | undefined) ?? null
+}
