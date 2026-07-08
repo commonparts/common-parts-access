@@ -3,6 +3,15 @@
  */
 
 /**
+ * Format a count with its noun, pluralizing the noun for counts other than 1.
+ * @example pluralize(2, 'part') // "2 parts"
+ * @example pluralize(1, 'brand') // "1 brand"
+ */
+export function pluralize(count: number, noun: string): string {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`
+}
+
+/**
  * Format file size from bytes to human readable format
  * @param bytes - Size in bytes
  * @param decimals - Number of decimal places (default: 2)

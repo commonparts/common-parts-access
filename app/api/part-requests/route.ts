@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const id = await createPartRequest(validation.value)
-    return NextResponse.json({ id }, { status: 201 })
+    await createPartRequest(validation.value)
+    return NextResponse.json({ success: true }, { status: 201 })
   } catch (error) {
     console.error('Failed to create part request:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

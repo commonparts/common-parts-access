@@ -40,6 +40,16 @@ export interface SearchResults {
   brands: SearchBrandResult[]
 }
 
+// Result-page type filter (All / Products / Parts / Brands). Lives here (not in
+// the client view) so the server route can validate the `type` param too.
+export type SearchType = "all" | "products" | "parts" | "brands"
+
+export const SEARCH_TYPES: SearchType[] = ["all", "products", "parts", "brands"]
+
+export function isSearchType(value: string | undefined): value is SearchType {
+  return !!value && (SEARCH_TYPES as string[]).includes(value)
+}
+
 // Bounds shared by the query layer and the endpoint.
 export const SEARCH_DEFAULT_LIMIT = 5
 export const SEARCH_MAX_LIMIT = 20

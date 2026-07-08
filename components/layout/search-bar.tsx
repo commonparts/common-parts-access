@@ -2,6 +2,7 @@
 import * as React from "react"
 import { useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { pluralize } from "@/lib/utils/formatters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -19,6 +20,8 @@ interface SearchBarProps {
   onSearch?: (query: string) => void
   showFilters?: boolean
   value?: string
+  /** Uncontrolled initial query (e.g. pre-filling the input on /search). */
+  defaultValue?: string
   onChange?: (query: string) => void
   onClear?: () => void
   /**
@@ -27,10 +30,6 @@ interface SearchBarProps {
    * /browse, whose behavior must stay unchanged.
    */
   autocomplete?: boolean
-}
-
-function pluralize(count: number, noun: string): string {
-  return `${count} ${noun}${count === 1 ? "" : "s"}`
 }
 
 const SearchIcon = ({ className }: { className?: string }) => (
@@ -97,10 +96,11 @@ export function SearchBar({
   value,
   onChange,
   onClear,
+  defaultValue,
   autocomplete = true,
 }: SearchBarProps) {
   const router = useRouter()
-  const [internalQuery, setInternalQuery] = React.useState(value ?? "")
+  const [internalQuery, setInternalQuery] = React.useState(value ?? defaultValue ?? "")
   const [isExpanded, setIsExpanded] = React.useState(false)
   const [activeIndex, setActiveIndex] = React.useState(-1)
   const containerRef = React.useRef<HTMLDivElement>(null)
