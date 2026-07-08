@@ -112,8 +112,11 @@ export function SearchResultsView({
     .filter(Boolean)
     .join(" · ")
 
+  // In the "All" view, hide empty groups. When a specific type is selected,
+  // always render its section — even with zero hits — so the page reflects the
+  // active filter instead of looking blank.
   const showSection = (type: Exclude<SearchType, "all">) =>
-    counts[type] > 0 && (activeType === "all" || activeType === type)
+    activeType === type || (activeType === "all" && counts[type] > 0)
 
   return (
     <div className="space-y-lg">
@@ -121,19 +124,18 @@ export function SearchResultsView({
         {summary}
       </p>
 
-      {/* Type filter chips */}
-      <div className="flex flex-wrap gap-sm" role="tablist" aria-label="Filter results by type">
+      {/* Type filter toggles — plain buttons with aria-pressed, not a tab
+          widget (there are no tab panels / roving focus to back that up). */}
+      <div className="flex flex-wrap gap-sm" role="group" aria-label="Filter results by type">
         {SEARCH_TYPES.map((type) => {
-          const label =
-            type === "all" ? "All" : TYPE_LABEL[type]
+          const label = type === "all" ? "All" : TYPE_LABEL[type]
           const count = type === "all" ? total : counts[type]
           const isActive = activeType === type
           return (
             <button
               key={type}
               type="button"
-              role="tab"
-              aria-selected={isActive}
+              aria-pressed={isActive}
               onClick={() => selectType(type)}
               className={cn(
                 "rounded-full border px-md py-xs text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface",
@@ -157,13 +159,18 @@ export function SearchResultsView({
           onSeeAll={() => selectType("products")}
           seeAllLabel={`See all ${pluralize(counts.products, "product")}`}
         >
-          <div className="grid gap-md sm:grid-cols-2">
-            {(activeType === "all" ? results.products.slice(0, PREVIEW_COUNT) : results.products).map(
-              (product) => (
+          {counts.products > 0 ? (
+            <div className="grid gap-md sm:grid-cols-2">
+              {(activeType === "all"
+                ? results.products.slice(0, PREVIEW_COUNT)
+                : results.products
+              ).map((product) => (
                 <ProductResultCard key={product.id} product={product} />
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <SectionEmpty label="products" query={query} />
+          )}
         </ResultSection>
       )}
 
@@ -175,13 +182,18 @@ export function SearchResultsView({
           onSeeAll={() => selectType("parts")}
           seeAllLabel={`See all ${pluralize(counts.parts, "part")}`}
         >
-          <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
-            {(activeType === "all" ? results.models.slice(0, PREVIEW_COUNT) : results.models).map(
-              (model) => (
+          {counts.parts > 0 ? (
+            <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+              {(activeType === "all"
+                ? results.models.slice(0, PREVIEW_COUNT)
+                : results.models
+              ).map((model) => (
                 <ModelCard key={model.id} model={toModelCardModel(model)} showStats={false} />
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <SectionEmpty label="parts" query={query} />
+          )}
         </ResultSection>
       )}
 
@@ -193,16 +205,29 @@ export function SearchResultsView({
           onSeeAll={() => selectType("brands")}
           seeAllLabel={`See all ${pluralize(counts.brands, "brand")}`}
         >
-          <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
-            {(activeType === "all" ? results.brands.slice(0, PREVIEW_COUNT) : results.brands).map(
-              (brand) => (
+          {counts.brands > 0 ? (
+            <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+              {(activeType === "all"
+                ? results.brands.slice(0, PREVIEW_COUNT)
+                : results.brands
+              ).map((brand) => (
                 <BrandResultCard key={brand.id} brand={brand} />
-              ),
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <SectionEmpty label="brands" query={query} />
+          )}
         </ResultSection>
       )}
     </div>
+  )
+}
+
+function SectionEmpty({ label, query }: { label: string; query: string }) {
+  return (
+    <p className="text-body text-text-secondary">
+      No {label} match &ldquo;{query}&rdquo;.
+    </p>
   )
 }
 
