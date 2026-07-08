@@ -73,8 +73,33 @@ export interface Product {
   image_url?: string | null;
   parent_id?: string | null; // family this variant belongs to
   product_kind?: ProductKind;
+  parts_count?: number; // denormalized count of published parts (trigger-maintained)
   created_at?: string;
   updated_at?: string;
+}
+
+// Captures part demand ("Request this part"). Deliberately separate from
+// feedback: no triage pipeline, demand accumulates until fulfilled, and its
+// aggregates are publicly displayable (unlike feedback's restrictive RLS).
+export type PartRequestStatus = 'open' | 'fulfilled' | 'dismissed';
+
+export interface PartRequest {
+  id: string;
+  product_id?: string | null;
+  raw_query?: string | null;
+  description?: string | null;
+  user_id?: string | null;
+  page_url?: string | null;
+  status: PartRequestStatus;
+  fulfilled_by_model_id?: string | null;
+  created_at?: string;
+}
+
+// Row shape returned by the fetch_part_request_counts RPC — aggregate only,
+// never any row-level or identifying data.
+export interface PartRequestCount {
+  description: string;
+  request_count: number;
 }
 
 // ============================================================================
