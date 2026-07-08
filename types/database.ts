@@ -55,6 +55,11 @@ export interface Category {
   created_at?: string;
 }
 
+// 'family' groups near-identical references for navigation (parent_id null);
+// 'variant' is an exact reference within a family (parent_id required);
+// 'standalone' is a product outside any family.
+export type ProductKind = 'standalone' | 'family' | 'variant';
+
 export interface Product {
   id: string;
   name: string;
@@ -66,6 +71,8 @@ export interface Product {
   release_year?: number | null;
   discontinued?: boolean;
   image_url?: string | null;
+  parent_id?: string | null; // family this variant belongs to
+  product_kind?: ProductKind;
   created_at?: string;
   updated_at?: string;
 }
@@ -156,6 +163,17 @@ export interface Model {
   
   created_at?: string;
   updated_at?: string;
+}
+
+// 'declared' means a contributor claimed compatibility; 'verified' means it
+// was confirmed (e.g. a documented make on that exact reference).
+export type CompatibilityStatus = 'declared' | 'verified';
+
+// Junction table model_products: links a model (part) to a compatible product.
+export interface ModelProduct {
+  model_id: string;
+  product_id: string;
+  compatibility_status: CompatibilityStatus;
 }
 
 export interface ModelFile {
