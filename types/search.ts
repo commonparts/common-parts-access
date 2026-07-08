@@ -39,8 +39,12 @@ export interface SearchResults {
 export const SEARCH_DEFAULT_LIMIT = 5
 export const SEARCH_MAX_LIMIT = 20
 
-export const EMPTY_SEARCH_RESULTS: SearchResults = {
-  products: [],
-  models: [],
-  brands: [],
+// Longer queries add cost to websearch_to_tsquery / word_similarity without
+// improving autocomplete results — cap defensively to avoid a cheap DoS vector.
+export const SEARCH_MAX_QUERY_LENGTH = 100
+
+// Factory (not a shared constant) so each caller gets its own arrays — a shared
+// object could be mutated by one caller and leak across requests.
+export function emptySearchResults(): SearchResults {
+  return { products: [], models: [], brands: [] }
 }

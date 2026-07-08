@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 import {
-  EMPTY_SEARCH_RESULTS,
+  emptySearchResults,
   SEARCH_DEFAULT_LIMIT,
   SEARCH_MAX_LIMIT,
+  SEARCH_MAX_QUERY_LENGTH,
   type SearchResults,
 } from '@/types/search'
 
@@ -15,13 +16,14 @@ import {
  * normalizes the inputs and guards the empty-query case so we never hit the
  * database for a blank term.
  *
- * @param query    Raw user query; whitespace-only yields an empty payload.
+ * @param query    Raw user query; whitespace-only yields an empty payload and
+ *                 it is truncated to SEARCH_MAX_QUERY_LENGTH before the DB call.
  * @param limit    Max results per group; clamped to [1, SEARCH_MAX_LIMIT].
  */
 export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LIMIT): Promise<SearchResults> {
-  const trimmed = query?.trim() ?? ''
+  const trimmed = (query?.trim() ?? '').slice(0, SEARCH_MAX_QUERY_LENGTH)
   if (!trimmed) {
-    return EMPTY_SEARCH_RESULTS
+    return emptySearchResults()
   }
 
   const safeLimit = Number.isFinite(limit)
