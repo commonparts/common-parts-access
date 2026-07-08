@@ -10,6 +10,7 @@ export interface SearchProductResult {
   model_number: string | null
   product_kind: ProductKind
   image_url: string | null
+  category: string | null
   parts_count: number
 }
 
@@ -20,6 +21,9 @@ export interface SearchModelResult {
   part_name: string | null
   part_number: string | null
   thumbnail_url: string | null
+  product_name: string | null // a linked product; null => "Generic part"
+  author_username: string | null
+  license: string | null // license short name, e.g. "CC BY-NC-ND 4.0"
 }
 
 export interface SearchBrandResult {
@@ -27,6 +31,7 @@ export interface SearchBrandResult {
   name: string
   slug: string
   logo_url: string | null
+  product_count: number
 }
 
 export interface SearchResults {
