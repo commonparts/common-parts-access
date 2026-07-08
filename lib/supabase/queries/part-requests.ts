@@ -89,13 +89,21 @@ export function validatePartRequestInput(body: unknown): PartRequestValidation {
 /**
  * Inserts a validated part request. Derives `user_id` from the authenticated
  * session (null for anonymous submissions) so callers cannot spoof attribution
- * — the insert RLS policy also enforces `user_id IS NULL OR user_id = auth.uid()`.
+ * — the insert RLS policy also enforces that a null `user_id` is only allowed
+ * when there is no session, and otherwise `user_id = auth.uid()`.
  * Returns the new row id only; no row-level data is ever read back publicly.
  */
 export async function createPartRequest(value: ValidatedPartRequest): Promise<string> {
   const supabase = await createClient()
 
-  const { data: authData } = await supabase.auth.getUser()
+  // Attribute to the signed-in user when there is one. A genuinely anonymous
+  // caller yields a null user_id (allowed by RLS); a real auth error is logged
+  // rather than swallowed. If a session exists but user_id came back null, RLS
+  // fails the insert closed rather than storing a mis-attributed anonymous row.
+  const { data: authData, error: authError } = await supabase.auth.getUser()
+  if (authError) {
+    console.error('createPartRequest: failed to resolve authenticated user', authError)
+  }
 
   const { data, error } = await supabase
     .from('part_requests')

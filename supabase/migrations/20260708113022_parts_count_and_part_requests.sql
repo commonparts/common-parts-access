@@ -136,7 +136,12 @@ create table if not exists public.part_requests (
   id                    uuid primary key default gen_random_uuid(),
   product_id            uuid references public.products(id) on delete set null,
   raw_query             text check (char_length(raw_query) <= 200),
-  description           text check (char_length(description) <= 500),
+  -- Enforce the demand invariant in the schema, not only in the API: the RLS
+  -- insert policy permits direct anon/auth inserts, so a null/blank description
+  -- must be rejected here too (matches the endpoint's 2..500 trimmed bounds).
+  description           text not null
+                          check (char_length(description) <= 500
+                                 and char_length(btrim(description, E' \t\n\r')) >= 2),
   user_id               uuid references public.user_profiles(id) on delete set null,
   page_url              text check (char_length(page_url) <= 2048),
   status                text not null default 'open'
@@ -151,11 +156,15 @@ create index if not exists idx_part_requests_status  on public.part_requests usi
 alter table public.part_requests enable row level security;
 
 -- Anonymous or authenticated insert; the API validates the payload server-side.
--- Users may only self-attribute (or stay anonymous with a null user_id) — they
--- cannot forge another user's id.
+-- Attribution is mandatory for signed-in users: a null user_id is only allowed
+-- when there is no session (auth.uid() is null). Signed-in callers cannot submit
+-- anonymously or forge another user's id — same rule as the feedback table.
 create policy "Anyone can submit a part request"
   on public.part_requests for insert
-  with check (user_id is null or user_id = auth.uid());
+  with check (
+    (auth.uid() is null and user_id is null)
+    or auth.uid() = user_id
+  );
 
 -- No SELECT / UPDATE / DELETE policies: part_requests is never readable at row
 -- level by the public. All public consumption goes through the aggregation RPC
