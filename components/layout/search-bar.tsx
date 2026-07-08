@@ -191,8 +191,14 @@ export function SearchBar({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") {
-      clearQuery()
-      close()
+      // Combobox convention: first Escape dismisses the popup but keeps the
+      // query; only clear once the popup is already closed (or in legacy mode).
+      if (autocomplete && isExpanded) {
+        close()
+      } else {
+        clearQuery()
+        close()
+      }
       return
     }
 
@@ -218,16 +224,24 @@ export function SearchBar({
     }
   }
 
-  // Close when clicking outside the whole search area.
+  // Close when focus or a click leaves the whole search area — covers both an
+  // outside mouse click and tabbing away (focus moving out without a click).
   React.useEffect(() => {
     if (!isExpanded) return
+    const isOutside = (target: EventTarget | null) =>
+      !!containerRef.current && !containerRef.current.contains(target as Node)
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
-        close()
-      }
+      if (isOutside(event.target)) close()
+    }
+    const handleFocusOutside = (event: FocusEvent) => {
+      if (isOutside(event.target)) close()
     }
     document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+    document.addEventListener("focusin", handleFocusOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+      document.removeEventListener("focusin", handleFocusOutside)
+    }
   }, [isExpanded])
 
   const renderProductRow = (product: SearchProductResult, index: number) => (
@@ -303,7 +317,7 @@ export function SearchBar({
             type="search"
             role={autocomplete ? "combobox" : undefined}
             aria-expanded={autocomplete ? showDropdown : undefined}
-            aria-controls={autocomplete ? "search-autocomplete-list" : undefined}
+            aria-controls={showDropdown ? "search-autocomplete-list" : undefined}
             aria-autocomplete={autocomplete ? "list" : undefined}
             placeholder={placeholder}
             value={currentQuery}
