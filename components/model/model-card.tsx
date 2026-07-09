@@ -4,6 +4,7 @@ import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { formatPrintTime } from "@/lib/utils/formatters"
 
 interface ModelCardProps {
   model: {
@@ -25,20 +26,31 @@ interface ModelCardProps {
     category: string
     createdAt: Date
     isPremium?: boolean
+    // Optional part metadata (e.g. product page). Rendered as a compact meta
+    // row + license badge when any is provided; other usages are unaffected.
+    material?: string | null
+    license?: string | null
+    estimatedPrintTime?: number | null // minutes
   }
   className?: string
   showAuthor?: boolean
   showStats?: boolean
   variant?: "default" | "compact" | "detailed"
+  // Optional overlay on the thumbnail (e.g. compatibility badge on a product
+  // page). Rendered top-left so it never collides with the Premium badge.
+  badge?: React.ReactNode
 }
 
-export function ModelCard({ 
-  model, 
-  className, 
-  showAuthor = true, 
+export function ModelCard({
+  model,
+  className,
+  showAuthor = true,
   showStats = true,
-  variant = "default"
+  variant = "default",
+  badge,
 }: ModelCardProps) {
+  const printTime = formatPrintTime(model.estimatedPrintTime)
+  const hasPartMeta = Boolean(model.material || model.license || printTime)
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -127,6 +139,7 @@ export function ModelCard({
           {model.isPremium && (
             <Badge className="absolute top-2 right-2 bg-yellow-500">Premium</Badge>
           )}
+          {badge && <div className="absolute left-2 top-2 z-10">{badge}</div>}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
         </div>
       </Link>
@@ -144,7 +157,7 @@ export function ModelCard({
         )}
       </CardHeader>
 
-      <CardContent className="pb-2">
+      <CardContent className="space-y-sm pb-2">
         {/* Author */}
         {showAuthor && (
           <div className="flex items-center space-x-2">
@@ -158,13 +171,25 @@ export function ModelCard({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <svg className="h-4 w-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg aria-hidden="true" className="h-4 w-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               )}
             </div>
             <span className="text-sm font-medium text-text-primary">@{model.author.username}</span>
           </div>
+        )}
+
+        {/* Part metadata (material, print time, downloads) + license badge */}
+        {hasPartMeta && (
+          <>
+            <div className="flex flex-wrap items-center gap-x-md gap-y-xs text-caption text-text-secondary">
+              {model.material && <span>{model.material}</span>}
+              {printTime && <span>{printTime}</span>}
+              <span>{formatNumber(model.stats.downloads)} downloads</span>
+            </div>
+            {model.license && <Badge variant="outline">{model.license}</Badge>}
+          </>
         )}
       </CardContent>
 
