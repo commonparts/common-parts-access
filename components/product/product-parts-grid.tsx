@@ -85,7 +85,7 @@ function PartCard({
           <img src={part.thumbnail_url} alt={part.name} className="h-full w-full object-cover" />
         ) : (
           <div className="flex h-full w-full items-center justify-center text-text-disabled">
-            <svg className="size-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg aria-hidden="true" className="size-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
             </svg>
           </div>
@@ -133,7 +133,7 @@ function CompatibilityBadge({
   if (verified) {
     return (
       <span className="inline-flex items-center gap-xs rounded-full bg-status-success px-sm py-xs text-xs font-semibold text-status-successText">
-        <svg className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg aria-hidden="true" className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
         </svg>
         Verified on {referenceLabel}
