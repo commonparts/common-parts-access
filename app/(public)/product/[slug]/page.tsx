@@ -57,12 +57,11 @@ export default async function ProductPage({
   const fitsLabel = family?.name ?? product.name
   const productionYears = formatProductionYears(product.release_year, product.discontinued)
 
+  // Category is shown as plain text: there is no category-listing route yet
+  // (/browse doesn't read a category param), so a link would go nowhere useful.
   const breadcrumbItems = [
     product.brand && { label: product.brand.name, href: `/brand/${product.brand.slug}` },
-    product.category && {
-      label: product.category.name,
-      href: `/browse?category=${product.category.slug}`,
-    },
+    product.category && { label: product.category.name },
     { label: product.name },
   ].filter((item): item is { label: string; href?: string } => Boolean(item))
 
