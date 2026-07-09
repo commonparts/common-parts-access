@@ -4,24 +4,42 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
-type SubmitState = "idle" | "submitting" | "done" | "error"
+type SubmitState = "idle" | "submitting" | "done" | "invalid" | "failed"
 
 const MIN_DESCRIPTION_LENGTH = 2
 
+export interface RequestPartFormProps {
+  /** Attach the request to a product (product page). Omit for a free search. */
+  productId?: string
+  /** The failed search term, stored as raw_query for curation context. */
+  rawQuery?: string
+  defaultDescription?: string
+  placeholder?: string
+  submitLabel?: string
+  successMessage?: string
+}
+
 /**
- * Empty-state "Request this part" form. Submits to POST /api/part-requests with
- * the failed search as raw_query and no product_id (anonymous allowed). Does not
- * touch the feedback table / triage pipeline — never creates a GitHub issue.
+ * Shared "request this part" form. Submits to POST /api/part-requests
+ * (anonymous allowed) with an optional product_id and raw_query — never touches
+ * the feedback table / triage pipeline, so it can't create a GitHub issue.
  */
-export function RequestPartForm({ query }: { query: string }) {
-  const [description, setDescription] = React.useState(query)
+export function RequestPartForm({
+  productId,
+  rawQuery,
+  defaultDescription = "",
+  placeholder = "Describe the part you need (brand, model, which part)…",
+  submitLabel = "Request this part",
+  successMessage = "Thanks — your request is logged. Parts with the most demand get prioritized for the catalog.",
+}: RequestPartFormProps) {
+  const [description, setDescription] = React.useState(defaultDescription)
   const [state, setState] = React.useState<SubmitState>("idle")
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const trimmed = description.trim()
     if (trimmed.length < MIN_DESCRIPTION_LENGTH) {
-      setState("error")
+      setState("invalid")
       return
     }
 
@@ -32,7 +50,8 @@ export function RequestPartForm({ query }: { query: string }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           description: trimmed,
-          rawQuery: query,
+          productId,
+          rawQuery,
           pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
         }),
       })
@@ -40,14 +59,14 @@ export function RequestPartForm({ query }: { query: string }) {
       setState("done")
     } catch (err) {
       console.error("RequestPartForm: submission failed", err)
-      setState("error")
+      setState("failed")
     }
   }
 
   if (state === "done") {
     return (
       <div className="rounded-lg border border-border-subtle bg-bg-subtle p-lg text-sm text-text-primary">
-        Thanks — your request is logged. Parts with the most demand get prioritized for the catalog.
+        {successMessage}
       </div>
     )
   }
@@ -58,19 +77,24 @@ export function RequestPartForm({ query }: { query: string }) {
         value={description}
         onChange={(e) => {
           setDescription(e.target.value)
-          if (state === "error") setState("idle")
+          if (state === "invalid" || state === "failed") setState("idle")
         }}
         rows={3}
         aria-label="Describe the part you need"
-        placeholder="Describe the part you need (brand, model, which part)…"
+        placeholder={placeholder}
       />
-      {state === "error" && (
+      {state === "invalid" && (
         <p className="text-caption text-text-secondary">
           Please add a short description (at least {MIN_DESCRIPTION_LENGTH} characters) so we know what to source.
         </p>
       )}
+      {state === "failed" && (
+        <p className="text-caption text-text-secondary">
+          Something went wrong sending your request. Please try again.
+        </p>
+      )}
       <Button type="submit" disabled={state === "submitting"}>
-        {state === "submitting" ? "Sending…" : "Request this part"}
+        {state === "submitting" ? "Sending…" : submitLabel}
       </Button>
     </form>
   )

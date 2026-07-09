@@ -12,6 +12,21 @@ export function pluralize(count: number, noun: string): string {
 }
 
 /**
+ * Format a print-time duration given in minutes as "2h 30m" / "45m" / "3h".
+ * Returns null for missing or non-positive values so callers can omit it.
+ */
+export function formatPrintTime(minutes: number | null | undefined): string | null {
+  if (!minutes || minutes <= 0) return null
+  // Round to whole minutes first so a fractional value can't roll up to "1h 60m".
+  const total = Math.round(minutes)
+  const hours = Math.floor(total / 60)
+  const mins = total % 60
+  if (hours === 0) return `${mins}m`
+  if (mins === 0) return `${hours}h`
+  return `${hours}h ${mins}m`
+}
+
+/**
  * Format file size from bytes to human readable format
  * @param bytes - Size in bytes
  * @param decimals - Number of decimal places (default: 2)

@@ -8,7 +8,7 @@ import { ModelCard } from "@/components/model/model-card"
 import { pluralize } from "@/lib/utils/formatters"
 import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
-import { RequestPartForm } from "@/components/search/request-part-form"
+import { RequestPartForm } from "@/components/part-requests/request-part-form"
 import type { BrandSuggestion } from "@/lib/supabase/queries/search"
 import {
   SEARCH_TYPES,
@@ -86,7 +86,7 @@ export function SearchResultsView({
           </p>
         </div>
 
-        <RequestPartForm query={query} />
+        <RequestPartForm rawQuery={query} defaultDescription={query} />
 
         <div className="flex flex-wrap items-center gap-sm">
           <Button asChild variant="outline">
