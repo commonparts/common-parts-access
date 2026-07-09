@@ -6,17 +6,20 @@ import * as React from "react"
 // Content is intentionally generic (works for any appliance brand).
 export function HowToCheckReference() {
   const [open, setOpen] = React.useState(false)
+  const contentId = React.useId()
 
   return (
     <div className="rounded-lg border border-border-subtle bg-bg-subtle">
       <button
         type="button"
         aria-expanded={open}
+        aria-controls={contentId}
         onClick={() => setOpen((v) => !v)}
         className="flex w-full items-center justify-between gap-sm px-md py-sm text-left text-sm font-medium text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
       >
         How to check your reference
         <svg
+          aria-hidden="true"
           className={`size-sm shrink-0 text-text-secondary transition-transform ${open ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
@@ -26,7 +29,10 @@ export function HowToCheckReference() {
         </svg>
       </button>
       {open && (
-        <div className="space-y-sm border-t border-border-subtle px-md py-sm text-sm text-text-secondary">
+        <div
+          id={contentId}
+          className="space-y-sm border-t border-border-subtle px-md py-sm text-sm text-text-secondary"
+        >
           <p>
             The exact reference (model number) tells you which parts are guaranteed to fit. Two
             products in the same series can differ in small ways, so it&rsquo;s worth confirming.

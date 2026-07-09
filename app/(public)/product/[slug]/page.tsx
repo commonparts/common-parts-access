@@ -9,7 +9,11 @@ import { HowToCheckReference } from "@/components/product/how-to-check-reference
 import { ProductPartsGrid } from "@/components/product/product-parts-grid"
 import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
-import { fetchProductPageBySlug, fetchProductPageParts } from "@/lib/supabase/queries/product-page"
+import {
+  fetchProductNameBySlug,
+  fetchProductPageBySlug,
+  fetchProductPageParts,
+} from "@/lib/supabase/queries/product-page"
 import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
 
 export async function generateMetadata({
@@ -18,8 +22,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const data = await fetchProductPageBySlug(slug)
-  return { title: data ? data.product.name : "Product" }
+  const name = await fetchProductNameBySlug(slug)
+  return { title: name ?? "Product" }
 }
 
 // "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
@@ -39,14 +43,15 @@ export default async function ProductPage({
 
   const { product, family, siblings } = data
 
-  const [parts, requestCounts] = await Promise.all([
-    fetchProductPageParts({
-      productId: product.id,
-      parentId: product.parent_id,
-      productKind: product.product_kind,
-    }),
-    fetchPartRequestCounts(product.id),
-  ])
+  const parts = await fetchProductPageParts({
+    productId: product.id,
+    parentId: product.parent_id,
+    productKind: product.product_kind,
+  })
+
+  // Request counts are only rendered in the empty state — skip the RPC entirely
+  // when the product already has parts.
+  const requestCounts = parts.length === 0 ? await fetchPartRequestCounts(product.id) : []
 
   const referenceLabel = product.model_number ?? product.name
   const fitsLabel = family?.name ?? product.name

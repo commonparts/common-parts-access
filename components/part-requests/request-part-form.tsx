@@ -4,7 +4,7 @@ import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
-type SubmitState = "idle" | "submitting" | "done" | "error"
+type SubmitState = "idle" | "submitting" | "done" | "invalid" | "failed"
 
 const MIN_DESCRIPTION_LENGTH = 2
 
@@ -39,7 +39,7 @@ export function RequestPartForm({
     e.preventDefault()
     const trimmed = description.trim()
     if (trimmed.length < MIN_DESCRIPTION_LENGTH) {
-      setState("error")
+      setState("invalid")
       return
     }
 
@@ -59,7 +59,7 @@ export function RequestPartForm({
       setState("done")
     } catch (err) {
       console.error("RequestPartForm: submission failed", err)
-      setState("error")
+      setState("failed")
     }
   }
 
@@ -77,15 +77,20 @@ export function RequestPartForm({
         value={description}
         onChange={(e) => {
           setDescription(e.target.value)
-          if (state === "error") setState("idle")
+          if (state === "invalid" || state === "failed") setState("idle")
         }}
         rows={3}
         aria-label="Describe the part you need"
         placeholder={placeholder}
       />
-      {state === "error" && (
+      {state === "invalid" && (
         <p className="text-caption text-text-secondary">
           Please add a short description (at least {MIN_DESCRIPTION_LENGTH} characters) so we know what to source.
+        </p>
+      )}
+      {state === "failed" && (
+        <p className="text-caption text-text-secondary">
+          Something went wrong sending your request. Please try again.
         </p>
       )}
       <Button type="submit" disabled={state === "submitting"}>

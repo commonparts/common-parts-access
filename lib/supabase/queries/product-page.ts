@@ -126,6 +126,21 @@ export async function fetchProductPageBySlug(slug: string): Promise<ProductPageD
   return { product, family, siblings }
 }
 
+/**
+ * Minimal lookup for metadata: just the product name by slug, so
+ * generateMetadata doesn't re-run the full product + family + siblings load.
+ */
+export async function fetchProductNameBySlug(slug: string): Promise<string | null> {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('products')
+    .select('name')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.name as string | undefined) ?? null
+}
+
 async function fetchProductRef(id: string): Promise<ProductRef | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
