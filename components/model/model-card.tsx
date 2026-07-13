@@ -39,6 +39,9 @@ interface ModelCardProps {
   // Optional overlay on the thumbnail (e.g. compatibility badge on a product
   // page). Rendered top-left so it never collides with the Premium badge.
   badge?: React.ReactNode
+  // Render the part-meta row (material · print time · downloads) + license
+  // badge. Downloads always show here; material/print/license are conditional.
+  showPartMeta?: boolean
 }
 
 export function ModelCard({
@@ -48,9 +51,9 @@ export function ModelCard({
   showStats = true,
   variant = "default",
   badge,
+  showPartMeta = false,
 }: ModelCardProps) {
   const printTime = formatPrintTime(model.estimatedPrintTime)
-  const hasPartMeta = Boolean(model.material || model.license || printTime)
   const formatNumber = (num: number) => {
     if (num >= 1000000) return `${(num / 1000000).toFixed(1)}M`
     if (num >= 1000) return `${(num / 1000).toFixed(1)}K`
@@ -139,7 +142,7 @@ export function ModelCard({
           {model.isPremium && (
             <Badge className="absolute top-2 right-2 bg-yellow-500">Premium</Badge>
           )}
-          {badge && <div className="absolute left-2 top-2 z-10">{badge}</div>}
+          {badge && <div className="absolute left-sm top-sm z-10">{badge}</div>}
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
         </div>
       </Link>
@@ -181,7 +184,7 @@ export function ModelCard({
         )}
 
         {/* Part metadata (material, print time, downloads) + license badge */}
-        {hasPartMeta && (
+        {showPartMeta && (
           <>
             <div className="flex flex-wrap items-center gap-x-md gap-y-xs text-caption text-text-secondary">
               {model.material && <span>{model.material}</span>}

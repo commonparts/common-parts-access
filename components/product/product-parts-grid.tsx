@@ -36,7 +36,7 @@ function toModelCardModel(part: ProductPart) {
     slug: part.slug,
     title: part.name,
     thumbnailUrl: part.thumbnail_url ?? undefined,
-    author: { username: part.author_username ?? "unknown" },
+    author: { username: part.author_username ?? "" },
     stats: { downloads: part.download_count, likes: 0, views: 0 },
     tags: [] as string[],
     category: "",
@@ -74,6 +74,8 @@ export function ProductPartsGrid({ parts, referenceLabel, fitsLabel }: ProductPa
             key={part.id}
             model={toModelCardModel(part)}
             showStats={false}
+            showAuthor={Boolean(part.author_username)}
+            showPartMeta
             badge={
               <CompatibilityBadge
                 verified={part.verified_here}
