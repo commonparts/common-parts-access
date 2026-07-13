@@ -1,10 +1,8 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { Badge } from "@/components/ui/badge"
-import { formatNumber, formatPrintTime } from "@/lib/utils/formatters"
+import { ModelCard } from "@/components/model/model-card"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
 
 type SortKey = "downloads" | "newest"
@@ -27,6 +25,26 @@ function sortParts(parts: ProductPart[], sortKey: SortKey): ProductPart[] {
     const bTime = b.created_at ? Date.parse(b.created_at) : 0
     return bTime - aTime
   })
+}
+
+// Map a product part onto the shared ModelCard shape. Stats are hidden (the
+// likes/views/date footer isn't relevant here); the part-meta row surfaces
+// material, print time, downloads and the license badge.
+function toModelCardModel(part: ProductPart) {
+  return {
+    id: part.id,
+    slug: part.slug,
+    title: part.name,
+    thumbnailUrl: part.thumbnail_url ?? undefined,
+    author: { username: part.author_username ?? "" },
+    stats: { downloads: part.download_count, likes: 0, views: 0 },
+    tags: [] as string[],
+    category: "",
+    createdAt: part.created_at ? new Date(part.created_at) : new Date(),
+    material: part.material,
+    license: part.license_short_name,
+    estimatedPrintTime: part.estimated_print_time,
+  }
 }
 
 export function ProductPartsGrid({ parts, referenceLabel, fitsLabel }: ProductPartsGridProps) {
@@ -52,72 +70,23 @@ export function ProductPartsGrid({ parts, referenceLabel, fitsLabel }: ProductPa
 
       <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((part) => (
-          <PartCard
+          <ModelCard
             key={part.id}
-            part={part}
-            referenceLabel={referenceLabel}
-            fitsLabel={fitsLabel}
+            model={toModelCardModel(part)}
+            showStats={false}
+            showAuthor={Boolean(part.author_username)}
+            showPartMeta
+            badge={
+              <CompatibilityBadge
+                verified={part.verified_here}
+                referenceLabel={referenceLabel}
+                fitsLabel={fitsLabel}
+              />
+            }
           />
         ))}
       </div>
     </div>
-  )
-}
-
-function PartCard({
-  part,
-  referenceLabel,
-  fitsLabel,
-}: {
-  part: ProductPart
-  referenceLabel: string
-  fitsLabel: string
-}) {
-  const printTime = formatPrintTime(part.estimated_print_time)
-  return (
-    <Link
-      href={`/model/${part.slug}`}
-      className="group flex flex-col overflow-hidden rounded-lg border border-border-subtle bg-bg-surface shadow-surface transition-colors hover:border-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-    >
-      <div className="relative aspect-video overflow-hidden bg-bg-subtle">
-        {part.thumbnail_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={part.thumbnail_url} alt={part.name} className="h-full w-full object-cover" />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-text-disabled">
-            <svg aria-hidden="true" className="size-lg" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-            </svg>
-          </div>
-        )}
-        <div className="absolute left-sm top-sm">
-          <CompatibilityBadge
-            verified={part.verified_here}
-            referenceLabel={referenceLabel}
-            fitsLabel={fitsLabel}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-1 flex-col gap-sm p-md">
-        <h3 className="line-clamp-2 font-heading text-sm font-semibold text-text-primary">
-          {part.name}
-        </h3>
-
-        <div className="flex flex-wrap items-center gap-x-md gap-y-xs text-caption text-text-secondary">
-          {part.author_username && <span>@{part.author_username}</span>}
-          {part.material && <span>{part.material}</span>}
-          {printTime && <span>{printTime}</span>}
-          <span>{formatNumber(part.download_count)} downloads</span>
-        </div>
-
-        {part.license_short_name && (
-          <div className="mt-auto pt-xs">
-            <Badge variant="outline">{part.license_short_name}</Badge>
-          </div>
-        )}
-      </div>
-    </Link>
   )
 }
 
