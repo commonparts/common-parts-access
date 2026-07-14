@@ -55,6 +55,11 @@ export interface Category {
   created_at?: string;
 }
 
+// 'family' groups near-identical references for navigation (parent_id null);
+// 'variant' is an exact reference within a family (parent_id required);
+// 'standalone' is a product outside any family.
+export type ProductKind = 'standalone' | 'family' | 'variant';
+
 export interface Product {
   id: string;
   name: string;
@@ -66,8 +71,35 @@ export interface Product {
   release_year?: number | null;
   discontinued?: boolean;
   image_url?: string | null;
+  parent_id?: string | null; // family this variant belongs to
+  product_kind?: ProductKind;
+  parts_count?: number; // denormalized count of published parts (trigger-maintained)
   created_at?: string;
   updated_at?: string;
+}
+
+// Captures part demand ("Request this part"). Deliberately separate from
+// feedback: no triage pipeline, demand accumulates until fulfilled, and its
+// aggregates are publicly displayable (unlike feedback's restrictive RLS).
+export type PartRequestStatus = 'open' | 'fulfilled' | 'dismissed';
+
+export interface PartRequest {
+  id: string;
+  product_id?: string | null;
+  raw_query?: string | null;
+  description?: string | null;
+  user_id?: string | null;
+  page_url?: string | null;
+  status: PartRequestStatus;
+  fulfilled_by_model_id?: string | null;
+  created_at?: string;
+}
+
+// Row shape returned by the fetch_part_request_counts RPC — aggregate only,
+// never any row-level or identifying data.
+export interface PartRequestCount {
+  description: string;
+  request_count: number;
 }
 
 // ============================================================================
@@ -156,6 +188,17 @@ export interface Model {
   
   created_at?: string;
   updated_at?: string;
+}
+
+// 'declared' means a contributor claimed compatibility; 'verified' means it
+// was confirmed (e.g. a documented make on that exact reference).
+export type CompatibilityStatus = 'declared' | 'verified';
+
+// Junction table model_products: links a model (part) to a compatible product.
+export interface ModelProduct {
+  model_id: string;
+  product_id: string;
+  compatibility_status: CompatibilityStatus;
 }
 
 export interface ModelFile {
