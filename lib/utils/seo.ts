@@ -96,10 +96,13 @@ export function buildModelJsonLd(model: ModelSeoData): Record<string, unknown> {
   if (model.tags.length > 0) modelEntity.keywords = model.tags.join(', ')
   if (model.products.length > 0) {
     // The products this part fits — expressed as the subject of the model.
+    // Typed as Thing, not Product: Google treats every Product entity as a
+    // product-snippet candidate and flags it invalid without offers/review/
+    // aggregateRating, which free printable parts never have. The brand is
+    // folded into the name to keep it available for query matching.
     modelEntity.about = model.products.map((product) => ({
-      '@type': 'Product',
-      name: product.name,
-      ...(product.brandName ? { brand: { '@type': 'Brand', name: product.brandName } } : {}),
+      '@type': 'Thing',
+      name: [product.brandName, product.name].filter(Boolean).join(' '),
     }))
   }
 
