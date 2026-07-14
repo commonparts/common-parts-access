@@ -11,8 +11,17 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  let body: unknown
   try {
-    const body: unknown = await request.json()
+    body = await request.json()
+  } catch {
+    return NextResponse.json(
+      { error: 'Invalid JSON body' },
+      { status: 400 }
+    )
+  }
+
+  try {
     const fileId =
       typeof body === 'object' && body !== null && 'fileId' in body
         ? (body as { fileId: unknown }).fileId

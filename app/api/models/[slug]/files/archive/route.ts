@@ -3,7 +3,7 @@ import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
 import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
-import { recordModelDownload } from '@/lib/supabase/queries/model-metrics'
+import { recordModelDownloadForModel } from '@/lib/supabase/queries/model-metrics'
 
 export const runtime = 'nodejs'
 
@@ -91,7 +91,7 @@ export async function GET(
     const zipBytes = new Uint8Array(zipBuffer)
 
     try {
-      await recordModelDownload({ slug, fileId: null })
+      await recordModelDownloadForModel(model.id, null)
     } catch (trackingError) {
       console.error('Failed to log archive download:', trackingError)
     }

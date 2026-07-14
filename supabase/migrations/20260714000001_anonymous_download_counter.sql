@@ -7,7 +7,8 @@
 -- Existing columns are kept for now so historical rows stay intact;
 -- dropping them can be a follow-up once analytics no longer read them.
 
-drop policy "Users can log their own downloads" on public.model_downloads;
+drop policy if exists "Users can log their own downloads" on public.model_downloads;
+drop policy if exists "Anyone can log anonymous downloads on published models" on public.model_downloads;
 
 create policy "Anyone can log anonymous downloads on published models"
   on public.model_downloads for insert
