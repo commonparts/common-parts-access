@@ -16,9 +16,12 @@ export function pluralize(count: number, noun: string): string {
  * Returns null for missing or non-positive values so callers can omit it.
  */
 export function formatPrintTime(minutes: number | null | undefined): string | null {
-  if (!minutes || minutes <= 0) return null
-  // Round to whole minutes first so a fractional value can't roll up to "1h 60m".
+  if (minutes == null || !Number.isFinite(minutes)) return null
+  // Round to whole minutes before the positivity check so fractional values
+  // below half a minute return null instead of "0m", and so a fractional
+  // value can't roll up to "1h 60m".
   const total = Math.round(minutes)
+  if (total <= 0) return null
   const hours = Math.floor(total / 60)
   const mins = total % 60
   if (hours === 0) return `${mins}m`
