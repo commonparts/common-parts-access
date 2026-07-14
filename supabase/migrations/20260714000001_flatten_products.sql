@@ -267,6 +267,84 @@ alter table public.model_products
 -- 3. Drop the products family hierarchy and model_number.
 -- ============================================================================
 
+-- The slug trigger (20260610123602) builds slugs from name + model_number and
+-- lists model_number in its UPDATE OF columns, which blocks the column drop.
+-- Recreate both name-only first.
+create or replace function public.set_product_slug()
+returns trigger
+language plpgsql
+as $$
+declare
+  base_slug  text;
+  candidate  text;
+  counter    int := 2;
+begin
+  -- Slug explicitly provided and changed by the user → keep it.
+  if new.slug is not null and new.slug <> '' and (tg_op = 'UPDATE' and new.slug <> old.slug) then
+    return new;
+  end if;
+
+  if new.slug is null or new.slug = '' then
+    base_slug := generate_slug(new.name);
+
+    candidate := base_slug;
+    while exists (
+      select 1 from public.products
+      where slug = candidate
+        and id <> coalesce(new.id, '00000000-0000-0000-0000-000000000000'::uuid)
+    ) loop
+      candidate := base_slug || '-' || counter;
+      counter   := counter + 1;
+    end loop;
+
+    new.slug := candidate;
+  end if;
+
+  -- Regenerate when name changes without a manual slug edit.
+  if tg_op = 'UPDATE'
+    and new.slug = old.slug
+    and new.name is distinct from old.name then
+
+    counter := 2;
+    base_slug := generate_slug(new.name);
+
+    candidate := base_slug;
+    while exists (
+      select 1 from public.products
+      where slug = candidate and id <> new.id
+    ) loop
+      candidate := base_slug || '-' || counter;
+      counter   := counter + 1;
+    end loop;
+
+    new.slug := candidate;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists product_slug_trigger on public.products;
+create trigger product_slug_trigger
+  before insert or update of name, slug on public.products
+  for each row execute function public.set_product_slug();
+
+-- Dropping model_number auto-drops UNIQUE (brand_id, model_number) — the only
+-- per-brand dedup guard. Replace it with UNIQUE (brand_id, name), which is what
+-- identifies a product once references are gone (verified conflict-free).
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conname = 'products_brand_name_unique'
+      and conrelid = 'public.products'::regclass
+  ) then
+    alter table public.products
+      add constraint products_brand_name_unique unique (brand_id, name);
+  end if;
+end
+$$;
+
 drop index if exists public.idx_products_parent;
 
 alter table public.products
