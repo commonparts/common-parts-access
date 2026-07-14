@@ -1,12 +1,16 @@
+import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS } from '@/constants/app';
 import { extractBucketStoragePath } from '@/lib/storage/path-utils';
+import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import type { ModelStatus } from '@/types/database';
 import type {
   ModelCardData,
   ModelCardRow,
   ModelListOptions,
   ModelListResult,
+  ModelSeoData,
+  ModelSeoRow,
   MyModelListItem,
   MyModelListResult,
 } from '@/types/models';
@@ -152,6 +156,89 @@ export async function fetchFeaturedModelCards(limit = 8) {
 
   return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
 }
+
+const MODEL_SEO_SELECT = `
+  id,
+  name,
+  slug,
+  description,
+  thumbnail_url,
+  created_at,
+  updated_at,
+  tags,
+  original_author,
+  original_author_url,
+  user_profiles!inner(username, display_name),
+  brands(name),
+  licenses!models_license_id_fkey(name, url),
+  source_licenses:licenses!models_source_license_id_fkey(name, url),
+  model_products(products(name, brands(name)))
+`;
+
+// Supabase returns joined rows as T | T[] depending on cardinality —
+// normalize to a single record, matching mapModelRowToCard above.
+function firstJoined<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+/**
+ * Fetches the minimal published-model dataset needed for part page SEO:
+ * metadata title/description, Open Graph tags, and schema.org structured data.
+ * Wrapped in React cache() so generateMetadata and the page component share a
+ * single query per request. Returns null when the part is not found or not
+ * published; rethrows other database errors.
+ * RLS: covered by the public read policy on published models.
+ */
+export const fetchModelSeoBySlug = cache(async (slug: string): Promise<ModelSeoData | null> => {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('models')
+    .select(MODEL_SEO_SELECT)
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .limit(VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT, { referencedTable: 'model_products' })
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null;
+    throw error;
+  }
+
+  const model = data as unknown as ModelSeoRow;
+  const author = firstJoined(model.user_profiles);
+  const brand = firstJoined(model.brands);
+  // Curated parts are governed by the source license — same precedence as the
+  // details route and the download license notice.
+  const license = firstJoined(model.source_licenses) ?? firstJoined(model.licenses);
+
+  const products = (model.model_products ?? [])
+    .map((row) => firstJoined(row.products))
+    .filter((p): p is NonNullable<typeof p> => p !== null)
+    .map((p) => ({
+      name: p.name,
+      brandName: firstJoined(p.brands)?.name ?? null,
+    }));
+
+  return {
+    id: model.id,
+    name: model.name,
+    slug: model.slug,
+    description: model.description ?? null,
+    thumbnailUrl: model.thumbnail_url ?? null,
+    createdAt: model.created_at ?? null,
+    updatedAt: model.updated_at ?? null,
+    tags: Array.isArray(model.tags) ? model.tags : [],
+    authorName: author?.display_name || author?.username || null,
+    originalAuthor: model.original_author ?? null,
+    originalAuthorUrl: model.original_author_url ?? null,
+    brandName: brand?.name ?? null,
+    licenseName: license?.name ?? null,
+    licenseUrl: license?.url ?? null,
+    products,
+  };
+});
 
 const MY_MODEL_SELECT = 'id, name, slug, created_at, thumbnail_url, status' as const;
 

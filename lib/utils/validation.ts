@@ -2,6 +2,17 @@
  * Form validation utilities and schemas
  */
 
+import { APP_URL } from '@/lib/utils/constants'
+
+/**
+ * Resolves an in-app path to an absolute URL on the canonical app origin.
+ * Uses the URL constructor so a trailing slash on APP_URL never produces
+ * a double slash (e.g. "https://site.com//model/x").
+ */
+export function absoluteAppUrl(path: string): string {
+  return new URL(path, APP_URL).href
+}
+
 /**
  * Coerces an unknown JSON value to a trimmed string; non-strings become ''.
  * Use on untrusted request bodies so a malformed payload (e.g. {"name": 123})
