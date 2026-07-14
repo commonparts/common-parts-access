@@ -87,6 +87,14 @@ begin
 end;
 $$;
 
+-- The maintenance functions above are SECURITY DEFINER and must only ever run
+-- via their triggers (which execute as the function owner). Revoke the default
+-- PUBLIC execute so anon/authenticated cannot invoke them directly through
+-- PostgREST /rpc and force RLS-bypassing writes to products.parts_count.
+revoke execute on function public.recompute_product_parts_count(uuid) from public, anon, authenticated;
+revoke execute on function public.trg_model_products_parts_count() from public, anon, authenticated;
+revoke execute on function public.trg_models_status_parts_count() from public, anon, authenticated;
+
 -- search_all: same display fields as issue #228, minus every family/reference
 -- concept. Products match on name + brand (no model_number, no parent family);
 -- models drop the parent-family join. category, parts_count, product_name,
