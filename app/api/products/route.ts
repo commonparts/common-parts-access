@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
 import { fetchProducts, createProduct } from '@/lib/supabase/queries/products'
+import { trimmedString } from '@/lib/utils/validation'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
@@ -22,15 +24,22 @@ export async function GET(request: NextRequest) {
 // POST /api/products - Create a new product
 export async function POST(request: NextRequest) {
   try {
+    // Writes require an authenticated session (RLS also enforces this, but a
+    // clean 401 beats a policy-violation 500). getUser() verifies server-side.
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object') {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const name = (body.name ?? '').trim()
-    const brandId = (body.brandId ?? '').trim()
-    const categoryId = (body.categoryId ?? '').trim()
-    const modelNumber = typeof body.modelNumber === 'string' ? body.modelNumber : undefined
+    const name = trimmedString(body.name)
+    const brandId = trimmedString(body.brandId)
+    const categoryId = trimmedString(body.categoryId)
     const description = typeof body.description === 'string' ? body.description : undefined
     const imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl : undefined
     const discontinued = Boolean(body.discontinued)
@@ -47,7 +56,6 @@ export async function POST(request: NextRequest) {
       name,
       brandId,
       categoryId,
-      modelNumber,
       description,
       releaseYear: Number.isNaN(releaseYear as number) ? null : releaseYear,
       imageUrl,

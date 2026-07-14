@@ -206,7 +206,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                   .filter((p) => !formData.productIds.includes(p.id))
                   .map((p) => ({
                     id: p.id,
-                    name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                    name: p.name,
                     categoryId: p.category_id ?? ''
                   }))}
                 searchTerm={productSearch}
@@ -232,9 +232,7 @@ export function ModelUploadForm({ onSubmit, loading = false, className }: ModelU
                 <div className="flex flex-wrap gap-sm mt-sm">
                   {formData.productIds.map((pid) => {
                     const p = products.find((x) => x.id === pid)
-                    const label = p
-                      ? (p.model_number ? `${p.name} (${p.model_number})` : p.name)
-                      : pid
+                    const label = p ? p.name : pid
                     return (
                       <Badge key={pid} variant="secondary">
                         {label}

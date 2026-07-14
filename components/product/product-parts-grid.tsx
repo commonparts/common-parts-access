@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { cn } from "@/lib/utils"
 import { ModelCard } from "@/components/model/model-card"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
 
@@ -9,17 +8,10 @@ type SortKey = "downloads" | "newest"
 
 interface ProductPartsGridProps {
   parts: ProductPart[]
-  // Label for the "Verified on {reference}" badge — this page's reference.
-  referenceLabel: string
-  // Label for the declared "Fits {family}" badge — the family (or product) name.
-  fitsLabel: string
 }
 
-// Verified-on-this-reference parts always rank first; the sort control orders
-// within that grouping.
 function sortParts(parts: ProductPart[], sortKey: SortKey): ProductPart[] {
   return [...parts].sort((a, b) => {
-    if (a.verified_here !== b.verified_here) return a.verified_here ? -1 : 1
     if (sortKey === "downloads") return b.download_count - a.download_count
     const aTime = a.created_at ? Date.parse(a.created_at) : 0
     const bTime = b.created_at ? Date.parse(b.created_at) : 0
@@ -47,7 +39,7 @@ function toModelCardModel(part: ProductPart) {
   }
 }
 
-export function ProductPartsGrid({ parts, referenceLabel, fitsLabel }: ProductPartsGridProps) {
+export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
   const [sortKey, setSortKey] = React.useState<SortKey>("downloads")
   const sorted = React.useMemo(() => sortParts(parts, sortKey), [parts, sortKey])
 
@@ -76,42 +68,9 @@ export function ProductPartsGrid({ parts, referenceLabel, fitsLabel }: ProductPa
             showStats={false}
             showAuthor={Boolean(part.author_username)}
             showPartMeta
-            badge={
-              <CompatibilityBadge
-                verified={part.verified_here}
-                referenceLabel={referenceLabel}
-                fitsLabel={fitsLabel}
-              />
-            }
           />
         ))}
       </div>
     </div>
-  )
-}
-
-function CompatibilityBadge({
-  verified,
-  referenceLabel,
-  fitsLabel,
-}: {
-  verified: boolean
-  referenceLabel: string
-  fitsLabel: string
-}) {
-  if (verified) {
-    return (
-      <span className="inline-flex items-center gap-xs rounded-full bg-status-success px-sm py-xs text-xs font-semibold text-status-successText">
-        <svg aria-hidden="true" className="size-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-        </svg>
-        Verified on {referenceLabel}
-      </span>
-    )
-  }
-  return (
-    <span className={cn("inline-flex items-center rounded-full border border-border-subtle bg-bg-surface px-sm py-xs text-xs font-medium text-text-secondary")}>
-      Fits {fitsLabel}
-    </span>
   )
 }

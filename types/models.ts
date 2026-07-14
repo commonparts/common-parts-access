@@ -1,4 +1,4 @@
-import type { Brand, Category, Model, ModelStatus, Product, UserProfile } from './database';
+import type { Brand, Category, Model, ModelStatus, UserProfile } from './database';
 export type { SourcePlatform } from './database';
 
 export type ModelCardRow = Pick<
@@ -16,7 +16,6 @@ export type ModelCardRow = Pick<
 > & {
 	user_profiles?: UserProfile | UserProfile[];
 	categories?: Pick<Category, 'name' | 'slug'> | Pick<Category, 'name' | 'slug'>[];
-	products?: Pick<Product, 'name'> | Pick<Product, 'name'>[];
 	brands?: Pick<Brand, 'name' | 'slug' | 'verified'> | Pick<Brand, 'name' | 'slug' | 'verified'>[];
 };
 
