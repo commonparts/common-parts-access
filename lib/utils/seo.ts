@@ -6,7 +6,7 @@
 
 import { APP_NAME, APP_URL } from '@/lib/utils/constants'
 import { truncateText } from '@/lib/utils/formatters'
-import { absoluteAppUrl } from '@/lib/utils/validation'
+import { absoluteAppUrl, isValidHttpUrl } from '@/lib/utils/validation'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import type { ModelSeoData } from '@/types/models'
 
@@ -81,8 +81,12 @@ export function buildModelJsonLd(model: ModelSeoData): Record<string, unknown> {
     modelEntity.creator = {
       '@type': 'Person',
       name: creatorName,
-      // Only the curated source author has a known profile URL.
-      ...(model.originalAuthor && model.originalAuthorUrl
+      // Only the curated source author has a known profile URL. Curation
+      // input — include it only when it is a well-formed http(s) URL so a
+      // bad value cannot fail structured data validation.
+      ...(model.originalAuthor &&
+      model.originalAuthorUrl &&
+      isValidHttpUrl(model.originalAuthorUrl)
         ? { url: model.originalAuthorUrl }
         : {}),
     }
