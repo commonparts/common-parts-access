@@ -61,13 +61,37 @@ export interface Product {
   slug: string;
   brand_id?: string | null;
   category_id?: string | null;
-  model_number?: string | null;
   description?: string | null;
   release_year?: number | null;
   discontinued?: boolean;
   image_url?: string | null;
+  parts_count?: number; // denormalized count of published parts (trigger-maintained)
   created_at?: string;
   updated_at?: string;
+}
+
+// Captures part demand ("Request this part"). Deliberately separate from
+// feedback: no triage pipeline, demand accumulates until fulfilled, and its
+// aggregates are publicly displayable (unlike feedback's restrictive RLS).
+export type PartRequestStatus = 'open' | 'fulfilled' | 'dismissed';
+
+export interface PartRequest {
+  id: string;
+  product_id?: string | null;
+  raw_query?: string | null;
+  description?: string | null;
+  user_id?: string | null;
+  page_url?: string | null;
+  status: PartRequestStatus;
+  fulfilled_by_model_id?: string | null;
+  created_at?: string;
+}
+
+// Row shape returned by the fetch_part_request_counts RPC — aggregate only,
+// never any row-level or identifying data.
+export interface PartRequestCount {
+  description: string;
+  request_count: number;
 }
 
 // ============================================================================
@@ -104,7 +128,6 @@ export interface Model {
   slug: string;
   description?: string | null;
   user_id: string;
-  product_id?: string | null;
   brand_id?: string | null;
   category_id?: string | null;
   
@@ -156,6 +179,12 @@ export interface Model {
   
   created_at?: string;
   updated_at?: string;
+}
+
+// Junction table model_products: links a model (part) to a compatible product.
+export interface ModelProduct {
+  model_id: string;
+  product_id: string;
 }
 
 export interface ModelFile {

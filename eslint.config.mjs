@@ -8,7 +8,7 @@ const eslintConfig = [
 	...toFlatConfigArray(nextCoreWebVitals),
 	...toFlatConfigArray(nextTypeScript),
 	{
-		ignores: ["supabase/**"],
+		ignores: ["supabase/**", "coverage/**"],
 	},
 ];
 

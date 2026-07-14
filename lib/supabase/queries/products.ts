@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Product } from '@/types/database'
 
+const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id'
+
 export interface FetchProductsParams {
   brandId?: string
   categoryId?: string
@@ -13,7 +15,6 @@ export interface CreateProductInput {
   name: string
   brandId: string
   categoryId: string
-  modelNumber?: string
   description?: string
   releaseYear?: number | null
   imageUrl?: string
@@ -61,7 +62,7 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
 
   let query = supabase
     .from('products')
-    .select('id, name, slug, brand_id, category_id, model_number')
+    .select(PRODUCT_SELECT)
     .order('name', { ascending: true })
     .limit(limit)
 
@@ -108,13 +109,12 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
       name,
       brand_id: input.brandId,
       category_id: input.categoryId,
-      model_number: input.modelNumber?.trim() || null,
       description: input.description?.trim() || null,
       release_year: input.releaseYear ?? null,
       image_url: input.imageUrl?.trim() || null,
       discontinued: Boolean(input.discontinued),
     })
-    .select('id, name, slug, brand_id, category_id, model_number')
+    .select(PRODUCT_SELECT)
     .single()
 
   if (error) {

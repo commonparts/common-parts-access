@@ -4,6 +4,7 @@ import { Logo } from "@/components/layout/logo";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "@/components/layout/mobile-menu";
+import { SearchBar } from "@/components/layout/search-bar";
 
 export default async function Navbar() {
   const {
@@ -19,6 +20,14 @@ export default async function Navbar() {
     <nav className="sticky top-0 z-50 w-full border-b border-border-default bg-bg-surface">
       <div className="mx-auto flex h-16 max-w-container-xl items-center justify-between px-md">
         <Logo asLink />
+
+        {/* Primary search — grouped autocomplete; hidden on mobile */}
+        <div className="hidden flex-1 justify-center px-lg md:flex">
+          <SearchBar
+            placeholder="Search parts, products, brands..."
+            className="w-full max-w-xl"
+          />
+        </div>
 
         {/* Desktop nav — hidden on mobile */}
         <div className="hidden items-center gap-sm md:flex">
