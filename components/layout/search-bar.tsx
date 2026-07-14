@@ -79,8 +79,11 @@ function Row({
       type="button"
       role="option"
       aria-selected={isActive}
+      // aria-activedescendant combobox: DOM focus stays on the input, so
+      // options must not be tab stops and hover only marks the active option.
+      tabIndex={-1}
       onClick={onSelect}
-      onMouseMove={onHover}
+      onMouseEnter={onHover}
       className={cn(
         "flex w-full items-center gap-sm px-md py-sm text-left transition-colors",
         isActive ? "bg-bg-hover" : "hover:bg-bg-hover",
@@ -418,8 +421,9 @@ export function SearchBar({
               role="option"
               id={optionId(footerIndex)}
               aria-selected={activeIndex === footerIndex}
+              tabIndex={-1}
               onClick={goToSearch}
-              onMouseMove={() => setActiveIndex(footerIndex)}
+              onMouseEnter={() => setActiveIndex(footerIndex)}
               className={cn(
                 "flex w-full items-center gap-sm border-t border-border-subtle px-md py-sm text-left text-sm font-medium transition-colors",
                 activeIndex === footerIndex ? "bg-bg-hover" : "hover:bg-bg-hover",
