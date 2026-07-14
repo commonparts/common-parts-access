@@ -164,7 +164,7 @@ export const Hero: React.FC = () => {
                       }
                       options={products.map((p) => ({
                         id: p.id,
-                        name: p.model_number ? `${p.name} (${p.model_number})` : p.name,
+                        name: p.name,
                         categoryId: p.category_id ?? "",
                       }))}
                       searchTerm={productSearch}

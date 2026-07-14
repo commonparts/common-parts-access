@@ -1,5 +1,3 @@
-import type { ProductKind } from '@/types/database'
-
 // Shapes returned by the public.search_all RPC and the GET /api/search endpoint.
 // Kept intentionally minimal — only what an autocomplete/search result row needs.
 
@@ -7,8 +5,6 @@ export interface SearchProductResult {
   id: string
   name: string
   slug: string
-  model_number: string | null
-  product_kind: ProductKind
   image_url: string | null
   category: string | null
   parts_count: number

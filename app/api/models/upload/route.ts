@@ -479,8 +479,7 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Preserve the user's original selection order so validatedProductIds[0]
-      // reliably points at their first-chosen product (used for backward-compat product_id).
+      // Preserve the user's original selection order when linking products.
       const foundIds = new Set(productRows.map((p) => p.id))
       validatedProductIds = productIds.filter((id) => foundIds.has(id))
     }
@@ -499,8 +498,6 @@ export async function POST(request: NextRequest) {
         instructions,
         category_id: categoryId,
         brand_id: brandId || null,
-        // Backward-compat: keep product_id pointing at the first selected product.
-        product_id: validatedProductIds[0] ?? null,
         tags,
         license_id: licenseId,
         status: fileHostingType === 'link_out' ? intendedStatus : 'draft',

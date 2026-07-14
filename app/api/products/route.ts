@@ -30,7 +30,6 @@ export async function POST(request: NextRequest) {
     const name = (body.name ?? '').trim()
     const brandId = (body.brandId ?? '').trim()
     const categoryId = (body.categoryId ?? '').trim()
-    const modelNumber = typeof body.modelNumber === 'string' ? body.modelNumber : undefined
     const description = typeof body.description === 'string' ? body.description : undefined
     const imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl : undefined
     const discontinued = Boolean(body.discontinued)
@@ -47,7 +46,6 @@ export async function POST(request: NextRequest) {
       name,
       brandId,
       categoryId,
-      modelNumber,
       description,
       releaseYear: Number.isNaN(releaseYear as number) ? null : releaseYear,
       imageUrl,
