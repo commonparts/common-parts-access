@@ -61,11 +61,13 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 
 // Shared row wrapper: consistent height, hover/active states, keyboard focus.
 function Row({
+  id,
   isActive,
   onSelect,
   onHover,
   children,
 }: {
+  id: string
   isActive: boolean
   onSelect: () => void
   onHover: () => void
@@ -73,6 +75,7 @@ function Row({
 }) {
   return (
     <button
+      id={id}
       type="button"
       role="option"
       aria-selected={isActive}
@@ -133,6 +136,11 @@ export function SearchBar({
   const modelOffset = results.products.length
   const brandOffset = modelOffset + results.models.length
   const footerIndex = navTargets.length - 1
+
+  // Unique per instance (there can be two SearchBars on a page) so listbox and
+  // option ids don't collide; drives aria-controls / aria-activedescendant.
+  const listboxId = React.useId()
+  const optionId = (index: number) => `${listboxId}-option-${index}`
 
   const hasResults =
     results.products.length > 0 || results.models.length > 0 || results.brands.length > 0
@@ -247,6 +255,7 @@ export function SearchBar({
   const renderProductRow = (product: SearchProductResult, index: number) => (
     <Row
       key={product.id}
+      id={optionId(productOffset + index)}
       isActive={activeIndex === productOffset + index}
       onSelect={() => navigateTo(`/product/${product.slug}`)}
       onHover={() => setActiveIndex(productOffset + index)}
@@ -265,6 +274,7 @@ export function SearchBar({
   const renderModelRow = (model: SearchModelResult, index: number) => (
     <Row
       key={model.id}
+      id={optionId(modelOffset + index)}
       isActive={activeIndex === modelOffset + index}
       onSelect={() => navigateTo(`/model/${model.slug}`)}
       onHover={() => setActiveIndex(modelOffset + index)}
@@ -288,6 +298,7 @@ export function SearchBar({
   const renderBrandRow = (brand: SearchBrandResult, index: number) => (
     <Row
       key={brand.id}
+      id={optionId(brandOffset + index)}
       isActive={activeIndex === brandOffset + index}
       onSelect={() => navigateTo(`/brand/${brand.slug}`)}
       onHover={() => setActiveIndex(brandOffset + index)}
@@ -317,7 +328,9 @@ export function SearchBar({
             type="search"
             role={autocomplete ? "combobox" : undefined}
             aria-expanded={autocomplete ? showDropdown : undefined}
-            aria-controls={showDropdown ? "search-autocomplete-list" : undefined}
+            aria-haspopup={autocomplete ? "listbox" : undefined}
+            aria-controls={showDropdown ? listboxId : undefined}
+            aria-activedescendant={showDropdown && activeIndex >= 0 ? optionId(activeIndex) : undefined}
             aria-autocomplete={autocomplete ? "list" : undefined}
             placeholder={placeholder}
             value={currentQuery}
@@ -349,7 +362,7 @@ export function SearchBar({
       {/* Grouped autocomplete dropdown (absolute — never shifts page layout). */}
       {showDropdown && (
         <div
-          id="search-autocomplete-list"
+          id={listboxId}
           role="listbox"
           className="absolute top-full left-0 right-0 z-50 mt-xs max-h-96 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay"
         >
@@ -397,6 +410,7 @@ export function SearchBar({
             <button
               type="button"
               role="option"
+              id={optionId(footerIndex)}
               aria-selected={activeIndex === footerIndex}
               onClick={goToSearch}
               onMouseMove={() => setActiveIndex(footerIndex)}

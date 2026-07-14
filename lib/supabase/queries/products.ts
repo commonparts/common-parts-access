@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { CompatibilityStatus, Model, Product } from '@/types/database'
 
 // Family-aware selects require the columns added by the product-families
-// migration (20260708000001); the legacy list keeps pre-existing queries
+// migration (20260708075018); the legacy list keeps pre-existing queries
 // working even if code ships before that migration runs.
 const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id, model_number'
 const PRODUCT_FAMILY_SELECT = `${PRODUCT_SELECT}, parent_id, product_kind`
