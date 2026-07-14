@@ -270,6 +270,29 @@ alter table public.model_products
 -- The slug trigger (20260610123602) builds slugs from name + model_number and
 -- lists model_number in its UPDATE OF columns, which blocks the column drop.
 -- Recreate both name-only first.
+
+-- generate_slug was created outside the tracked migrations (20260610123602's
+-- local file is empty) — define it here verbatim from production so a clean
+-- `supabase db reset` is reproducible. create or replace is a no-op remotely.
+create or replace function public.generate_slug(input text)
+returns text
+language plpgsql
+immutable
+as $$
+declare
+  result text;
+begin
+  result := lower(input);
+  result := translate(result,
+    'àáâãäåæçèéêëìíîïðñòóôõöùúûüýÿ',
+    'aaaaaaeceeeeiiiidnoooooouuuuyy'
+  );
+  result := regexp_replace(result, '[^a-z0-9]+', '-', 'g');
+  result := trim(both '-' from result);
+  return result;
+end;
+$$;
+
 create or replace function public.set_product_slug()
 returns trigger
 language plpgsql
