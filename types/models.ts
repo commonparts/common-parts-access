@@ -1,4 +1,4 @@
-import type { Brand, Category, Model, ModelStatus, UserProfile } from './database';
+import type { Brand, Category, License, Model, ModelStatus, Product, UserProfile } from './database';
 export type { SourcePlatform } from './database';
 
 export type ModelCardRow = Pick<
@@ -62,6 +62,63 @@ export interface ModelListResult {
 		hasNext: boolean;
 		hasPrev: boolean;
 	};
+}
+
+/** Raw row shape returned by the part page SEO metadata query. */
+export type ModelSeoRow = Pick<
+	Model,
+	| 'id'
+	| 'name'
+	| 'slug'
+	| 'description'
+	| 'thumbnail_url'
+	| 'created_at'
+	| 'updated_at'
+	| 'tags'
+	| 'original_author'
+	| 'original_author_url'
+> & {
+	user_profiles?:
+		| Pick<UserProfile, 'username' | 'display_name'>
+		| Pick<UserProfile, 'username' | 'display_name'>[];
+	brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null;
+	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
+	source_licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
+	model_products?: {
+		products:
+			| (Pick<Product, 'name'> & { brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null })
+			| (Pick<Product, 'name'> & { brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null })[]
+			| null;
+	}[];
+};
+
+/** A product a part fits, reduced to what SEO copy and structured data need. */
+export interface ModelSeoProductFit {
+	name: string;
+	brandName: string | null;
+}
+
+/** Normalized model data consumed by part page metadata and structured data. */
+export interface ModelSeoData {
+	id: string;
+	name: string;
+	slug: string;
+	description: string | null;
+	thumbnailUrl: string | null;
+	createdAt: string | null;
+	updatedAt: string | null;
+	tags: string[];
+	/** Uploader display name (or username) — fallback attribution. */
+	authorName: string | null;
+	/** Source author for curated parts — takes precedence for attribution. */
+	originalAuthor: string | null;
+	originalAuthorUrl: string | null;
+	/** Brand set directly on the model, used when no product is linked. */
+	brandName: string | null;
+	/** Effective license: the source license when present, else the platform license. */
+	licenseName: string | null;
+	licenseUrl: string | null;
+	products: ModelSeoProductFit[];
 }
 
 /** Minimal model data used in the authenticated user's "My Models" dashboard list. */

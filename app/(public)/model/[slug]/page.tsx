@@ -3,10 +3,18 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
 import { ModelDetails } from '@/components/model/model-details'
-import { createClient } from '@/lib/supabase/server'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
+import { fetchModelSeoBySlug } from '@/lib/supabase/queries/model'
+import {
+  buildModelJsonLd,
+  buildModelSeoDescription,
+  buildModelSeoTitle,
+  serializeJsonLd,
+} from '@/lib/utils/seo'
+import { resolveStorageUrl } from '@/lib/storage/url'
+import { APP_NAME } from '@/lib/utils/constants'
 
 // This page uses cookies() via the Supabase server client,
 // so it cannot be statically rendered at build time.
@@ -18,106 +26,83 @@ interface ModelPageProps {
   }>
 }
 
-// Generate metadata for SEO
+/**
+ * SEO metadata per part (issue #252): title/description carrying the brand
+ * and product name, Open Graph tags, and the canonical URL. Shares the
+ * cached fetchModelSeoBySlug query with the page component.
+ */
 export async function generateMetadata({ params }: ModelPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
-    const supabase = await createClient()
-    
-    // Fetch basic model info for metadata
-    const { data: model, error } = await supabase
-      .from('models')
-      .select(`
-        name,
-        description,
-        thumbnail_url,
-        user_profiles!inner(username, display_name),
-        tags
-      `)
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single()
+    const model = await fetchModelSeoBySlug(slug)
 
-    if (error || !model) {
+    if (!model) {
       return {
-        title: 'Part Not Found',
-        description: 'The requested part could not be found.'
+        title: 'Part not found',
+        description: 'The requested part could not be found.',
       }
     }
 
-    const userProfile = Array.isArray(model.user_profiles) ? model.user_profiles[0] : model.user_profiles
-    const authorName = userProfile?.display_name || userProfile?.username || 'Unknown'
-    
+    const title = buildModelSeoTitle(model)
+    const description = buildModelSeoDescription(model)
+    const canonicalPath = `/model/${model.slug}`
+    const image = resolveStorageUrl(model.thumbnailUrl)
+
+    // Relative URLs resolve against metadataBase (set in the root layout).
     return {
-      title: `${model.name} - Part by ${authorName}`,
-      description: model.description || `Download ${model.name}, a part created by ${authorName}. Find replacement parts and printable components.`,
-      keywords: model.tags ? model.tags.join(', ') : undefined,
+      title,
+      description,
+      keywords: model.tags.length > 0 ? model.tags.join(', ') : undefined,
+      alternates: {
+        canonical: canonicalPath,
+      },
       openGraph: {
-        title: `${model.name} - Part`,
-        description: model.description || `Part created by ${authorName}`,
-        images: model.thumbnail_url ? [
-          {
-            url: model.thumbnail_url,
-            width: 1200,
-            height: 630,
-            alt: model.name
-          }
-        ] : undefined,
-        type: 'website'
+        title,
+        description,
+        url: canonicalPath,
+        siteName: APP_NAME,
+        type: 'website',
+        images: image ? [{ url: image, alt: model.name }] : undefined,
       },
       twitter: {
         card: 'summary_large_image',
-        title: `${model.name} - Part`,
-        description: model.description || `Part created by ${authorName}`,
-        images: model.thumbnail_url ? [model.thumbnail_url] : undefined
-      }
+        title,
+        description,
+        images: image ? [image] : undefined,
+      },
     }
   } catch (error) {
-    console.error('Error generating metadata:', error)
+    console.error('Error generating part page metadata:', error)
     return {
-      title: 'Common Parts Access — Parts',
-      description: 'Browse and download verified parts and repair components.'
+      title: `${APP_NAME} — Parts`,
+      description: 'Browse and download verified parts and repair components.',
     }
-  }
-}
-
-// Pre-validate that the model exists (optional, for better UX)
-async function validateModel(slug: string) {
-  try {
-    const supabase = await createClient()
-    
-    const { data: model, error } = await supabase
-      .from('models')
-      .select('id, slug')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single()
-
-    return { exists: !error && !!model, model }
-  } catch (error) {
-    console.error('Error validating model:', error)
-    return { exists: false, model: null }
   }
 }
 
 export default async function ModelPage({ params }: ModelPageProps) {
   const { slug } = await params
-  
-  // Validate the model exists before rendering
-  const { exists } = await validateModel(slug)
-  
-  if (!exists) {
+
+  // Cached — reuses the generateMetadata query within the same request.
+  const model = await fetchModelSeoBySlug(slug)
+
+  if (!model) {
     notFound()
   }
 
   return (
     <Section>
       <Container size="xl" className="space-y-lg">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildModelJsonLd(model)) }}
+        />
+
         <Breadcrumbs
           items={[
             { label: 'Home', href: '/' },
             { label: 'Browse', href: '/browse' },
-            { label: 'Part' },
+            { label: model.name },
           ]}
           className="text-text-secondary"
         />
