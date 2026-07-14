@@ -1,10 +1,11 @@
 'use client'
 
 import * as React from "react"
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
+import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
@@ -172,7 +173,24 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [likePending, setLikePending] = useState(false)
   const [downloadPending, setDownloadPending] = useState(false)
+  const [licenseNoticeVisible, setLicenseNoticeVisible] = useState(false)
   const viewTrackedRef = useRef(false)
+
+  // Non-blocking license notice shown once a download is triggered (issue #250).
+  // Curated models are governed by the source license and credit the original author.
+  const licenseNotice = useMemo(() => {
+    if (!model) return null
+    const effectiveLicense = model.sourceLicense ?? model.license
+    if (!effectiveLicense) return null
+    const author =
+      model.originalAuthor || model.author?.displayName || model.author?.username || null
+    return formatLicenseNotice({
+      licenseName: effectiveLicense.shortName || effectiveLicense.name,
+      requiresAttribution: effectiveLicense.requiresAttribution,
+      isCopyleft: effectiveLicense.isCopyleft,
+      author,
+    })
+  }, [model])
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setModel(prev => {
@@ -508,10 +526,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                   aria-busy={downloadPending}
                   onClick={async () => {
                     setDownloadPending(true)
+                    setLicenseNoticeVisible(true)
                     try {
                       const { downloadAllModelFiles } = await import('@/lib/storage/download')
                       const result = await downloadAllModelFiles(model.files, model.slug, model.name)
-                      if (!result.success && !result.requiresAuth) {
+                      if (!result.success) {
                         console.error('Download failed:', result.error)
                         alert(`Download failed: ${result.error}`)
                       }
@@ -559,6 +578,12 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                 {model.viewerHasLiked ? 'Liked' : 'Like'}
               </Button>
             </div>
+
+            {licenseNoticeVisible && licenseNotice && (
+              <p role="status" className="text-sm text-text-secondary">
+                {licenseNotice}
+              </p>
+            )}
 
           </div>
 
@@ -912,17 +937,18 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
         {/* Files */}
         {/* Files — only shown for hosted models */}
         {model.fileHostingType !== 'link_out' && (
-        <div className="col-span-12 lg:col-span-6 xl:col-span-8">
-          <ModelFileList 
+        <div className="col-span-12 space-y-sm lg:col-span-6 xl:col-span-8">
+          <ModelFileList
             files={model.files}
             showCard={true}
             modelSlug={model.slug}
             onFileDownload={async (file: ModelFile) => {
+              setLicenseNoticeVisible(true)
               const { downloadFile } = await import('@/lib/storage/download')
 
               try {
                 const result = await downloadFile(file, model.slug)
-                if (!result.success && !result.requiresAuth) {
+                if (!result.success) {
                   console.error('Download failed:', result.error)
                   alert(`Download failed: ${result.error}`)
                 }
@@ -932,6 +958,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
               }
             }}
           />
+          {licenseNoticeVisible && licenseNotice && (
+            <p role="status" className="text-sm text-text-secondary">
+              {licenseNotice}
+            </p>
+          )}
         </div>
         )}
 

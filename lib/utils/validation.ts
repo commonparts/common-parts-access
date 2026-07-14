@@ -78,6 +78,16 @@ export function isValidHttpUrl(url: string): boolean {
 }
 
 /**
+ * UUID validation (any version, canonical 8-4-4-4-12 hex format)
+ * @param value - String to validate
+ * @returns True if the string is a well-formed UUID
+ */
+export function isValidUuid(value: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  return uuidRegex.test(value)
+}
+
+/**
  * Password strength validation
  * @param password - Password to validate
  * @returns Validation result with strength level and requirements

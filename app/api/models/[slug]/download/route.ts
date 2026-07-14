@@ -1,56 +1,38 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import crypto from 'crypto'
-import { getCurrentUser } from '@/lib/supabase/queries/auth.server'
 import { recordModelDownload } from '@/lib/supabase/queries/model-metrics'
 import { isModelNotFoundError } from '@/lib/utils/errors'
+import { isValidUuid } from '@/lib/utils/validation'
 
 export const runtime = 'nodejs'
 
-function hashFingerprint(ip: string, userAgent: string) {
-  return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
-}
-
-interface DownloadTrackingData {
-  fileId: string
-  filename: string
-}
-
-// POST /api/models/[slug]/download - Track model download
+// POST /api/models/[slug]/download - Increment the anonymous download counter.
+// No account, cookie, or fingerprint is required or recorded (issue #250).
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
-    const body: DownloadTrackingData = await request.json()
-    const { fileId, filename } = body
+    const body: unknown = await request.json()
+    const fileId =
+      typeof body === 'object' && body !== null && 'fileId' in body
+        ? (body as { fileId: unknown }).fileId
+        : null
+
+    if (typeof fileId !== 'string' || !isValidUuid(fileId)) {
+      return NextResponse.json(
+        { error: 'Invalid fileId: expected a UUID' },
+        { status: 400 }
+      )
+    }
+
     const { slug } = await params
-    
-    // Get client IP and user agent for analytics
-    const headersList = await headers()
-    const userAgent = headersList.get('user-agent') || ''
-    const forwardedFor = headersList.get('x-forwarded-for')
-    const clientIp = forwardedFor?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown'
-    const ipHash = hashFingerprint(clientIp, userAgent)
-
-    // Get current user if authenticated
-    const { data: { user } } = await getCurrentUser()
-
-    const download = await recordModelDownload({
-      slug,
-      fileId,
-      userId: user?.id,
-      ipHash,
-      userAgent,
-    })
+    const download = await recordModelDownload({ slug, fileId })
 
     return NextResponse.json({
       success: true,
-      message: 'Download tracked successfully',
+      message: 'Download counted',
       modelName: download.modelName,
-      filename: filename
     })
-
   } catch (error) {
     if (isModelNotFoundError(error)) {
       return NextResponse.json(

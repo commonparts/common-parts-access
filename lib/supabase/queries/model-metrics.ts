@@ -86,13 +86,17 @@ export async function recordModelView(input: RecordViewInput) {
 
 export interface RecordDownloadInput {
 	slug: string;
-	fileId: string;
-	userId?: string | null;
-	ipHash: string;
-	userAgent: string;
+	/** Null for archive downloads containing multiple files. */
+	fileId: string | null;
 	downloadedAt?: string;
 }
 
+/**
+ * Records an anonymous download for a published model.
+ * No user id, IP, or user agent is stored — the row only feeds the
+ * download_count trigger (issue #250). Covered by the RLS policy
+ * "Anyone can log anonymous downloads on published models".
+ */
 export async function recordModelDownload(input: RecordDownloadInput) {
 	const supabase = await createClient();
 
@@ -107,9 +111,6 @@ export async function recordModelDownload(input: RecordDownloadInput) {
 		.insert({
 			model_id: model.id,
 			file_id: input.fileId,
-			user_id: input.userId ?? null,
-			ip_hash: input.ipHash,
-			user_agent: input.userAgent,
 			downloaded_at: input.downloadedAt ?? new Date().toISOString(),
 		});
 
