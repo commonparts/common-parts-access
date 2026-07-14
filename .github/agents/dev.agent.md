@@ -21,6 +21,7 @@ The project is solo-operated and in MVP stage. The human is the final decision-m
 - **Never mix server and client Supabase imports** in the same file
 - **Never use `'use server'`** — this project uses API routes, not Server Actions
 - **Never install new dependencies** without asking first
+- **Never make assumptions** — if there is any open question or doubt (about a schema, a file, an API, the intent of an issue), verify it first: read the actual code, check the actual schema via the Supabase MCP, read the actual issue via the GitHub MCP, or ask the human. Acting on an unverified guess is never acceptable.
 
 ---
 
@@ -484,6 +485,8 @@ Before writing any code for an issue:
 ---
 
 ## What to do if uncertain
+
+**Never resolve uncertainty with an assumption.** Every time a question arises during the work — "does this column exist?", "is this route protected?", "what does the issue actually ask for?" — stop and verify against the source of truth (the code, the schema, the issue, the logs) before writing a line that depends on the answer. Only ask the human when no tool available to you can answer the question.
 
 If you are unsure about:
 - **Architecture** — ask before implementing
