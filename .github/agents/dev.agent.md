@@ -486,7 +486,7 @@ Before writing any code for an issue:
 
 ## What to do if uncertain
 
-**Never resolve uncertainty with an assumption.** Every time a question arises during the work — "does this column exist?", "is this route protected?", "what does the issue actually ask for?" — stop and verify against the source of truth (the code, the schema, the issue, the logs) before writing a line that depends on the answer. Only ask the human when no tool available to you can answer the question.
+**Never resolve uncertainty with an assumption.** Every time a question arises during the work — "does this column exist?", "is this route protected?", "what does the issue actually ask for?" — stop and verify against the source of truth (the code, the schema, the issue, the logs) before writing a line that depends on the answer. Ask the human only when none of the tools available to you can answer the question.
 
 If you are unsure about:
 - **Architecture** — ask before implementing
