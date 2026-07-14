@@ -330,7 +330,13 @@ export function SearchBar({
             aria-expanded={autocomplete ? showDropdown : undefined}
             aria-haspopup={autocomplete ? "listbox" : undefined}
             aria-controls={showDropdown ? listboxId : undefined}
-            aria-activedescendant={showDropdown && activeIndex >= 0 ? optionId(activeIndex) : undefined}
+            aria-activedescendant={
+              // Only reference an option that is actually rendered: not while
+              // loading (options are replaced by the spinner) and within range.
+              showDropdown && !isLoading && activeIndex >= 0 && activeIndex < navTargets.length
+                ? optionId(activeIndex)
+                : undefined
+            }
             aria-autocomplete={autocomplete ? "list" : undefined}
             placeholder={placeholder}
             value={currentQuery}
