@@ -278,6 +278,37 @@ export function formatModelStats(stats: {
   }
 }
 
+interface LicenseNoticeInput {
+  /** Display name of the license, e.g. "CC BY-SA 4.0" */
+  licenseName: string
+  requiresAttribution: boolean
+  /** True for ShareAlike/copyleft licenses (e.g. CC-BY-SA, GPL) */
+  isCopyleft: boolean
+  /** Name of the author to credit, if known */
+  author?: string | null
+}
+
+/**
+ * Builds the one-line informational license notice shown when a download
+ * is triggered (issue #250): license, author, attribution obligation, and
+ * the ShareAlike clause for copyleft licenses. Informational only — it
+ * must never gate or block the download.
+ */
+export function formatLicenseNotice(input: LicenseNoticeInput): string {
+  const sentences = [
+    input.author
+      ? `Licensed under ${input.licenseName}, by ${input.author}.`
+      : `Licensed under ${input.licenseName}.`
+  ]
+  if (input.requiresAttribution) {
+    sentences.push('Attribution to the author is required when sharing.')
+  }
+  if (input.isCopyleft) {
+    sentences.push('Derivatives must be shared under the same license (ShareAlike).')
+  }
+  return sentences.join(' ')
+}
+
 /**
  * Get file extension from filename
  * @param filename - Filename to extract extension from

@@ -1,6 +1,5 @@
 'use client'
 
-import { createClient } from '@/lib/supabase/client'
 import { toZipSafeName } from '@/lib/storage/path-utils'
 
 interface ModelFile {
@@ -18,35 +17,18 @@ interface DownloadResult {
   success: boolean
   error?: string
   downloadUrl?: string
-  requiresAuth?: boolean
 }
 
 /**
- * Download a single file
+ * Download a single file.
+ * Anonymous — no account or cookie-based identification is required (issue #250).
+ * Fires a non-blocking POST that increments the anonymous download counter.
  */
 export async function downloadFile(file: ModelFile, modelSlug: string): Promise<DownloadResult> {
-  // Check if user is authenticated
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  if (!session) {
-    // Store the current URL to redirect back after login
-    const currentUrl = window.location.pathname
-    sessionStorage.setItem('redirectAfterLogin', currentUrl)
-    
-    // Redirect to login
-    window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
-    
-    return {
-      success: false,
-      requiresAuth: true,
-      error: 'Authentication required'
-    }
-  }
   try {
-    // Get a signed download URL from the API
+    // Get a download URL from the API
     const urlResponse = await fetch(`/api/models/${modelSlug}/files/${file.id}/download-url`)
-    
+
     if (!urlResponse.ok) {
       const errorData = await urlResponse.json().catch(() => ({ error: 'Failed to get download URL' }))
       return {
@@ -57,17 +39,13 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
 
     const { downloadUrl, filename } = await urlResponse.json()
 
-    // Track the download (non-blocking)
+    // Increment the anonymous download counter (non-blocking)
     fetch(`/api/models/${modelSlug}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        fileId: file.id,
-        filename: file.original_filename,
-        fileCategory: file.file_category
-      })
+      body: JSON.stringify({ fileId: file.id })
     }).catch(err => {
       console.warn('Failed to track download:', err)
     })
@@ -78,10 +56,10 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
     link.download = filename || file.original_filename
     link.target = '_blank'
     link.rel = 'noopener noreferrer'
-    
+
     document.body.appendChild(link)
     link.click()
-    
+
     // Clean up after a short delay
     setTimeout(() => {
       document.body.removeChild(link)
@@ -101,7 +79,9 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
 }
 
 /**
- * Download all model files
+ * Download all model files as a ZIP archive.
+ * Anonymous — the archive endpoint requires no authentication and
+ * increments the anonymous download counter server-side (issue #250).
  */
 export async function downloadAllModelFiles(files: ModelFile[], modelSlug: string, modelName?: string): Promise<DownloadResult> {
   if (!files || files.length === 0) {
@@ -111,35 +91,8 @@ export async function downloadAllModelFiles(files: ModelFile[], modelSlug: strin
     }
   }
 
-  const supabase = createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-
-  if (!session) {
-    const currentUrl = window.location.pathname
-    sessionStorage.setItem('redirectAfterLogin', currentUrl)
-    window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
-
-    return {
-      success: false,
-      requiresAuth: true,
-      error: 'Authentication required'
-    }
-  }
-
   try {
     const response = await fetch(`/api/models/${modelSlug}/files/archive`)
-
-    if (response.status === 401) {
-      const currentUrl = window.location.pathname
-      sessionStorage.setItem('redirectAfterLogin', currentUrl)
-      window.location.href = `/login?redirect=${encodeURIComponent(currentUrl)}`
-
-      return {
-        success: false,
-        requiresAuth: true,
-        error: 'Authentication required'
-      }
-    }
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Failed to download archive' }))

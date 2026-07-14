@@ -86,13 +86,43 @@ export async function recordModelView(input: RecordViewInput) {
 
 export interface RecordDownloadInput {
 	slug: string;
-	fileId: string;
-	userId?: string | null;
-	ipHash: string;
-	userAgent: string;
+	/** Null for archive downloads containing multiple files. */
+	fileId: string | null;
 	downloadedAt?: string;
 }
 
+/**
+ * Inserts an anonymous download row for an already-resolved model id.
+ * No user id, IP, or user agent is stored — the row only feeds the
+ * download_count trigger (issue #250). Covered by the RLS policy
+ * "Anyone can log anonymous downloads on published models".
+ * Use recordModelDownload() when only the slug is known.
+ */
+export async function recordModelDownloadForModel(
+	modelId: string,
+	fileId: string | null,
+	downloadedAt?: string,
+) {
+	const supabase = await createClient();
+
+	const { error: trackingError } = await supabase
+		.from('model_downloads')
+		.insert({
+			model_id: modelId,
+			file_id: fileId,
+			downloaded_at: downloadedAt ?? new Date().toISOString(),
+		});
+
+	if (trackingError) {
+		throw trackingError;
+	}
+}
+
+/**
+ * Resolves a published model by slug, then records an anonymous download.
+ * Callers that already hold the model id should use
+ * recordModelDownloadForModel() to avoid the extra lookup.
+ */
 export async function recordModelDownload(input: RecordDownloadInput) {
 	const supabase = await createClient();
 
@@ -102,20 +132,11 @@ export async function recordModelDownload(input: RecordDownloadInput) {
 		supabase,
 	);
 
-	const { error: trackingError } = await supabase
-		.from('model_downloads')
-		.insert({
-			model_id: model.id,
-			file_id: input.fileId,
-			user_id: input.userId ?? null,
-			ip_hash: input.ipHash,
-			user_agent: input.userAgent,
-			downloaded_at: input.downloadedAt ?? new Date().toISOString(),
-		});
-
-	if (trackingError) {
-		throw trackingError;
-	}
+	await recordModelDownloadForModel(
+		model.id as string,
+		input.fileId,
+		input.downloadedAt,
+	);
 
 	return { modelId: model.id as string, modelName: model.name as string };
 }

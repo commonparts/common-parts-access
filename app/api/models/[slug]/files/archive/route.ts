@@ -1,17 +1,14 @@
 import { NextResponse } from 'next/server'
-import { headers } from 'next/headers'
-import crypto from 'crypto'
 import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
 import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
+import { recordModelDownloadForModel } from '@/lib/supabase/queries/model-metrics'
 
 export const runtime = 'nodejs'
 
-function hashFingerprint(ip: string, userAgent: string) {
-  return crypto.createHash('sha256').update(`${ip}::${userAgent}`).digest('hex')
-}
-
+// GET /api/models/[slug]/files/archive - Download all model files as a ZIP.
+// Anonymous: no account required, only the anonymous counter is incremented (issue #250).
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -19,11 +16,6 @@ export async function GET(
   try {
     const supabase = await createClient()
     const { slug } = await params
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
 
     const { data: model, error: modelError } = await supabase
       .from('models')
@@ -99,22 +91,7 @@ export async function GET(
     const zipBytes = new Uint8Array(zipBuffer)
 
     try {
-      const headersList = await headers()
-      const userAgent = headersList.get('user-agent') || ''
-      const forwardedFor = headersList.get('x-forwarded-for')
-      const clientIp = forwardedFor?.split(',')[0]?.trim() || headersList.get('x-real-ip') || 'unknown'
-      const ipHash = hashFingerprint(clientIp, userAgent)
-
-      await supabase
-        .from('model_downloads')
-        .insert({
-          model_id: model.id,
-          file_id: null,
-          user_id: user.id,
-          ip_hash: ipHash,
-          user_agent: userAgent,
-          downloaded_at: new Date().toISOString()
-        })
+      await recordModelDownloadForModel(model.id, null)
     } catch (trackingError) {
       console.error('Failed to log archive download:', trackingError)
     }
