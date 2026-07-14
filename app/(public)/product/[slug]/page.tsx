@@ -5,7 +5,6 @@ import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
 import { Breadcrumbs } from "@/components/layout/breadcrumbs"
 import { Button } from "@/components/ui/button"
-import { HowToCheckReference } from "@/components/product/how-to-check-reference"
 import { ProductPartsGrid } from "@/components/product/product-parts-grid"
 import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
@@ -41,20 +40,14 @@ export default async function ProductPage({
   const data = await fetchProductPageBySlug(slug)
   if (!data) notFound()
 
-  const { product, family, siblings } = data
+  const { product } = data
 
-  const parts = await fetchProductPageParts({
-    productId: product.id,
-    parentId: product.parent_id,
-    productKind: product.product_kind,
-  })
+  const parts = await fetchProductPageParts({ productId: product.id })
 
   // Request counts are only rendered in the empty state — skip the RPC entirely
   // when the product already has parts.
   const requestCounts = parts.length === 0 ? await fetchPartRequestCounts(product.id) : []
 
-  const referenceLabel = product.model_number ?? product.name
-  const fitsLabel = family?.name ?? product.name
   const productionYears = formatProductionYears(product.release_year, product.discontinued)
 
   // Category is shown as plain text: there is no category-listing route yet
@@ -95,40 +88,18 @@ export default async function ProductPage({
               <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
                 {product.name}
               </h1>
-              <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
-                {product.model_number && (
-                  <span className="font-mono text-sm text-text-primary">{product.model_number}</span>
-                )}
-                {productionYears && <span>{productionYears}</span>}
-              </div>
-            </div>
-
-            {siblings.length > 0 && (
-              <div className="space-y-xs">
-                <p className="text-caption font-medium text-text-secondary">
-                  {product.product_kind === "family" ? "References in this family" : "Other references"}
-                </p>
-                <div className="flex flex-wrap gap-sm">
-                  {siblings.map((sibling) => (
-                    <Link
-                      key={sibling.id}
-                      href={`/product/${sibling.slug}`}
-                      className="rounded-full border border-border-subtle bg-bg-surface px-md py-xs font-mono text-caption text-text-primary transition-colors hover:bg-bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                    >
-                      {sibling.model_number ?? sibling.name}
-                    </Link>
-                  ))}
+              {productionYears && (
+                <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
+                  <span>{productionYears}</span>
                 </div>
-              </div>
-            )}
-
-            <HowToCheckReference />
+              )}
+            </div>
           </div>
         </div>
 
         {parts.length > 0 ? (
           <>
-            <ProductPartsGrid parts={parts} referenceLabel={referenceLabel} fitsLabel={fitsLabel} />
+            <ProductPartsGrid parts={parts} />
 
             {/* Request capture — always available below the grid */}
             <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">

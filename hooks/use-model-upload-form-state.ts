@@ -47,7 +47,6 @@ export interface ProductOption {
   id: string
   name: string
   slug: string
-  model_number?: string | null
   brand_id?: string | null
   category_id?: string | null
 }
@@ -56,7 +55,6 @@ export interface CreateProductFormData {
   name: string
   brandId: string
   categoryId: string
-  modelNumber?: string
   description?: string
   releaseYear?: string
   imageFile?: File | null
@@ -101,7 +99,6 @@ const emptyCreateProduct: CreateProductFormData = {
   name: "",
   brandId: "",
   categoryId: "",
-  modelNumber: "",
   description: "",
   releaseYear: "",
   imageFile: null,
@@ -430,7 +427,6 @@ export function useModelUploadFormState() {
       name: createProductData.name.trim(),
       brandId: createProductData.brandId,
       categoryId: createProductData.categoryId,
-      modelNumber: createProductData.modelNumber?.trim() || undefined,
       description: createProductData.description?.trim() || undefined,
       releaseYear: createProductData.releaseYear ? Number(createProductData.releaseYear) : undefined,
       imageUrl,
@@ -452,8 +448,6 @@ export function useModelUploadFormState() {
 
       const product = json?.product as ProductOption | undefined
       if (product?.id) {
-        const displayName = product.model_number ? `${product.name} (${product.model_number})` : product.name
-
         setProducts(prev => {
           const next = [
             ...prev.filter((p) => p.id !== product.id),
@@ -461,7 +455,6 @@ export function useModelUploadFormState() {
               id: product.id,
               name: product.name,
               slug: product.slug,
-              model_number: product.model_number ?? null,
               brand_id: product.brand_id ?? null,
               category_id: product.category_id ?? null,
             },

@@ -130,7 +130,6 @@ interface ModelData {
     id: string
     name: string
     slug: string
-    modelNumber?: string
     description?: string
     releaseYear?: number
     discontinued: boolean
@@ -892,11 +891,6 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="font-medium line-clamp-2">{p.name}</div>
-                      {p.modelNumber && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          Model: <span className="font-mono">{p.modelNumber}</span>
-                        </p>
-                      )}
                       {p.brand && (
                         <div className="flex items-center gap-2 mt-2">
                           <span className="text-sm font-medium">{p.brand.name}</span>

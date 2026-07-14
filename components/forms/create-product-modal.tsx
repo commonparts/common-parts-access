@@ -66,27 +66,15 @@ export function CreateProductModal({
             )}
 
             <div className="space-y-4" role="form" aria-label="Create product">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create-name">Product name *</Label>
-                  <Input
-                    id="create-name"
-                    value={data.name}
-                    onChange={(e) => onChange("name", e.target.value)}
-                    placeholder="Enter product name"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="create-model">Model number</Label>
-                  <Input
-                    id="create-model"
-                    value={data.modelNumber || ""}
-                    onChange={(e) => onChange("modelNumber", e.target.value)}
-                    placeholder="e.g., XR-200"
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="create-name">Product name *</Label>
+                <Input
+                  id="create-name"
+                  value={data.name}
+                  onChange={(e) => onChange("name", e.target.value)}
+                  placeholder="Enter product name"
+                  required
+                />
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -3,6 +3,15 @@
  */
 
 /**
+ * Coerces an unknown JSON value to a trimmed string; non-strings become ''.
+ * Use on untrusted request bodies so a malformed payload (e.g. {"name": 123})
+ * stays on the caller's 400 path instead of throwing on .trim().
+ */
+export function trimmedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : ''
+}
+
+/**
  * Validates that a redirect path is a safe relative in-app path.
  * Accepts only strings that start with a single "/" (not "//") and contain
  * no ASCII control characters, whitespace, or backslashes — preventing

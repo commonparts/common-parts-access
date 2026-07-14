@@ -1,8 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import type { ProductKind } from '@/types/database'
 
-// A commercial series stays well under this; bounds every variant/parts query.
-const MAX_VARIANTS = 100
+// Upper bound on part links fetched for a product page in one call.
 const MAX_PART_LINKS = 500
 
 // Supabase embeds a to-one relation as an object, but the generated-less client
@@ -12,34 +10,19 @@ function firstOf<T>(value: T | T[] | null | undefined): T | null {
   return value ?? null
 }
 
-export interface ProductRef {
-  id: string
-  name: string
-  slug: string
-  model_number: string | null
-}
-
 export interface ProductPageProduct {
   id: string
   name: string
   slug: string
-  model_number: string | null
   release_year: number | null
   discontinued: boolean
   image_url: string | null
-  product_kind: ProductKind
-  parent_id: string | null
   brand: { id: string; name: string; slug: string } | null
   category: { id: string; name: string; slug: string } | null
 }
 
 export interface ProductPageData {
   product: ProductPageProduct
-  // The parent family for a variant (null for standalone/family pages).
-  family: ProductRef | null
-  // Sibling references (a variant's family members) or, on a family page, the
-  // family's variants. Always excludes the product itself.
-  siblings: ProductRef[]
 }
 
 export interface ProductPart {
@@ -55,31 +38,23 @@ export interface ProductPart {
   created_at: string | null
   author_username: string | null
   license_short_name: string | null
-  // True when a link to THIS exact reference is marked verified — drives the
-  // "Verified on {reference}" badge (vs the declared "Fits {family}" badge).
-  verified_here: boolean
-  // Every product (this reference / family / siblings) the part is linked to.
-  product_ids: string[]
 }
 
 interface ProductRow {
   id: string
   name: string
   slug: string
-  model_number: string | null
   release_year: number | null
   discontinued: boolean | null
   image_url: string | null
-  product_kind: ProductKind | null
-  parent_id: string | null
   brands: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
   categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
 }
 
 /**
- * Loads a product page by slug: the product with its brand + category, the
- * parent family (for a variant), and sibling references. Returns null when the
- * slug does not resolve. Covered by the public read policy on products.
+ * Loads a product page by slug: the product with its brand + category. Returns
+ * null when the slug does not resolve. Covered by the public read policy on
+ * products.
  */
 export async function fetchProductPageBySlug(slug: string): Promise<ProductPageData | null> {
   const supabase = await createClient()
@@ -88,7 +63,7 @@ export async function fetchProductPageBySlug(slug: string): Promise<ProductPageD
     .from('products')
     .select(
       `
-      id, name, slug, model_number, release_year, discontinued, image_url, parent_id, product_kind,
+      id, name, slug, release_year, discontinued, image_url,
       brands(id, name, slug),
       categories(id, name, slug)
     `,
@@ -104,31 +79,19 @@ export async function fetchProductPageBySlug(slug: string): Promise<ProductPageD
     id: row.id,
     name: row.name,
     slug: row.slug,
-    model_number: row.model_number,
     release_year: row.release_year,
     discontinued: Boolean(row.discontinued),
     image_url: row.image_url,
-    product_kind: row.product_kind ?? 'standalone',
-    parent_id: row.parent_id,
     brand: firstOf(row.brands),
     category: firstOf(row.categories),
   }
 
-  const family = product.parent_id ? await fetchProductRef(product.parent_id) : null
-
-  // Siblings: on a family page, the family's variants; on a variant page, the
-  // other members of the same family.
-  const siblingParentId = product.product_kind === 'family' ? product.id : product.parent_id
-  const siblings = siblingParentId
-    ? await fetchSiblings(siblingParentId, product.id)
-    : []
-
-  return { product, family, siblings }
+  return { product }
 }
 
 /**
  * Minimal lookup for metadata: just the product name by slug, so
- * generateMetadata doesn't re-run the full product + family + siblings load.
+ * generateMetadata doesn't re-run the full product load.
  */
 export async function fetchProductNameBySlug(slug: string): Promise<string | null> {
   const supabase = await createClient()
@@ -139,30 +102,6 @@ export async function fetchProductNameBySlug(slug: string): Promise<string | nul
     .maybeSingle()
   if (error) throw error
   return (data?.name as string | undefined) ?? null
-}
-
-async function fetchProductRef(id: string): Promise<ProductRef | null> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, slug, model_number')
-    .eq('id', id)
-    .maybeSingle()
-  if (error) throw error
-  return (data as ProductRef | null) ?? null
-}
-
-async function fetchSiblings(parentId: string, excludeId: string): Promise<ProductRef[]> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, slug, model_number')
-    .eq('parent_id', parentId)
-    .neq('id', excludeId)
-    .order('model_number', { ascending: true })
-    .limit(MAX_VARIANTS)
-  if (error) throw error
-  return (data ?? []) as ProductRef[]
 }
 
 interface ModelRow {
@@ -182,44 +121,22 @@ interface ModelRow {
 
 interface PartLinkRow {
   product_id: string
-  compatibility_status: 'declared' | 'verified'
   models: ModelRow | ModelRow[] | null
 }
 
 /**
  * Fetches the published parts shown on a product page, deduplicated per model.
- * A variant inherits its parent family's parts; a family page aggregates its
- * variants' parts. `verified_here` is true only when a link to THIS reference is
- * verified — so the same part reads "Verified on HC9450/15" on that page and
- * "Fits {family}" on a sibling. Sorting/ranking is left to the caller.
+ * The model_products "Public or owner read" RLS policy restricts rows to
+ * published models (or the caller's own). Sorting/ranking is left to the caller.
  */
-export async function fetchProductPageParts(input: {
-  productId: string
-  parentId: string | null
-  productKind: ProductKind
-}): Promise<ProductPart[]> {
+export async function fetchProductPageParts(input: { productId: string }): Promise<ProductPart[]> {
   const supabase = await createClient()
-
-  const relevantIds = [input.productId]
-  if (input.productKind === 'variant' && input.parentId) {
-    relevantIds.push(input.parentId)
-  }
-  if (input.productKind === 'family') {
-    const { data: variants, error: variantsError } = await supabase
-      .from('products')
-      .select('id')
-      .eq('parent_id', input.productId)
-      .limit(MAX_VARIANTS)
-    if (variantsError) throw variantsError
-    relevantIds.push(...(variants ?? []).map((v) => v.id))
-  }
 
   const { data, error } = await supabase
     .from('model_products')
     .select(
       `
       product_id,
-      compatibility_status,
       models!inner(
         id, name, slug, thumbnail_url, part_name, part_number, material,
         download_count, estimated_print_time, created_at, status,
@@ -228,7 +145,7 @@ export async function fetchProductPageParts(input: {
       )
     `,
     )
-    .in('product_id', relevantIds)
+    .eq('product_id', input.productId)
     .eq('models.status', 'published')
     .limit(MAX_PART_LINKS)
 
@@ -239,16 +156,7 @@ export async function fetchProductPageParts(input: {
   for (const link of (data ?? []) as PartLinkRow[]) {
     const model = firstOf(link.models)
     if (!model) continue
-
-    const verifiedHere =
-      link.product_id === input.productId && link.compatibility_status === 'verified'
-
-    const existing = byModel.get(model.id)
-    if (existing) {
-      existing.product_ids.push(link.product_id)
-      if (verifiedHere) existing.verified_here = true
-      continue
-    }
+    if (byModel.has(model.id)) continue
 
     byModel.set(model.id, {
       id: model.id,
@@ -263,8 +171,6 @@ export async function fetchProductPageParts(input: {
       created_at: model.created_at,
       author_username: firstOf(model.user_profiles)?.username ?? null,
       license_short_name: firstOf(model.licenses)?.short_name ?? null,
-      verified_here: verifiedHere,
-      product_ids: [link.product_id],
     })
   }
 

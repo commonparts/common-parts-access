@@ -27,14 +27,15 @@ const MODEL_SELECT = `
     display_name,
     avatar_url
   ),
-  products!models_product_id_fkey(
-    name
-  ),
   categories(
     name,
     slug
   )
 `;
+
+// Cap on the number of model ids resolved when filtering a list by product.
+// A single product's parts stay well under this in the MVP.
+const MAX_MODELS_PER_PRODUCT = 500;
 
 function mapModelRowToCard(model: ModelCardRow): ModelCardData {
   const userProfile = Array.isArray(model.user_profiles)
@@ -90,6 +91,33 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
 
   const supabase = await createClient();
 
+  // Filtering by product goes through the model_products junction (models no
+  // longer carry a direct product_id). Resolve the linked model ids first, then
+  // constrain the list to them — an empty set short-circuits to no results.
+  let productModelIds: string[] | null = null;
+  if (options.product) {
+    const { data: links, error: linksError } = await supabase
+      .from('model_products')
+      .select('model_id')
+      .eq('product_id', options.product)
+      .limit(MAX_MODELS_PER_PRODUCT);
+    if (linksError) throw linksError;
+    productModelIds = (links ?? []).map((l) => l.model_id);
+    if (productModelIds.length === 0) {
+      return {
+        models: [],
+        pagination: {
+          page,
+          limit,
+          total: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrev: page > 1,
+        },
+      };
+    }
+  }
+
   let query = supabase
     .from('models')
     .select(MODEL_SELECT, { count: 'exact' });
@@ -97,7 +125,7 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
   if (options.brand) query = query.eq('brand_id', options.brand);
-  if (options.product) query = query.eq('product_id', options.product);
+  if (productModelIds) query = query.in('id', productModelIds);
   if (search) query = query.ilike('name', `%${search}%`);
 
   query = query.order(resolveOrderColumn(options.sortBy), {
