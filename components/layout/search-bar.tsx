@@ -129,7 +129,7 @@ export function SearchBar({
     const targets = [
       ...results.products.map((p) => `/product/${p.slug}`),
       ...results.models.map((m) => `/model/${m.slug}`),
-      ...results.brands.map((b) => `/brand/${b.slug}`),
+      ...results.brands.map((b) => `/brands/${b.slug}`),
       searchHref,
     ]
     return targets
@@ -303,7 +303,7 @@ export function SearchBar({
       key={brand.id}
       id={optionId(brandOffset + index)}
       isActive={activeIndex === brandOffset + index}
-      onSelect={() => navigateTo(`/brand/${brand.slug}`)}
+      onSelect={() => navigateTo(`/brands/${brand.slug}`)}
       onHover={() => setActiveIndex(brandOffset + index)}
     >
       <Avatar className="size-xl">

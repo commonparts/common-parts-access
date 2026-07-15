@@ -131,3 +131,93 @@ export function buildModelJsonLd(model: ModelSeoData): Record<string, unknown> {
 export function serializeJsonLd(data: Record<string, unknown>): string {
   return JSON.stringify(data).replace(/</g, '\\u003c')
 }
+
+// ============================================================================
+// Navigation pages (issue #256): /brands/[brand] and /brands/[brand]/[category]
+// are primary SEO entry points ("spare part [brand] [category]", Flow P2).
+// ============================================================================
+
+/** Canonical path for a brand page. */
+export function brandCanonicalPath(brandSlug: string): string {
+  return `/brands/${brandSlug}`
+}
+
+/** Canonical path for a brand-scoped category listing. */
+export function brandCategoryCanonicalPath(brandSlug: string, categorySlug: string): string {
+  return `${brandCanonicalPath(brandSlug)}/${categorySlug}`
+}
+
+/** Page title for a brand page: "Bosch spare parts". */
+export function buildBrandSeoTitle(brandName: string): string {
+  return `${brandName} spare parts`
+}
+
+/**
+ * Meta description for a brand page, leading with the brand name and the
+ * as-is parts count (Flow P2: counts are never hidden or inflated).
+ */
+export function buildBrandSeoDescription(input: {
+  brandName: string
+  partsCount: number
+  brandDescription?: string | null
+}): string {
+  const lead =
+    input.partsCount > 0
+      ? `${input.partsCount} printable spare ${input.partsCount === 1 ? 'part' : 'parts'} for ${input.brandName} products.`
+      : `Printable spare parts for ${input.brandName} products.`
+  const body =
+    input.brandDescription?.trim() ||
+    `Browse by category and download with license and attribution details on ${APP_NAME}.`
+  return truncateText(`${lead} ${body}`, SEO_DESCRIPTION_MAX_LENGTH)
+}
+
+/** Page title for a brand-scoped category listing: "Bosch Dishwashers spare parts". */
+export function buildBrandCategorySeoTitle(brandName: string, categoryName: string): string {
+  return `${brandName} ${categoryName} spare parts`
+}
+
+/** Meta description for a brand-scoped category listing. */
+export function buildBrandCategorySeoDescription(input: {
+  brandName: string
+  categoryName: string
+  productCount: number
+}): string {
+  const lead =
+    input.productCount > 0
+      ? `Printable spare parts for ${input.productCount} ${input.brandName} ${
+          input.productCount === 1 ? 'product' : 'products'
+        } in ${input.categoryName}.`
+      : `Printable spare parts for ${input.brandName} products in ${input.categoryName}.`
+  return truncateText(
+    `${lead} Download with license and attribution details on ${APP_NAME}.`,
+    SEO_DESCRIPTION_MAX_LENGTH,
+  )
+}
+
+export interface BreadcrumbJsonLdItem {
+  name: string
+  /** In-app path; omit on the last item — the current page URL is implied. */
+  path?: string
+}
+
+/**
+ * Builds a standalone BreadcrumbList JSON-LD document for navigation pages.
+ * BreadcrumbList is a supported Google rich result type; the last item is
+ * emitted without `item` per Google's guidelines.
+ */
+export function buildBreadcrumbJsonLd(
+  pagePath: string,
+  items: BreadcrumbJsonLdItem[],
+): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    '@id': `${absoluteAppUrl(pagePath)}#breadcrumb`,
+    itemListElement: items.map((item, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      name: item.name,
+      ...(item.path ? { item: absoluteAppUrl(item.path) } : {}),
+    })),
+  }
+}

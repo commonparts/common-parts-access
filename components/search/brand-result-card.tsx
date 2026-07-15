@@ -8,7 +8,7 @@ import type { SearchBrandResult } from "@/types/search"
 export function BrandResultCard({ brand }: { brand: SearchBrandResult }) {
   return (
     <Link
-      href={`/brand/${brand.slug}`}
+      href={`/brands/${brand.slug}`}
       className="group flex items-center gap-md rounded-lg border border-border-subtle bg-bg-surface p-md shadow-surface transition-colors hover:border-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
     >
       <Avatar className="size-2xl">
