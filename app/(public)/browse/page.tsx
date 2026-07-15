@@ -45,7 +45,14 @@ export default async function BrowsePage() {
   try {
     nav = await fetchBrowseNav()
   } catch (error) {
-    console.error('Failed to load browse navigation:', error)
+    // Log the message text, not the raw object: Supabase errors serialize to
+    // "{}" in the Next.js dev overlay, hiding the actual cause (most likely
+    // "fetch_browse_nav not found" while the migration is not applied yet).
+    const message =
+      typeof error === 'object' && error !== null && 'message' in error
+        ? String((error as { message: unknown }).message)
+        : String(error)
+    console.error('Failed to load browse navigation:', message)
   }
 
   return (
