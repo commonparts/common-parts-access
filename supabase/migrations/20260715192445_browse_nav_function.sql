@@ -9,8 +9,8 @@
 -- covered by the public read RLS policies, so no privilege escalation is
 -- needed or wanted.
 --
--- To be validated and executed by the human via the Supabase SQL editor —
--- never applied by the agent.
+-- Applied to production on 2026-07-15 via the Supabase MCP at the human's
+-- explicit instruction (recorded as version 20260715192445).
 
 create or replace function public.fetch_browse_nav()
 returns jsonb
