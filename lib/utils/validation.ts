@@ -48,6 +48,15 @@ export function isSafeRedirect(path: string): boolean {
 }
 
 /**
+ * Parses a 1-based page number from a URL search param.
+ * Returns 1 for missing, malformed, or non-positive values.
+ */
+export function parsePageParam(raw: string | undefined): number {
+  const parsed = Number.parseInt(raw ?? '1', 10)
+  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
+}
+
+/**
  * Email validation
  * @param email - Email to validate
  * @returns True if valid email format

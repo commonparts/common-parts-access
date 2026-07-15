@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
+import { PaginationLinks } from '@/components/browse/pagination-links'
 import { ProductResultCard } from '@/components/search/product-result-card'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +14,7 @@ import {
 } from '@/lib/supabase/queries/brand-page'
 import { APP_NAME } from '@/lib/utils/constants'
 import { pluralize } from '@/lib/utils/formatters'
+import { parsePageParam } from '@/lib/utils/validation'
 import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
@@ -31,12 +33,6 @@ interface BrandCategoryPageProps {
   searchParams: Promise<{ page?: string }>
 }
 
-/** Parses the ?page param to a positive integer, defaulting to 1. */
-function parsePage(raw: string | undefined): number {
-  const parsed = Number.parseInt(raw ?? '1', 10)
-  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
-}
-
 export async function generateMetadata({
   params,
   searchParams,
@@ -52,11 +48,11 @@ export async function generateMetadata({
       }
     }
 
-    const listing = await fetchBrandCategoryListing({
-      brandId: brand.id,
+    const listing = await fetchBrandCategoryListing(
+      brand.id,
       categorySlug,
-      page: parsePage(rawPage),
-    })
+      parsePageParam(rawPage),
+    )
     if (!listing) {
       return {
         title: 'Category not found',
@@ -115,15 +111,14 @@ export default async function BrandCategoryPage({
   const brand = await fetchBrandBySlug(brandSlug)
   if (!brand) notFound()
 
-  const page = parsePage(rawPage)
-  const listing = await fetchBrandCategoryListing({
-    brandId: brand.id,
+  const listing = await fetchBrandCategoryListing(
+    brand.id,
     categorySlug,
-    page,
-  })
+    parsePageParam(rawPage),
+  )
   if (!listing) notFound()
 
-  const { category, products, total, totalPages } = listing
+  const { category, products, total, page, totalPages } = listing
 
   const canonicalPath = brandCategoryCanonicalPath(brand.slug, category.slug)
   const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, [
@@ -187,31 +182,7 @@ export default async function BrandCategoryPage({
           </div>
         )}
 
-        {totalPages > 1 && (
-          <nav aria-label="Pagination" className="flex items-center justify-center gap-sm">
-            {page > 1 ? (
-              <Button asChild variant="outline" size="sm">
-                <Link href={`${canonicalPath}?page=${page - 1}`}>Previous</Link>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
-                Previous
-              </Button>
-            )}
-            <span className="text-caption text-text-secondary">
-              Page {page} of {totalPages}
-            </span>
-            {page < totalPages ? (
-              <Button asChild variant="outline" size="sm">
-                <Link href={`${canonicalPath}?page=${page + 1}`}>Next</Link>
-              </Button>
-            ) : (
-              <Button variant="outline" size="sm" disabled>
-                Next
-              </Button>
-            )}
-          </nav>
-        )}
+        <PaginationLinks basePath={canonicalPath} page={page} totalPages={totalPages} />
       </Container>
     </Section>
   )

@@ -98,3 +98,62 @@ as $$
 $$;
 
 grant execute on function public.fetch_browse_nav() to anon, authenticated;
+
+-- ============================================================================
+-- Brand page aggregates
+-- ============================================================================
+
+-- Accurate totals and covered categories for one brand page, independent of
+-- how the (paginated) product list is fetched: a truncated product list must
+-- never drive the displayed counts (PR #274 review).
+create or replace function public.fetch_brand_nav(p_brand_id uuid)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with brand_products as (
+    select p.category_id, p.parts_count
+    from public.products p
+    where p.brand_id = p_brand_id
+  ),
+  totals as (
+    select
+      count(*)::int as product_count,
+      coalesce(sum(parts_count), 0)::int as parts_count
+    from brand_products
+  ),
+  covered_categories as (
+    -- Products without a category count toward the totals but cannot appear
+    -- in the category navigation.
+    select
+      c.id,
+      c.name,
+      c.slug,
+      count(*)::int as product_count,
+      sum(bp.parts_count)::int as parts_count
+    from brand_products bp
+    join public.categories c on c.id = bp.category_id
+    group by c.id, c.name, c.slug
+  )
+  select jsonb_build_object(
+    'parts_count', (select parts_count from totals),
+    'product_count', (select product_count from totals),
+    'categories', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id', id,
+          'name', name,
+          'slug', slug,
+          'parts_count', parts_count,
+          'product_count', product_count
+        )
+        order by name
+      )
+      from covered_categories
+    ), '[]'::jsonb)
+  );
+$$;
+
+grant execute on function public.fetch_brand_nav(uuid) to anon, authenticated;
