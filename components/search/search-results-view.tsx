@@ -94,7 +94,7 @@ export function SearchResultsView({
           </Button>
           {brandSuggestion && (
             <Button asChild variant="ghost">
-              <Link href={`/brand/${brandSuggestion.slug}`}>
+              <Link href={`/brands/${brandSuggestion.slug}`}>
                 View {brandSuggestion.name}
               </Link>
             </Button>
