@@ -46,13 +46,20 @@ export default async function BrowsePage() {
     nav = await fetchBrowseNav()
   } catch (error) {
     // Log the message text, not the raw object: Supabase errors serialize to
-    // "{}" in the Next.js dev overlay, hiding the actual cause (most likely
-    // "fetch_browse_nav not found" while the migration is not applied yet).
-    const message =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? String((error as { message: unknown }).message)
-        : String(error)
-    console.error('Failed to load browse navigation:', message)
+    // "{}" in the Next.js dev overlay, hiding the actual cause.
+    const { code, message } = (
+      typeof error === 'object' && error !== null ? error : {}
+    ) as { code?: string; message?: string }
+    if (code === 'PGRST202') {
+      // Function not found: expected until the fetch_browse_nav migration is
+      // applied — a known degraded state, not an application fault.
+      console.warn(
+        'Browse navigation unavailable — run supabase/migrations/20260715090000_browse_nav_function.sql:',
+        message ?? String(error),
+      )
+    } else {
+      console.error('Failed to load browse navigation:', message ?? String(error))
+    }
   }
 
   return (
