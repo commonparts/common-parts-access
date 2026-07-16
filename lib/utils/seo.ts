@@ -205,8 +205,10 @@ export function buildCategorySeoTitle(categoryName: string): string {
 }
 
 /**
- * Meta description for a category page, leading with the subtree-aggregated
- * counts displayed as-is (Flow P2: counts are never hidden or inflated).
+ * Meta description for a category page. Leads with the subtree-aggregated
+ * counts when parts exist; zero-part categories get generic copy instead of
+ * a "0 parts" search snippet — same rule as buildBrandSeoDescription. The
+ * show-zeros rule (Flow P2) governs on-page counts, not SERP copy.
  */
 export function buildCategorySeoDescription(input: {
   categoryName: string
