@@ -1,19 +1,30 @@
 -- Migration: hierarchical category drill-down navigation (issue #276)
 --
 -- Reworks fetch_browse_nav so the /browse hub shows the level-0 roots with
--- subtree-aggregated counts (plus example leaves as microcopy), and adds
--- fetch_category_page powering the new /categories/[slug] routes. All counts
--- are path-prefix sums of the denormalized products.parts_count
--- (trigger-maintained since #227/#244) — no per-row count queries.
+-- subtree-aggregated counts (plus example leaves as microcopy), adds
+-- fetch_category_page powering the new /categories/[slug] routes, and fixes
+-- fetch_brand_nav's counting semantics (see below).
+--
+-- Parts counts are counts of DISTINCT published parts (model_products ×
+-- published models), not sums of the denormalized products.parts_count:
+-- a part that fits several products must count once per navigation node,
+-- not once per product (found on PR #277 — iRobot showed "3 parts" for one
+-- part linked to three products). products.parts_count stays correct for
+-- per-product display; it is only the cross-product aggregation that must
+-- deduplicate. Everything remains set-based single-round-trip aggregation —
+-- no per-row count queries. Product counts are count(distinct p.id) because
+-- the model_products join fans out product rows.
 --
 -- Subtree membership is a starts_with() literal prefix check on
 -- categories.path — no LIKE wildcard semantics — and is safe against
 -- sibling-prefix collisions (/cook/ vs /cooker/) because materialized paths
 -- always end with a trailing slash.
 --
--- SECURITY INVOKER: everything read here (brands, categories, products) is
--- covered by the public read RLS policies, so no privilege escalation is
--- needed or wanted.
+-- SECURITY INVOKER: everything read here (brands, categories, products,
+-- model_products, models) is covered by the public read RLS policies —
+-- model_products rows are readable when their model is published, and the
+-- joins filter on models.status = 'published' explicitly so counts are
+-- identical for anonymous and authenticated readers.
 --
 -- To be applied by the human via the Supabase SQL editor (see PR for #276).
 
@@ -25,12 +36,14 @@ security invoker
 set search_path = public
 as $$
   with brand_totals as (
-    -- Per-brand product count and summed published-parts count.
+    -- Per-brand distinct product and distinct published-part counts.
     select
       p.brand_id,
-      count(*)::int as product_count,
-      sum(p.parts_count)::int as parts_count
+      count(distinct p.id)::int as product_count,
+      count(distinct m.id)::int as parts_count
     from public.products p
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
     where p.brand_id is not null
     group by p.brand_id
   ),
@@ -44,21 +57,25 @@ as $$
   root_totals as (
     select
       r.id,
-      count(p.id)::int as product_count,
-      coalesce(sum(p.parts_count), 0)::int as parts_count
+      count(distinct p.id)::int as product_count,
+      count(distinct m.id)::int as parts_count
     from roots r
     join public.categories sub on starts_with(sub.path, r.path)
     left join public.products p on p.category_id = sub.id
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
     group by r.id
   ),
   direct_totals as (
     select
-      category_id,
-      count(*)::int as product_count,
-      coalesce(sum(parts_count), 0)::int as parts_count
-    from public.products
-    where category_id is not null
-    group by category_id
+      p.category_id,
+      count(distinct p.id)::int as product_count,
+      count(distinct m.id)::int as parts_count
+    from public.products p
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
+    where p.category_id is not null
+    group by p.category_id
   ),
   -- Up to three example leaves per root, availability first: the hub tile
   -- microcopy previews where the catalog actually has content, not the
@@ -149,16 +166,18 @@ as $$
     from public.categories
     where slug = p_slug
   ),
-  -- Subtree totals for the target and each of its direct children: path-prefix
-  -- sums of the denormalized products.parts_count.
+  -- Subtree totals for the target and each of its direct children: distinct
+  -- products and distinct published parts anywhere under the node.
   subtree as (
     select
       c.id,
-      count(p.id)::int as product_count,
-      coalesce(sum(p.parts_count), 0)::int as parts_count
+      count(distinct p.id)::int as product_count,
+      count(distinct m.id)::int as parts_count
     from public.categories c
     join public.categories sub on starts_with(sub.path, c.path)
     left join public.products p on p.category_id = sub.id
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
     where c.id = (select id from target)
        or c.parent_id = (select id from target)
     group by c.id
@@ -171,10 +190,12 @@ as $$
       b.id,
       b.name,
       b.slug,
-      count(*)::int as product_count,
-      sum(p.parts_count)::int as parts_count
+      count(distinct p.id)::int as product_count,
+      count(distinct m.id)::int as parts_count
     from public.products p
     join public.brands b on b.id = p.brand_id
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
     where p.category_id = (select id from target)
     group by b.id, b.name, b.slug
   )
@@ -235,3 +256,69 @@ as $$
 $$;
 
 grant execute on function public.fetch_category_page(text) to anon, authenticated;
+
+-- ============================================================================
+-- Brand page aggregates — same distinct-parts fix
+-- ============================================================================
+
+-- fetch_brand_nav (deployed by migration 20260715192445 for the /brands
+-- pages of #256) has the same defect this migration fixes elsewhere: it sums
+-- products.parts_count, so one part fitting three products displays as
+-- "3 printable spare parts" on the brand page header and category chips.
+-- Replaced here rather than in a separate migration so the hub and the brand
+-- pages can never disagree about the same brand's numbers.
+create or replace function public.fetch_brand_nav(p_brand_id uuid)
+returns jsonb
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  with product_parts as (
+    -- One row per (product, published part) pair of this brand; products
+    -- without parts keep a row with a null model so they still count.
+    select p.id as product_id, p.category_id, m.id as model_id
+    from public.products p
+    left join public.model_products mp on mp.product_id = p.id
+    left join public.models m on m.id = mp.model_id and m.status = 'published'
+    where p.brand_id = p_brand_id
+  ),
+  totals as (
+    select
+      count(distinct product_id)::int as product_count,
+      count(distinct model_id)::int as parts_count
+    from product_parts
+  ),
+  covered_categories as (
+    -- Products without a category count toward the totals but cannot appear
+    -- in the category navigation.
+    select
+      c.id,
+      c.name,
+      c.slug,
+      count(distinct pp.product_id)::int as product_count,
+      count(distinct pp.model_id)::int as parts_count
+    from product_parts pp
+    join public.categories c on c.id = pp.category_id
+    group by c.id, c.name, c.slug
+  )
+  select jsonb_build_object(
+    'parts_count', (select parts_count from totals),
+    'product_count', (select product_count from totals),
+    'categories', coalesce((
+      select jsonb_agg(
+        jsonb_build_object(
+          'id', id,
+          'name', name,
+          'slug', slug,
+          'parts_count', parts_count,
+          'product_count', product_count
+        )
+        order by name
+      )
+      from covered_categories
+    ), '[]'::jsonb)
+  );
+$$;
+
+grant execute on function public.fetch_brand_nav(uuid) to anon, authenticated;

@@ -2,15 +2,16 @@ import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 // Row shapes returned by the fetch_category_page RPC (migration
-// 20260716100000). All counts are path-prefix sums of the denormalized
-// products.parts_count — never live counts.
+// 20260716100000). Parts counts are distinct published parts per node (a
+// part fitting several products counts once), aggregated set-based in the
+// RPC — never per-row count queries.
 
 export interface CategoryPageCategory {
   id: string
   name: string
   slug: string
   level: number
-  /** Subtree-aggregated (path-prefix) sums, not direct-product counts. */
+  /** Subtree-aggregated (path-prefix) distinct counts, not direct-product counts. */
   parts_count: number
   product_count: number
 }
@@ -25,7 +26,7 @@ export interface CategoryPageChild {
   id: string
   name: string
   slug: string
-  /** Subtree-aggregated (path-prefix) sums, not direct-product counts. */
+  /** Subtree-aggregated (path-prefix) distinct counts, not direct-product counts. */
   parts_count: number
   product_count: number
   /** Direct children of this child — signals whether it drills further. */

@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 
 // Row shapes returned by the fetch_browse_nav RPC (migration 20260716100000).
-// Counts are the denormalized products.parts_count sums — never live counts.
+// Parts counts are distinct published parts per node (a part fitting several
+// products counts once), aggregated set-based in the RPC — never per-row
+// count queries.
 
 export interface BrowseNavBrand {
   id: string
@@ -15,7 +17,7 @@ export interface BrowseNavRoot {
   id: string
   name: string
   slug: string
-  /** Subtree-aggregated (path-prefix) sums, not direct-product counts. */
+  /** Subtree-aggregated (path-prefix) distinct counts, not direct-product counts. */
   parts_count: number
   product_count: number
   /** Up to three example leaf names, availability first — hub tile microcopy. */
