@@ -194,6 +194,37 @@ export function buildBrandCategorySeoDescription(input: {
   )
 }
 
+/** Canonical path for a category drill-down page (issue #276). */
+export function categoryCanonicalPath(categorySlug: string): string {
+  return `/categories/${categorySlug}`
+}
+
+/** Page title for a category page: "Vacuum Cleaner spare parts". */
+export function buildCategorySeoTitle(categoryName: string): string {
+  return `${categoryName} spare parts`
+}
+
+/**
+ * Meta description for a category page, leading with the subtree-aggregated
+ * counts displayed as-is (Flow P2: counts are never hidden or inflated).
+ */
+export function buildCategorySeoDescription(input: {
+  categoryName: string
+  partsCount: number
+  productCount: number
+}): string {
+  const lead =
+    input.partsCount > 0
+      ? `${input.partsCount} printable spare ${input.partsCount === 1 ? 'part' : 'parts'} across ${
+          input.productCount
+        } ${input.productCount === 1 ? 'product' : 'products'} in ${input.categoryName}.`
+      : `Printable spare parts for ${input.categoryName} products.`
+  return truncateText(
+    `${lead} Browse by subcategory and brand on ${APP_NAME}.`,
+    SEO_DESCRIPTION_MAX_LENGTH,
+  )
+}
+
 export interface BreadcrumbJsonLdItem {
   name: string
   /** In-app path; omit on the last item — the current page URL is implied. */
