@@ -6,9 +6,10 @@
 -- are path-prefix sums of the denormalized products.parts_count
 -- (trigger-maintained since #227/#244) — no per-row count queries.
 --
--- The LIKE prefix match on categories.path is safe against sibling-prefix
--- collisions (/cook/ vs /cooker/) because materialized paths always end with
--- a trailing slash; slugs cannot contain the LIKE wildcards % or _.
+-- Subtree membership is a starts_with() literal prefix check on
+-- categories.path — no LIKE wildcard semantics — and is safe against
+-- sibling-prefix collisions (/cook/ vs /cooker/) because materialized paths
+-- always end with a trailing slash.
 --
 -- SECURITY INVOKER: everything read here (brands, categories, products) is
 -- covered by the public read RLS policies, so no privilege escalation is
@@ -46,7 +47,7 @@ as $$
       count(p.id)::int as product_count,
       coalesce(sum(p.parts_count), 0)::int as parts_count
     from roots r
-    join public.categories sub on sub.path like r.path || '%'
+    join public.categories sub on starts_with(sub.path, r.path)
     left join public.products p on p.category_id = sub.id
     group by r.id
   ),
@@ -74,7 +75,7 @@ as $$
              ) as rn
       from public.categories leaf
       left join direct_totals dt on dt.category_id = leaf.id
-      where leaf.path like r.path || '%'
+      where starts_with(leaf.path, r.path)
         and leaf.id <> r.id
         and not exists (
           select 1 from public.categories ch where ch.parent_id = leaf.id
@@ -156,7 +157,7 @@ as $$
       count(p.id)::int as product_count,
       coalesce(sum(p.parts_count), 0)::int as parts_count
     from public.categories c
-    join public.categories sub on sub.path like c.path || '%'
+    join public.categories sub on starts_with(sub.path, c.path)
     left join public.products p on p.category_id = sub.id
     where c.id = (select id from target)
        or c.parent_id = (select id from target)
@@ -196,7 +197,7 @@ as $$
         order by a.level
       )
       from public.categories a, target t
-      where t.path like a.path || '%'
+      where starts_with(t.path, a.path)
         and a.id <> t.id
     ), '[]'::jsonb),
     'children', coalesce((

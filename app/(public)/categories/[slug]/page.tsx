@@ -131,7 +131,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     { name: data.category.name },
   ])
 
-  const isEmpty = effective.children.length === 0 && effective.brands.length === 0
+  // The "no parts" notice must never contradict the counts in the header:
+  // if inconsistent data ever yields parts without navigable children or
+  // brands, show nothing extra rather than a false claim (P-3).
+  const isEmpty =
+    effective.children.length === 0 &&
+    effective.brands.length === 0 &&
+    data.category.parts_count === 0
   // Upward escape for empty nodes: the nearest ancestor, or the hub.
   const parent = data.ancestors[data.ancestors.length - 1]
   const upwardHref = parent ? categoryCanonicalPath(parent.slug) : '/browse'
