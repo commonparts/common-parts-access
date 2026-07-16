@@ -1,10 +1,10 @@
 import type { Metadata } from 'next'
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
+import { NavChip } from '@/components/browse/nav-chip'
 import { PaginationLinks } from '@/components/browse/pagination-links'
 import { ProductResultCard } from '@/components/search/product-result-card'
 import {
@@ -152,15 +152,11 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
             <ul className="flex flex-wrap gap-sm">
               {nav.categories.map((category) => (
                 <li key={category.id}>
-                  <Link
+                  <NavChip
                     href={brandCategoryCanonicalPath(brand.slug, category.slug)}
-                    className="inline-flex items-baseline gap-xs rounded-lg border border-border-subtle bg-bg-surface px-md py-xs text-body text-text-primary transition-colors hover:border-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                  >
-                    <span className="font-medium">{category.name}</span>
-                    <span className="text-caption text-text-secondary">
-                      {pluralize(category.parts_count, 'part')}
-                    </span>
-                  </Link>
+                    label={category.name}
+                    caption={pluralize(category.parts_count, 'part')}
+                  />
                 </li>
               ))}
             </ul>

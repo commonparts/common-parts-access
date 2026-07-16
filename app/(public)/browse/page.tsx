@@ -41,7 +41,7 @@ export default async function BrowsePage() {
   // The hub must stay up even if the navigation RPC is unavailable (e.g. the
   // migration has not been applied yet): fall back to an empty nav — the
   // sections hide themselves — rather than failing the catalog entry point.
-  let nav: BrowseNav = { brands: [], categories: [] }
+  let nav: BrowseNav = { brands: [], roots: [] }
   try {
     nav = await fetchBrowseNav()
   } catch (error) {
@@ -54,7 +54,7 @@ export default async function BrowsePage() {
       // Function not found: expected until the fetch_browse_nav migration is
       // applied — a known degraded state, not an application fault.
       console.warn(
-        'Browse navigation unavailable — run supabase/migrations/20260715192445_browse_nav_function.sql:',
+        'Browse navigation unavailable — run supabase/migrations/20260716181406_category_drilldown_nav.sql:',
         message ?? String(error),
       )
     } else {

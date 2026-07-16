@@ -1,42 +1,54 @@
 import Link from 'next/link'
 
+import { Badge } from '@/components/ui/badge'
+import { CategoryTile } from '@/components/browse/category-tile'
 import { pluralize } from '@/lib/utils/formatters'
+import { categoryCanonicalPath } from '@/lib/utils/seo'
 import type { BrowseNav, BrowseNavBrand } from '@/lib/supabase/queries/browse-nav'
 
-// Shared card-link styling for navigation tiles, consistent with the result
-// cards used on /search.
-const tileClassName =
-  'group flex items-center justify-between gap-sm rounded-lg border border-border-subtle bg-bg-surface p-md shadow-surface transition-colors hover:border-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface'
+/**
+ * One line of the compact brand index. Brands with parts carry an emphasized
+ * count badge; zero-count brands stay present as quiet links (their pages are
+ * kept alive per Flow P2) so availability is signalled by emphasis, not by
+ * hiding entries.
+ */
+function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
+  const hasParts = brand.parts_count > 0
 
-function BrandTile({ brand }: { brand: BrowseNavBrand }) {
   return (
-    <Link href={`/brands/${brand.slug}`} className={tileClassName}>
-      <span className="truncate font-heading text-sm font-semibold text-text-primary">
+    <Link
+      href={`/brands/${brand.slug}`}
+      className="flex items-center justify-between gap-xs break-inside-avoid rounded-md py-xs pr-xs transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+    >
+      <span
+        className={
+          hasParts ? 'truncate font-medium text-text-primary' : 'truncate text-text-secondary'
+        }
+      >
         {brand.name}
       </span>
-      <span className="shrink-0 text-caption text-text-secondary">
-        {pluralize(brand.parts_count, 'part')}
-      </span>
+      {hasParts && <Badge className="shrink-0">{pluralize(brand.parts_count, 'part')}</Badge>}
     </Link>
   )
 }
 
 /**
- * Server-rendered navigation sections of the /browse hub (Flow P2): entry by
- * category and by brand, with denormalized parts_count aggregates displayed
- * as-is. Every link targets a dedicated crawlable route — category entries
- * resolve to brand-scoped listings (/brands/[brand]/[category]) since those
- * are the navigation pages; nothing here is a client-side filter state.
+ * Server-rendered navigation sections of the /browse hub (Flow P2, reworked
+ * for the hierarchical drill-down of issue #276): the level-0 category roots
+ * as tiles with subtree-aggregated counts and example-leaf microcopy, and a
+ * compact multi-column alphabetical brand index. Every link targets a
+ * dedicated crawlable route (/categories/[slug], /brands/[brand]); nothing
+ * here is a client-side filter state.
  */
 export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
-  const hasCategories = nav.categories.length > 0
+  const hasRoots = nav.roots.length > 0
   const hasBrands = nav.brands.length > 0
 
-  if (!hasCategories && !hasBrands) return null
+  if (!hasRoots && !hasBrands) return null
 
   return (
     <div className="space-y-xl">
-      {hasCategories && (
+      {hasRoots && (
         <section aria-labelledby="browse-by-category" className="space-y-sm">
           <h2
             id="browse-by-category"
@@ -45,33 +57,15 @@ export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
             Browse by category
           </h2>
           <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3">
-            {nav.categories.map((category) => (
-              <div
-                key={category.id}
-                className="space-y-sm rounded-lg border border-border-subtle bg-bg-surface p-md shadow-surface"
-              >
-                <div className="flex items-center justify-between gap-sm">
-                  <h3 className="truncate font-heading text-sm font-semibold text-text-primary">
-                    {category.name}
-                  </h3>
-                  <span className="shrink-0 text-caption text-text-secondary">
-                    {pluralize(category.parts_count, 'part')}
-                  </span>
-                </div>
-                <ul className="space-y-xs">
-                  {category.brands.map((brand) => (
-                    <li key={brand.id}>
-                      <Link
-                        href={`/brands/${brand.slug}/${category.slug}`}
-                        className="inline-flex items-baseline gap-xs text-body text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
-                      >
-                        <span className="font-medium">{brand.name}</span>
-                        <span className="text-caption">{pluralize(brand.parts_count, 'part')}</span>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+            {nav.roots.map((root) => (
+              <CategoryTile
+                key={root.id}
+                name={root.name}
+                href={categoryCanonicalPath(root.slug)}
+                partsCount={root.parts_count}
+                productCount={root.product_count}
+                hint={root.example_leaves.length > 0 ? root.example_leaves.join(', ') : null}
+              />
             ))}
           </div>
         </section>
@@ -85,9 +79,9 @@ export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
           >
             Browse by brand
           </h2>
-          <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-4">
+          <div className="columns-2 gap-md text-body sm:columns-3 lg:columns-4">
             {nav.brands.map((brand) => (
-              <BrandTile key={brand.id} brand={brand} />
+              <BrandIndexLink key={brand.id} brand={brand} />
             ))}
           </div>
         </section>

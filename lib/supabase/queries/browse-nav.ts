@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server'
 
-// Row shapes returned by the fetch_browse_nav RPC (migration 20260715090000).
-// Counts are the denormalized products.parts_count sums — never live counts.
+// Row shapes returned by the fetch_browse_nav RPC (migration 20260716181406).
+// Parts counts are distinct published parts per node (a part fitting several
+// products counts once), aggregated set-based in the RPC — never per-row
+// count queries.
 
 export interface BrowseNavBrand {
   id: string
@@ -11,25 +13,28 @@ export interface BrowseNavBrand {
   product_count: number
 }
 
-export interface BrowseNavCategory {
+export interface BrowseNavRoot {
   id: string
   name: string
   slug: string
+  /** Subtree-aggregated (path-prefix) distinct counts, not direct-product counts. */
   parts_count: number
-  /** Brands covering this category — targets of /brands/[brand]/[category]. */
-  brands: BrowseNavBrand[]
+  product_count: number
+  /** Up to three example leaf names, availability first — hub tile microcopy. */
+  example_leaves: string[]
 }
 
 export interface BrowseNav {
   brands: BrowseNavBrand[]
-  categories: BrowseNavCategory[]
+  roots: BrowseNavRoot[]
 }
 
 /**
  * Fetches the /browse hub navigation data in one round-trip: all indexed
  * brands (including zero-part brands, whose pages are kept alive per Flow P2)
- * and the category×brand entries with summed parts counts. Reads are covered
- * by the public read RLS policies (the RPC is SECURITY INVOKER).
+ * and the level-0 category roots with subtree-aggregated counts — the entry
+ * tiles of the hierarchical drill-down (issue #276). Reads are covered by
+ * the public read RLS policies (the RPC is SECURITY INVOKER).
  */
 export async function fetchBrowseNav(): Promise<BrowseNav> {
   const supabase = await createClient()
@@ -39,6 +44,8 @@ export async function fetchBrowseNav(): Promise<BrowseNav> {
   const nav = data as BrowseNav | null
   return {
     brands: nav?.brands ?? [],
-    categories: nav?.categories ?? [],
+    // An RPC deployed before migration 20260716181406 has no roots key —
+    // degrade to an empty category section rather than failing the hub.
+    roots: nav?.roots ?? [],
   }
 }
