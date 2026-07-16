@@ -75,7 +75,7 @@ export const fetchBrandBySlug = cache(async (slug: string): Promise<BrandPageBra
 
 /**
  * Fetches a brand's accurate totals and covered categories via the
- * fetch_brand_nav RPC (replaced by migration 20260716100000: parts counts
+ * fetch_brand_nav RPC (replaced by migration 20260716181406: parts counts
  * are distinct published parts, a part fitting several products counts
  * once) — aggregated in the database so the counts are never derived from a
  * truncated product list.

@@ -54,7 +54,7 @@ export default async function BrowsePage() {
       // Function not found: expected until the fetch_browse_nav migration is
       // applied — a known degraded state, not an application fault.
       console.warn(
-        'Browse navigation unavailable — run supabase/migrations/20260716100000_category_drilldown_nav.sql:',
+        'Browse navigation unavailable — run supabase/migrations/20260716181406_category_drilldown_nav.sql:',
         message ?? String(error),
       )
     } else {

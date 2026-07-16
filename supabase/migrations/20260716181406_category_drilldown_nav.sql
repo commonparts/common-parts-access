@@ -26,7 +26,8 @@
 -- joins filter on models.status = 'published' explicitly so counts are
 -- identical for anonymous and authenticated readers.
 --
--- To be applied by the human via the Supabase SQL editor (see PR for #276).
+-- Applied to production on 2026-07-16 via the Supabase MCP at the human's
+-- explicit instruction (recorded as version 20260716181406).
 
 create or replace function public.fetch_browse_nav()
 returns jsonb

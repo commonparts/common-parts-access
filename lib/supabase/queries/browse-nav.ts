@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 
-// Row shapes returned by the fetch_browse_nav RPC (migration 20260716100000).
+// Row shapes returned by the fetch_browse_nav RPC (migration 20260716181406).
 // Parts counts are distinct published parts per node (a part fitting several
 // products counts once), aggregated set-based in the RPC — never per-row
 // count queries.
@@ -44,7 +44,7 @@ export async function fetchBrowseNav(): Promise<BrowseNav> {
   const nav = data as BrowseNav | null
   return {
     brands: nav?.brands ?? [],
-    // An RPC deployed before migration 20260716100000 has no roots key —
+    // An RPC deployed before migration 20260716181406 has no roots key —
     // degrade to an empty category section rather than failing the hub.
     roots: nav?.roots ?? [],
   }

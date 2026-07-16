@@ -2,7 +2,7 @@ import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 
 // Row shapes returned by the fetch_category_page RPC (migration
-// 20260716100000). Parts counts are distinct published parts per node (a
+// 20260716181406). Parts counts are distinct published parts per node (a
 // part fitting several products counts once), aggregated set-based in the
 // RPC — never per-row count queries.
 
