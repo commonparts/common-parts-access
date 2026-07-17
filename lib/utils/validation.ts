@@ -32,14 +32,6 @@ export function normalizeEntityName(value: string): string {
 }
 
 /**
- * Escapes ILIKE metacharacters (% _ \) in a literal string so it can be used
- * as a case-insensitive exact-match pattern without acting as a wildcard.
- */
-export function escapeIlikePattern(value: string): string {
-  return value.replace(/[\\%_]/g, '\\$&')
-}
-
-/**
  * Validates that a redirect path is a safe relative in-app path.
  * Accepts only strings that start with a single "/" (not "//") and contain
  * no ASCII control characters, whitespace, or backslashes — preventing
