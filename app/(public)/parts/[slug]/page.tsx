@@ -45,7 +45,7 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
 
     const title = buildModelSeoTitle(model)
     const description = buildModelSeoDescription(model)
-    const canonicalPath = `/model/${model.slug}`
+    const canonicalPath = `/parts/${model.slug}`
     const image = resolveStorageUrl(model.thumbnailUrl)
 
     // Relative URLs resolve against metadataBase (set in the root layout).

@@ -13,9 +13,9 @@ import type { ModelSeoData } from '@/types/models'
 /** Search snippets are cut around 155-160 characters; stay within that budget. */
 const SEO_DESCRIPTION_MAX_LENGTH = 160
 
-/** Canonical URL for a part page. */
+/** Canonical URL for a part page (public route is /parts — issue #258). */
 export function modelCanonicalUrl(slug: string): string {
-  return absoluteAppUrl(`/model/${slug}`)
+  return absoluteAppUrl(`/parts/${slug}`)
 }
 
 /**

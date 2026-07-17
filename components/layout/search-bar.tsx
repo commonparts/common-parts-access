@@ -128,7 +128,7 @@ export function SearchBar({
   const navTargets = React.useMemo(() => {
     const targets = [
       ...results.products.map((p) => `/product/${p.slug}`),
-      ...results.models.map((m) => `/model/${m.slug}`),
+      ...results.models.map((m) => `/parts/${m.slug}`),
       ...results.brands.map((b) => `/brands/${b.slug}`),
       searchHref,
     ]
@@ -279,7 +279,7 @@ export function SearchBar({
       key={model.id}
       id={optionId(modelOffset + index)}
       isActive={activeIndex === modelOffset + index}
-      onSelect={() => navigateTo(`/model/${model.slug}`)}
+      onSelect={() => navigateTo(`/parts/${model.slug}`)}
       onHover={() => setActiveIndex(modelOffset + index)}
     >
       <Thumbnail src={model.thumbnail_url} alt={model.name} />
