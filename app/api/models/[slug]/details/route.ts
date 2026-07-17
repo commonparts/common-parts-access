@@ -50,6 +50,8 @@ export async function GET(
           created_at,
           updated_at,
           origin_type,
+          status,
+          user_id,
           verification_status,
           source_url,
           source_platform,
@@ -109,7 +111,6 @@ export async function GET(
           )
         `)
         .eq('slug', slug)
-        .eq('status', 'published')
         .single(),
     ])
 
@@ -119,6 +120,13 @@ export async function GET(
       }
       console.error('Error fetching model:', modelError)
       return NextResponse.json({ error: 'Failed to fetch model' }, { status: 500 })
+    }
+
+    // RLS already limits reads to published rows plus the owner's own; this
+    // explicit check keeps the route correct even if policies change. Owners
+    // can preview their drafts (curation review screen); everyone else 404s.
+    if (model.status !== 'published' && (!user || user.id !== model.user_id)) {
+      return NextResponse.json({ error: 'Model not found' }, { status: 404 })
     }
 
     const [

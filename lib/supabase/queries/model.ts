@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS } from '@/constants/app';
 import { extractBucketStoragePath } from '@/lib/storage/path-utils';
+import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import type { ModelStatus } from '@/types/database';
 import type {
@@ -36,6 +37,35 @@ const MODEL_SELECT = `
     slug
   )
 `;
+
+/**
+ * Derives a slug from the model name and suffixes it until it is unique in
+ * models.slug. Falls back to a timestamp suffix after 50 collisions so the
+ * loop is always bounded.
+ */
+export async function ensureUniqueModelSlug(
+  name: string,
+  supabase: Awaited<ReturnType<typeof createClient>>,
+): Promise<string> {
+  const base = slugify(name) || `model-${Date.now().toString(36)}`;
+  let candidate = base;
+  let counter = 1;
+
+  while (true) {
+    const { data } = await supabase
+      .from('models')
+      .select('id')
+      .eq('slug', candidate)
+      .maybeSingle();
+
+    if (!data) return candidate;
+    candidate = `${base}-${counter}`;
+    counter += 1;
+    if (counter > 50) {
+      return `${base}-${Date.now().toString(36)}`;
+    }
+  }
+}
 
 function mapModelRowToCard(model: ModelCardRow): ModelCardData {
   const userProfile = Array.isArray(model.user_profiles)

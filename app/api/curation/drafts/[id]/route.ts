@@ -1,0 +1,255 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import {
+  getCurationDraft,
+  updateCurationDraft,
+  type CurationDraftPatch,
+} from '@/lib/supabase/queries/curation'
+import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
+
+const SOURCE_URL_MAX_LENGTH = 2048
+const AUTHOR_MAX_LENGTH = 200
+const JUSTIFICATION_MAX_LENGTH = 1000
+
+type RouteContext = { params: Promise<{ id: string }> }
+
+async function requireOwnDraft(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { user: null, draft: null }
+
+  if (!isValidUuid(id)) return { user, draft: null }
+
+  const draft = await getCurationDraft(id)
+  if (!draft || draft.user_id !== user.id) return { user, draft: null }
+  return { user, draft }
+}
+
+// GET /api/curation/drafts/[id] — full draft state for session resume.
+export async function GET(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params
+    const { user, draft } = await requireOwnDraft(id)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+
+    return NextResponse.json({ draft })
+  } catch (error) {
+    console.error('Failed to load curation draft', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}
+
+// PATCH /api/curation/drafts/[id] — partial autosave of the curation session.
+// Accepts any subset of the editable fields; only provided keys are written.
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params
+    const { user, draft } = await requireOwnDraft(id)
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    if (draft.status !== 'draft') {
+      return NextResponse.json({ error: 'Only drafts can be edited by the curation tool' }, { status: 409 })
+    }
+
+    const body = await request.json().catch(() => null)
+    if (!body || typeof body !== 'object') {
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+    const payload = body as Record<string, unknown>
+    const supabase = await createClient()
+    const patch: CurationDraftPatch = {}
+
+    if (payload.title !== undefined) {
+      const name = trimmedString(payload.title)
+      if (name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
+        return NextResponse.json(
+          { error: `Title must be between ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` },
+          { status: 400 },
+        )
+      }
+      patch.name = name
+    }
+
+    if (payload.description !== undefined) {
+      const description = trimmedString(payload.description)
+      if (description.length > VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH) {
+        return NextResponse.json({ error: `Description must be at most ${VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH} characters` }, { status: 400 })
+      }
+      patch.description = description || null
+    }
+
+    if (payload.instructions !== undefined) {
+      const instructions = trimmedString(payload.instructions)
+      if (instructions.length > VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH) {
+        return NextResponse.json({ error: `Instructions must be at most ${VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH} characters` }, { status: 400 })
+      }
+      patch.instructions = instructions || null
+    }
+
+    if (payload.categoryId !== undefined) {
+      const categoryId = trimmedString(payload.categoryId)
+      if (categoryId) {
+        if (!isValidUuid(categoryId)) {
+          return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
+        }
+        const { data: category, error } = await supabase.from('categories').select('id').eq('id', categoryId).maybeSingle()
+        if (error || !category) return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
+      }
+      patch.category_id = categoryId || null
+    }
+
+    if (payload.brandId !== undefined) {
+      const brandId = trimmedString(payload.brandId)
+      if (brandId) {
+        if (!isValidUuid(brandId)) {
+          return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
+        }
+        const { data: brand, error } = await supabase.from('brands').select('id').eq('id', brandId).maybeSingle()
+        if (error || !brand) return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
+      }
+      patch.brand_id = brandId || null
+    }
+
+    if (payload.licenseId !== undefined) {
+      const licenseId = trimmedString(payload.licenseId)
+      if (licenseId) {
+        if (!isValidUuid(licenseId)) {
+          return NextResponse.json({ error: 'Invalid license' }, { status: 400 })
+        }
+        const { data: license, error } = await supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle()
+        if (error || !license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      }
+      patch.license_id = licenseId || null
+    }
+
+    if (payload.sourceLicenseId !== undefined) {
+      const sourceLicenseId = trimmedString(payload.sourceLicenseId)
+      if (!isValidUuid(sourceLicenseId)) {
+        return NextResponse.json({ error: 'Source license is required for curated parts' }, { status: 400 })
+      }
+      const { data: license, error } = await supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle()
+      if (error || !license) return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
+      patch.source_license_id = sourceLicenseId
+    }
+
+    if (payload.sourcePlatform !== undefined) {
+      const sourcePlatform = trimmedString(payload.sourcePlatform)
+      if (sourcePlatform) {
+        const { data: platform, error } = await supabase.from('source_platforms').select('slug').eq('slug', sourcePlatform).maybeSingle()
+        if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+      }
+      patch.source_platform = sourcePlatform || null
+    }
+
+    if (payload.originalAuthor !== undefined) {
+      const originalAuthor = trimmedString(payload.originalAuthor)
+      if (!originalAuthor || originalAuthor.length > AUTHOR_MAX_LENGTH) {
+        return NextResponse.json({ error: `Original author is required (max ${AUTHOR_MAX_LENGTH} characters)` }, { status: 400 })
+      }
+      patch.original_author = originalAuthor
+    }
+
+    if (payload.originalAuthorUrl !== undefined) {
+      const originalAuthorUrl = trimmedString(payload.originalAuthorUrl)
+      if (originalAuthorUrl && (originalAuthorUrl.length > SOURCE_URL_MAX_LENGTH || !isValidHttpUrl(originalAuthorUrl))) {
+        return NextResponse.json({ error: 'Original author URL must be a valid http(s) URL' }, { status: 400 })
+      }
+      patch.original_author_url = originalAuthorUrl || null
+    }
+
+    if (payload.tags !== undefined) {
+      if (!Array.isArray(payload.tags)) {
+        return NextResponse.json({ error: 'Tags must be an array' }, { status: 400 })
+      }
+      const tags = payload.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
+      if (tags.length > VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT) {
+        return NextResponse.json({ error: `Too many tags (max ${VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT})` }, { status: 400 })
+      }
+      for (const tag of tags) {
+        if (tag.length < VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH || tag.length > VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH) {
+          return NextResponse.json(
+            { error: `Tags must be between ${VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH} characters` },
+            { status: 400 },
+          )
+        }
+      }
+      patch.tags = tags
+    }
+
+    if (payload.checklist !== undefined) {
+      const checklist = sanitizeChecklist(payload.checklist)
+      if (!checklist) {
+        return NextResponse.json({ error: 'Checklist must be an object of criterion booleans' }, { status: 400 })
+      }
+      patch.curation_checklist = checklist
+    }
+
+    for (const flag of CURATION_FLAGS) {
+      const raw = payload[flag.column]
+      if (raw !== undefined) {
+        if (typeof raw !== 'boolean') {
+          return NextResponse.json({ error: `${flag.column} must be a boolean` }, { status: 400 })
+        }
+        patch[flag.column] = raw
+      }
+    }
+
+    if (payload.needs_legal_review !== undefined) {
+      if (typeof payload.needs_legal_review !== 'boolean') {
+        return NextResponse.json({ error: 'needs_legal_review must be a boolean' }, { status: 400 })
+      }
+      patch.needs_legal_review = payload.needs_legal_review
+    }
+
+    if (payload.legalReviewJustification !== undefined) {
+      const justification = trimmedString(payload.legalReviewJustification)
+      if (justification.length > JUSTIFICATION_MAX_LENGTH) {
+        return NextResponse.json({ error: `Justification must be at most ${JUSTIFICATION_MAX_LENGTH} characters` }, { status: 400 })
+      }
+      patch.legal_review_justification = justification || null
+    }
+
+    // The DB constraint also enforces this pair; failing early gives a clean 400.
+    const nextNeedsLegalReview = patch.needs_legal_review ?? draft.needs_legal_review ?? false
+    const nextJustification = patch.legal_review_justification !== undefined
+      ? patch.legal_review_justification
+      : draft.legal_review_justification ?? null
+    if (nextNeedsLegalReview && !nextJustification) {
+      return NextResponse.json({ error: 'A justification is required when flagging for legal review' }, { status: 400 })
+    }
+
+    let productIds: string[] | undefined
+    if (payload.productIds !== undefined) {
+      if (!Array.isArray(payload.productIds)) {
+        return NextResponse.json({ error: 'productIds must be an array' }, { status: 400 })
+      }
+      const ids = [...new Set(payload.productIds.filter((p): p is string => typeof p === 'string' && isValidUuid(p)))]
+      if (ids.length !== payload.productIds.length) {
+        return NextResponse.json({ error: 'productIds must be unique product UUIDs' }, { status: 400 })
+      }
+      if (ids.length > VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) {
+        return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT})` }, { status: 400 })
+      }
+      if (ids.length > 0) {
+        const { data: rows, error } = await supabase.from('products').select('id').in('id', ids)
+        if (error || !rows || rows.length !== ids.length) {
+          return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
+        }
+      }
+      productIds = ids
+    }
+
+    if (Object.keys(patch).length === 0 && productIds === undefined) {
+      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
+    }
+
+    await updateCurationDraft(id, user.id, patch, productIds)
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('Failed to update curation draft', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

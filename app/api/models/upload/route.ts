@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { slugify } from '@/lib/utils/slug'
+import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
@@ -77,31 +77,6 @@ function validateFileMetadata(
 
   return { ok: issues.length === 0, issues }
 }
-
-async function ensureUniqueSlug(name: string, supabase: Awaited<ReturnType<typeof createClient>>) {
-  const base = slugify(name) || `model-${Date.now().toString(36)}`
-  let candidate = base
-  let counter = 1
-
-  while (true) {
-    const { data } = await supabase
-      .from('models')
-      .select('id')
-      .eq('slug', candidate)
-      .maybeSingle()
-
-    if (!data) return candidate
-    candidate = `${base}-${counter}`
-    counter += 1
-    if (counter > 50) {
-      candidate = `${base}-${Date.now().toString(36)}`
-      break
-    }
-  }
-
-  return candidate
-}
-
 
 const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
 const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
@@ -484,7 +459,7 @@ export async function POST(request: NextRequest) {
       validatedProductIds = productIds.filter((id) => foundIds.has(id))
     }
 
-    const slug = await ensureUniqueSlug(name, supabase)
+    const slug = await ensureUniqueModelSlug(name, supabase)
     const intendedStatus = isPublic ? 'published' : 'draft'
 
     // Hosted: always draft — promoted to intendedStatus after file registration.
