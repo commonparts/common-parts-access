@@ -23,6 +23,23 @@ export function trimmedString(value: unknown): string {
 }
 
 /**
+ * Normalizes an entity name (brand, product) for storage and duplicate
+ * comparison: trims and collapses internal whitespace runs to single spaces.
+ * Case is preserved for display — case-insensitive matching happens in SQL.
+ */
+export function normalizeEntityName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ')
+}
+
+/**
+ * Escapes ILIKE metacharacters (% _ \) in a literal string so it can be used
+ * as a case-insensitive exact-match pattern without acting as a wildcard.
+ */
+export function escapeIlikePattern(value: string): string {
+  return value.replace(/[\\%_]/g, '\\$&')
+}
+
+/**
  * Validates that a redirect path is a safe relative in-app path.
  * Accepts only strings that start with a single "/" (not "//") and contain
  * no ASCII control characters, whitespace, or backslashes — preventing

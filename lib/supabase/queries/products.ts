@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { escapeIlikePattern, normalizeEntityName } from '@/lib/utils/validation'
 import type { Product } from '@/types/database'
 
 const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id'
@@ -87,10 +88,37 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   return (data ?? []) as Product[]
 }
 
+/**
+ * Finds an existing product under a brand whose name matches the given name
+ * case-insensitively after whitespace normalization. Duplicate guard for
+ * creation: the DB unique (brand_id, name) constraint only catches exact
+ * matches, and the slug trigger suffixes collisions instead of failing.
+ * Covered by the public "Products are publicly readable" RLS policy.
+ */
+export async function findProductByNormalizedName(brandId: string, name: string): Promise<Product | null> {
+  const supabase = await createClient()
+  const normalized = normalizeEntityName(name)
+  if (!normalized) return null
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('brand_id', brandId)
+    .ilike('name', escapeIlikePattern(normalized))
+    .limit(1)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  return (data as Product | null) ?? null
+}
+
 export async function createProduct(input: CreateProductInput): Promise<Product> {
   const supabase = await createClient()
 
-  const name = input.name?.trim()
+  const name = normalizeEntityName(input.name ?? '')
   if (!name) {
     throw new Error('Name is required')
   }
