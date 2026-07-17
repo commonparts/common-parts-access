@@ -71,7 +71,7 @@ export function ModelCard({
   if (variant === "compact") {
     return (
       <Card className={cn("group transition-colors duration-200 hover:border-border-default", className)}>
-        <Link href={`/model/${model.slug}`}>
+        <Link href={`/parts/${model.slug}`}>
           <div className="relative aspect-square overflow-hidden rounded-t-lg">
             {model.thumbnailUrl ? (
               <Image
@@ -94,7 +94,7 @@ export function ModelCard({
           </div>
         </Link>
         <CardContent className="space-y-1 p-3">
-          <Link href={`/model/${model.slug}`}>
+          <Link href={`/parts/${model.slug}`}>
             <h3 className="line-clamp-2 min-h-[2lh] font-heading text-sm font-semibold text-text-primary transition-colors hover:text-primary">
               {model.title}
             </h3>
@@ -122,7 +122,7 @@ export function ModelCard({
 
   return (
     <Card className={cn("group transition-colors duration-200 hover:border-border-default", className)}>
-      <Link href={`/model/${model.slug}`}>
+      <Link href={`/parts/${model.slug}`}>
         <div className="relative aspect-video overflow-hidden rounded-t-lg">
           {model.thumbnailUrl ? (
             <Image
@@ -148,7 +148,7 @@ export function ModelCard({
       </Link>
 
       <CardHeader className="pb-2">
-        <Link href={`/model/${model.slug}`}>
+        <Link href={`/parts/${model.slug}`}>
           <h3 className="line-clamp-2 min-h-[2lh] font-heading text-heading-sm font-semibold text-text-primary transition-colors hover:text-primary">
             {model.title}
           </h3>

@@ -9,7 +9,7 @@ interface SuccessPageProps {
 
 export default async function UploadSuccessPage({ searchParams }: SuccessPageProps) {
   const { slug } = await searchParams
-  const viewHref = slug ? `/model/${slug}` : '/browse'
+  const viewHref = slug ? `/parts/${slug}` : '/browse'
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
