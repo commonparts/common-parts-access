@@ -440,13 +440,15 @@ export function useModelUploadFormState() {
       })
 
       const json = await res.json().catch(() => ({}))
+      const product = json?.product as ProductOption | undefined
 
-      if (!res.ok) {
+      // A 409 carrying a product means an equivalent one already exists for
+      // this brand — fall through and link it instead of surfacing an error.
+      if (!res.ok && !(res.status === 409 && product?.id)) {
         setCreateProductError(json?.error || "Failed to create product")
         return
       }
 
-      const product = json?.product as ProductOption | undefined
       if (product?.id) {
         setProducts(prev => {
           const next = [

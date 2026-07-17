@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchProducts, createProduct } from '@/lib/supabase/queries/products'
+import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
 import { trimmedString } from '@/lib/utils/validation'
 
 // GET /api/products - List products with optional brand/category filters
@@ -51,6 +51,17 @@ export async function POST(request: NextRequest) {
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     if (!brandId) return NextResponse.json({ error: 'Brand is required' }, { status: 400 })
     if (!categoryId) return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+
+    // Duplicate guard: a case/spacing variant of an existing product must link
+    // to that product, not create a sibling. 409 carries the existing record
+    // so the client can select it instead.
+    const existing = await findProductByNormalizedName(brandId, name)
+    if (existing) {
+      return NextResponse.json(
+        { error: 'A product with this name already exists for this brand', product: existing },
+        { status: 409 }
+      )
+    }
 
     const product = await createProduct({
       name,

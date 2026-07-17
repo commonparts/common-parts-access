@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { normalizeEntityName } from '@/lib/utils/validation'
 import type { Product } from '@/types/database'
 
 const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id'
@@ -87,10 +88,46 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   return (data ?? []) as Product[]
 }
 
+// Upper bound on brand-scoped rows scanned by the duplicate guard. A brand
+// exceeding it degrades gracefully: rows beyond the limit escape the
+// normalized check, but exact matches are still caught by the DB unique
+// (brand_id, name) constraint.
+const DUPLICATE_SCAN_LIMIT = 1000
+
+/**
+ * Finds an existing product under a brand whose name matches the given name
+ * case-insensitively after whitespace normalization. Duplicate guard for
+ * creation: the DB unique (brand_id, name) constraint only catches exact
+ * matches, and the slug trigger suffixes collisions instead of failing.
+ * Both sides are normalized in JS so legacy rows stored with irregular
+ * internal whitespace (created before names were normalized) still match.
+ * Covered by the public "Products are publicly readable" RLS policy.
+ */
+export async function findProductByNormalizedName(brandId: string, name: string): Promise<Product | null> {
+  const supabase = await createClient()
+  const target = normalizeEntityName(name).toLowerCase()
+  if (!target) return null
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('brand_id', brandId)
+    .limit(DUPLICATE_SCAN_LIMIT)
+
+  if (error) {
+    throw error
+  }
+
+  const match = (data ?? []).find(
+    (row) => normalizeEntityName(row.name).toLowerCase() === target
+  )
+  return (match as Product | undefined) ?? null
+}
+
 export async function createProduct(input: CreateProductInput): Promise<Product> {
   const supabase = await createClient()
 
-  const name = input.name?.trim()
+  const name = normalizeEntityName(input.name ?? '')
   if (!name) {
     throw new Error('Name is required')
   }
