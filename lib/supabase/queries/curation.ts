@@ -3,8 +3,11 @@ import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
 import type { CurationChecklist, CurationCriterionKey, Model } from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
+// user_id must stay in this list: the draft routes' ownership check compares
+// it against the session user, and an absent field reads as undefined — which
+// made every draft 404 for its own owner (bug found 2026-07-18).
 const CURATION_DRAFT_SELECT = `
-  id, name, slug, description, instructions, status, origin_type,
+  id, name, slug, user_id, description, instructions, status, origin_type,
   category_id, brand_id, license_id, tags, thumbnail_url,
   source_url, source_platform, original_author, original_author_url, source_license_id,
   verification_status, file_hosting_type,

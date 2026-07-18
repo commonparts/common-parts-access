@@ -35,7 +35,10 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
 
-    return NextResponse.json({ draft })
+    // user_id is fetched for the ownership check only — never echoed back.
+    const clientDraft = { ...draft }
+    delete clientDraft.user_id
+    return NextResponse.json({ draft: clientDraft })
   } catch (error) {
     console.error('Failed to load curation draft', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
