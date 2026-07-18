@@ -19,8 +19,8 @@
 -- in the application publish endpoint, not in the database — the tool is
 -- internal and trusts the operator (Flow P3 §4.2).
 --
--- Idempotent-safe where practical. To be validated and executed by a human via
--- the Supabase SQL editor — never applied by the agent.
+-- Idempotent-safe where practical. Applied to production via the Supabase MCP
+-- on 2026-07-18, on explicit human instruction.
 
 -- ============================================================================
 -- 1. Curation flags and checklist state on models
