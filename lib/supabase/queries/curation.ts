@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
-import type { CurationChecklist, Model } from '@/types/database'
+import type { CurationChecklist, CurationCriterionKey, Model } from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
 const CURATION_DRAFT_SELECT = `
@@ -153,6 +153,16 @@ export async function createCurationDraft(
       original_author_url: input.originalAuthorUrl ?? null,
       source_license_id: input.sourceLicenseId,
       file_hosting_type: 'hosted',
+      // A fresh draft has confirmed nothing yet: every completeness flag
+      // starts set and is cleared by explicit confirmation in the Flags step.
+      // The column default (false) is for non-curated rows, where the flags
+      // do not apply. needs_legal_review stays false — it is a manual
+      // escalation, not a completeness confirmation.
+      needs_verification: true,
+      needs_print_settings: true,
+      needs_photo: true,
+      needs_instructions: true,
+      needs_category: true,
     })
     .select('id, slug')
     .single()
@@ -245,7 +255,7 @@ export async function updateCurationDraft(
 export interface CurationRejectionInput {
   sourceUrl: string
   reason: string
-  failedCriteria: string[]
+  failedCriteria: CurationCriterionKey[]
 }
 
 /**

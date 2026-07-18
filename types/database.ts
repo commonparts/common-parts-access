@@ -211,7 +211,7 @@ export interface CurationRejection {
   id: string;
   source_url: string;
   reason: string;
-  failed_criteria: string[];
+  failed_criteria: CurationCriterionKey[];
   created_by: string;
   created_at?: string;
 }

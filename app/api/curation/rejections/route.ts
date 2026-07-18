@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { insertCurationRejection } from '@/lib/supabase/queries/curation'
 import { CURATION_BLOCKING_CRITERIA } from '@/lib/curation/checklist'
 import { isValidHttpUrl, trimmedString } from '@/lib/utils/validation'
+import type { CurationCriterionKey } from '@/types/database'
 
 const SOURCE_URL_MAX_LENGTH = 2048
 const REASON_MAX_LENGTH = 1000
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest) {
     }
 
     const failedCriteria = Array.isArray(payload.failedCriteria)
-      ? [...new Set(payload.failedCriteria.filter((c): c is string => typeof c === 'string' && CRITERION_KEYS.has(c)))]
+      ? [...new Set(payload.failedCriteria.filter((c): c is CurationCriterionKey => typeof c === 'string' && CRITERION_KEYS.has(c)))]
       : []
 
     await insertCurationRejection(user.id, { sourceUrl, reason, failedCriteria })

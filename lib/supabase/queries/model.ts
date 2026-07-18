@@ -52,11 +52,15 @@ export async function ensureUniqueModelSlug(
   let counter = 1;
 
   while (true) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('models')
       .select('id')
       .eq('slug', candidate)
       .maybeSingle();
+
+    // A failed read must not pass for "slug free" — that would hand out
+    // colliding slugs and surface as a confusing unique-violation later.
+    if (error) throw error;
 
     if (!data) return candidate;
     candidate = `${base}-${counter}`;
