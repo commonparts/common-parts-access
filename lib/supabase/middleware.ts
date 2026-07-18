@@ -6,6 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * These correspond to routes inside app/(dashboard)/.
  */
 const PROTECTED_ROUTE_PREFIXES = [
+  "/curation",
   "/upload",
   "/dashboard",
   "/collections",

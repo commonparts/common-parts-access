@@ -33,6 +33,8 @@ export function resolveModelContentType(extension: string): string {
 		case '.stp':
 		case '.step':
 			return 'model/step'
+		case '.3mf':
+			return 'model/3mf'
 		default:
 			return 'application/octet-stream'
 	}

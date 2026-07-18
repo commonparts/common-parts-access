@@ -118,6 +118,19 @@ export interface ModelPrintSettings {
 // ============================================================================
 
 export type ModelStatus = 'draft' | 'published' | 'archived';
+
+// The six blocking criteria of curation checklist v1 (Flow P3 §4.3.3).
+// Stored on models.curation_checklist as a partial {criterion: boolean} map;
+// all six must be true for a curated part to be publishable.
+export type CurationCriterionKey =
+  | 'eligibility'
+  | 'product_target'
+  | 'license'
+  | 'file'
+  | 'attribution'
+  | 'duplicate';
+
+export type CurationChecklist = Partial<Record<CurationCriterionKey, boolean>>;
 export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
 export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 export type ModelFileHostingType = 'hosted' | 'link_out';
@@ -176,9 +189,31 @@ export interface Model {
   tags?: string[] | null;
   instructions?: string | null;
   notes?: string | null;
-  
+
+  // Curation (Flow P3) — non-blocking flags, the blocking legal-review flag,
+  // and the blocking-checklist state. Maintained by the internal curation tool.
+  needs_verification?: boolean;
+  needs_print_settings?: boolean;
+  needs_photo?: boolean;
+  needs_instructions?: boolean;
+  needs_category?: boolean;
+  needs_legal_review?: boolean;
+  legal_review_justification?: string | null;
+  curation_checklist?: CurationChecklist;
+
   created_at?: string;
   updated_at?: string;
+}
+
+// Rejection traceability (Flow P3 §4.3.3): a rejected source is recorded with
+// its reason and failed criteria, independently of any model row.
+export interface CurationRejection {
+  id: string;
+  source_url: string;
+  reason: string;
+  failed_criteria: CurationCriterionKey[];
+  created_by: string;
+  created_at?: string;
 }
 
 // Junction table model_products: links a model (part) to a compatible product.
