@@ -417,12 +417,14 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
   // Switching back to hosted invalidates an NC/ND license selection — clear
   // it so the select never shows a value the whitelist filter would hide.
+  // Fails closed: the selection is kept only when the license is positively
+  // confirmed whitelisted, so an unloaded list or stale id also clears.
   const handleHostingChange = (value: ModelFileHostingType) => {
     setFormData((prev) => {
       const next = { ...prev, fileHostingType: value }
       if (value === 'hosted' && prev.licenseId) {
         const license = form.licenses.find((l) => l.id === prev.licenseId)
-        if (license && !(license.allowsCommercial && license.allowsRedistribution)) {
+        if (!license || !license.allowsCommercial || !license.allowsRedistribution) {
           next.licenseId = ''
         }
       }
