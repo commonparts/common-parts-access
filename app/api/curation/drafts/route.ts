@@ -5,8 +5,12 @@ import {
   findModelBySourceUrl,
   listCurationDrafts,
 } from '@/lib/supabase/queries/curation'
+import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
+
+const VALID_FILE_HOSTING_TYPES = ['hosted', 'link_out'] as const
+type FileHostingType = (typeof VALID_FILE_HOSTING_TYPES)[number]
 
 const SOURCE_URL_MAX_LENGTH = 2048
 const AUTHOR_MAX_LENGTH = 200
@@ -55,6 +59,18 @@ export async function POST(request: NextRequest) {
     const originalAuthorUrl = trimmedString(payload.originalAuthorUrl)
     const sourceLicenseId = trimmedString(payload.sourceLicenseId)
     const sourcePlatform = trimmedString(payload.sourcePlatform)
+    const rawHostingType = trimmedString(payload.fileHostingType) || 'hosted'
+
+    if (!(VALID_FILE_HOSTING_TYPES as readonly string[]).includes(rawHostingType)) {
+      return NextResponse.json({ error: 'Invalid file hosting type' }, { status: 400 })
+    }
+    const fileHostingType = rawHostingType as FileHostingType
+
+    // Link-out keeps the files at the source, so the source platform claim is
+    // mandatory and must match where the URL actually points.
+    if (fileHostingType === 'link_out' && !sourcePlatform) {
+      return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
+    }
 
     if (name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
       return NextResponse.json(
@@ -85,13 +101,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (sourcePlatform) {
-      const { data: platform, error: platformError } = await supabase
-        .from('source_platforms')
-        .select('slug')
-        .eq('slug', sourcePlatform)
-        .maybeSingle()
-      if (platformError || !platform) {
-        return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+      if (fileHostingType === 'link_out') {
+        // Single round trip: the helper covers both platform existence and
+        // the URL domain match required for link-out.
+        const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
+        if (!platformCheck.ok) {
+          return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
+        }
+      } else {
+        const { data: platform, error: platformError } = await supabase
+          .from('source_platforms')
+          .select('slug')
+          .eq('slug', sourcePlatform)
+          .maybeSingle()
+        if (platformError || !platform) {
+          return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+        }
       }
     }
 
@@ -111,6 +136,7 @@ export async function POST(request: NextRequest) {
         sourceLicenseId,
         sourcePlatform: sourcePlatform || null,
         originalAuthorUrl: originalAuthorUrl || null,
+        fileHostingType,
       })
       return NextResponse.json({ draft }, { status: 201 })
     } catch (insertError) {

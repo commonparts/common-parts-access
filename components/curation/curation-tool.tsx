@@ -23,7 +23,7 @@ import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { isChecklistComplete, missingCriteria, CURATION_FLAGS, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { FILE_TYPES } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import type { CurationChecklist, CurationCriterionKey } from '@/types/database'
+import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } from '@/types/database'
 
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
 const SOURCE_CHECK_DEBOUNCE_MS = 500
@@ -124,6 +124,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           originalAuthor: draft.original_author ?? '',
           originalAuthorUrl: draft.original_author_url ?? '',
           sourceLicenseId: draft.source_license_id ?? '',
+          fileHostingType: draft.file_hosting_type === 'link_out' ? 'link_out' : 'hosted',
         }))
         form.setCategoryPathFromCategoryId(draft.category_id)
         setChecklist(draft.curation_checklist ?? {})
@@ -209,6 +210,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
               sourceLicenseId: formData.sourceLicenseId,
+              fileHostingType: formData.fileHostingType,
             })
           }
           const res = await fetch('/api/curation/drafts', {
@@ -221,6 +223,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
               sourceLicenseId: formData.sourceLicenseId,
+              fileHostingType: formData.fileHostingType,
             }),
           })
           const json = await res.json().catch(() => ({}))
@@ -292,7 +295,8 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
       const uploads = await uploadFilesFromClient({
         userId,
         modelId: draftId,
-        modelFiles: formData.files,
+        // Link-out parts never host model files — only photos are uploaded.
+        modelFiles: formData.fileHostingType === 'link_out' ? [] : formData.files,
         thumbnails: formData.thumbnails,
       })
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
@@ -374,11 +378,13 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
   )
 
   const checklistComplete = isChecklistComplete(checklist)
+  const isLinkOut = formData.fileHostingType === 'link_out'
   const sourceStepReady =
     formData.title.trim().length >= 3 &&
     formData.sourceUrl.trim().length > 0 &&
     formData.originalAuthor.trim().length > 0 &&
     formData.sourceLicenseId.length > 0 &&
+    (!isLinkOut || formData.sourcePlatform.length > 0) &&
     !duplicate
 
   if (hydrating) {
@@ -469,18 +475,39 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-platform">Source platform</Label>
+                <Label htmlFor="curation-platform">Source platform{isLinkOut ? ' *' : ''}</Label>
                 <DropdownInput
                   as="select"
                   id="curation-platform"
                   value={formData.sourcePlatform}
                   onChange={(e) => setFormData((prev) => ({ ...prev, sourcePlatform: e.target.value }))}
+                  required={isLinkOut}
                 >
                   <option value="">Select platform</option>
                   {form.sourcePlatforms.map((platform) => (
                     <option key={platform.slug} value={platform.slug}>{platform.name}</option>
                   ))}
                 </DropdownInput>
+              </div>
+              <div className="space-y-2xs md:col-span-2">
+                <Label htmlFor="curation-hosting">File hosting *</Label>
+                <DropdownInput
+                  as="select"
+                  id="curation-hosting"
+                  value={formData.fileHostingType}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, fileHostingType: e.target.value as ModelFileHostingType }))
+                  }
+                  required
+                >
+                  <option value="hosted">Host files here — whitelist licenses only (no NC/ND)</option>
+                  <option value="link_out">Link out to the source — NC/ND licenses allowed</option>
+                </DropdownInput>
+                <p className="text-sm text-text-secondary">
+                  {isLinkOut
+                    ? 'Files stay on the source platform; the platform selection above is required and its domain must match the source URL.'
+                    : 'Hosting requires a license that allows commercial use and redistribution.'}
+                </p>
               </div>
               <div className="space-y-2xs">
                 <Label htmlFor="curation-author">Original author *</Label>
@@ -641,12 +668,16 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 >
                   <option value="">Select the license the part is published under</option>
                   {form.licenses
-                    .filter((license) => license.allowsCommercial && license.allowsRedistribution)
+                    .filter((license) => isLinkOut || (license.allowsCommercial && license.allowsRedistribution))
                     .map((license) => (
                       <option key={license.id} value={license.id}>{license.shortName} — {license.name}</option>
                     ))}
                 </DropdownInput>
-                <p className="text-sm text-text-secondary">Only whitelist licenses (no NC/ND) are offered — hosting requires them.</p>
+                <p className="text-sm text-text-secondary">
+                  {isLinkOut
+                    ? 'Link-out part: NC/ND licenses are allowed — the files are never hosted here.'
+                    : 'Only whitelist licenses (no NC/ND) are offered — hosting requires them.'}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -757,27 +788,38 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">Files</CardTitle>
               <div className="flex gap-2xs">
-                <Badge variant={modelFileCount > 0 ? 'secondary' : 'outline'}>
-                  {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
-                </Badge>
+                {!isLinkOut && (
+                  <Badge variant={modelFileCount > 0 ? 'secondary' : 'outline'}>
+                    {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
+                  </Badge>
+                )}
                 <Badge variant="outline">{imageFileCount} {imageFileCount === 1 ? 'image' : 'images'}</Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
-                <div className="space-y-2xs">
-                  <Label>Model files (STL / 3MF / STEP)</Label>
-                  <FileUploader
-                    accept={FILE_TYPES.MODEL_FILES.join(',')}
-                    multiple
-                    onFilesSelect={form.handleFilesSelect}
-                  />
-                  {formData.files.length > 0 && (
-                    <p className="text-sm text-text-secondary">
-                      Selected: {formData.files.map((f) => f.name).join(', ')}
+                {isLinkOut ? (
+                  <div className="space-y-2xs">
+                    <Label>Model files</Label>
+                    <p className="rounded-md border border-border-subtle bg-bg-subtle p-sm text-sm text-text-secondary">
+                      Link-out part: the model files stay on the source platform and are never uploaded here. Verify at the source that they open correctly.
                     </p>
-                  )}
-                </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2xs">
+                    <Label>Model files (STL / 3MF / STEP)</Label>
+                    <FileUploader
+                      accept={FILE_TYPES.MODEL_FILES.join(',')}
+                      multiple
+                      onFilesSelect={form.handleFilesSelect}
+                    />
+                    {formData.files.length > 0 && (
+                      <p className="text-sm text-text-secondary">
+                        Selected: {formData.files.map((f) => f.name).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <div className="space-y-2xs">
                   <Label>Photos / thumbnails</Label>
                   <FileUploader

@@ -11,8 +11,10 @@ type RouteContext = { params: Promise<{ id: string }> }
 // failing any criterion cannot be published regardless of client state:
 //   - all six checklist v1 criteria explicitly checked
 //   - not flagged for legal review (saved but not publishable, Flow P3 §4.4)
-//   - a whitelisted license set (hosting requires commercial + redistribution)
-//   - at least one registered model file
+//   - a license set; the no-NC/ND whitelist applies to HOSTED parts only —
+//     link-out parts keep their files at the source, so NC/ND is acceptable
+//   - hosted: at least one registered model file
+//   - link-out: a source platform, and NO registered model files
 //   - at least one linked product (the product_target criterion made concrete)
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
@@ -46,6 +48,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       blockers.push('The part is flagged for legal review and cannot be published')
     }
 
+    const isLinkOut = draft.file_hosting_type === 'link_out'
+
     if (!draft.license_id) {
       blockers.push('A publication license is required')
     } else {
@@ -56,12 +60,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
         .maybeSingle()
       if (error || !license) {
         blockers.push('The selected license could not be verified')
-      } else if (!license.allows_commercial || !license.allows_redistribution) {
-        blockers.push('Hosted parts require an open license (no NC/ND restrictions)')
+      } else if (!isLinkOut && (!license.allows_commercial || !license.allows_redistribution)) {
+        blockers.push('Hosted parts require an open license (no NC/ND restrictions) — link out instead')
       }
     }
 
-    if (draft.model_file_count < 1) {
+    if (isLinkOut) {
+      if (!draft.source_platform) {
+        blockers.push('A source platform is required for link-out parts')
+      }
+      if (draft.model_file_count > 0) {
+        blockers.push('A link-out part must not host model files — remove them or switch to hosted')
+      }
+    } else if (draft.model_file_count < 1) {
       blockers.push('At least one model file must be uploaded and registered')
     }
 

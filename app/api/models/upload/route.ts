@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
+import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
@@ -400,32 +401,9 @@ export async function POST(request: NextRequest) {
 
     // For link-out models, verify the source URL domain matches the selected platform
     if (fileHostingType === 'link_out' && sourcePlatform && sourceUrl) {
-      const { data: platform, error: platformLookupError } = await supabase
-        .from('source_platforms')
-        .select('base_url')
-        .eq('slug', sourcePlatform)
-        .maybeSingle()
-
-      if (platformLookupError) {
-        return NextResponse.json({ error: 'Failed to validate source platform' }, { status: 500 })
-      }
-      if (!platform) {
-        return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
-      }
-
-      try {
-        const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
-        if (platform.base_url) {
-          const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
-          if (sourceHost !== platformHost) {
-            return NextResponse.json(
-              { error: 'Source URL domain does not match the selected platform' },
-              { status: 400 },
-            )
-          }
-        }
-      } catch {
-        return NextResponse.json({ error: 'Invalid source URL format' }, { status: 400 })
+      const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
+      if (!platformCheck.ok) {
+        return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
       }
     }
 

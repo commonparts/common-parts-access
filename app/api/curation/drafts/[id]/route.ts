@@ -6,6 +6,7 @@ import {
   type CurationDraftPatch,
 } from '@/lib/supabase/queries/curation'
 import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
+import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
 
@@ -139,12 +140,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.sourcePlatform !== undefined) {
-      const sourcePlatform = trimmedString(payload.sourcePlatform)
-      if (sourcePlatform) {
-        const { data: platform, error } = await supabase.from('source_platforms').select('slug').eq('slug', sourcePlatform).maybeSingle()
-        if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+      // Shape only here — platform existence is validated once in the
+      // cross-field invariant below, which knows the resulting hosting type.
+      patch.source_platform = trimmedString(payload.sourcePlatform) || null
+    }
+
+    if (payload.fileHostingType !== undefined) {
+      const fileHostingType = trimmedString(payload.fileHostingType)
+      if (fileHostingType !== 'hosted' && fileHostingType !== 'link_out') {
+        return NextResponse.json({ error: 'Invalid file hosting type' }, { status: 400 })
       }
-      patch.source_platform = sourcePlatform || null
+      // Files already registered in storage contradict link-out (the whole
+      // point is NOT hosting them) — and NC/ND licenses forbid hosting.
+      if (fileHostingType === 'link_out' && draft.model_file_count > 0) {
+        return NextResponse.json(
+          { error: 'Model files are already uploaded — a link-out part must not host files' },
+          { status: 409 },
+        )
+      }
+      patch.file_hosting_type = fileHostingType
     }
 
     if (payload.originalAuthor !== undefined) {
@@ -213,6 +227,28 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: `Justification must be at most ${JUSTIFICATION_MAX_LENGTH} characters` }, { status: 400 })
       }
       patch.legal_review_justification = justification || null
+    }
+
+    // Cross-field invariant: the resulting state of a link-out draft must name
+    // a source platform whose domain matches the (immutable) source URL. This
+    // is also the single place platform existence is checked (one round trip).
+    const nextHostingType = patch.file_hosting_type ?? draft.file_hosting_type ?? 'hosted'
+    const nextPlatform = patch.source_platform !== undefined ? patch.source_platform : draft.source_platform ?? null
+    if (nextHostingType === 'link_out') {
+      if (!nextPlatform) {
+        return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
+      }
+      const platformCheck = await validateSourceUrlMatchesPlatform(nextPlatform, draft.source_url ?? '')
+      if (!platformCheck.ok) {
+        return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
+      }
+    } else if (patch.source_platform) {
+      const { data: platform, error } = await supabase
+        .from('source_platforms')
+        .select('slug')
+        .eq('slug', patch.source_platform)
+        .maybeSingle()
+      if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
     }
 
     // The DB constraint also enforces this pair; failing early gives a clean 400.
