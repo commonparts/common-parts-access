@@ -140,12 +140,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.sourcePlatform !== undefined) {
-      const sourcePlatform = trimmedString(payload.sourcePlatform)
-      if (sourcePlatform) {
-        const { data: platform, error } = await supabase.from('source_platforms').select('slug').eq('slug', sourcePlatform).maybeSingle()
-        if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
-      }
-      patch.source_platform = sourcePlatform || null
+      // Shape only here — platform existence is validated once in the
+      // cross-field invariant below, which knows the resulting hosting type.
+      patch.source_platform = trimmedString(payload.sourcePlatform) || null
     }
 
     if (payload.fileHostingType !== undefined) {
@@ -233,19 +230,25 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     // Cross-field invariant: the resulting state of a link-out draft must name
-    // a source platform whose domain matches the (immutable) source URL.
+    // a source platform whose domain matches the (immutable) source URL. This
+    // is also the single place platform existence is checked (one round trip).
     const nextHostingType = patch.file_hosting_type ?? draft.file_hosting_type ?? 'hosted'
     const nextPlatform = patch.source_platform !== undefined ? patch.source_platform : draft.source_platform ?? null
     if (nextHostingType === 'link_out') {
       if (!nextPlatform) {
         return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
       }
-      if (draft.source_url) {
-        const platformCheck = await validateSourceUrlMatchesPlatform(nextPlatform, draft.source_url)
-        if (!platformCheck.ok) {
-          return NextResponse.json({ error: platformCheck.error }, { status: 400 })
-        }
+      const platformCheck = await validateSourceUrlMatchesPlatform(nextPlatform, draft.source_url ?? '')
+      if (!platformCheck.ok) {
+        return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
       }
+    } else if (patch.source_platform) {
+      const { data: platform, error } = await supabase
+        .from('source_platforms')
+        .select('slug')
+        .eq('slug', patch.source_platform)
+        .maybeSingle()
+      if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
     }
 
     // The DB constraint also enforces this pair; failing early gives a clean 400.

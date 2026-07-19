@@ -403,7 +403,7 @@ export async function POST(request: NextRequest) {
     if (fileHostingType === 'link_out' && sourcePlatform && sourceUrl) {
       const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
       if (!platformCheck.ok) {
-        return NextResponse.json({ error: platformCheck.error }, { status: 400 })
+        return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
       }
     }
 

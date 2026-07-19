@@ -101,20 +101,22 @@ export async function POST(request: NextRequest) {
     }
 
     if (sourcePlatform) {
-      const { data: platform, error: platformError } = await supabase
-        .from('source_platforms')
-        .select('slug')
-        .eq('slug', sourcePlatform)
-        .maybeSingle()
-      if (platformError || !platform) {
-        return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
-      }
-    }
-
-    if (fileHostingType === 'link_out' && sourcePlatform) {
-      const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
-      if (!platformCheck.ok) {
-        return NextResponse.json({ error: platformCheck.error }, { status: 400 })
+      if (fileHostingType === 'link_out') {
+        // Single round trip: the helper covers both platform existence and
+        // the URL domain match required for link-out.
+        const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
+        if (!platformCheck.ok) {
+          return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
+        }
+      } else {
+        const { data: platform, error: platformError } = await supabase
+          .from('source_platforms')
+          .select('slug')
+          .eq('slug', sourcePlatform)
+          .maybeSingle()
+        if (platformError || !platform) {
+          return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+        }
       }
     }
 
