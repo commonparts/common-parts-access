@@ -126,6 +126,8 @@ export interface CreateCurationDraftInput {
   sourceLicenseId: string
   sourcePlatform?: string | null
   originalAuthorUrl?: string | null
+  /** 'hosted' (whitelist licenses only) or 'link_out' (NC/ND allowed — files stay at the source). */
+  fileHostingType?: 'hosted' | 'link_out'
 }
 
 /**
@@ -155,7 +157,7 @@ export async function createCurationDraft(
       original_author: input.originalAuthor,
       original_author_url: input.originalAuthorUrl ?? null,
       source_license_id: input.sourceLicenseId,
-      file_hosting_type: 'hosted',
+      file_hosting_type: input.fileHostingType ?? 'hosted',
       // A fresh draft has confirmed nothing yet: every completeness flag
       // starts set and is cleared by explicit confirmation in the Flags step.
       // The column default (false) is for non-curated rows, where the flags
@@ -187,6 +189,7 @@ export interface CurationDraftPatch {
   original_author?: string
   original_author_url?: string | null
   source_license_id?: string
+  file_hosting_type?: 'hosted' | 'link_out'
   curation_checklist?: CurationChecklist
   needs_verification?: boolean
   needs_print_settings?: boolean
