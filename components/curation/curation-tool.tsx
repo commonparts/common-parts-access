@@ -23,6 +23,7 @@ import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { isChecklistComplete, missingCriteria, CURATION_FLAGS, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { FILE_TYPES } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { serializeModelMetadata } from '@/lib/utils/model-metadata'
 import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } from '@/types/database'
 
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
@@ -48,49 +49,6 @@ const allFlagsUnconfirmed = (): Record<CurationFlagColumn, boolean> =>
 /** Formats a nullable number from the draft into a form input string. */
 const numToStr = (value: number | null | undefined): string =>
   value === null || value === undefined ? '' : String(value)
-
-interface MetadataFields {
-  material: string
-  color: string
-  dimensionsLength: string
-  dimensionsWidth: string
-  dimensionsHeight: string
-  dimensionsUnit: string
-  layerHeight: string
-  infill: string
-  supports: string
-  estimatedPrintTime: string
-  estimatedMaterialUsage: string
-}
-
-/**
- * Serializes the flat metadata form fields into the PATCH payload shape:
- * dimensions/print_settings as JSON strings (empty when no sub-field is set),
- * estimates as numeric strings. Mirrors the public upload page so both flows
- * hit the shared parsers identically. Empty strings clear the columns.
- */
-function buildMetadataPayload(f: MetadataFields) {
-  const dims: Record<string, number | string> = {}
-  if (f.dimensionsLength.trim()) dims.length = parseFloat(f.dimensionsLength)
-  if (f.dimensionsWidth.trim()) dims.width = parseFloat(f.dimensionsWidth)
-  if (f.dimensionsHeight.trim()) dims.height = parseFloat(f.dimensionsHeight)
-  const hasDims = Object.keys(dims).length > 0
-  if (hasDims) dims.unit = f.dimensionsUnit || 'mm'
-
-  const ps: Record<string, number | string> = {}
-  if (f.layerHeight.trim()) ps.layer_height = parseFloat(f.layerHeight)
-  if (f.infill.trim()) ps.infill = parseFloat(f.infill)
-  if (f.supports.trim()) ps.supports = f.supports
-
-  return {
-    material: f.material.trim(),
-    color: f.color.trim(),
-    dimensions: hasDims ? JSON.stringify(dims) : '',
-    print_settings: Object.keys(ps).length > 0 ? JSON.stringify(ps) : '',
-    estimated_print_time: f.estimatedPrintTime.trim(),
-    estimated_material_usage: f.estimatedMaterialUsage.trim(),
-  }
-}
 
 interface HostingSelectProps {
   id: string
@@ -353,7 +311,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             // The hosting selector is editable on this step too (a resumed
             // session never passes through the source step).
             fileHostingType: formData.fileHostingType,
-            ...buildMetadataPayload(formData),
+            ...serializeModelMetadata(formData),
           })
         }
 

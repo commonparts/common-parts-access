@@ -206,10 +206,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     // Physical / print metadata — applies to any part (hosted or link-out).
     // Sent the same way the upload form serializes it: dimensions and
-    // print_settings as JSON strings, estimates as numeric strings. An empty
-    // string clears the field.
+    // print_settings as JSON strings, estimates as numeric strings. Each field
+    // must be a string when present; an empty string clears the column. A
+    // non-string is rejected (not coerced) so a malformed payload never
+    // silently wipes stored data on a partial autosave.
     if (payload.material !== undefined) {
-      const material = trimmedString(payload.material)
+      if (typeof payload.material !== 'string') {
+        return NextResponse.json({ error: 'Material must be a string' }, { status: 400 })
+      }
+      const material = payload.material.trim()
       if (material.length > MATERIAL_MAX_LENGTH) {
         return NextResponse.json({ error: `Material is too long (max ${MATERIAL_MAX_LENGTH} characters)` }, { status: 400 })
       }
@@ -217,7 +222,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.color !== undefined) {
-      const color = trimmedString(payload.color)
+      if (typeof payload.color !== 'string') {
+        return NextResponse.json({ error: 'Color must be a string' }, { status: 400 })
+      }
+      const color = payload.color.trim()
       if (color.length > COLOR_MAX_LENGTH) {
         return NextResponse.json({ error: `Color is too long (max ${COLOR_MAX_LENGTH} characters)` }, { status: 400 })
       }
@@ -225,7 +233,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.dimensions !== undefined) {
-      const raw = trimmedString(payload.dimensions)
+      if (typeof payload.dimensions !== 'string') {
+        return NextResponse.json({ error: 'dimensions must be a JSON string' }, { status: 400 })
+      }
+      const raw = payload.dimensions.trim()
       if (!raw) {
         patch.dimensions = null
       } else {
@@ -236,7 +247,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.print_settings !== undefined) {
-      const raw = trimmedString(payload.print_settings)
+      if (typeof payload.print_settings !== 'string') {
+        return NextResponse.json({ error: 'print_settings must be a JSON string' }, { status: 400 })
+      }
+      const raw = payload.print_settings.trim()
       if (!raw) {
         patch.print_settings = null
       } else {
@@ -247,7 +261,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.estimated_print_time !== undefined) {
-      const raw = trimmedString(payload.estimated_print_time)
+      if (typeof payload.estimated_print_time !== 'string') {
+        return NextResponse.json({ error: 'estimated_print_time must be a string' }, { status: 400 })
+      }
+      const raw = payload.estimated_print_time.trim()
       if (!raw) {
         patch.estimated_print_time = null
       } else {
@@ -258,7 +275,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.estimated_material_usage !== undefined) {
-      const raw = trimmedString(payload.estimated_material_usage)
+      if (typeof payload.estimated_material_usage !== 'string') {
+        return NextResponse.json({ error: 'estimated_material_usage must be a string' }, { status: 400 })
+      }
+      const raw = payload.estimated_material_usage.trim()
       if (!raw) {
         patch.estimated_material_usage = null
       } else {

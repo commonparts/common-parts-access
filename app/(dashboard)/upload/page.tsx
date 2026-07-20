@@ -6,6 +6,7 @@ import { ModelUploadForm } from '@/components/forms/model-upload-form'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
 import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
+import { serializeModelMetadata } from '@/lib/utils/model-metadata'
 import type { ModelFileHostingType } from '@/types/database'
 import type { ModelFormData } from '@/hooks/use-model-upload-form-state'
 
@@ -17,19 +18,6 @@ interface UploadIssue {
 interface FileMetadata {
   name: string
   size: number
-}
-
-interface DimensionsMetadata {
-  unit: string
-  length?: number
-  width?: number
-  height?: number
-}
-
-interface PrintSettingsMetadata {
-  layer_height?: number
-  infill?: number
-  supports?: string
 }
 
 interface CreateModelMetadataPayload {
@@ -132,51 +120,16 @@ export default function UploadPage() {
       if (payload.originalAuthor) metadata.original_author = payload.originalAuthor
       if (payload.originalAuthorUrl) metadata.original_author_url = payload.originalAuthorUrl
       if (payload.sourceLicenseId) metadata.source_license_id = payload.sourceLicenseId
-      if (payload.material) metadata.material = payload.material
-      if (payload.color) metadata.color = payload.color
-
-      if (payload.estimatedPrintTime !== '' && payload.estimatedPrintTime != null) {
-        metadata.estimated_print_time = payload.estimatedPrintTime
-      }
-      if (payload.estimatedMaterialUsage !== '' && payload.estimatedMaterialUsage != null) {
-        metadata.estimated_material_usage = payload.estimatedMaterialUsage
-      }
-
-      const hasDimensions =
-        (payload.dimensionsLength != null && payload.dimensionsLength !== '') ||
-        (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') ||
-        (payload.dimensionsHeight != null && payload.dimensionsHeight !== '')
-      if (hasDimensions) {
-        const dimensions: DimensionsMetadata = { unit: payload.dimensionsUnit || 'mm' }
-        if (payload.dimensionsLength != null && payload.dimensionsLength !== '') {
-          dimensions.length = parseFloat(payload.dimensionsLength)
-        }
-        if (payload.dimensionsWidth != null && payload.dimensionsWidth !== '') {
-          dimensions.width = parseFloat(payload.dimensionsWidth)
-        }
-        if (payload.dimensionsHeight != null && payload.dimensionsHeight !== '') {
-          dimensions.height = parseFloat(payload.dimensionsHeight)
-        }
-        metadata.dimensions = JSON.stringify(dimensions)
-      }
-
-      const hasPrintSettings =
-        (payload.layerHeight != null && payload.layerHeight !== '') ||
-        (payload.infill != null && payload.infill !== '') ||
-        (payload.supports != null && payload.supports !== '')
-      if (hasPrintSettings) {
-        const settings: PrintSettingsMetadata = {}
-        if (payload.layerHeight != null && payload.layerHeight !== '') {
-          settings.layer_height = parseFloat(payload.layerHeight)
-        }
-        if (payload.infill != null && payload.infill !== '') {
-          settings.infill = parseFloat(payload.infill)
-        }
-        if (payload.supports != null && payload.supports !== '') {
-          settings.supports = payload.supports
-        }
-        metadata.print_settings = JSON.stringify(settings)
-      }
+      // Shared serializer (same one the curation flow uses) builds the
+      // dimensions/print_settings JSON and trims estimates. Only non-empty
+      // values are attached so a create omits absent fields entirely.
+      const serialized = serializeModelMetadata(payload)
+      if (serialized.material) metadata.material = serialized.material
+      if (serialized.color) metadata.color = serialized.color
+      if (serialized.dimensions) metadata.dimensions = serialized.dimensions
+      if (serialized.print_settings) metadata.print_settings = serialized.print_settings
+      if (serialized.estimated_print_time) metadata.estimated_print_time = serialized.estimated_print_time
+      if (serialized.estimated_material_usage) metadata.estimated_material_usage = serialized.estimated_material_usage
 
       // --- Phase 1: Create model record ---
       const createResponse = await fetch('/api/models/upload', {
