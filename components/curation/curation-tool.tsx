@@ -23,6 +23,7 @@ import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { isChecklistComplete, missingCriteria, CURATION_FLAGS, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { FILE_TYPES } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { serializeModelMetadata } from '@/lib/utils/model-metadata'
 import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } from '@/types/database'
 
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
@@ -44,6 +45,10 @@ interface CurationToolProps {
 
 const allFlagsUnconfirmed = (): Record<CurationFlagColumn, boolean> =>
   Object.fromEntries(CURATION_FLAGS.map((f) => [f.column, false])) as Record<CurationFlagColumn, boolean>
+
+/** Formats a nullable number from the draft into a form input string. */
+const numToStr = (value: number | null | undefined): string =>
+  value === null || value === undefined ? '' : String(value)
 
 interface HostingSelectProps {
   id: string
@@ -160,6 +165,19 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           originalAuthorUrl: draft.original_author_url ?? '',
           sourceLicenseId: draft.source_license_id ?? '',
           fileHostingType: draft.file_hosting_type === 'link_out' ? 'link_out' : 'hosted',
+          // Metadata: the draft stores dimensions/print_settings as objects and
+          // the estimates as numbers; the form holds each as a flat string.
+          material: draft.material ?? '',
+          color: draft.color ?? '',
+          dimensionsLength: numToStr(draft.dimensions?.length),
+          dimensionsWidth: numToStr(draft.dimensions?.width),
+          dimensionsHeight: numToStr(draft.dimensions?.height),
+          dimensionsUnit: draft.dimensions?.unit ?? 'mm',
+          layerHeight: numToStr(draft.print_settings?.layer_height),
+          infill: numToStr(draft.print_settings?.infill),
+          supports: draft.print_settings?.supports ?? '',
+          estimatedPrintTime: numToStr(draft.estimated_print_time),
+          estimatedMaterialUsage: numToStr(draft.estimated_material_usage),
         }))
         form.setCategoryPathFromCategoryId(draft.category_id)
         setChecklist(draft.curation_checklist ?? {})
@@ -293,6 +311,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             // The hosting selector is editable on this step too (a resumed
             // session never passes through the source step).
             fileHostingType: formData.fileHostingType,
+            ...serializeModelMetadata(formData),
           })
         }
 
@@ -726,6 +745,163 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                     ? 'Link-out part: NC/ND licenses are allowed — the files are never hosted here.'
                     : 'Only whitelist licenses (no NC/ND) are offered — hosting requires them.'}
                 </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Print metadata</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-md">
+              <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+                <div className="space-y-2xs">
+                  <Label htmlFor="curation-material">Material</Label>
+                  <Input
+                    id="curation-material"
+                    value={formData.material}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, material: e.target.value }))}
+                    placeholder="e.g. PLA, PETG, ABS"
+                    maxLength={100}
+                  />
+                </div>
+                <div className="space-y-2xs">
+                  <Label htmlFor="curation-color">Color</Label>
+                  <Input
+                    id="curation-color"
+                    value={formData.color}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, color: e.target.value }))}
+                    placeholder="e.g. Black, White, Any"
+                    maxLength={50}
+                  />
+                </div>
+              </div>
+
+              <fieldset className="space-y-2xs">
+                <legend className="text-sm font-medium text-text-primary">Dimensions</legend>
+                <div className="grid grid-cols-2 gap-sm md:grid-cols-4">
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-dim-length">Length</Label>
+                    <Input
+                      id="curation-dim-length"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensionsLength}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsLength: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-dim-width">Width</Label>
+                    <Input
+                      id="curation-dim-width"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensionsWidth}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsWidth: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-dim-height">Height</Label>
+                    <Input
+                      id="curation-dim-height"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={formData.dimensionsHeight}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsHeight: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-dim-unit">Unit</Label>
+                    <DropdownInput
+                      as="select"
+                      id="curation-dim-unit"
+                      value={formData.dimensionsUnit}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsUnit: e.target.value }))}
+                    >
+                      <option value="mm">mm</option>
+                      <option value="cm">cm</option>
+                      <option value="in">in</option>
+                    </DropdownInput>
+                  </div>
+                </div>
+              </fieldset>
+
+              <fieldset className="space-y-2xs">
+                <legend className="text-sm font-medium text-text-primary">Print settings</legend>
+                <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-layer-height">Layer height (mm)</Label>
+                    <Input
+                      id="curation-layer-height"
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={formData.layerHeight}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, layerHeight: e.target.value }))}
+                      placeholder="e.g. 0.2"
+                    />
+                  </div>
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-infill">Infill (%)</Label>
+                    <Input
+                      id="curation-infill"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="1"
+                      value={formData.infill}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, infill: e.target.value }))}
+                      placeholder="e.g. 20"
+                    />
+                  </div>
+                  <div className="space-y-2xs">
+                    <Label htmlFor="curation-supports">Supports</Label>
+                    <DropdownInput
+                      as="select"
+                      id="curation-supports"
+                      value={formData.supports}
+                      onChange={(e) => setFormData((prev) => ({ ...prev, supports: e.target.value }))}
+                    >
+                      <option value="">Not specified</option>
+                      <option value="none">None</option>
+                      <option value="buildplate_only">Build plate only</option>
+                      <option value="everywhere">Everywhere</option>
+                    </DropdownInput>
+                  </div>
+                </div>
+              </fieldset>
+
+              <div className="grid grid-cols-1 gap-md md:grid-cols-2">
+                <div className="space-y-2xs">
+                  <Label htmlFor="curation-print-time">Estimated print time (minutes)</Label>
+                  <Input
+                    id="curation-print-time"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={formData.estimatedPrintTime}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, estimatedPrintTime: e.target.value }))}
+                    placeholder="e.g. 120"
+                  />
+                </div>
+                <div className="space-y-2xs">
+                  <Label htmlFor="curation-material-usage">Estimated material usage (grams)</Label>
+                  <Input
+                    id="curation-material-usage"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={formData.estimatedMaterialUsage}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, estimatedMaterialUsage: e.target.value }))}
+                    placeholder="e.g. 45"
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
