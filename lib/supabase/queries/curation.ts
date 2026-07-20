@@ -1,6 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
-import type { CurationChecklist, CurationCriterionKey, Model } from '@/types/database'
+import type {
+  CurationChecklist,
+  CurationCriterionKey,
+  Model,
+  ModelDimensions,
+  ModelPrintSettings,
+} from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
 // user_id must stay in this list: the draft routes' ownership check compares
@@ -11,6 +17,8 @@ const CURATION_DRAFT_SELECT = `
   category_id, brand_id, license_id, tags, thumbnail_url,
   source_url, source_platform, original_author, original_author_url, source_license_id,
   verification_status, file_hosting_type,
+  material, color, dimensions, print_settings,
+  estimated_print_time, estimated_material_usage,
   needs_verification, needs_print_settings, needs_photo, needs_instructions,
   needs_category, needs_legal_review, legal_review_justification,
   curation_checklist, created_at, updated_at
@@ -190,6 +198,12 @@ export interface CurationDraftPatch {
   original_author_url?: string | null
   source_license_id?: string
   file_hosting_type?: 'hosted' | 'link_out'
+  material?: string | null
+  color?: string | null
+  dimensions?: ModelDimensions | null
+  print_settings?: ModelPrintSettings | null
+  estimated_print_time?: number | null
+  estimated_material_usage?: number | null
   curation_checklist?: CurationChecklist
   needs_verification?: boolean
   needs_print_settings?: boolean

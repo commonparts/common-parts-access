@@ -8,6 +8,14 @@ import {
 import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import {
+  COLOR_MAX_LENGTH,
+  MATERIAL_MAX_LENGTH,
+  parseDimensions,
+  parseNonNegativeFloat,
+  parseNonNegativeInt,
+  parsePrintSettings,
+} from '@/lib/utils/model-metadata'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
 
 const SOURCE_URL_MAX_LENGTH = 2048
@@ -194,6 +202,70 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         }
       }
       patch.tags = tags
+    }
+
+    // Physical / print metadata — applies to any part (hosted or link-out).
+    // Sent the same way the upload form serializes it: dimensions and
+    // print_settings as JSON strings, estimates as numeric strings. An empty
+    // string clears the field.
+    if (payload.material !== undefined) {
+      const material = trimmedString(payload.material)
+      if (material.length > MATERIAL_MAX_LENGTH) {
+        return NextResponse.json({ error: `Material is too long (max ${MATERIAL_MAX_LENGTH} characters)` }, { status: 400 })
+      }
+      patch.material = material || null
+    }
+
+    if (payload.color !== undefined) {
+      const color = trimmedString(payload.color)
+      if (color.length > COLOR_MAX_LENGTH) {
+        return NextResponse.json({ error: `Color is too long (max ${COLOR_MAX_LENGTH} characters)` }, { status: 400 })
+      }
+      patch.color = color || null
+    }
+
+    if (payload.dimensions !== undefined) {
+      const raw = trimmedString(payload.dimensions)
+      if (!raw) {
+        patch.dimensions = null
+      } else {
+        const result = parseDimensions(raw)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        patch.dimensions = result.data
+      }
+    }
+
+    if (payload.print_settings !== undefined) {
+      const raw = trimmedString(payload.print_settings)
+      if (!raw) {
+        patch.print_settings = null
+      } else {
+        const result = parsePrintSettings(raw)
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        patch.print_settings = result.data
+      }
+    }
+
+    if (payload.estimated_print_time !== undefined) {
+      const raw = trimmedString(payload.estimated_print_time)
+      if (!raw) {
+        patch.estimated_print_time = null
+      } else {
+        const result = parseNonNegativeInt(raw, 'estimated_print_time')
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        patch.estimated_print_time = result.data
+      }
+    }
+
+    if (payload.estimated_material_usage !== undefined) {
+      const raw = trimmedString(payload.estimated_material_usage)
+      if (!raw) {
+        patch.estimated_material_usage = null
+      } else {
+        const result = parseNonNegativeFloat(raw, 'estimated_material_usage')
+        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
+        patch.estimated_material_usage = result.data
+      }
     }
 
     if (payload.checklist !== undefined) {

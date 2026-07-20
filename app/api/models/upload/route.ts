@@ -5,7 +5,15 @@ import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platfor
 import { MODEL_UPLOAD_LIMITS, getFileExtension } from '@/lib/storage/file-validation'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import type { ModelFileHostingType } from '@/types/database'
+import {
+  COLOR_MAX_LENGTH,
+  MATERIAL_MAX_LENGTH,
+  parseDimensions,
+  parseNonNegativeFloat,
+  parseNonNegativeInt,
+  parsePrintSettings,
+} from '@/lib/utils/model-metadata'
+import type { ModelDimensions, ModelFileHostingType, ModelPrintSettings } from '@/types/database'
 
 export const runtime = 'nodejs'
 
@@ -82,100 +90,6 @@ function validateFileMetadata(
 const VALID_ORIGIN_TYPES = ['original', 'curated', 'manufacturer'] as const
 const VALID_VERIFICATION_STATUSES = ['unverified', 'author_tested', 'community_validated', 'certified'] as const
 const VALID_FILE_HOSTING_TYPES = ['hosted', 'link_out'] as const
-const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
-const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
-
-type ParseResult<T> = { ok: true; data: T } | { ok: false; error: string }
-
-interface ValidDimensions {
-  length?: number
-  width?: number
-  height?: number
-  unit?: string
-}
-
-interface ValidPrintSettings {
-  layer_height?: number
-  infill?: number
-  supports?: string
-}
-
-function parseNonNegativeInt(value: string, field: string): ParseResult<number> {
-  const parsed = Number(value)
-  if (!Number.isInteger(parsed)) return { ok: false, error: `${field} must be a valid integer` }
-  if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
-  return { ok: true, data: parsed }
-}
-
-function parseNonNegativeFloat(value: string, field: string): ParseResult<number> {
-  const parsed = Number(value)
-  if (!Number.isFinite(parsed)) return { ok: false, error: `${field} must be a valid number` }
-  if (parsed < 0) return { ok: false, error: `${field} must be a non-negative number` }
-  return { ok: true, data: parsed }
-}
-
-/**
- * Validates and parses a JSON dimensions string.
- * Expects { length?, width?, height? } as non-negative numbers and unit as mm|cm|in.
- */
-function parseDimensions(raw: string): ParseResult<ValidDimensions> {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return { ok: false, error: 'Invalid JSON in dimensions' }
-  }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return { ok: false, error: 'dimensions must be a JSON object' }
-  }
-  const obj = parsed as Record<string, unknown>
-  if (obj.unit !== undefined && (typeof obj.unit !== 'string' || !(ALLOWED_DIMENSION_UNITS as readonly string[]).includes(obj.unit))) {
-    return { ok: false, error: 'dimensions.unit must be one of: mm, cm, in' }
-  }
-  for (const key of ['length', 'width', 'height'] as const) {
-    const val = obj[key]
-    if (val !== undefined && (typeof val !== 'number' || !Number.isFinite(val) || val < 0)) {
-      return { ok: false, error: `dimensions.${key} must be a non-negative finite number` }
-    }
-  }
-  const result: ValidDimensions = {}
-  if (obj.length !== undefined) result.length = obj.length as number
-  if (obj.width !== undefined) result.width = obj.width as number
-  if (obj.height !== undefined) result.height = obj.height as number
-  if (obj.unit !== undefined) result.unit = obj.unit as string
-  return { ok: true, data: result }
-}
-
-/**
- * Validates and parses a JSON print settings string.
- * Expects { layer_height?, infill?, supports? } with appropriate constraints.
- */
-function parsePrintSettings(raw: string): ParseResult<ValidPrintSettings> {
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    return { ok: false, error: 'Invalid JSON in print_settings' }
-  }
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return { ok: false, error: 'print_settings must be a JSON object' }
-  }
-  const ps = parsed as Record<string, unknown>
-  if (ps.layer_height !== undefined && (typeof ps.layer_height !== 'number' || !Number.isFinite(ps.layer_height) || ps.layer_height < 0)) {
-    return { ok: false, error: 'print_settings.layer_height must be a non-negative finite number' }
-  }
-  if (ps.infill !== undefined && (typeof ps.infill !== 'number' || !Number.isFinite(ps.infill) || ps.infill < 0 || ps.infill > 100)) {
-    return { ok: false, error: 'print_settings.infill must be a finite number between 0 and 100' }
-  }
-  if (ps.supports !== undefined && (typeof ps.supports !== 'string' || !(ALLOWED_SUPPORT_TYPES as readonly string[]).includes(ps.supports))) {
-    return { ok: false, error: 'print_settings.supports must be one of: none, buildplate_only, everywhere' }
-  }
-  const result: ValidPrintSettings = {}
-  if (ps.layer_height !== undefined) result.layer_height = ps.layer_height as number
-  if (ps.infill !== undefined) result.infill = ps.infill as number
-  if (ps.supports !== undefined) result.supports = ps.supports as string
-  return { ok: true, data: result }
-}
 
 /**
  * Creates a model record from metadata only (no file bytes).
@@ -334,21 +248,21 @@ export async function POST(request: NextRequest) {
     if (originalAuthor && originalAuthor.length > 200) {
       return NextResponse.json({ error: 'Original author name is too long (max 200 characters)' }, { status: 400 })
     }
-    if (material && material.length > 100) {
-      return NextResponse.json({ error: 'Material is too long (max 100 characters)' }, { status: 400 })
+    if (material && material.length > MATERIAL_MAX_LENGTH) {
+      return NextResponse.json({ error: `Material is too long (max ${MATERIAL_MAX_LENGTH} characters)` }, { status: 400 })
     }
-    if (color && color.length > 50) {
-      return NextResponse.json({ error: 'Color is too long (max 50 characters)' }, { status: 400 })
+    if (color && color.length > COLOR_MAX_LENGTH) {
+      return NextResponse.json({ error: `Color is too long (max ${COLOR_MAX_LENGTH} characters)` }, { status: 400 })
     }
 
-    let dimensions: ValidDimensions | null = null
+    let dimensions: ModelDimensions | null = null
     if (dimensionsRaw) {
       const result = parseDimensions(dimensionsRaw)
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
       dimensions = result.data
     }
 
-    let printSettings: ValidPrintSettings | null = null
+    let printSettings: ModelPrintSettings | null = null
     if (printSettingsRaw) {
       const result = parsePrintSettings(printSettingsRaw)
       if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
