@@ -25,7 +25,7 @@ A session is a 5-step stepper rendered by `components/curation/curation-tool.tsx
 ### 1. Source
 
 - **Duplicate check.** As the curator types the source URL, a debounced `GET /api/curation/source-check` looks it up against the `idx_models_source_url` unique index. A hit blocks the step and links to the existing part.
-- **Pre-fill.** `GET /api/curation/prefill` best-effort extracts platform, author and declared license from the URL (issue #255). Extraction is server-side and never blocks — a failure returns null fields and the curator enters them manually (Flow P3 §4.4).
+- **Manual entry.** Title, platform, author and declared source license are entered by the curator. (Best-effort pre-fill from the source URL is a separate, planned addition — see #286 — and is not part of the tool on `dev`.)
 - **Hosting choice** (`hosted` vs `link_out`) — see [File hosting](#file-hosting-hosted-vs-link-out). Editable here and on the Details step.
 - Creating the draft requires the DB minimum for `origin_type = 'curated'`: title, source URL, original author, and source license.
 
@@ -53,7 +53,7 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 - **Text fields:** description, instructions, category (drill-down), publication license.
 - **Entity assignment:** brand autocomplete (read-only list — brands are curated directly in the DB, not created here) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 - **Demand context:** `components/curation/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
-- **Print metadata:** material, colour, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Applies to hosted and link-out parts alike. Serialized by the shared `serializeModelMetadata` in `lib/utils/model-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
+- **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Applies to hosted and link-out parts alike. Serialized by the shared `serializeModelMetadata` in `lib/utils/model-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
 
 ### 4. Non-blocking flags & files
 
@@ -98,7 +98,6 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/curation/source-check?url=` | GET | Duplicate check on `source_url`; returns the existing part or `null`. |
-| `/api/curation/prefill?url=` | GET | Best-effort platform/author/license extraction; never errors on failure. |
 | `/api/curation/drafts` | GET | List the caller's open curated drafts (resume). |
 | `/api/curation/drafts` | POST | Create a draft (title + source URL + author + source license; hosting type). 409 on duplicate source URL. |
 | `/api/curation/drafts/[id]` | GET | Full draft state for resume (owner only; `user_id` stripped from the response). |
@@ -150,7 +149,6 @@ components/curation/
   demand-panel.tsx                          Read-only part_requests demand context
 lib/curation/
   checklist.ts                              Criteria + flags definitions (single source of truth)
-  prefill.ts                                Source-URL extraction
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
 lib/utils/model-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
 app/api/curation/**                         Endpoints above
@@ -168,4 +166,4 @@ supabase/migrations/20260717120000_curation_tool_fields.sql
 ## References
 
 - `docs/user-flows.md` — Flow P3 (§4)
-- Issues #254 (tool), #253 (entity dedup), #255 (source pre-fill)
+- Issues #254 (tool), #253 (entity dedup)
