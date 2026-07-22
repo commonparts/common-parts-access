@@ -248,6 +248,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     if (draftId || !formData.sourceUrl.trim()) {
       setDuplicate(null)
       setLastPrefill(null)
+      // An in-flight check was cancelled by the cleanup below, so its
+      // finally block will not reset the indicator — do it here.
+      setCheckingSource(false)
       return
     }
 

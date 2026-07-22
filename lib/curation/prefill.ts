@@ -130,7 +130,15 @@ export async function getPrefillFromSourceUrl(sourceUrl: string): Promise<Curati
   const sourceHost = normalizedHostname(sourceUrl)
   if (!sourceHost) return prefill
 
-  const platforms = await getActiveSourcePlatforms()
+  // Pre-fill is advisory: if the platform list cannot be loaded, return the
+  // empty prefill instead of erroring — the curator just fills manually.
+  let platforms
+  try {
+    platforms = await getActiveSourcePlatforms()
+  } catch (error) {
+    console.error('Curation prefill: failed to load source platforms', error)
+    return prefill
+  }
   const platform = platforms.find(
     (p) => p.base_url && normalizedHostname(p.base_url) === sourceHost,
   )
