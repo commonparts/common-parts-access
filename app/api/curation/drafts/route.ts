@@ -5,7 +5,9 @@ import {
   findModelBySourceUrl,
   listCurationDrafts,
 } from '@/lib/supabase/queries/curation'
+import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
+import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
 
@@ -91,13 +93,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Source license is required' }, { status: 400 })
     }
 
-    const { data: license, error: licenseError } = await supabase
-      .from('licenses')
-      .select('id')
-      .eq('id', sourceLicenseId)
-      .maybeSingle()
-    if (licenseError || !license) {
+    const license = await getLicenseById(sourceLicenseId)
+    if (!license) {
       return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
+    }
+    // An NC/ND source license forbids hosting the files here — only link-out
+    // keeps them at the source, where those terms are honored.
+    if (fileHostingType === 'hosted' && !isHostableLicenseRow(license)) {
+      return NextResponse.json(
+        { error: 'The declared source license (NC/ND) does not allow hosting files here — switch to link-out' },
+        { status: 400 },
+      )
     }
 
     if (sourcePlatform) {

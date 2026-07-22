@@ -6,7 +6,9 @@ import {
   type CurationDraftPatch,
 } from '@/lib/supabase/queries/curation'
 import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
+import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
+import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import {
   COLOR_MAX_LENGTH,
@@ -142,8 +144,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       if (!isValidUuid(sourceLicenseId)) {
         return NextResponse.json({ error: 'Source license is required for curated parts' }, { status: 400 })
       }
-      const { data: license, error } = await supabase.from('licenses').select('id').eq('id', sourceLicenseId).maybeSingle()
-      if (error || !license) return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
+      const license = await getLicenseById(sourceLicenseId)
+      if (!license) return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
       patch.source_license_id = sourceLicenseId
     }
 
@@ -341,6 +343,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         .eq('slug', patch.source_platform)
         .maybeSingle()
       if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+    }
+
+    // Cross-field invariant: a hosted draft cannot carry an NC/ND source
+    // license — those terms forbid hosting the files here (link-out only).
+    if (nextHostingType === 'hosted') {
+      const nextSourceLicenseId = patch.source_license_id ?? draft.source_license_id ?? null
+      if (nextSourceLicenseId) {
+        const sourceLicense = await getLicenseById(nextSourceLicenseId)
+        if (sourceLicense && !isHostableLicenseRow(sourceLicense)) {
+          return NextResponse.json(
+            { error: 'The declared source license (NC/ND) does not allow hosting files here — switch to link-out' },
+            { status: 400 },
+          )
+        }
+      }
     }
 
     // The DB constraint also enforces this pair; failing early gives a clean 400.

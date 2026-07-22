@@ -22,6 +22,7 @@ import { useModelUploadFormState } from '@/hooks/use-model-upload-form-state'
 import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { isChecklistComplete, missingCriteria, CURATION_FLAGS, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { FILE_TYPES } from '@/constants/app'
+import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { serializeModelMetadata } from '@/lib/utils/model-metadata'
 import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } from '@/types/database'
@@ -60,6 +61,8 @@ interface HostingSelectProps {
   id: string
   value: ModelFileHostingType
   onChange: (value: ModelFileHostingType) => void
+  /** True when the declared source license (NC/ND) forbids hosting. */
+  hostedDisabled?: boolean
 }
 
 /**
@@ -68,7 +71,7 @@ interface HostingSelectProps {
  * starts past the source step, so it must stay reachable where licenses are
  * picked. Both instances bind the same form field.
  */
-function HostingSelect({ id, value, onChange }: HostingSelectProps) {
+function HostingSelect({ id, value, onChange, hostedDisabled }: HostingSelectProps) {
   return (
     <div className="space-y-2xs">
       <Label htmlFor={id}>File hosting *</Label>
@@ -79,13 +82,17 @@ function HostingSelect({ id, value, onChange }: HostingSelectProps) {
         onChange={(e) => onChange(e.target.value as ModelFileHostingType)}
         required
       >
-        <option value="hosted">Host files here — whitelist licenses only (no NC/ND)</option>
+        <option value="hosted" disabled={hostedDisabled}>
+          Host files here — whitelist licenses only (no NC/ND)
+        </option>
         <option value="link_out">Link out to the source — NC/ND licenses allowed</option>
       </DropdownInput>
       <p className="text-sm text-text-secondary">
-        {value === 'link_out'
-          ? 'Files stay on the source platform; the source platform (source step) is required and its domain must match the source URL.'
-          : 'Hosting requires a license that allows commercial use and redistribution.'}
+        {hostedDisabled
+          ? 'The declared source license is NC/ND — the files cannot be hosted here, only linked out at the source.'
+          : value === 'link_out'
+            ? 'Files stay on the source platform; the source platform (source step) is required and its domain must match the source URL.'
+            : 'Hosting requires a license that allows commercial use and redistribution.'}
       </p>
     </div>
   )
@@ -493,13 +500,26 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
       const next = { ...prev, fileHostingType: value }
       if (value === 'hosted' && prev.licenseId) {
         const license = form.licenses.find((l) => l.id === prev.licenseId)
-        if (!license || !license.allowsCommercial || !license.allowsRedistribution) {
+        if (!license || !isHostableLicense(license)) {
           next.licenseId = ''
         }
       }
       return next
     })
   }
+
+  // An NC/ND source license means the files cannot be hosted here at all.
+  const sourceLicense = form.licenses.find((l) => l.id === formData.sourceLicenseId)
+  const sourceLicenseForbidsHosting = Boolean(sourceLicense && !isHostableLicense(sourceLicense))
+
+  // Force link-out whenever the source license forbids hosting — this covers
+  // pre-fill, manual selection and resumed drafts alike (and re-runs once the
+  // license list finishes loading, so a pre-fill that lands first is caught).
+  React.useEffect(() => {
+    if (sourceLicenseForbidsHosting && formData.fileHostingType === 'hosted') {
+      setFormData((prev) => ({ ...prev, fileHostingType: 'link_out' }))
+    }
+  }, [sourceLicenseForbidsHosting, formData.fileHostingType, setFormData])
 
   const checklistComplete = isChecklistComplete(checklist)
   const isLinkOut = formData.fileHostingType === 'link_out'
@@ -621,6 +641,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   id="curation-hosting"
                   value={formData.fileHostingType}
                   onChange={handleHostingChange}
+                  hostedDisabled={sourceLicenseForbidsHosting}
                 />
               </div>
               <div className="space-y-2xs">
@@ -784,6 +805,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 id="curation-hosting-details"
                 value={formData.fileHostingType}
                 onChange={handleHostingChange}
+                hostedDisabled={sourceLicenseForbidsHosting}
               />
 
               <div className="space-y-2xs">
@@ -797,7 +819,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 >
                   <option value="">Select the license the part is published under</option>
                   {form.licenses
-                    .filter((license) => isLinkOut || (license.allowsCommercial && license.allowsRedistribution))
+                    .filter((license) => isLinkOut || isHostableLicense(license))
                     .map((license) => (
                       <option key={license.id} value={license.id}>{license.shortName} — {license.name}</option>
                     ))}
