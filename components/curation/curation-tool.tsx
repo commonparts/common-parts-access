@@ -29,6 +29,12 @@ import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } fr
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
 const SOURCE_CHECK_DEBOUNCE_MS = 500
 
+const PREFILLABLE_FIELDS = ['sourcePlatform', 'originalAuthor', 'originalAuthorUrl', 'sourceLicenseId'] as const
+type PrefillableField = (typeof PREFILLABLE_FIELDS)[number]
+
+/** Shape returned by GET /api/curation/prefill — null means not extractable. */
+type CurationPrefillValues = Record<PrefillableField, string | null>
+
 interface SourceDuplicate {
   id: string
   name: string
@@ -110,6 +116,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
   const [duplicate, setDuplicate] = React.useState<SourceDuplicate | null>(null)
   const [checkingSource, setCheckingSource] = React.useState(false)
+  const [lastPrefill, setLastPrefill] = React.useState<CurationPrefillValues | null>(null)
 
   const [modelFileCount, setModelFileCount] = React.useState(0)
   const [imageFileCount, setImageFileCount] = React.useState(0)
@@ -206,30 +213,70 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDraftId])
 
-  // Immediate duplicate check on source_url while typing (new sessions only —
-  // a resumed draft already owns its URL).
+  /**
+   * Applies extracted values to fields the curator has not filled yet —
+   * pre-fill never overwrites manual input. The raw response is kept so the
+   * "Pre-filled" markers can be derived (see isPrefilled).
+   */
+  const applyPrefill = React.useCallback(
+    (prefill: CurationPrefillValues) => {
+      setLastPrefill(prefill)
+      setFormData((prev) => {
+        const next = { ...prev }
+        for (const field of PREFILLABLE_FIELDS) {
+          const value = prefill[field]
+          if (value && !prev[field].trim()) next[field] = value
+        }
+        return next
+      })
+    },
+    [setFormData],
+  )
+
+  /**
+   * A field is marked pre-filled while its value still matches what was
+   * extracted from the source — editing it makes the marker disappear
+   * without any extra bookkeeping.
+   */
+  const isPrefilled = (field: PrefillableField): boolean =>
+    Boolean(lastPrefill?.[field]) && formData[field] === lastPrefill?.[field]
+
+  // Immediate duplicate check + best-effort pre-fill on source_url while
+  // typing (new sessions only — a resumed draft already owns its URL).
+  // Pre-fill failure is silent by design: the flow never blocks on it.
   React.useEffect(() => {
     if (draftId || !formData.sourceUrl.trim()) {
       setDuplicate(null)
+      setLastPrefill(null)
       return
     }
 
     const url = formData.sourceUrl.trim()
+    let cancelled = false
     const timer = setTimeout(async () => {
       setCheckingSource(true)
       try {
-        const res = await fetch(`/api/curation/source-check?url=${encodeURIComponent(url)}`)
-        const json = await res.json().catch(() => ({}))
-        setDuplicate(res.ok ? (json.duplicate ?? null) : null)
+        const [dupRes, prefillRes] = await Promise.all([
+          fetch(`/api/curation/source-check?url=${encodeURIComponent(url)}`),
+          fetch(`/api/curation/prefill?url=${encodeURIComponent(url)}`),
+        ])
+        const dupJson = await dupRes.json().catch(() => ({}))
+        const prefillJson = await prefillRes.json().catch(() => ({}))
+        if (cancelled) return
+        setDuplicate(dupRes.ok ? (dupJson.duplicate ?? null) : null)
+        if (prefillRes.ok && prefillJson.prefill) applyPrefill(prefillJson.prefill)
       } catch {
-        setDuplicate(null)
+        if (!cancelled) setDuplicate(null)
       } finally {
-        setCheckingSource(false)
+        if (!cancelled) setCheckingSource(false)
       }
     }, SOURCE_CHECK_DEBOUNCE_MS)
 
-    return () => clearTimeout(timer)
-  }, [formData.sourceUrl, draftId])
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [formData.sourceUrl, draftId, applyPrefill])
 
   const patchDraft = React.useCallback(
     async (body: Record<string, unknown>): Promise<boolean> => {
@@ -549,7 +596,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-platform">Source platform{isLinkOut ? ' *' : ''}</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-platform">Source platform{isLinkOut ? ' *' : ''}</Label>
+                  {isPrefilled('sourcePlatform') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <DropdownInput
                   as="select"
                   id="curation-platform"
@@ -571,7 +621,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-author">Original author *</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-author">Original author *</Label>
+                  {isPrefilled('originalAuthor') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Input
                   id="curation-author"
                   value={formData.originalAuthor}
@@ -581,7 +634,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-author-url">Author URL</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-author-url">Author URL</Label>
+                  {isPrefilled('originalAuthorUrl') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Input
                   id="curation-author-url"
                   type="url"
@@ -591,7 +647,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs md:col-span-2">
-                <Label htmlFor="curation-source-license">Declared source license *</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-source-license">Declared source license *</Label>
+                  {isPrefilled('sourceLicenseId') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <DropdownInput
                   as="select"
                   id="curation-source-license"
