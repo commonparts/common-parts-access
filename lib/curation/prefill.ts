@@ -2,6 +2,7 @@ import { getActiveSourcePlatforms } from '@/lib/supabase/queries/platforms'
 import { getLicenseBySpdxId } from '@/lib/supabase/queries/licenses'
 import {
   derivePrintablesPrintMetadata,
+  derivePrintablesTexts,
   parsePrintablesModelId,
   PRINTABLES_LICENSE_TO_SPDX,
   type PrintablesPrintDetails,
@@ -18,7 +19,9 @@ export interface CurationPrefill {
   originalAuthor: string | null
   originalAuthorUrl: string | null
   sourceLicenseId: string | null
-  // Print metadata (details step) — form-ready strings.
+  // Details step — form-ready strings.
+  description: string | null
+  instructions: string | null
   material: string | null
   layerHeight: string | null
   estimatedPrintTime: string | null
@@ -36,6 +39,8 @@ interface PrintablesPrintResponse {
       | (PrintablesPrintDetails & {
           user?: { publicUsername?: string | null; handle?: string | null } | null
           license?: { abbreviation?: string | null } | null
+          summary?: string | null
+          description?: string | null
         })
       | null
   } | null
@@ -60,7 +65,7 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
       signal: AbortSignal.timeout(EXTRACTION_TIMEOUT_MS),
       body: JSON.stringify({
         query:
-          'query($id: ID!) { print(id: $id) { user { publicUsername handle } license { abbreviation } printDuration weight materials { name } layerHeights } }',
+          'query($id: ID!) { print(id: $id) { user { publicUsername handle } license { abbreviation } summary description printDuration weight materials { name } layerHeights } }',
         variables: { id: printId },
       }),
     })
@@ -73,9 +78,12 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
   const print = json?.data?.print
   if (!print) return {}
 
-  // Null metadata fields are fine here: Object.assign onto the all-null
-  // prefill base is a no-op for them.
-  const result: Partial<CurationPrefill> = derivePrintablesPrintMetadata(print)
+  // Null fields are fine here: Object.assign onto the all-null prefill base
+  // is a no-op for them.
+  const result: Partial<CurationPrefill> = {
+    ...derivePrintablesPrintMetadata(print),
+    ...derivePrintablesTexts(print),
+  }
   if (print.user?.publicUsername) result.originalAuthor = print.user.publicUsername
   if (print.user?.handle) result.originalAuthorUrl = `${PRINTABLES_BASE_URL}/@${print.user.handle}`
 
@@ -111,6 +119,8 @@ export async function getPrefillFromSourceUrl(sourceUrl: string): Promise<Curati
     originalAuthor: null,
     originalAuthorUrl: null,
     sourceLicenseId: null,
+    description: null,
+    instructions: null,
     material: null,
     layerHeight: null,
     estimatedPrintTime: null,

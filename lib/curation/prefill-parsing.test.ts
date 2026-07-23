@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { derivePrintablesPrintMetadata, parsePrintablesModelId } from './prefill-parsing'
+import { derivePrintablesPrintMetadata, derivePrintablesTexts, parsePrintablesModelId } from './prefill-parsing'
 
 describe('parsePrintablesModelId', () => {
   it('parses the canonical model URL', () => {
@@ -81,5 +81,41 @@ describe('derivePrintablesPrintMetadata', () => {
       estimatedPrintTime: null,
       estimatedMaterialUsage: null,
     })
+  })
+})
+
+describe('derivePrintablesTexts', () => {
+  it('maps the summary to the short description as-is', () => {
+    const result = derivePrintablesTexts({
+      summary:
+        'Complete replacement clip for IKEA JANSJO lamp type V1431 (old design). The original rubber pads can be reused.',
+    })
+    expect(result.description).toBe(
+      'Complete replacement clip for IKEA JANSJO lamp type V1431 (old design). The original rubber pads can be reused.',
+    )
+    expect(result.instructions).toBeNull()
+  })
+
+  it('converts the HTML description into plain-text instructions', () => {
+    const result = derivePrintablesTexts({
+      description:
+        '<p>The clamp broke.</p><h3>Features</h3><ul><li>Complete Clamp (2 Parts).</li><li>Rubber pads reusable.</li></ul><figure><img src="https://example.com/x.png"></figure><p>Screw the stem in.</p>',
+    })
+    expect(result.instructions).toBe(
+      'The clamp broke.\nFeatures\n- Complete Clamp (2 Parts).\n- Rubber pads reusable.\n\nScrew the stem in.',
+    )
+  })
+
+  it('returns nulls for missing or whitespace-only content', () => {
+    expect(derivePrintablesTexts({})).toEqual({ description: null, instructions: null })
+    expect(derivePrintablesTexts({ summary: '  ', description: '<p>&nbsp;</p>' })).toEqual({
+      description: null,
+      instructions: null,
+    })
+  })
+
+  it('caps over-limit text at the column limit instead of dropping it', () => {
+    const result = derivePrintablesTexts({ summary: 'x'.repeat(300) })
+    expect(result.description).toHaveLength(250)
   })
 })

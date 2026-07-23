@@ -35,6 +35,8 @@ const PREFILLABLE_FIELDS = [
   'originalAuthor',
   'originalAuthorUrl',
   'sourceLicenseId',
+  'description',
+  'instructions',
   'material',
   'layerHeight',
   'estimatedPrintTime',
@@ -785,7 +787,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
-                <Label htmlFor="curation-description">Description</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-description">Short description</Label>
+                  {isPrefilled('description') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Textarea
                   id="curation-description"
                   rows={3}
@@ -795,7 +800,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-instructions">Instructions</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-instructions">Instructions</Label>
+                  {isPrefilled('instructions') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Textarea
                   id="curation-instructions"
                   rows={3}

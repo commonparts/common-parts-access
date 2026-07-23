@@ -1,4 +1,6 @@
+import { htmlToPlainText } from '@/lib/utils/formatters'
 import { MATERIAL_MAX_LENGTH } from '@/lib/utils/model-metadata'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 /**
  * Pure parsing and mapping logic for curation pre-fill (no I/O) — split from
@@ -92,4 +94,35 @@ export function derivePrintablesPrintMetadata(print: PrintablesPrintDetails): Pr
     Number.isFinite(grams) && grams > 0 ? String(grams) : null
 
   return { material, layerHeight, estimatedPrintTime, estimatedMaterialUsage }
+}
+
+/** Trims a value to a column limit; over-limit text is cut, not dropped. */
+function capped(value: string, maxLength: number): string | null {
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  return trimmed.length <= maxLength ? trimmed : trimmed.slice(0, maxLength).trimEnd()
+}
+
+export interface PrintablesTexts {
+  description: string | null
+  instructions: string | null
+}
+
+/**
+ * Maps Printables' text content onto the form fields: their `summary` (the
+ * short line under the title) becomes the short description, and their rich
+ * HTML `description` (the long body) becomes the instructions, converted to
+ * plain text.
+ */
+export function derivePrintablesTexts(print: {
+  summary?: string | null
+  description?: string | null
+}): PrintablesTexts {
+  return {
+    description: capped(print.summary ?? '', VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH),
+    instructions: capped(
+      print.description ? htmlToPlainText(print.description) : '',
+      VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH,
+    ),
+  }
 }
