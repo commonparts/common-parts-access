@@ -1,4 +1,5 @@
 import * as React from "react"
+import { createPortal } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownInput } from "@/components/ui/dropdown-input"
@@ -36,10 +37,15 @@ export function CreateProductModal({
   onChange,
   onSubmit,
 }: CreateProductModalProps) {
-  if (!open) return null
+  // Rendered as null on the server (closed by default); the portal target
+  // only exists in the browser.
+  if (!open || typeof document === "undefined") return null
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-background/70 px-sm py-sm backdrop-blur-sm">
+  // Portaled to <body> so the backdrop blur spans the whole viewport,
+  // including the sticky navbar once it is "stuck" on its own compositing
+  // layer (which a page-nested backdrop-filter cannot sample).
+  return createPortal(
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-background/70 px-sm py-sm backdrop-blur-sm">
       <div className="flex min-h-full w-full items-start justify-center">
         <div className="w-full max-w-3xl">
           <Card
@@ -167,6 +173,7 @@ export function CreateProductModal({
         </Card>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }
