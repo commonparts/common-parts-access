@@ -75,10 +75,9 @@ interface HostingSelectProps {
 }
 
 /**
- * File-hosting choice (hosted vs link-out). Rendered on the source step AND
- * the details step: the choice gates the license list, and a resumed session
- * starts past the source step, so it must stay reachable where licenses are
- * picked. Both instances bind the same form field.
+ * File-hosting choice (hosted vs link-out), on the source step only. The
+ * choice gates the details-step license list; a resumed session starts past
+ * the source step but can reach it with Back.
  */
 function HostingSelect({ id, value, onChange, hostedDisabled }: HostingSelectProps) {
   return (
@@ -243,6 +242,12 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           const value = prefill[field]
           if (value && !prev[field].trim()) next[field] = value
         }
+        // The publication license defaults to the declared source license —
+        // any earlier licenseId value is just the form's arbitrary default,
+        // never a curator choice (the details step comes later).
+        if (prefill.sourceLicenseId && next.sourceLicenseId === prefill.sourceLicenseId) {
+          next.licenseId = prefill.sourceLicenseId
+        }
         return next
       })
     },
@@ -374,8 +379,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             licenseId: formData.licenseId,
             tags: formData.tags,
             productIds: formData.productIds,
-            // The hosting selector is editable on this step too (a resumed
-            // session never passes through the source step).
+            // The selector lives on the source step, but the NC/ND
+            // auto-switch can flip hosting at any point — persist it here
+            // so the draft never drifts from what the tool shows.
             fileHostingType: formData.fileHostingType,
             ...serializeModelMetadata(formData),
           })
@@ -687,8 +693,16 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 <DropdownInput
                   as="select"
                   id="curation-source-license"
+                  // Picking the source license also pre-selects it as the
+                  // publication license (still editable on the details step).
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      sourceLicenseId: e.target.value,
+                      licenseId: e.target.value || prev.licenseId,
+                    }))
+                  }
                   value={formData.sourceLicenseId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, sourceLicenseId: e.target.value }))}
                   required
                 >
                   <option value="">Select the license declared at the source</option>
@@ -809,13 +823,6 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   ))}
                 </div>
               </div>
-
-              <HostingSelect
-                id="curation-hosting-details"
-                value={formData.fileHostingType}
-                onChange={handleHostingChange}
-                hostedDisabled={sourceLicenseForbidsHosting}
-              />
 
               <div className="space-y-2xs">
                 <Label htmlFor="curation-license">Publication license *</Label>
