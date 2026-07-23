@@ -7,6 +7,7 @@ import {
   PRINTABLES_LICENSE_TO_SPDX,
   type PrintablesPrintDetails,
 } from '@/lib/curation/prefill-parsing'
+import { PRINTABLES_BASE_URL, queryPrintables } from '@/lib/curation/printables-api'
 import { normalizedHostname } from '@/lib/utils/validation'
 
 /**
@@ -28,22 +29,15 @@ export interface CurationPrefill {
   estimatedMaterialUsage: string | null
 }
 
-const EXTRACTION_TIMEOUT_MS = 5000
-
-const PRINTABLES_GRAPHQL_URL = 'https://api.printables.com/graphql/'
-const PRINTABLES_BASE_URL = 'https://www.printables.com'
-
-interface PrintablesPrintResponse {
-  data?: {
-    print?:
-      | (PrintablesPrintDetails & {
-          user?: { publicUsername?: string | null; handle?: string | null } | null
-          license?: { abbreviation?: string | null } | null
-          summary?: string | null
-          description?: string | null
-        })
-      | null
-  } | null
+interface PrintablesPrintData {
+  print?:
+    | (PrintablesPrintDetails & {
+        user?: { publicUsername?: string | null; handle?: string | null } | null
+        license?: { abbreviation?: string | null } | null
+        summary?: string | null
+        description?: string | null
+      })
+    | null
 }
 
 /**
@@ -56,26 +50,11 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
   const printId = parsePrintablesModelId(url)
   if (!printId) return {}
 
-  let json: PrintablesPrintResponse | null = null
-  try {
-    const res = await fetch(PRINTABLES_GRAPHQL_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      cache: 'no-store',
-      signal: AbortSignal.timeout(EXTRACTION_TIMEOUT_MS),
-      body: JSON.stringify({
-        query:
-          'query($id: ID!) { print(id: $id) { user { publicUsername handle } license { abbreviation } summary description printDuration weight materials { name } layerHeights } }',
-        variables: { id: printId },
-      }),
-    })
-    if (!res.ok) return {}
-    json = (await res.json().catch(() => null)) as PrintablesPrintResponse | null
-  } catch {
-    return {}
-  }
-
-  const print = json?.data?.print
+  const data = await queryPrintables<PrintablesPrintData>(
+    'query($id: ID!) { print(id: $id) { user { publicUsername handle } license { abbreviation } summary description printDuration weight materials { name } layerHeights } }',
+    { id: printId },
+  )
+  const print = data?.print
   if (!print) return {}
 
   // Null fields are fine here: Object.assign onto the all-null prefill base

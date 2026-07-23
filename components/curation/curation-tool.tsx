@@ -138,6 +138,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
   const [modelFileCount, setModelFileCount] = React.useState(0)
   const [imageFileCount, setImageFileCount] = React.useState(0)
   const [uploadingFiles, setUploadingFiles] = React.useState(false)
+  const [importingImages, setImportingImages] = React.useState(false)
 
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -304,6 +305,27 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     }
   }, [formData.sourceUrl, draftId, applyPrefill])
 
+  /**
+   * Imports the source's gallery images into the fresh draft (numbered
+   * 00-…, 01-… so the source's first image becomes the thumbnail and the
+   * slideshow keeps the source order). Fire-and-forget: a failed import is
+   * silent — the curator uploads photos manually on the files step.
+   */
+  const importImagesFromSource = React.useCallback(async (id: string) => {
+    setImportingImages(true)
+    try {
+      const res = await fetch(`/api/curation/drafts/${id}/import-images`, { method: 'POST' })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && typeof json.imported === 'number') {
+        setImageFileCount((count) => count + json.imported)
+      }
+    } catch {
+      // Silent by design — pre-fill never blocks the flow.
+    } finally {
+      setImportingImages(false)
+    }
+  }, [])
+
   const patchDraft = React.useCallback(
     async (body: Record<string, unknown>): Promise<boolean> => {
       if (!draftId) return false
@@ -360,6 +382,11 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           }
           setDraftId(json.draft.id)
           setDraftSlug(json.draft.slug)
+          // Kick off the source image import in the background — the files
+          // step shows the running state and the resulting count.
+          if (formData.sourcePlatform === 'printables') {
+            void importImagesFromSource(json.draft.id)
+          }
           return true
         }
 
@@ -403,7 +430,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         setSaving(false)
       }
     },
-    [draftId, formData, checklist, needsLegalReview, legalJustification, confirmedFlags, patchDraft],
+    [draftId, formData, checklist, needsLegalReview, legalJustification, confirmedFlags, patchDraft, importImagesFromSource],
   )
 
   const goTo = async (nextStep: number) => {
@@ -1166,6 +1193,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 )}
                 <div className="space-y-2xs">
                   <Label>Photos / thumbnails</Label>
+                  {importingImages && (
+                    <p className="text-sm text-text-secondary">Importing images from the source…</p>
+                  )}
                   <FileUploader
                     accept={FILE_TYPES.IMAGE_FILES.join(',')}
                     multiple
