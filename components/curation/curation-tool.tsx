@@ -30,7 +30,16 @@ import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } fr
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
 const SOURCE_CHECK_DEBOUNCE_MS = 500
 
-const PREFILLABLE_FIELDS = ['sourcePlatform', 'originalAuthor', 'originalAuthorUrl', 'sourceLicenseId'] as const
+const PREFILLABLE_FIELDS = [
+  'sourcePlatform',
+  'originalAuthor',
+  'originalAuthorUrl',
+  'sourceLicenseId',
+  'material',
+  'layerHeight',
+  'estimatedPrintTime',
+  'estimatedMaterialUsage',
+] as const
 type PrefillableField = (typeof PREFILLABLE_FIELDS)[number]
 
 /** Shape returned by GET /api/curation/prefill — null means not extractable. */
@@ -840,7 +849,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             <CardContent className="space-y-md">
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-material">Material</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-material">Material</Label>
+                    {isPrefilled('material') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-material"
                     value={formData.material}
@@ -920,7 +932,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 <legend className="text-sm font-medium text-text-primary">Print settings</legend>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   <div className="space-y-2xs">
-                    <Label htmlFor="curation-layer-height">Layer height (mm)</Label>
+                    <div className="flex items-center gap-2xs">
+                      <Label htmlFor="curation-layer-height">Layer height (mm)</Label>
+                      {isPrefilled('layerHeight') && <Badge variant="outline">Pre-filled</Badge>}
+                    </div>
                     <Input
                       id="curation-layer-height"
                       type="number"
@@ -963,7 +978,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-print-time">Estimated print time (minutes)</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-print-time">Estimated print time (minutes)</Label>
+                    {isPrefilled('estimatedPrintTime') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-print-time"
                     type="number"
@@ -975,7 +993,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   />
                 </div>
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-material-usage">Estimated material usage (grams)</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-material-usage">Estimated material usage (grams)</Label>
+                    {isPrefilled('estimatedMaterialUsage') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-material-usage"
                     type="number"
