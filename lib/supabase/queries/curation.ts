@@ -14,7 +14,7 @@ import type {
 // made every draft 404 for its own owner (bug found 2026-07-18).
 const CURATION_DRAFT_SELECT = `
   id, name, slug, user_id, description, instructions, status, origin_type,
-  category_id, brand_id, license_id, tags, thumbnail_url,
+  category_id, brand_id, license_id, tags, thumbnail_url, images,
   source_url, source_platform, original_author, original_author_url, source_license_id,
   verification_status, file_hosting_type,
   material, color, dimensions, print_settings,

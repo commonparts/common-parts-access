@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
-import { sortImageUrls } from '@/lib/utils/images'
+import { mergeImageUrls } from '@/lib/utils/images'
 
 export const runtime = 'nodejs'
 
@@ -288,16 +288,16 @@ export async function POST(
     const modelUpdate: Record<string, unknown> = {}
 
     const imageFiles = fileRows.filter((f) => f.file_category === 'image')
+    // The current gallery in canonical order — returned to the client so it
+    // can preview registered images without a refetch.
+    const existingImages = Array.isArray(model.images)
+      ? model.images.filter((img): img is string => typeof img === 'string')
+      : []
+    let images = existingImages
     if (imageFiles.length > 0) {
-      const newImageUrls = imageFiles.map((f) => f.file_url)
-      const existingImages = Array.isArray(model.images)
-        ? model.images.filter((img): img is string => typeof img === 'string')
-        : []
-      const existingThumbnail = typeof model.thumbnail_url === 'string' && model.thumbnail_url ? [model.thumbnail_url] : []
-      const merged = [...new Set([...existingThumbnail, ...existingImages, ...newImageUrls])]
-      const sortedImages = sortImageUrls(merged)
-      modelUpdate.images = sortedImages
-      modelUpdate.thumbnail_url = sortedImages[0]
+      images = mergeImageUrls(model.thumbnail_url, model.images, imageFiles.map((f) => f.file_url))
+      modelUpdate.images = images
+      modelUpdate.thumbnail_url = images[0]
     }
 
     if (intendedStatus === 'published') {
@@ -315,13 +315,13 @@ export async function POST(
       if (updateError) {
         console.error('Failed to update model after file registration', updateError)
         return NextResponse.json(
-          { registered: fileRows.length, warning: 'Files were registered, but the model could not be updated' },
+          { registered: fileRows.length, images: existingImages, warning: 'Files were registered, but the model could not be updated' },
           { status: 201 },
         )
       }
     }
 
-    return NextResponse.json({ registered: fileRows.length }, { status: 201 })
+    return NextResponse.json({ registered: fileRows.length, images }, { status: 201 })
   } catch (error) {
     console.error('File registration failed', error)
     return NextResponse.json({ error: 'Unexpected error while registering files' }, { status: 500 })

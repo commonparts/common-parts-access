@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -22,12 +23,30 @@ import { useModelUploadFormState } from '@/hooks/use-model-upload-form-state'
 import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { isChecklistComplete, missingCriteria, CURATION_FLAGS, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { FILE_TYPES } from '@/constants/app'
+import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { serializeModelMetadata } from '@/lib/utils/model-metadata'
 import type { CurationChecklist, CurationCriterionKey, ModelFileHostingType } from '@/types/database'
 
 const STEP_LABELS = ['Source', 'Checklist', 'Details', 'Flags & files', 'Review'] as const
 const SOURCE_CHECK_DEBOUNCE_MS = 500
+
+const PREFILLABLE_FIELDS = [
+  'sourcePlatform',
+  'originalAuthor',
+  'originalAuthorUrl',
+  'sourceLicenseId',
+  'description',
+  'instructions',
+  'material',
+  'layerHeight',
+  'estimatedPrintTime',
+  'estimatedMaterialUsage',
+] as const
+type PrefillableField = (typeof PREFILLABLE_FIELDS)[number]
+
+/** Shape returned by GET /api/curation/prefill — null means not extractable. */
+type CurationPrefillValues = Record<PrefillableField, string | null>
 
 interface SourceDuplicate {
   id: string
@@ -54,15 +73,16 @@ interface HostingSelectProps {
   id: string
   value: ModelFileHostingType
   onChange: (value: ModelFileHostingType) => void
+  /** True when the declared source license (NC/ND) forbids hosting. */
+  hostedDisabled?: boolean
 }
 
 /**
- * File-hosting choice (hosted vs link-out). Rendered on the source step AND
- * the details step: the choice gates the license list, and a resumed session
- * starts past the source step, so it must stay reachable where licenses are
- * picked. Both instances bind the same form field.
+ * File-hosting choice (hosted vs link-out), on the source step only. The
+ * choice gates the details-step license list; a resumed session starts past
+ * the source step but can reach it with Back.
  */
-function HostingSelect({ id, value, onChange }: HostingSelectProps) {
+function HostingSelect({ id, value, onChange, hostedDisabled }: HostingSelectProps) {
   return (
     <div className="space-y-2xs">
       <Label htmlFor={id}>File hosting *</Label>
@@ -73,13 +93,17 @@ function HostingSelect({ id, value, onChange }: HostingSelectProps) {
         onChange={(e) => onChange(e.target.value as ModelFileHostingType)}
         required
       >
-        <option value="hosted">Host files here — whitelist licenses only (no NC/ND)</option>
+        <option value="hosted" disabled={hostedDisabled}>
+          Host files here — whitelist licenses only (no NC/ND)
+        </option>
         <option value="link_out">Link out to the source — NC/ND licenses allowed</option>
       </DropdownInput>
       <p className="text-sm text-text-secondary">
-        {value === 'link_out'
-          ? 'Files stay on the source platform; the source platform (source step) is required and its domain must match the source URL.'
-          : 'Hosting requires a license that allows commercial use and redistribution.'}
+        {hostedDisabled
+          ? 'The declared source license is NC/ND — the files cannot be hosted here, only linked out at the source.'
+          : value === 'link_out'
+            ? 'Files stay on the source platform; the source platform (source step) is required and its domain must match the source URL.'
+            : 'Hosting requires a license that allows commercial use and redistribution.'}
       </p>
     </div>
   )
@@ -110,10 +134,14 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
   const [duplicate, setDuplicate] = React.useState<SourceDuplicate | null>(null)
   const [checkingSource, setCheckingSource] = React.useState(false)
+  const [lastPrefill, setLastPrefill] = React.useState<CurationPrefillValues | null>(null)
 
   const [modelFileCount, setModelFileCount] = React.useState(0)
-  const [imageFileCount, setImageFileCount] = React.useState(0)
+  // Registered image URLs in canonical order (index 0 is the thumbnail) —
+  // drives both the count and the previews on the files step.
+  const [imageUrls, setImageUrls] = React.useState<string[]>([])
   const [uploadingFiles, setUploadingFiles] = React.useState(false)
+  const [importingImages, setImportingImages] = React.useState(false)
 
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -189,7 +217,11 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         setNeedsLegalReview(draft.needs_legal_review === true)
         setLegalJustification(draft.legal_review_justification ?? '')
         setModelFileCount(draft.model_file_count ?? 0)
-        setImageFileCount(draft.image_file_count ?? 0)
+        setImageUrls(
+          Array.isArray(draft.images)
+            ? draft.images.filter((url: unknown): url is string => typeof url === 'string')
+            : [],
+        )
         setStep(1)
       } catch {
         if (!cancelled) setError('Failed to load the draft')
@@ -206,30 +238,100 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialDraftId])
 
-  // Immediate duplicate check on source_url while typing (new sessions only —
-  // a resumed draft already owns its URL).
+  /**
+   * Applies extracted values to fields the curator has not filled yet —
+   * pre-fill never overwrites manual input. The raw response is kept so the
+   * "Pre-filled" markers can be derived (see isPrefilled).
+   */
+  const applyPrefill = React.useCallback(
+    (prefill: CurationPrefillValues) => {
+      setLastPrefill(prefill)
+      setFormData((prev) => {
+        const next = { ...prev }
+        for (const field of PREFILLABLE_FIELDS) {
+          const value = prefill[field]
+          if (value && !prev[field].trim()) next[field] = value
+        }
+        // The publication license defaults to the declared source license —
+        // any earlier licenseId value is just the form's arbitrary default,
+        // never a curator choice (the details step comes later).
+        if (prefill.sourceLicenseId && next.sourceLicenseId === prefill.sourceLicenseId) {
+          next.licenseId = prefill.sourceLicenseId
+        }
+        return next
+      })
+    },
+    [setFormData],
+  )
+
+  /**
+   * A field is marked pre-filled while its value still matches what was
+   * extracted from the source — editing it makes the marker disappear
+   * without any extra bookkeeping.
+   */
+  const isPrefilled = (field: PrefillableField): boolean =>
+    Boolean(lastPrefill?.[field]) && formData[field] === lastPrefill?.[field]
+
+  // Immediate duplicate check + best-effort pre-fill on source_url while
+  // typing (new sessions only — a resumed draft already owns its URL).
+  // Pre-fill failure is silent by design: the flow never blocks on it.
   React.useEffect(() => {
     if (draftId || !formData.sourceUrl.trim()) {
       setDuplicate(null)
+      setLastPrefill(null)
+      // An in-flight check was cancelled by the cleanup below, so its
+      // finally block will not reset the indicator — do it here.
+      setCheckingSource(false)
       return
     }
 
     const url = formData.sourceUrl.trim()
+    let cancelled = false
     const timer = setTimeout(async () => {
       setCheckingSource(true)
       try {
-        const res = await fetch(`/api/curation/source-check?url=${encodeURIComponent(url)}`)
-        const json = await res.json().catch(() => ({}))
-        setDuplicate(res.ok ? (json.duplicate ?? null) : null)
+        const [dupRes, prefillRes] = await Promise.all([
+          fetch(`/api/curation/source-check?url=${encodeURIComponent(url)}`),
+          fetch(`/api/curation/prefill?url=${encodeURIComponent(url)}`),
+        ])
+        const dupJson = await dupRes.json().catch(() => ({}))
+        const prefillJson = await prefillRes.json().catch(() => ({}))
+        if (cancelled) return
+        setDuplicate(dupRes.ok ? (dupJson.duplicate ?? null) : null)
+        if (prefillRes.ok && prefillJson.prefill) applyPrefill(prefillJson.prefill)
       } catch {
-        setDuplicate(null)
+        if (!cancelled) setDuplicate(null)
       } finally {
-        setCheckingSource(false)
+        if (!cancelled) setCheckingSource(false)
       }
     }, SOURCE_CHECK_DEBOUNCE_MS)
 
-    return () => clearTimeout(timer)
-  }, [formData.sourceUrl, draftId])
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [formData.sourceUrl, draftId, applyPrefill])
+
+  /**
+   * Imports the source's gallery images into the fresh draft (numbered
+   * 00-…, 01-… so the source's first image becomes the thumbnail and the
+   * slideshow keeps the source order). Fire-and-forget: a failed import is
+   * silent — the curator uploads photos manually on the files step.
+   */
+  const importImagesFromSource = React.useCallback(async (id: string) => {
+    setImportingImages(true)
+    try {
+      const res = await fetch(`/api/curation/drafts/${id}/import-images`, { method: 'POST' })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && Array.isArray(json.images)) {
+        setImageUrls(json.images)
+      }
+    } catch {
+      // Silent by design — pre-fill never blocks the flow.
+    } finally {
+      setImportingImages(false)
+    }
+  }, [])
 
   const patchDraft = React.useCallback(
     async (body: Record<string, unknown>): Promise<boolean> => {
@@ -287,6 +389,11 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           }
           setDraftId(json.draft.id)
           setDraftSlug(json.draft.slug)
+          // Kick off the source image import in the background — the files
+          // step shows the running state and the resulting count.
+          if (formData.sourcePlatform === 'printables') {
+            void importImagesFromSource(json.draft.id)
+          }
           return true
         }
 
@@ -308,8 +415,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             licenseId: formData.licenseId,
             tags: formData.tags,
             productIds: formData.productIds,
-            // The hosting selector is editable on this step too (a resumed
-            // session never passes through the source step).
+            // The selector lives on the source step, but the NC/ND
+            // auto-switch can flip hosting at any point — persist it here
+            // so the draft never drifts from what the tool shows.
             fileHostingType: formData.fileHostingType,
             ...serializeModelMetadata(formData),
           })
@@ -329,7 +437,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         setSaving(false)
       }
     },
-    [draftId, formData, checklist, needsLegalReview, legalJustification, confirmedFlags, patchDraft],
+    [draftId, formData, checklist, needsLegalReview, legalJustification, confirmedFlags, patchDraft, importImagesFromSource],
   )
 
   const goTo = async (nextStep: number) => {
@@ -362,13 +470,13 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: allFiles }),
       })
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
         setError(json.error || 'Failed to register uploaded files')
         return
       }
       setModelFileCount((count) => count + uploads.modelFiles.length)
-      setImageFileCount((count) => count + uploads.thumbnails.length)
+      if (Array.isArray(json.images)) setImageUrls(json.images)
       setFormData((prev) => ({ ...prev, files: [], thumbnails: [] }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'File upload failed')
@@ -443,13 +551,26 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
       const next = { ...prev, fileHostingType: value }
       if (value === 'hosted' && prev.licenseId) {
         const license = form.licenses.find((l) => l.id === prev.licenseId)
-        if (!license || !license.allowsCommercial || !license.allowsRedistribution) {
+        if (!license || !isHostableLicense(license)) {
           next.licenseId = ''
         }
       }
       return next
     })
   }
+
+  // An NC/ND source license means the files cannot be hosted here at all.
+  const sourceLicense = form.licenses.find((l) => l.id === formData.sourceLicenseId)
+  const sourceLicenseForbidsHosting = Boolean(sourceLicense && !isHostableLicense(sourceLicense))
+
+  // Force link-out whenever the source license forbids hosting — this covers
+  // pre-fill, manual selection and resumed drafts alike (and re-runs once the
+  // license list finishes loading, so a pre-fill that lands first is caught).
+  React.useEffect(() => {
+    if (sourceLicenseForbidsHosting && formData.fileHostingType === 'hosted') {
+      setFormData((prev) => ({ ...prev, fileHostingType: 'link_out' }))
+    }
+  }, [sourceLicenseForbidsHosting, formData.fileHostingType, setFormData])
 
   const checklistComplete = isChecklistComplete(checklist)
   const isLinkOut = formData.fileHostingType === 'link_out'
@@ -549,7 +670,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-platform">Source platform{isLinkOut ? ' *' : ''}</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-platform">Source platform{isLinkOut ? ' *' : ''}</Label>
+                  {isPrefilled('sourcePlatform') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <DropdownInput
                   as="select"
                   id="curation-platform"
@@ -568,10 +692,14 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   id="curation-hosting"
                   value={formData.fileHostingType}
                   onChange={handleHostingChange}
+                  hostedDisabled={sourceLicenseForbidsHosting}
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-author">Original author *</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-author">Original author *</Label>
+                  {isPrefilled('originalAuthor') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Input
                   id="curation-author"
                   value={formData.originalAuthor}
@@ -581,7 +709,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-author-url">Author URL</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-author-url">Author URL</Label>
+                  {isPrefilled('originalAuthorUrl') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Input
                   id="curation-author-url"
                   type="url"
@@ -591,12 +722,27 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs md:col-span-2">
-                <Label htmlFor="curation-source-license">Declared source license *</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-source-license">Declared source license *</Label>
+                  {isPrefilled('sourceLicenseId') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <DropdownInput
                   as="select"
                   id="curation-source-license"
+                  // The publication license defaults to the declared source
+                  // license, but only while it still tracks it (or on the very
+                  // first pick) — never clobber a publication license the
+                  // curator has deliberately diverged on the details step.
+                  onChange={(e) =>
+                    setFormData((prev) => {
+                      const next = { ...prev, sourceLicenseId: e.target.value }
+                      if (e.target.value && (!prev.sourceLicenseId || prev.licenseId === prev.sourceLicenseId)) {
+                        next.licenseId = e.target.value
+                      }
+                      return next
+                    })
+                  }
                   value={formData.sourceLicenseId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, sourceLicenseId: e.target.value }))}
                   required
                 >
                   <option value="">Select the license declared at the source</option>
@@ -679,7 +825,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
-                <Label htmlFor="curation-description">Description</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-description">Short description</Label>
+                  {isPrefilled('description') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Textarea
                   id="curation-description"
                   rows={3}
@@ -689,7 +838,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor="curation-instructions">Instructions</Label>
+                <div className="flex items-center gap-2xs">
+                  <Label htmlFor="curation-instructions">Instructions</Label>
+                  {isPrefilled('instructions') && <Badge variant="outline">Pre-filled</Badge>}
+                </div>
                 <Textarea
                   id="curation-instructions"
                   rows={3}
@@ -718,12 +870,6 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 </div>
               </div>
 
-              <HostingSelect
-                id="curation-hosting-details"
-                value={formData.fileHostingType}
-                onChange={handleHostingChange}
-              />
-
               <div className="space-y-2xs">
                 <Label htmlFor="curation-license">Publication license *</Label>
                 <DropdownInput
@@ -735,7 +881,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 >
                   <option value="">Select the license the part is published under</option>
                   {form.licenses
-                    .filter((license) => isLinkOut || (license.allowsCommercial && license.allowsRedistribution))
+                    .filter((license) => isLinkOut || isHostableLicense(license))
                     .map((license) => (
                       <option key={license.id} value={license.id}>{license.shortName} — {license.name}</option>
                     ))}
@@ -756,7 +902,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
             <CardContent className="space-y-md">
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-material">Material</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-material">Material</Label>
+                    {isPrefilled('material') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-material"
                     value={formData.material}
@@ -836,7 +985,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 <legend className="text-sm font-medium text-text-primary">Print settings</legend>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   <div className="space-y-2xs">
-                    <Label htmlFor="curation-layer-height">Layer height (mm)</Label>
+                    <div className="flex items-center gap-2xs">
+                      <Label htmlFor="curation-layer-height">Layer height (mm)</Label>
+                      {isPrefilled('layerHeight') && <Badge variant="outline">Pre-filled</Badge>}
+                    </div>
                     <Input
                       id="curation-layer-height"
                       type="number"
@@ -879,7 +1031,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-print-time">Estimated print time (minutes)</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-print-time">Estimated print time (minutes)</Label>
+                    {isPrefilled('estimatedPrintTime') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-print-time"
                     type="number"
@@ -891,7 +1046,10 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   />
                 </div>
                 <div className="space-y-2xs">
-                  <Label htmlFor="curation-material-usage">Estimated material usage (grams)</Label>
+                  <div className="flex items-center gap-2xs">
+                    <Label htmlFor="curation-material-usage">Estimated material usage (grams)</Label>
+                    {isPrefilled('estimatedMaterialUsage') && <Badge variant="outline">Pre-filled</Badge>}
+                  </div>
                   <Input
                     id="curation-material-usage"
                     type="number"
@@ -1017,7 +1175,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                     {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
                   </Badge>
                 )}
-                <Badge variant="outline">{imageFileCount} {imageFileCount === 1 ? 'image' : 'images'}</Badge>
+                <Badge variant={imageUrls.length > 0 ? 'secondary' : 'outline'}>
+                  {imageUrls.length} {imageUrls.length === 1 ? 'image' : 'images'}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-md">
@@ -1046,6 +1206,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 )}
                 <div className="space-y-2xs">
                   <Label>Photos / thumbnails</Label>
+                  {importingImages && (
+                    <p className="text-sm text-text-secondary">Importing images from the source…</p>
+                  )}
                   <FileUploader
                     accept={FILE_TYPES.IMAGE_FILES.join(',')}
                     multiple
@@ -1058,6 +1221,36 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   )}
                 </div>
               </div>
+
+              {imageUrls.length > 0 && (
+                <div className="space-y-2xs">
+                  <p className="text-sm text-text-secondary">
+                    {imageUrls.length} {imageUrls.length === 1 ? 'image is' : 'images are'} on the draft, in slideshow order — the first is the thumbnail.
+                  </p>
+                  <div className="flex flex-wrap gap-2xs">
+                    {imageUrls.map((url, index) => (
+                      <div
+                        key={url}
+                        className="relative h-3xl w-3xl overflow-hidden rounded-md border border-border-subtle bg-bg-subtle"
+                      >
+                        <Image
+                          src={url}
+                          alt={index === 0 ? 'Thumbnail' : `Image ${index + 1}`}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                        {index === 0 && (
+                          <span className="absolute inset-x-0 bottom-0 bg-background/70 py-px text-center text-xs text-text-primary">
+                            Thumbnail
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-sm">
                 <Button
                   onClick={handleUploadFiles}

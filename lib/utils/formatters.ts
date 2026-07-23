@@ -326,3 +326,36 @@ export function getFileExtension(filename: string): string {
 export function getFilenameWithoutExtension(filename: string): string {
   return filename.substring(0, filename.lastIndexOf('.'))
 }
+/**
+ * Converts rich HTML (as returned by source platforms) into readable plain
+ * text for textarea pre-fill: <br> and block-element ends become newlines,
+ * list items become "- " bullets, all other tags are stripped, common HTML
+ * entities are decoded and blank runs are collapsed. Not a sanitizer — the
+ * output contains no markup by construction.
+ */
+export function htmlToPlainText(html: string): string {
+  const text = html
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<\/(p|div|li|ul|ol|h[1-6]|figure|figcaption|table|tr|blockquote)>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#(x?)([0-9a-f]+);/gi, (match, hex, code) => {
+      try {
+        return String.fromCodePoint(Number.parseInt(code, hex ? 16 : 10))
+      } catch {
+        return match
+      }
+    })
+
+  return text
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+/g, ' ').trim())
+    .join('\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}

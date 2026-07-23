@@ -1,10 +1,12 @@
 'use client'
 
 import * as React from 'react'
+import { Trash2 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { CurationTool } from '@/components/curation/curation-tool'
 import { CURATION_BLOCKING_CRITERIA } from '@/lib/curation/checklist'
 import type { CurationChecklist } from '@/types/database'
@@ -33,6 +35,8 @@ export default function CurationPage() {
   const [drafts, setDrafts] = React.useState<DraftListItem[]>([])
   const [loading, setLoading] = React.useState(true)
   const [error, setError] = React.useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = React.useState<DraftListItem | null>(null)
+  const [deleting, setDeleting] = React.useState(false)
 
   const loadDrafts = React.useCallback(async () => {
     setLoading(true)
@@ -59,6 +63,28 @@ export default function CurationPage() {
   }, [session.mode, loadDrafts])
 
   const exitSession = React.useCallback(() => setSession({ mode: 'idle' }), [])
+
+  // Drafts are models rows, so deletion reuses the owner-gated model delete
+  // endpoint (row + storage cleanup). It also frees the unique source URL.
+  const handleConfirmDelete = async () => {
+    const target = pendingDelete
+    if (!target) return
+    setDeleting(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/models/${encodeURIComponent(target.slug)}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error || 'Delete failed. Please try again.')
+      }
+      setDrafts((current) => current.filter((draft) => draft.id !== target.id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed. Please try again.')
+    } finally {
+      setPendingDelete(null)
+      setDeleting(false)
+    }
+  }
 
   return (
     <DashboardShell
@@ -100,9 +126,19 @@ export default function CurationPage() {
                   </CardHeader>
                   <CardContent className="flex items-center justify-between gap-sm">
                     <p className="min-w-0 truncate text-sm text-text-secondary">{draft.source_url}</p>
-                    <Button variant="secondary" onClick={() => setSession({ mode: 'resume', draftId: draft.id })}>
-                      Resume
-                    </Button>
+                    <div className="flex shrink-0 items-center gap-2xs">
+                      <Button variant="secondary" onClick={() => setSession({ mode: 'resume', draftId: draft.id })}>
+                        Resume
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete ${draft.name}`}
+                        onClick={() => setPendingDelete(draft)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
@@ -117,6 +153,19 @@ export default function CurationPage() {
           onExit={exitSession}
         />
       )}
+
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        title="Delete draft"
+        description={`Are you sure you want to delete the draft "${pendingDelete?.name}"? Uploaded files are removed and the source URL becomes available for a new session. This action cannot be undone.`}
+        confirmLabel="Delete"
+        loadingLabel="Deleting…"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null)
+        }}
+        loading={deleting}
+      />
     </DashboardShell>
   )
 }
