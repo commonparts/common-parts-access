@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurationDraft, updateCurationDraft } from '@/lib/supabase/queries/curation'
+import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
+import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { isValidUuid } from '@/lib/utils/validation'
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -53,15 +55,22 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (!draft.license_id) {
       blockers.push('A publication license is required')
     } else {
-      const { data: license, error } = await supabase
-        .from('licenses')
-        .select('id, allows_commercial, allows_redistribution')
-        .eq('id', draft.license_id)
-        .maybeSingle()
-      if (error || !license) {
+      const license = await getLicenseById(draft.license_id)
+      if (!license) {
         blockers.push('The selected license could not be verified')
-      } else if (!isLinkOut && (!license.allows_commercial || !license.allows_redistribution)) {
+      } else if (!isLinkOut && !isHostableLicenseRow(license)) {
         blockers.push('Hosted parts require an open license (no NC/ND restrictions) — link out instead')
+      }
+    }
+
+    // The declared source license binds hosting too: NC/ND at the source
+    // means the files may only be linked out, never hosted here.
+    if (!isLinkOut && draft.source_license_id) {
+      const sourceLicense = await getLicenseById(draft.source_license_id)
+      if (!sourceLicense) {
+        blockers.push('The declared source license could not be verified')
+      } else if (!isHostableLicenseRow(sourceLicense)) {
+        blockers.push('The declared source license is NC/ND — hosting is not allowed, link out instead')
       }
     }
 

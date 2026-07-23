@@ -10,3 +10,22 @@ export function sortImageUrls(urls: string[]): string[] {
     return fa.localeCompare(fb, undefined, { numeric: true, sensitivity: 'base' })
   })
 }
+
+/**
+ * Merges a model's current thumbnail and gallery with newly registered image
+ * URLs (deduplicated) and returns the canonical display order. The first
+ * entry becomes the thumbnail. Shared by every write path that registers
+ * images so thumbnail selection can never diverge between them.
+ */
+export function mergeImageUrls(
+  currentThumbnail: unknown,
+  currentImages: unknown,
+  newUrls: string[],
+): string[] {
+  const existingImages = Array.isArray(currentImages)
+    ? currentImages.filter((img): img is string => typeof img === 'string')
+    : []
+  const existingThumbnail =
+    typeof currentThumbnail === 'string' && currentThumbnail ? [currentThumbnail] : []
+  return sortImageUrls([...new Set([...existingThumbnail, ...existingImages, ...newUrls])])
+}

@@ -107,6 +107,19 @@ export function isValidHttpUrl(url: string): boolean {
 }
 
 /**
+ * Returns the hostname of a URL with any leading "www." stripped, or null
+ * for unparseable input. Used to compare user-supplied URLs against platform
+ * base URLs without being tripped up by the www prefix.
+ */
+export function normalizedHostname(url: string): string | null {
+  try {
+    return new URL(url).hostname.replace(/^www\./, '')
+  } catch {
+    return null
+  }
+}
+
+/**
  * UUID validation (any version, canonical 8-4-4-4-12 hex format)
  * @param value - String to validate
  * @returns True if the string is a well-formed UUID
