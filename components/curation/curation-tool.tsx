@@ -729,14 +729,18 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 <DropdownInput
                   as="select"
                   id="curation-source-license"
-                  // Picking the source license also pre-selects it as the
-                  // publication license (still editable on the details step).
+                  // The publication license defaults to the declared source
+                  // license, but only while it still tracks it (or on the very
+                  // first pick) — never clobber a publication license the
+                  // curator has deliberately diverged on the details step.
                   onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      sourceLicenseId: e.target.value,
-                      licenseId: e.target.value || prev.licenseId,
-                    }))
+                    setFormData((prev) => {
+                      const next = { ...prev, sourceLicenseId: e.target.value }
+                      if (e.target.value && (!prev.sourceLicenseId || prev.licenseId === prev.sourceLicenseId)) {
+                        next.licenseId = e.target.value
+                      }
+                      return next
+                    })
                   }
                   value={formData.sourceLicenseId}
                   required
