@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -136,7 +137,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
   const [lastPrefill, setLastPrefill] = React.useState<CurationPrefillValues | null>(null)
 
   const [modelFileCount, setModelFileCount] = React.useState(0)
-  const [imageFileCount, setImageFileCount] = React.useState(0)
+  // Registered image URLs in canonical order (index 0 is the thumbnail) —
+  // drives both the count and the previews on the files step.
+  const [imageUrls, setImageUrls] = React.useState<string[]>([])
   const [uploadingFiles, setUploadingFiles] = React.useState(false)
   const [importingImages, setImportingImages] = React.useState(false)
 
@@ -214,7 +217,11 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         setNeedsLegalReview(draft.needs_legal_review === true)
         setLegalJustification(draft.legal_review_justification ?? '')
         setModelFileCount(draft.model_file_count ?? 0)
-        setImageFileCount(draft.image_file_count ?? 0)
+        setImageUrls(
+          Array.isArray(draft.images)
+            ? draft.images.filter((url: unknown): url is string => typeof url === 'string')
+            : [],
+        )
         setStep(1)
       } catch {
         if (!cancelled) setError('Failed to load the draft')
@@ -316,8 +323,8 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     try {
       const res = await fetch(`/api/curation/drafts/${id}/import-images`, { method: 'POST' })
       const json = await res.json().catch(() => ({}))
-      if (res.ok && typeof json.imported === 'number') {
-        setImageFileCount((count) => count + json.imported)
+      if (res.ok && Array.isArray(json.images)) {
+        setImageUrls(json.images)
       }
     } catch {
       // Silent by design — pre-fill never blocks the flow.
@@ -463,13 +470,13 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: allFiles }),
       })
+      const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
         setError(json.error || 'Failed to register uploaded files')
         return
       }
       setModelFileCount((count) => count + uploads.modelFiles.length)
-      setImageFileCount((count) => count + uploads.thumbnails.length)
+      if (Array.isArray(json.images)) setImageUrls(json.images)
       setFormData((prev) => ({ ...prev, files: [], thumbnails: [] }))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'File upload failed')
@@ -1164,7 +1171,9 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                     {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
                   </Badge>
                 )}
-                <Badge variant="outline">{imageFileCount} {imageFileCount === 1 ? 'image' : 'images'}</Badge>
+                <Badge variant={imageUrls.length > 0 ? 'secondary' : 'outline'}>
+                  {imageUrls.length} {imageUrls.length === 1 ? 'image' : 'images'}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="space-y-md">
@@ -1208,6 +1217,36 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   )}
                 </div>
               </div>
+
+              {imageUrls.length > 0 && (
+                <div className="space-y-2xs">
+                  <p className="text-sm text-text-secondary">
+                    {imageUrls.length} {imageUrls.length === 1 ? 'image is' : 'images are'} on the draft, in slideshow order — the first is the thumbnail.
+                  </p>
+                  <div className="flex flex-wrap gap-2xs">
+                    {imageUrls.map((url, index) => (
+                      <div
+                        key={url}
+                        className="relative h-3xl w-3xl overflow-hidden rounded-md border border-border-subtle bg-bg-subtle"
+                      >
+                        <Image
+                          src={url}
+                          alt={index === 0 ? 'Thumbnail' : `Image ${index + 1}`}
+                          fill
+                          sizes="80px"
+                          className="object-cover"
+                        />
+                        {index === 0 && (
+                          <span className="absolute inset-x-0 bottom-0 bg-background/70 py-px text-center text-xs text-text-primary">
+                            Thumbnail
+                          </span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-center gap-sm">
                 <Button
                   onClick={handleUploadFiles}

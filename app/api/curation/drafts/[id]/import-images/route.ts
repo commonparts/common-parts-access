@@ -42,7 +42,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     // Idempotency: the import targets a fresh draft. Once any image exists
     // (imported or manual), re-running would duplicate or reorder — skip.
     if (draft.image_file_count > 0) {
-      return NextResponse.json({ imported: 0, skipped: 'Images already registered for this draft' })
+      return NextResponse.json({ imported: 0, images: draft.images ?? [], skipped: 'Images already registered for this draft' })
     }
 
     let printId: string | null = null
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       MODEL_UPLOAD_LIMITS.maxThumbnailFiles,
     )
     if (imageUrls.length === 0) {
-      return NextResponse.json({ imported: 0 })
+      return NextResponse.json({ imported: 0, images: draft.images ?? [] })
     }
 
     const fileRows: {
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     }
 
     if (fileRows.length === 0) {
-      return NextResponse.json({ imported: 0 })
+      return NextResponse.json({ imported: 0, images: draft.images ?? [] })
     }
 
     const { error: insertError } = await supabase.from('model_files').insert(fileRows)
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       console.error('Image import: failed to update model thumbnail', updateError)
     }
 
-    return NextResponse.json({ imported: fileRows.length })
+    return NextResponse.json({ imported: fileRows.length, images: sortedImages })
   } catch (error) {
     console.error('Curation image import failed', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
