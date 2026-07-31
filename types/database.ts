@@ -201,6 +201,12 @@ export interface Model {
   legal_review_justification?: string | null;
   curation_checklist?: CurationChecklist;
 
+  // Public upload flow (origin_type = 'original') — the contributor's
+  // declaration that they created the part and may publish it. Blocking
+  // condition of the upload publish gate.
+  originality_attested?: boolean;
+  originality_attested_at?: string | null;
+
   created_at?: string;
   updated_at?: string;
 }

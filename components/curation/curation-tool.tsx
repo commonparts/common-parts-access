@@ -13,6 +13,7 @@ import { DropdownInput } from '@/components/ui/dropdown-input'
 import { FileUploader } from '@/components/ui/file-uploader'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Stepper } from '@/components/ui/stepper'
 import { Textarea } from '@/components/ui/textarea'
 import { CreateProductModal } from '@/components/forms/create-product-modal'
 import { ModelDetails } from '@/components/model/model-details'
@@ -602,17 +603,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
 
   return (
     <div className="space-y-md">
-      {/* Stepper */}
-      <nav aria-label="Curation steps" className="flex flex-wrap items-center gap-sm">
-        {STEP_LABELS.map((label, index) => (
-          <React.Fragment key={label}>
-            {index > 0 && <span className="text-text-disabled">→</span>}
-            <Badge variant={index === step ? 'default' : index < step ? 'secondary' : 'outline'}>
-              {index + 1}. {label}
-            </Badge>
-          </React.Fragment>
-        ))}
-      </nav>
+      <Stepper labels={STEP_LABELS} current={step} ariaLabel="Curation steps" />
 
       {error && (
         <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
