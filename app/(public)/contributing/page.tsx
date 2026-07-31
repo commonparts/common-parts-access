@@ -98,6 +98,8 @@ export default function ContributingPage() {
             <h2 className="text-h3">Verification status</h2>
             <p className="text-text-secondary">
               Every part in the Index carries a verification status reflecting the level of evidence available.
+              The status is set by the registry as evidence accumulates — it is not something a contributor
+              declares. Newly uploaded parts start unverified.
             </p>
 
             <div className="overflow-x-auto">
@@ -154,72 +156,53 @@ export default function ContributingPage() {
             <h2 className="text-h3">How to submit</h2>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you are publishing an original model you designed</h3>
+              <h3 className="text-h4">If you are publishing a part you designed</h3>
+              <p className="text-text-secondary">
+                This is what{' '}
+                <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
+                  upload
+                </Link>{' '}
+                is for: your own design, with the files hosted here and kept downloadable. Your progress is saved at
+                every step, so you can stop and come back.
+              </p>
               <ol className="list-decimal space-y-xs pl-md text-text-secondary">
-                <li>
-                  Upload your file via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
-                    Common Parts Access
-                  </Link>
-                </li>
-                <li>Declare the license you want to apply</li>
-                <li>Fill in the product metadata and print settings</li>
-                <li>If you have printed and tested the part yourself, mark it as author-tested</li>
+                <li>Name the part, place it in a category, and choose the license you publish under</li>
+                <li>Upload the model files and photos of the printed part</li>
+                <li>Add the description, instructions and print settings</li>
+                <li>Link the products it fits — a spare part is found by the device it repairs</li>
+                <li>Review the page as it will appear, then publish</li>
               </ol>
+              <p className="text-text-secondary">
+                Because the registry hosts and redistributes the files, the license must allow commercial use and
+                modification. Licenses with NC or ND restrictions cannot be uploaded — see below.
+              </p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you are curating an open-license model from another platform</h3>
+              <h3 className="text-h4">If you found a part someone else published</h3>
               <p className="text-text-secondary">
-                Use this flow for models published under CC0, CC BY, CC BY-SA, MIT, or GPL. The file will be hosted
-                on Common Parts.
+                Parts from Printables, Thingiverse, GitHub or anywhere else are not uploaded — they are curated, so
+                that attribution to the original author and the terms of their license are handled properly. This
+                applies whether the license is open (the file can be hosted here) or restrictive such as NC or ND
+                (the file stays at the source and we link to it).
               </p>
-              <ol className="list-decimal space-y-xs pl-md text-text-secondary">
-                <li>Find the original publication (Printables, Thingiverse, GitHub, etc.)</li>
-                <li>Confirm the license is open (see above)</li>
-                <li>
-                  Submit via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
-                    Common Parts Access
-                  </Link>{' '}
-                  — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
-                  <em>Host file</em>
-                </li>
-                <li>Review the pre-filled fields and complete what is missing</li>
-                <li>Add the product metadata: brand, model(s), and category</li>
-                <li>Add print settings if you have them — infill, supports, recommended material</li>
-              </ol>
-            </div>
-
-            <div className="space-y-xs">
-              <h3 className="text-h4">If you are referencing a model published under a restrictive license</h3>
               <p className="text-text-secondary">
-                Use this flow for models published under NC, ND, or other non-open licenses. The file stays on the
-                original platform — Common Parts hosts the metadata and links to the source.
+                Send us the source URL through the feedback widget or at{' '}
+                <Link href="mailto:contact@commonparts.org" className="underline">
+                  contact@commonparts.org
+                </Link>
+                , and tell us which product it fits. Curation is done by the Common Parts team, one part at a time.
               </p>
-              <ol className="list-decimal space-y-xs pl-md text-text-secondary">
-                <li>Find the original publication and confirm it is publicly accessible</li>
-                <li>
-                  Submit via{' '}
-                  <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
-                    Common Parts Access
-                  </Link>{' '}
-                  — paste the source URL, select <em>Curated from an external source</em>, and choose{' '}
-                  <em>Link to source</em>
-                </li>
-                <li>Review the pre-filled fields and complete what is missing</li>
-                <li>Add the product metadata: brand, model(s), and category</li>
-              </ol>
             </div>
           </section>
 
           <section className="space-y-sm">
             <h2 className="text-h3">After submission</h2>
             <p className="text-text-secondary">
-              Once submitted, the part goes through a brief curation review. We check that all required fields are
-              present, the license is valid, and the file is in order. Parts that pass review are published
-              immediately. Parts with missing information are flagged — you will be able to see which fields need
-              attention.
+              A part you upload goes live as soon as it clears the publication checks: a license the registry may
+              host under, at least one model file, and at least one product it fits. If something is missing, the
+              review step names it and the part stays a draft until you complete it. A part you sent us to curate
+              is reviewed by the Common Parts team before it is published.
             </p>
             <p className="text-text-secondary">
               We do not modify your model or its metadata without contacting you. Attribution is permanent and public.
