@@ -19,7 +19,10 @@
 -- declaration nobody made, which is the same kind of unsound record the
 -- constraint exists to prevent.
 --
--- NOT YET APPLIED. Run in the Supabase SQL editor before merging the PR.
+-- Applied to production via the Supabase MCP on 2026-07-31, on explicit human
+-- instruction. Verified after applying: both columns present, the CHECK
+-- rejects each inconsistent direction, the index exists, and all 12 existing
+-- rows carry the (false, null) default untouched.
 
 alter table public.models
   add column if not exists originality_attested boolean not null default false,
