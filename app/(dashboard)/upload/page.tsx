@@ -1,257 +1,182 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { ModelUploadForm } from '@/components/forms/model-upload-form'
+import * as React from 'react'
+import Image from 'next/image'
+import { Trash2 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
-import { Grid } from '@/components/layout/grid'
-import { uploadFilesFromClient, cleanupUploadedFiles, type UploadProgress } from '@/lib/storage/client-upload'
-import { serializeModelMetadata } from '@/lib/utils/model-metadata'
-import type { ModelFileHostingType } from '@/types/database'
-import type { ModelFormData } from '@/hooks/use-model-upload-form-state'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
+import { UploadTool } from '@/components/upload/upload-tool'
+import { formatRelativeTime } from '@/lib/utils/formatters'
 
-interface UploadIssue {
-  field?: string
-  message?: string
-}
-
-interface FileMetadata {
+interface DraftListItem {
+  id: string
   name: string
-  size: number
-}
-
-interface CreateModelMetadataPayload {
-  title: string
-  description: string
-  instructions?: string
-  category: string
-  license_id: string
-  isPublic: boolean
-  origin_type: string
-  verification_status: string
-  tags: string[]
-  modelFiles: FileMetadata[]
-  thumbnails: FileMetadata[]
-  brand?: string
-  products?: string[]
-  source_url?: string
-  source_platform?: string
-  original_author?: string
-  original_author_url?: string
-  source_license_id?: string
-  file_hosting_type?: ModelFileHostingType
-  material?: string
-  color?: string
-  dimensions?: string
-  print_settings?: string
-  estimated_print_time?: string
-  estimated_material_usage?: string
-}
-
-interface CreateModelSuccessResponse {
-  modelId: string
   slug: string
-  userId: string
-  intendedStatus: string
+  thumbnail_url: string | null
+  updated_at: string | null
 }
 
-interface UploadErrorResponse {
-  error?: string
-  issues?: UploadIssue[]
-}
+type Session = { mode: 'idle' } | { mode: 'new' } | { mode: 'resume'; draftId: string }
 
-function isCreateModelSuccessResponse(data: unknown): data is CreateModelSuccessResponse {
-  if (typeof data !== 'object' || data === null || Array.isArray(data)) return false
-  const obj = data as Record<string, unknown>
-  return (
-    typeof obj.modelId === 'string' &&
-    typeof obj.slug === 'string' &&
-    typeof obj.userId === 'string' &&
-    typeof obj.intendedStatus === 'string'
-  )
-}
-
+/**
+ * Public upload flow (issue #293): publish an original part whose files this
+ * registry hosts. Opens on the contributor's unfinished drafts so an
+ * interrupted session can be picked up where it stopped.
+ *
+ * Parts that live on another platform are not uploaded here — they go through
+ * the internal curation flow, which owns source attribution and link-out.
+ */
 export default function UploadPage() {
-  const router = useRouter()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [issues, setIssues] = useState<UploadIssue[]>([])
-  const [progressText, setProgressText] = useState<string | null>(null)
+  const [session, setSession] = React.useState<Session>({ mode: 'idle' })
+  const [drafts, setDrafts] = React.useState<DraftListItem[]>([])
+  const [loading, setLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+  const [pendingDelete, setPendingDelete] = React.useState<DraftListItem | null>(null)
+  const [deleting, setDeleting] = React.useState(false)
 
-  /**
-   * Three-phase upload:
-   * 1. Send metadata (no files) to the API to create the model record.
-   * 2. Upload files directly to Supabase Storage from the browser.
-   * 3. Register the uploaded files via a second API call.
-   *
-   * This bypasses the Vercel 4.5 MB serverless body-size limit by never
-   * sending file bytes through the API route.
-   */
-  const handleSubmit = async (payload: ModelFormData) => {
+  const loadDrafts = React.useCallback(async () => {
     setLoading(true)
     setError(null)
-    setSuccess(null)
-    setIssues([])
-    setProgressText('Creating model record…')
-
     try {
-      // --- Build metadata payload (no file bytes) ---
-      const metadata: CreateModelMetadataPayload = {
-        title: payload.title,
-        description: payload.description || '',
-        category: payload.categoryId,
-        license_id: payload.licenseId || '',
-        isPublic: Boolean(payload.isPublic),
-        origin_type: payload.originType || 'original',
-        verification_status: payload.verificationStatus || 'unverified',
-        tags: payload.tags || [],
-        file_hosting_type: payload.fileHostingType || 'hosted',
-        // File metadata for server-side validation (names/sizes only)
-        modelFiles: payload.files.map((f) => ({ name: f.name, size: f.size })),
-        thumbnails: payload.thumbnails.map((f) => ({ name: f.name, size: f.size })),
-      }
-
-      if (payload.instructions) metadata.instructions = payload.instructions
-      if (payload.brandId) metadata.brand = payload.brandId
-      if (payload.productIds && payload.productIds.length > 0) metadata.products = payload.productIds
-      if (payload.sourceUrl) metadata.source_url = payload.sourceUrl
-      if (payload.sourcePlatform) metadata.source_platform = payload.sourcePlatform
-      if (payload.originalAuthor) metadata.original_author = payload.originalAuthor
-      if (payload.originalAuthorUrl) metadata.original_author_url = payload.originalAuthorUrl
-      if (payload.sourceLicenseId) metadata.source_license_id = payload.sourceLicenseId
-      // Shared serializer (same one the curation flow uses) builds the
-      // dimensions/print_settings JSON and trims estimates. Only non-empty
-      // values are attached so a create omits absent fields entirely.
-      const serialized = serializeModelMetadata(payload)
-      if (serialized.material) metadata.material = serialized.material
-      if (serialized.color) metadata.color = serialized.color
-      if (serialized.dimensions) metadata.dimensions = serialized.dimensions
-      if (serialized.print_settings) metadata.print_settings = serialized.print_settings
-      if (serialized.estimated_print_time) metadata.estimated_print_time = serialized.estimated_print_time
-      if (serialized.estimated_material_usage) metadata.estimated_material_usage = serialized.estimated_material_usage
-
-      // --- Phase 1: Create model record ---
-      const createResponse = await fetch('/api/models/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(metadata),
-      })
-      const createData: unknown = await createResponse.json().catch(() => ({}))
-
-      if (!createResponse.ok) {
-        const errorData = createData as UploadErrorResponse
-        setError(errorData.error || 'Failed to create model record')
-        setIssues(Array.isArray(errorData.issues) ? errorData.issues : [])
+      const res = await fetch('/api/upload/drafts')
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        setError(json.error || 'Failed to load drafts')
         return
       }
-
-      if (!isCreateModelSuccessResponse(createData)) {
-        setError('Invalid response from server — missing model data')
-        return
-      }
-
-      const { modelId, slug, userId, intendedStatus } = createData
-
-      // Link-out models with no thumbnails have no files to upload or register
-      if (payload.fileHostingType === 'link_out' && payload.thumbnails.length === 0) {
-        const params = new URLSearchParams({ slug })
-        router.push(`/upload/success?${params.toString()}`)
-        return
-      }
-
-      // --- Phase 2: Upload files directly to Supabase Storage ---
-      setProgressText('Uploading files…')
-
-      const handleProgress = (progress: UploadProgress) => {
-        setProgressText(
-          `Uploading ${progress.fileName} (${progress.current}/${progress.total})…`,
-        )
-      }
-
-      const uploads = await uploadFilesFromClient({
-        userId,
-        modelId,
-        modelFiles: payload.fileHostingType === 'link_out' ? [] : payload.files,
-        thumbnails: payload.thumbnails,
-        onProgress: handleProgress,
-      })
-
-      // --- Phase 3: Register uploaded files ---
-      setProgressText('Finalizing upload…')
-
-      const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
-      // Link-out models are already published after phase 1; omitting intendedStatus
-      // avoids the files endpoint's "model file required to publish" guard.
-      const registerBody = payload.fileHostingType === 'link_out'
-        ? { files: allFiles }
-        : { files: allFiles, intendedStatus }
-      const registerResponse = await fetch(`/api/models/${encodeURIComponent(slug)}/files`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(registerBody),
-      })
-      const registerData: UploadErrorResponse = await registerResponse
-        .json()
-        .catch((): UploadErrorResponse => ({}))
-
-      if (!registerResponse.ok) {
-        // Best-effort cleanup of orphaned storage files
-        try {
-          await cleanupUploadedFiles(allFiles)
-        } catch (cleanupError) {
-          console.error('Failed to clean up orphaned files after registration failure', cleanupError)
-        }
-
-        setError(registerData?.error || 'Failed to register uploaded files')
-        return
-      }
-
-      setSuccess('Model uploaded successfully')
-      if (slug) {
-        const params = new URLSearchParams({ slug })
-        router.push(`/upload/success?${params.toString()}`)
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Upload failed — please try again')
+      setDrafts(Array.isArray(json.drafts) ? json.drafts : [])
+    } catch {
+      setError('Failed to load drafts')
     } finally {
       setLoading(false)
-      setProgressText(null)
+    }
+  }, [])
+
+  React.useEffect(() => {
+    if (session.mode === 'idle') {
+      loadDrafts()
+    }
+  }, [session.mode, loadDrafts])
+
+  const exitSession = React.useCallback(() => setSession({ mode: 'idle' }), [])
+
+  // Drafts are models rows, so deletion reuses the owner-gated model delete
+  // endpoint, which removes the row and cleans up the stored files.
+  const handleConfirmDelete = async () => {
+    const target = pendingDelete
+    if (!target) return
+    setDeleting(true)
+    setError(null)
+    try {
+      const res = await fetch(`/api/models/${encodeURIComponent(target.slug)}`, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error || 'Delete failed. Please try again.')
+      }
+      setDrafts((current) => current.filter((draft) => draft.id !== target.id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed. Please try again.')
+    } finally {
+      setPendingDelete(null)
+      setDeleting(false)
     }
   }
 
   return (
     <DashboardShell
-      title="Upload a new model"
-      description="Share verified, printable parts with the community."
+      title="Upload a part"
+      description="Publish a part you designed. The registry hosts the files and keeps them downloadable."
     >
-      <Grid columns={12}>
-        <div className="col-span-12 space-y-md">
+      {session.mode === 'idle' && (
+        <div className="space-y-md">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-medium text-text-primary">Unfinished parts</h2>
+            <Button onClick={() => setSession({ mode: 'new' })}>Upload a new part</Button>
+          </div>
+
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-md text-sm text-destructive">
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
               {error}
-              {issues.length > 0 && (
-                <ul className="mt-xs list-disc space-y-1 pl-md">
-                  {issues.map((issue, idx) => (
-                    <li key={`${issue.field}-${idx}`}>{issue.message || 'Invalid field'}</li>
-                  ))}
-                </ul>
-              )}
             </div>
           )}
 
-          {success && (
-            <div className="rounded-lg border border-emerald-400/50 bg-emerald-50 p-md text-sm text-emerald-800">
-              {success}
+          {loading ? (
+            <p className="text-sm text-text-secondary">Loading drafts…</p>
+          ) : drafts.length === 0 ? (
+            <Card>
+              <CardContent className="pt-md">
+                <p className="text-sm text-text-secondary">
+                  Nothing in progress. Start a part — your work is saved at every step, so you can
+                  stop and come back.
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-sm">
+              {drafts.map((draft) => (
+                <Card key={draft.id}>
+                  <CardHeader className="space-y-0">
+                    <CardTitle className="text-base">{draft.name}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="flex items-center justify-between gap-sm">
+                    <div className="flex min-w-0 items-center gap-sm">
+                      {draft.thumbnail_url && (
+                        <div className="relative h-2xl w-2xl shrink-0 overflow-hidden rounded-md border border-border-subtle bg-bg-subtle">
+                          <Image
+                            src={draft.thumbnail_url}
+                            alt=""
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <p className="min-w-0 truncate text-sm text-text-secondary">
+                        {draft.updated_at ? `Last edited ${formatRelativeTime(draft.updated_at)}` : 'Draft'}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-2xs">
+                      <Button variant="secondary" onClick={() => setSession({ mode: 'resume', draftId: draft.id })}>
+                        Resume
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete ${draft.name}`}
+                        onClick={() => setPendingDelete(draft)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
             </div>
-          )}
-
-          <ModelUploadForm onSubmit={handleSubmit} loading={loading} />
-          {progressText && loading && (
-            <p className="text-sm text-text-secondary">{progressText}</p>
           )}
         </div>
-      </Grid>
+      )}
+
+      {session.mode !== 'idle' && (
+        <UploadTool
+          draftId={session.mode === 'resume' ? session.draftId : null}
+          onExit={exitSession}
+        />
+      )}
+
+      <ConfirmationDialog
+        open={pendingDelete !== null}
+        title="Delete draft"
+        description={`Are you sure you want to delete the draft "${pendingDelete?.name}"? Any files you uploaded are removed. This action cannot be undone.`}
+        confirmLabel="Delete"
+        loadingLabel="Deleting…"
+        onConfirm={handleConfirmDelete}
+        onCancel={() => {
+          if (!deleting) setPendingDelete(null)
+        }}
+        loading={deleting}
+      />
     </DashboardShell>
   )
 }

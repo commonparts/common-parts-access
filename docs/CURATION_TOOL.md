@@ -6,6 +6,8 @@ The curation tool is an internal, dashboard-only interface for turning an extern
 
 It is a **judged, unitary** flow — one part at a time, no bulk import, no auto-publish. Publication is gated by a server-enforced blocking checklist: a part failing any criterion cannot go live regardless of client state.
 
+> **Curation vs. upload.** Curation covers the two ways a part *references someone else's publication*: files hosted here under an open license, or left at the source under NC/ND. A contributor publishing **their own design** uses the public [upload flow](UPLOAD_FLOW.md) instead. The two are kept apart at the query level — every curation query is scoped to `origin_type = 'curated'`, every upload query to `'original'` — so neither flow can touch the other's drafts.
+
 **Route:** `/curation` (under the `(dashboard)` route group). Protected by `lib/supabase/middleware.ts` (`/curation` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/curation`. In Phase 0 there is no separate curator role — any authenticated user may curate (decision 2026-07-17).
 
 > **Scope note.** The product-family concept referenced in the original issue was cancelled before implementation (the `flatten_products` migration removed `parent_id`/`product_kind`/`compatibility_status`). Entity assignment is **brand + flat product** only; there is no family selection and no per-product compatibility status.

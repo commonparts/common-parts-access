@@ -151,8 +151,10 @@ export const API_ENDPOINTS = {
     SEARCH: '/api/models/search',
     CATEGORIES: '/api/models/categories',
     FEATURED: '/api/models/featured',
-    POPULAR: '/api/models/popular',
-    UPLOAD: '/api/models/upload'
+    POPULAR: '/api/models/popular'
+  },
+  UPLOAD: {
+    DRAFTS: '/api/upload/drafts'
   },
   USERS: {
     BASE: '/api/users',
