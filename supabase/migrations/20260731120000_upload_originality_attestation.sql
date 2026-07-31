@@ -14,7 +14,10 @@
 --
 -- The publish gate (attested + license + files + product + category) is
 -- enforced in the application publish endpoint. The CHECK below only keeps the
--- pair internally consistent — a set flag always carries its timestamp.
+-- pair internally consistent, in both directions: the flag and the timestamp
+-- are set together or not at all. A timestamp without a flag would date a
+-- declaration nobody made, which is the same kind of unsound record the
+-- constraint exists to prevent.
 --
 -- NOT YET APPLIED. Run in the Supabase SQL editor before merging the PR.
 
@@ -36,7 +39,7 @@ begin
   ) then
     alter table public.models
       add constraint models_originality_attested_requires_timestamp
-      check (not originality_attested or originality_attested_at is not null);
+      check (originality_attested = (originality_attested_at is not null));
   end if;
 end
 $$;

@@ -153,9 +153,6 @@ export const API_ENDPOINTS = {
     FEATURED: '/api/models/featured',
     POPULAR: '/api/models/popular'
   },
-  UPLOAD: {
-    DRAFTS: '/api/upload/drafts'
-  },
   USERS: {
     BASE: '/api/users',
     PROFILE: '/api/users/profile',

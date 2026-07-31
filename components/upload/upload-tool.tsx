@@ -326,6 +326,11 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
     [form.licenses],
   )
 
+  // The storage path needs the draft and the owner id, and the owner id
+  // arrives from an async auth call — so there is a window on the files step
+  // where an upload would silently do nothing. Gate the button on it instead.
+  const uploadReady = Boolean(draftId && draftSlug && userId)
+
   const partStepReady =
     formData.title.trim().length >= VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH &&
     formData.categoryId.length > 0 &&
@@ -540,12 +545,18 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
               <div className="flex items-center gap-sm">
                 <Button
                   onClick={handleUploadFiles}
-                  disabled={uploadingFiles || (formData.files.length === 0 && formData.thumbnails.length === 0)}
+                  disabled={
+                    uploadingFiles ||
+                    !uploadReady ||
+                    (formData.files.length === 0 && formData.thumbnails.length === 0)
+                  }
                 >
                   {uploadingFiles ? 'Uploading…' : 'Upload selected files'}
                 </Button>
                 <p className="text-sm text-text-secondary">
-                  Files are stored as soon as you upload them — you can leave and come back.
+                  {uploadReady
+                    ? 'Files are stored as soon as you upload them — you can leave and come back.'
+                    : 'Preparing the upload session…'}
                 </p>
               </div>
             </CardContent>
@@ -846,13 +857,15 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
                   <Label htmlFor="upload-product">Compatible products *</Label>
                   <Combobox
                     id="upload-product"
+                    // A category is mandatory to create the draft, so products
+                    // are always searchable here — narrowed by category, and
+                    // further by brand once one is picked. There is no
+                    // "select something first" state to describe.
                     placeholder={form.loadingProducts
                       ? 'Loading products…'
                       : formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
                         ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
-                        : (!formData.brandId && !formData.categoryId)
-                          ? 'Select a brand first'
-                          : 'Search and add a product'}
+                        : 'Search and add a product'}
                     options={form.products
                       .filter((p) => !formData.productIds.includes(p.id))
                       .map((p) => ({ id: p.id, name: p.name, categoryId: p.category_id ?? '' }))}
@@ -866,8 +879,7 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
                     onOpenChange={form.setProductOpen}
                     disabled={
                       form.loadingProducts ||
-                      formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT ||
-                      (!formData.brandId && !formData.categoryId)
+                      formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
                     }
                     emptyMessage={form.productSearch ? 'No matching products' : 'No products found'}
                   />
