@@ -23,6 +23,11 @@
 -- instruction. Verified after applying: both columns present, the CHECK
 -- rejects each inconsistent direction, the index exists, and all 12 existing
 -- rows carry the (false, null) default untouched.
+--
+-- The filename timestamp is the version schema_migrations actually recorded
+-- (20260731134450), not the one this file was drafted under: apply_migration
+-- stamps its own. They must match, or `supabase db push` reads this as
+-- un-applied and runs it again.
 
 alter table public.models
   add column if not exists originality_attested boolean not null default false,
