@@ -592,7 +592,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {model.originType === 'curated' ? 'Curated by' : 'Created by'}
+                  {model.originType === 'curated' ? 'Referenced by' : 'Created by'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
