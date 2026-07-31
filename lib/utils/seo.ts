@@ -14,9 +14,10 @@ import type { ModelSeoData } from '@/types/models'
 const SEO_DESCRIPTION_MAX_LENGTH = 160
 
 /** Canonical URL for a part page (public route is /parts — issue #258). */
-export function modelCanonicalUrl(slug: string): string {
+function modelCanonicalUrl(slug: string): string {
   return absoluteAppUrl(`/parts/${slug}`)
 }
+
 
 /**
  * "Bosch MUM5" — the brand + product the part fits, from the first linked

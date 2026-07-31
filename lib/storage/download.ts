@@ -128,17 +128,3 @@ export async function downloadAllModelFiles(files: ModelFile[], modelSlug: strin
   }
 }
 
-/**
- * Get download statistics
- */
-export async function getDownloadStats(modelSlug: string) {
-  try {
-    const response = await fetch(`/api/models/${modelSlug}/stats`)
-    if (response.ok) {
-      return await response.json()
-    }
-  } catch (error) {
-    console.error('Failed to fetch download stats:', error)
-  }
-  return null
-}

@@ -15,7 +15,6 @@ export * from './utils/slug'
 export * from './utils/validation'
 export * from './utils/formatters'
 export * from './utils/constants'
-export * from './utils/api'
 
 // Performance utilities (keeping these in main file for now)
 
@@ -58,123 +57,10 @@ export function throttle<TArgs extends unknown[]>(
   }
 }
 
-/**
- * Deep clone an object
- * @param obj - Object to clone
- * @returns Cloned object
- */
-export function deepClone<T>(obj: T): T {
-  if (obj === null || typeof obj !== "object") return obj
-  if (obj instanceof Date) return new Date(obj.getTime()) as unknown as T
-  if (obj instanceof Array) return obj.map(item => deepClone(item)) as unknown as T
-  if (typeof obj === "object") {
-    const cloned = {} as T
-    for (const key in obj) {
-      if (obj.hasOwnProperty(key)) {
-        cloned[key] = deepClone(obj[key])
-      }
-    }
-    return cloned
-  }
-  return obj
-}
 
-/**
- * Generate random string
- * @param length - Length of the string
- * @param chars - Characters to use (default: alphanumeric)
- * @returns Random string
- */
-export function randomString(length: number, chars: string = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'): string {
-  let result = ''
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return result
-}
 
-/**
- * Generate a random ID
- * @param length - Length of the ID (default: 8)
- * @returns Random string ID
- */
-export function generateId(length: number = 8): string {
-  return Math.random()
-    .toString(36)
-    .substring(2, 2 + length)
-}
 
-/**
- * Sleep/delay function
- * @param ms - Milliseconds to sleep
- * @returns Promise that resolves after the delay
- */
-export function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
-}
 
-/**
- * Remove duplicates from array
- * @param array - Array with potential duplicates
- * @param key - Key to compare for objects (optional)
- * @returns Array without duplicates
- */
-export function removeDuplicates<T>(array: T[], key?: keyof T): T[] {
-  if (key) {
-    const seen = new Set()
-    return array.filter(item => {
-      const value = item[key]
-      if (seen.has(value)) return false
-      seen.add(value)
-      return true
-    })
-  }
-  return [...new Set(array)]
-}
 
-/**
- * Chunk array into smaller arrays
- * @param array - Array to chunk
- * @param size - Size of each chunk
- * @returns Array of chunks
- */
-export function chunkArray<T>(array: T[], size: number): T[][] {
-  const chunks: T[][] = []
-  for (let i = 0; i < array.length; i += size) {
-    chunks.push(array.slice(i, i + size))
-  }
-  return chunks
-}
 
-/**
- * Group array by key
- * @param array - Array to group
- * @param key - Key to group by
- * @returns Grouped object
- */
-export function groupBy<T>(array: T[], key: keyof T): Record<string, T[]> {
-  return array.reduce((groups, item) => {
-    const group = String(item[key])
-    groups[group] = groups[group] || []
-    groups[group].push(item)
-    return groups
-  }, {} as Record<string, T[]>)
-}
 
-/**
- * Check if file type is allowed
- * @param file - File to check
- * @param allowedTypes - Array of allowed MIME types or extensions
- * @returns True if file type is allowed
- */
-export function isFileTypeAllowed(file: File, allowedTypes: string[]): boolean {
-  const fileType = file.type.toLowerCase()
-  const filename = file.name.toLowerCase()
-  
-  return allowedTypes.some(type => {
-    if (type.startsWith('.')) {
-      return filename.endsWith(type.toLowerCase())
-    }
-    return fileType.includes(type.toLowerCase())
-  })
-}
