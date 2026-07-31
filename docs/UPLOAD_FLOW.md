@@ -50,7 +50,9 @@ Short description, instructions, tags, and print metadata (material, colour, dim
 
 Brand autocomplete (read-only list — brands are curated directly in the DB) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 
-At least one product is **required to publish**: a spare part with no product attached is unreachable through the device-based navigation of Flow P2, so it would be published and unfindable.
+**A brand and at least one product are required to publish.** Flow P2 descends brand → product → part, so a part missing either is published and unfindable. Brand comes first in the UI and gates the product picker: products are scoped to the brand, and changing the brand clears the selection, so offering the picker earlier would only invite choices the next click throws away.
+
+The gate additionally checks that every linked product **belongs to the selected brand**. The UI cannot produce a mismatch on its own — changing the brand clears the products — but a brand changed after the fact through the API could, and a part filed under one brand while fitting another's products sits at the wrong place in the browse tree.
 
 The curator-facing demand panel is deliberately absent — open part-request counts steer curation priorities, and are not a contributor's concern.
 
@@ -67,9 +69,10 @@ The review screen renders the **actual part page** (`components/model/model-deta
 3. The originality declaration is recorded.
 4. A license is set and it is hostable (commercial + modification, no NC/ND).
 5. At least one registered model file.
-6. At least one linked product.
+6. A brand is set.
+7. At least one linked product, and every one of them belongs to that brand.
 
-The review step also mirrors conditions 5 and 6 locally so a blocked publish can be explained before the round trip — the server stays the authority.
+The review step also mirrors the file, brand and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
 
 ## Flow narrowing
 

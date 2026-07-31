@@ -341,6 +341,7 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
   // before the round trip. The server remains the authority.
   const missingForPublish = [
     modelFileCount < 1 ? 'at least one model file' : null,
+    !formData.brandId ? 'a brand' : null,
     formData.productIds.length < 1 ? 'at least one compatible product' : null,
   ].filter((item): item is string => item !== null)
 
@@ -826,13 +827,13 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
             </CardHeader>
             <CardContent className="space-y-md">
               <p className="text-sm text-text-secondary">
-                A spare part is found by the device it repairs. At least one compatible product is
-                required to publish.
+                A spare part is found by the device it repairs: visitors browse brand, then product,
+                then parts. Both are required to publish.
               </p>
 
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="upload-brand">Brand</Label>
+                  <Label htmlFor="upload-brand">Brand *</Label>
                   <Combobox
                     id="upload-brand"
                     placeholder={form.loadingMeta ? 'Loading brands…' : 'Search brands'}
@@ -857,15 +858,17 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
                   <Label htmlFor="upload-product">Compatible products *</Label>
                   <Combobox
                     id="upload-product"
-                    // A category is mandatory to create the draft, so products
-                    // are always searchable here — narrowed by category, and
-                    // further by brand once one is picked. There is no
-                    // "select something first" state to describe.
+                    // Brand comes first: products are scoped to it, and
+                    // changing the brand clears the selection — so offering
+                    // the picker before a brand exists would only invite
+                    // choices the next click throws away.
                     placeholder={form.loadingProducts
                       ? 'Loading products…'
-                      : formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
-                        ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
-                        : 'Search and add a product'}
+                      : !formData.brandId
+                        ? 'Select a brand first'
+                        : formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
+                          ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
+                          : 'Search and add a product'}
                     options={form.products
                       .filter((p) => !formData.productIds.includes(p.id))
                       .map((p) => ({ id: p.id, name: p.name, categoryId: p.category_id ?? '' }))}
@@ -879,6 +882,7 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
                     onOpenChange={form.setProductOpen}
                     disabled={
                       form.loadingProducts ||
+                      !formData.brandId ||
                       formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
                     }
                     emptyMessage={form.productSearch ? 'No matching products' : 'No products found'}
