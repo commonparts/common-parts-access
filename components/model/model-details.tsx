@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
@@ -915,10 +916,20 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium line-clamp-2">{p.name}</div>
+                      <Link
+                        href={`/product/${p.slug}`}
+                        className="block font-medium line-clamp-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                      >
+                        {p.name}
+                      </Link>
                       {p.brand && (
                         <div className="flex items-center gap-2 mt-2">
-                          <span className="text-sm font-medium">{p.brand.name}</span>
+                          <Link
+                            href={`/brands/${p.brand.slug}`}
+                            className="text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                          >
+                            {p.brand.name}
+                          </Link>
                           {p.brand.verified && (
                             <Badge variant="secondary" className="text-xs">
                               ✓ Verified
