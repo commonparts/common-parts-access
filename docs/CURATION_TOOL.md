@@ -8,21 +8,23 @@ It is a **judged, unitary** flow — one part at a time, no bulk import, no auto
 
 > **Curation vs. upload.** Curation covers the two ways a part *references someone else's publication*: files hosted here under an open license, or left at the source under NC/ND. A contributor publishing **their own design** uses the public [upload flow](UPLOAD_FLOW.md) instead. The two are kept apart at the query level — every curation query is scoped to `origin_type = 'curated'`, every upload query to `'original'` — so neither flow can touch the other's drafts.
 
-**Route:** `/curation` (under the `(dashboard)` route group). Protected by `lib/supabase/middleware.ts` (`/curation` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/curation`. In Phase 0 there is no separate curator role — any authenticated user may curate (decision 2026-07-17).
+**Route:** `/publish` (under the `(dashboard)` route group), shared with the original track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. There is no curator role — any authenticated user may publish on either track (decision 2026-07-17). The former `/curation` route is removed, not redirected.
 
 > **Scope note.** The product-family concept referenced in the original issue was cancelled before implementation (the `flatten_products` migration removed `parent_id`/`product_kind`/`compatibility_status`). Entity assignment is **brand + flat product** only; there is no family selection and no per-product compatibility status.
 
 ## Session flow
 
-A session is a 5-step stepper rendered by `components/curation/curation-tool.tsx`. Every step transition **persists to the draft** (see [Persistent drafts](#persistent-drafts)), so an interrupted session is never lost.
+A session is the shared 5-step stepper rendered by `components/publish/elsewhere-track.tsx`, over the shared step components in `components/publish/`. Every step transition **persists to the draft** (see [Persistent drafts](#persistent-drafts)), so an interrupted session is never lost.
 
 | # | Step | Purpose |
 |---|------|---------|
-| 1 | **Source** | Source URL + duplicate check + best-effort pre-fill, title, platform, author, declared source license, and the hosting choice. Creates the draft (and kicks off the source-image import). |
-| 2 | **Checklist** | The six blocking criteria + the optional legal-review flag. Also the rejection recorder. |
-| 3 | **Details** | Short description, instructions, category, publication license, entity assignment (brand/product) with demand context, and print metadata. |
-| 4 | **Flags & files** | Non-blocking completeness flags and file upload (hosted parts). |
-| 5 | **Review** | Renders the real part page against the draft; publish or save as draft. |
+| 1 | **Origin** | Source URL + duplicate check + best-effort pre-fill, title, category, platform, author, declared source license, and the resulting hosting outcome. Creates the draft (and kicks off the source-image import). Carries the `duplicate`, `attribution`, `license` and `eligibility` criteria and the rejection recorder. |
+| 2 | **Files** | File upload for hosted parts, photos for referenced ones. Carries the `file` criterion. |
+| 3 | **Details** | Short description, instructions, tags, publication license, and print metadata. |
+| 4 | **Compatibility** | Brand and product assignment with demand context. Carries the `product_target` criterion. |
+| 5 | **Review** | Renders the real part page against the draft; checklist roll-up, legal-review escalation, publish or save as draft. |
+
+The dedicated Checklist and Flags steps were dissolved in issue #302: the criteria and completeness flags keep their definitions, storage and gate enforcement, and only their rendering location changed — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md) and `lib/publish/placement.ts`.
 
 ### 1. Source
 
@@ -66,12 +68,12 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 - **Text fields:** short description, instructions, category (drill-down), publication license. The publication-license select defaults to the declared source license and stays editable.
 - **Entity assignment:** brand autocomplete (read-only list — brands are curated directly in the DB, not created here) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
-- **Demand context:** `components/curation/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
+- **Demand context:** `components/publish/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
 - **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Applies to hosted and link-out parts alike. Serialized by the shared `serializeModelMetadata` in `lib/utils/model-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
 
 ### 4. Non-blocking flags & files
 
-- **Completeness flags** (`components/curation/flags-panel.tsx`), defined in `CURATION_FLAGS`: `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
+- **Completeness flags**, defined in `CURATION_FLAGS` and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
 - **Files:** hosted parts upload STL/3MF/STEP model files and photos through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/models/[slug]/files`), which bypasses the Vercel body-size limit. Link-out parts upload no model files (they stay at the source); photos are still allowed.
 - **Image previews.** Registered images (imported or uploaded) are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — so it is obvious the gallery is in place rather than an opaque count. Both `POST /api/models/[slug]/files` and the import endpoint return the model's `images` list so the grid updates without a refetch.
 
@@ -110,7 +112,7 @@ A declared **NC/ND source license forces `link_out`**: the tool auto-switches ho
 
 - A draft is a `models` row with `origin_type = 'curated'` and `status = 'draft'`.
 - Created on the Source step; every later step transition sends a partial `PATCH /api/curation/drafts/[id]` (autosave). Only the fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
-- The drafts list (`GET /api/curation/drafts`) shows the curator's open curated drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, checklist, flags, hosting type, metadata and registered images from `GET /api/curation/drafts/[id]`, then opens at the Checklist step.
+- The drafts list (`GET /api/curation/drafts`) shows the curator's open curated drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, checklist, flags, hosting type, metadata and registered images from `GET /api/curation/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review.
 - **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/models/[slug]` — it removes the row and cleans up storage, and frees the source URL for a new session (issue #288).
 
 ## API endpoints
@@ -168,11 +170,19 @@ RLS: authenticated users may insert (with `created_by = auth.uid()`) and read.
 
 ```
 app/(dashboard)/curation/page.tsx          Drafts list + session launcher
-components/curation/
-  curation-tool.tsx                         The 5-step stepper orchestrator
-  blocking-checklist.tsx                    Checklist v1 + legal-review flag
-  flags-panel.tsx                           Non-blocking completeness flags
+components/publish/
+  elsewhere-track.tsx                       The 5-step stepper orchestrator
+  legal-review-escalation.tsx               Legal-review flag + justification
+  checklist-rollup.tsx                      Review roll-up of the six criteria
+  judgement-checkbox.tsx                    One criterion or flag, rendered inline
+  rejection-recorder.tsx                    Rejection traceability entry point
   demand-panel.tsx                          Read-only part_requests demand context
+  files-step.tsx, details-step.tsx,         Steps shared with the original track
+  compatibility-step.tsx, review-step.tsx
+lib/publish/
+  steps.ts                                  Step labels, indices, resume rule
+  placement.ts                               Which step renders which judgement
+  blockers.ts                               Local mirrors of both publish gates
 lib/curation/
   checklist.ts                              Criteria + flags definitions (single source of truth)
   prefill.ts                                Source-URL pre-fill orchestration (Printables extractor)

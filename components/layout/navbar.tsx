@@ -54,7 +54,7 @@ export default async function Navbar() {
           )}
 
           <Button asChild variant="default" size="sm" className="font-medium">
-            <Link href="/upload">Publish a part</Link>
+            <Link href="/publish">Publish a part</Link>
           </Button>
         </div>
 
