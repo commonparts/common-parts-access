@@ -439,8 +439,13 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         <div className="col-span-12 lg:col-span-5 space-y-md">
           <div className="space-y-xs">
-            <Badge variant="outline" title={publication.description}>
+            {/* The badge is a one-word summary, so what it means is carried as
+                visually hidden text rather than a title attribute — keyboard
+                users and most screen readers never surface a tooltip. It is
+                absolutely positioned, so it is not a flex item and adds no gap. */}
+            <Badge variant="outline">
               {publication.badge}
+              <span className="sr-only"> — {publication.description}</span>
             </Badge>
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{model.name}</h1>
             {model.originType === 'curated' && model.originalAuthor && (
@@ -599,11 +604,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {/* The account that brought the part into the registry. On the
-                      elsewhere track that is not the designer — the original
-                      author is credited under the title — so the label stays
-                      neutral rather than claiming authorship (#299). */}
-                  {model.originType === 'curated' ? 'Added by' : 'Created by'}
+                  {model.originType === 'curated' ? 'Referenced by' : 'Created by'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
