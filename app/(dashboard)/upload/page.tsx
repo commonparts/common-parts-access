@@ -25,8 +25,9 @@ type Session = { mode: 'idle' } | { mode: 'new' } | { mode: 'resume'; draftId: s
  * registry hosts. Opens on the contributor's unfinished drafts so an
  * interrupted session can be picked up where it stopped.
  *
- * Parts that live on another platform are not uploaded here — they go through
- * the internal curation flow, which owns source attribution and link-out.
+ * Parts already published on another platform do not belong here — they go
+ * through the elsewhere track, which owns source attribution and the choice
+ * between hosting the files and referencing them at the source.
  */
 export default function UploadPage() {
   const [session, setSession] = React.useState<Session>({ mode: 'idle' })
@@ -86,14 +87,14 @@ export default function UploadPage() {
 
   return (
     <DashboardShell
-      title="Upload a part"
-      description="Publish a part you designed. The registry hosts the files and keeps them downloadable."
+      title="Publish a part you designed"
+      description="Publish your own design here for the first time. Common Parts hosts the files and keeps them downloadable."
     >
       {session.mode === 'idle' && (
         <div className="space-y-md">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-text-primary">Unfinished parts</h2>
-            <Button onClick={() => setSession({ mode: 'new' })}>Upload a new part</Button>
+            <Button onClick={() => setSession({ mode: 'new' })}>Start a new part</Button>
           </div>
 
           {error && (

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
+import { describePublication } from "@/lib/utils/publication"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -381,6 +382,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     ...model.images,
   ].filter(Boolean))])
 
+  // How the part entered the registry, in the reader's vocabulary (#301).
+  const publication = describePublication(model.originType, model.fileHostingType)
+
   // File filtering is now handled by ModelFileList component
 
   return (
@@ -435,6 +439,14 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         <div className="col-span-12 lg:col-span-5 space-y-md">
           <div className="space-y-xs">
+            {/* The badge is a one-word summary, so what it means is carried as
+                visually hidden text rather than a title attribute — keyboard
+                users and most screen readers never surface a tooltip. It is
+                absolutely positioned, so it is not a flex item and adds no gap. */}
+            <Badge variant="outline">
+              {publication.badge}
+              <span className="sr-only"> — {publication.description}</span>
+            </Badge>
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{model.name}</h1>
             {model.originType === 'curated' && model.originalAuthor && (
               <p className="text-body text-text-secondary">
@@ -592,7 +604,12 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {model.originType === 'curated' ? 'Referenced by' : 'Created by'}
+                  {/* "Added by", not "Referenced by": the badge above reserves
+                      *Referenced* for a part whose files stay at the source, so
+                      reusing it here would label a Hosted part as referenced.
+                      This card names the account that brought the part in — the
+                      original author is credited under the title. */}
+                  {model.originType === 'curated' ? 'Added by' : 'Created by'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">

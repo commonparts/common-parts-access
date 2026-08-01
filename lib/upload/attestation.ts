@@ -28,7 +28,7 @@ export const ATTESTATION_CLAUSES: readonly AttestationClause[] = [
   },
   {
     key: 'hosting',
-    text: 'The files are published here, not linked from another platform. Parts that live elsewhere are added through curation, not upload.',
+    text: 'The files are published here, not linked from another platform. A part already published elsewhere — including on your own site or repository — is published through the elsewhere track instead, with you credited as the original author.',
   },
 ] as const
 

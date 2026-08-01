@@ -27,8 +27,9 @@ function checkedCount(checklist: CurationChecklist): number {
 }
 
 /**
- * Internal curation tool (Flow P3): pick up an interrupted draft or start a
- * new guided session. Dashboard-protected; not linked from public navigation.
+ * The elsewhere track (Flow P3): publish a part already published on another
+ * platform. Pick up an interrupted draft or start a new guided session.
+ * Dashboard-protected; open to any authenticated user (decision 2026-07-17).
  */
 export default function CurationPage() {
   const [session, setSession] = React.useState<Session>({ mode: 'idle' })
@@ -88,14 +89,14 @@ export default function CurationPage() {
 
   return (
     <DashboardShell
-      title="Curation"
-      description="Guided intake of external parts: checklist, entities, demand, files, review."
+      title="Publish a part from elsewhere"
+      description="Add a part already published on another platform, crediting its original author. Common Parts hosts the files when the license allows it, and links to the source when it does not."
     >
       {session.mode === 'idle' && (
         <div className="space-y-md">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-medium text-text-primary">Open drafts</h2>
-            <Button onClick={() => setSession({ mode: 'new' })}>Start a curation session</Button>
+            <Button onClick={() => setSession({ mode: 'new' })}>Start a new part</Button>
           </div>
 
           {error && (
@@ -110,7 +111,7 @@ export default function CurationPage() {
             <Card>
               <CardContent className="pt-md">
                 <p className="text-sm text-text-secondary">
-                  No open curation drafts. Start a session with a source URL — progress is saved at every step.
+                  Nothing in progress. Start with the URL where the part is published — your work is saved at every step, so you can stop and come back.
                 </p>
               </CardContent>
             </Card>

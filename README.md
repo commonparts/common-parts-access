@@ -10,7 +10,7 @@ It is the first official interface of the [Common Parts](https://commonparts.org
 
 ## What this is
 
-Common Parts Access is a structured registry where spare part models can be published, discovered, and downloaded. Contributors can publish original models or curate existing open-licensed parts from external platforms (Printables, Thingiverse, GitHub, etc.) with full attribution to original authors.
+Common Parts Access is a structured registry where spare part models can be published, discovered, and downloaded. Contributors can publish their own designs, or add parts already published on external platforms (Printables, Thingiverse, GitHub, etc.) with full attribution to original authors.
 
 The platform is currently in active development (Phase 0 — MVP). It is functional and live.
 
@@ -63,7 +63,7 @@ Code contributions are not solicited at this stage. The codebase is maintained b
 
 **What you can do:**
 
-- [Publish a part](https://access.commonparts.org/upload) — whether you designed it or curated it from an existing source
+- [Publish a part](https://access.commonparts.org/upload) — whether you designed it or found it already published elsewhere
 - Report a bug or share feedback using the feedback button at the bottom right of the app
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
