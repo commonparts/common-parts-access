@@ -16,7 +16,7 @@ const footerColumns: FooterColumn[] = [
     title: "Platform",
     links: [
       { label: "Browse parts", href: "/browse" },
-      { label: "Publish a part", href: "/upload" },
+      { label: "Publish a part", href: "/publish" },
       { label: "Common Parts", href: "https://commonparts.org" },
       { label: "GitHub", href: "https://github.com/commonparts" },
     ],

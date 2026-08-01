@@ -20,7 +20,7 @@ There are two meaningful ways to contribute to Common Parts:
 
 The most direct contribution is adding a part to the registry.
 
-Go to [access.commonparts.org/upload](https://access.commonparts.org/upload) and follow the guided steps. Your progress is saved at every step, so you can stop and come back.
+Go to [access.commonparts.org/publish](https://access.commonparts.org/publish) and follow the guided steps. Your progress is saved at every step, so you can stop and come back.
 
 One question decides how a part is published: **where does it come from?** Not who designed it — where it is already available. A part you designed but published on your own site or repository comes from elsewhere, and you are still credited as its original author.
 

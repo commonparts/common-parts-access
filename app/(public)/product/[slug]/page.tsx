@@ -155,7 +155,9 @@ function EmptyState({
 
       <div className="flex flex-wrap items-center gap-sm">
         <Button asChild variant="outline">
-          <Link href={`/upload?product=${productId}`}>Contribute a model</Link>
+          {/* The product is picked on the Compatibility step, not carried in
+              the URL — the old ?product= param was never read (#260). */}
+          <Link href="/publish">Publish a part</Link>
         </Button>
       </div>
 

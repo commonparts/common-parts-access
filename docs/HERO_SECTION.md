@@ -6,7 +6,7 @@
 - Icons (UploadCloud, Search) are absolutely positioned at the top-right of their cards with matching offsets.
 
 ## Upload Lane
-- CTA: "Dock a model" links to `/upload` via the shared Button component.
+- CTA: "Publish a part" links to `/publish` via the shared Button component.
 - Purely navigational; no form state. Uses the `use client` hero wrapper.
 
 ## Search Card

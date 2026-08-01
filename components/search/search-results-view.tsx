@@ -90,7 +90,7 @@ export function SearchResultsView({
 
         <div className="flex flex-wrap items-center gap-sm">
           <Button asChild variant="outline">
-            <Link href="/upload">Contribute a model</Link>
+            <Link href="/publish">Publish a part</Link>
           </Button>
           {brandSuggestion && (
             <Button asChild variant="ghost">

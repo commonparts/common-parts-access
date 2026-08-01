@@ -63,7 +63,7 @@ Code contributions are not solicited at this stage. The codebase is maintained b
 
 **What you can do:**
 
-- [Publish a part](https://access.commonparts.org/upload) — whether you designed it or found it already published elsewhere
+- [Publish a part](https://access.commonparts.org/publish) — whether you designed it or found it already published elsewhere
 - Report a bug or share feedback using the feedback button at the bottom right of the app
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for details.

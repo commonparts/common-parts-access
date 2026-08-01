@@ -6,23 +6,23 @@ The upload flow is the **public** contribution path: a contributor publishes a p
 
 That is the whole scope. Of the three ways a part enters the registry, the two that reference someone else's publication — link-out with files hosted here, and link-out with the files left at the source — belong to the [internal curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
 
-**Route:** `/upload` (under the `(dashboard)` route group). Protected by `lib/supabase/middleware.ts` (`/upload` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/upload`. Any authenticated user may upload.
+**Route:** `/publish` (under the `(dashboard)` route group), shared with the elsewhere track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. Any authenticated user may publish. The former `/upload` route is removed, not redirected.
 
 It shares its UX with the curation tool — persistent drafts, a step per concern, a review screen rendering the real part page, and a server-enforced publish gate — because the two flows have the same failure mode: a long form that loses everything when a session breaks.
 
 ## Session flow
 
-A session is a 5-step stepper rendered by `components/upload/upload-tool.tsx`. Every step transition **persists to the draft**, so an interrupted session is never lost.
+A session is the shared 5-step stepper rendered by `components/publish/original-track.tsx`, over the shared step components in `components/publish/`. Every step transition **persists to the draft**, so an interrupted session is never lost.
 
 | # | Step | Purpose |
 |---|------|---------|
-| 1 | **Part** | Title, category, publication license, and the originality declaration. Creates the draft. |
+| 1 | **Origin** | Title, category, publication license, and the originality declaration. Creates the draft. |
 | 2 | **Files** | Model files (STL/3MF/STEP) and photos, uploaded through the three-phase client pipeline. |
 | 3 | **Details** | Short description, instructions, tags, and print metadata. |
 | 4 | **Compatibility** | Brand and compatible products, with product creation available inline. |
 | 5 | **Review** | Renders the real part page against the draft; publish or save as draft. |
 
-### 1. Part
+### 1. Origin
 
 The creation minimum: a title, a category, a hostable license, and the declaration. A draft cannot exist without all four.
 
@@ -93,7 +93,7 @@ Covered by `lib/upload/payload.test.ts`.
 
 - A draft is a `models` row with `origin_type = 'original'` and `status = 'draft'`.
 - Created on the Part step; every later step transition sends a partial `PATCH /api/upload/drafts/[id]` (autosave). Only fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
-- The drafts list (`GET /api/upload/drafts`) shows the contributor's open drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, metadata and registered images from `GET /api/upload/drafts/[id]`, then opens at the Files step.
+- The drafts list (`GET /api/upload/drafts`) shows the contributor's open drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, metadata and registered images from `GET /api/upload/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review.
 - **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/models/[slug]` — it removes the row and cleans up storage.
 
 Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated'` scoping in `queries/curation.ts`. That single filter is what keeps the flows apart: **upload endpoints cannot mutate a curation draft, and curation endpoints cannot mutate an upload draft**, in either direction and regardless of who owns the row.

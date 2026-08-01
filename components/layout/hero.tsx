@@ -84,7 +84,7 @@ export const Hero: React.FC = () => {
                 <CardContent className="pt-0">
                   <div className="flex flex-wrap justify-center gap-sm">
                     <Button asChild>
-                      <a href="/upload">Publish a part</a>
+                      <a href="/publish">Publish a part</a>
                     </Button>
                   </div>
                 </CardContent>

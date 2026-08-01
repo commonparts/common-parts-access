@@ -164,7 +164,7 @@ export default function ContributingPage() {
               <h3 className="text-h4">If you designed it and are publishing it here for the first time</h3>
               <p className="text-text-secondary">
                 This is what{' '}
-                <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
+                <Link href="/publish" className="underline" target="_blank" rel="noopener noreferrer">
                   Publish a part
                 </Link>{' '}
                 is for: your own design, with the files hosted here and kept downloadable. Your progress is saved at
@@ -204,11 +204,9 @@ export default function ContributingPage() {
                 </li>
               </ul>
               <p className="text-text-secondary">
-                Send us the source URL through the feedback widget or at{' '}
-                <Link href="mailto:contact@commonparts.org" className="underline">
-                  contact@commonparts.org
-                </Link>
-                , and tell us which product it fits. Parts from elsewhere are reviewed one at a time.
+                Start from the same place, with the URL where the part is published. Common Parts
+                checks it against what is already indexed, fills in what it can from the source, and
+                asks you to confirm the attribution and the license before anything goes live.
               </p>
             </div>
           </section>
@@ -216,10 +214,11 @@ export default function ContributingPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">After submission</h2>
             <p className="text-text-secondary">
-              A part you publish yourself goes live as soon as it clears the publication checks: a license Common
-              Parts may host under, at least one model file, and at least one product it fits. If something is
-              missing, the review step names it and the part stays a draft until you complete it. A part you sent us
-              from elsewhere is reviewed by the Common Parts team before it is published.
+              A part goes live as soon as it clears the publication checks: a license Common Parts may
+              publish it under, the files it needs, and at least one product it fits. A part from
+              elsewhere additionally requires its attribution and eligibility to be confirmed. If
+              something is missing, the review step names it and the part stays a draft until you
+              complete it — the checks run again on our servers, so nothing skips them.
             </p>
             <p className="text-text-secondary">
               We do not modify your model or its metadata without contacting you. Attribution is permanent and public.
