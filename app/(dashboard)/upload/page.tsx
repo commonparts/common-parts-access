@@ -7,7 +7,7 @@ import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
-import { UploadTool } from '@/components/upload/upload-tool'
+import { OriginalTrack } from '@/components/publish/original-track'
 import { formatRelativeTime } from '@/lib/utils/formatters'
 
 interface DraftListItem {
@@ -160,7 +160,7 @@ export default function UploadPage() {
       )}
 
       {session.mode !== 'idle' && (
-        <UploadTool
+        <OriginalTrack
           draftId={session.mode === 'resume' ? session.draftId : null}
           onExit={exitSession}
         />
