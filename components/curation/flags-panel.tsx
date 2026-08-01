@@ -50,7 +50,7 @@ export function FlagsPanel({ confirmed, onToggle, className }: FlagsPanelProps) 
           </div>
         ))}
         <p className="text-sm text-text-secondary border-t border-border-subtle pt-sm">
-          Unchecked items set the matching <code>needs_*</code> flag on the record — the part stays publishable.
+          Anything left unchecked is recorded as still missing on the part — it stays publishable either way.
         </p>
       </CardContent>
     </Card>

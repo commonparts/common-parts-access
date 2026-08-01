@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
+import { describePublication } from "@/lib/utils/publication"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -381,6 +382,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
     ...model.images,
   ].filter(Boolean))])
 
+  // How the part entered the registry, in the reader's vocabulary (#301).
+  const publication = describePublication(model.originType, model.fileHostingType)
+
   // File filtering is now handled by ModelFileList component
 
   return (
@@ -435,6 +439,9 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
 
         <div className="col-span-12 lg:col-span-5 space-y-md">
           <div className="space-y-xs">
+            <Badge variant="outline" title={publication.description}>
+              {publication.badge}
+            </Badge>
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{model.name}</h1>
             {model.originType === 'curated' && model.originalAuthor && (
               <p className="text-body text-text-secondary">
@@ -592,7 +599,11 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {model.originType === 'curated' ? 'Curated by' : 'Created by'}
+                  {/* The account that brought the part into the registry. On the
+                      elsewhere track that is not the designer — the original
+                      author is credited under the title — so the label stays
+                      neutral rather than claiming authorship (#299). */}
+                  {model.originType === 'curated' ? 'Added by' : 'Created by'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">

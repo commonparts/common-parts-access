@@ -47,7 +47,7 @@ const numToStr = (value: number | null | undefined): string =>
  * persists to the draft, so an interrupted session loses nothing.
  *
  * The flow deliberately exposes no origin, hosting or verification control —
- * a part sourced from another platform belongs to the curation flow, and the
+ * a part sourced from another platform belongs to the elsewhere track, and the
  * upload endpoints reject a payload that tries to set any of them.
  */
 export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps) {
@@ -346,7 +346,7 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
   ].filter((item): item is string => item !== null)
 
   if (hydrating) {
-    return <p className="text-sm text-text-secondary">Loading upload session…</p>
+    return <p className="text-sm text-text-secondary">Loading your draft…</p>
   }
 
   return (
@@ -420,8 +420,8 @@ export function UploadTool({ draftId: initialDraftId, onExit }: UploadToolProps)
                   ))}
                 </DropdownInput>
                 <p className="text-sm text-text-secondary">
-                  The registry hosts your files, so the license must allow commercial use and modification.
-                  Licenses with NC or ND restrictions are not offered here.
+                  Common Parts hosts and redistributes your files, so the license must allow commercial use
+                  and modification. Licenses with NC or ND restrictions cannot be offered on this track.
                 </p>
               </div>
             </CardContent>

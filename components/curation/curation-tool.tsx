@@ -86,7 +86,7 @@ interface HostingSelectProps {
 function HostingSelect({ id, value, onChange, hostedDisabled }: HostingSelectProps) {
   return (
     <div className="space-y-2xs">
-      <Label htmlFor={id}>File hosting *</Label>
+      <Label htmlFor={id}>Where the files live *</Label>
       <DropdownInput
         as="select"
         id={id}
@@ -95,16 +95,16 @@ function HostingSelect({ id, value, onChange, hostedDisabled }: HostingSelectPro
         required
       >
         <option value="hosted" disabled={hostedDisabled}>
-          Host files here — whitelist licenses only (no NC/ND)
+          Hosted on Common Parts — open licenses only (no NC or ND)
         </option>
-        <option value="link_out">Link out to the source — NC/ND licenses allowed</option>
+        <option value="link_out">Referenced at the source — NC and ND licenses allowed</option>
       </DropdownInput>
       <p className="text-sm text-text-secondary">
         {hostedDisabled
-          ? 'The declared source license is NC/ND — the files cannot be hosted here, only linked out at the source.'
+          ? 'The declared source license carries NC or ND terms, which do not permit redistribution — Common Parts will link to the source instead of hosting the files.'
           : value === 'link_out'
-            ? 'Files stay on the source platform; the source platform (source step) is required and its domain must match the source URL.'
-            : 'Hosting requires a license that allows commercial use and redistribution.'}
+            ? 'The files stay where they are published; the source platform is required above, and its domain must match the source URL.'
+            : 'Hosting the files here requires a license that allows commercial use and redistribution.'}
       </p>
     </div>
   )
@@ -584,7 +584,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
     !duplicate
 
   if (hydrating) {
-    return <p className="text-sm text-text-secondary">Loading curation session…</p>
+    return <p className="text-sm text-text-secondary">Loading your draft…</p>
   }
 
   if (rejected) {
@@ -595,7 +595,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
           <p className="text-sm text-text-secondary">
             The reason and failed criteria are traced in the rejection log. The draft, if one was created, remains available in your drafts.
           </p>
-          <Button onClick={onExit}>Back to curation</Button>
+          <Button onClick={onExit}>Back to drafts</Button>
         </CardContent>
       </Card>
     )
@@ -879,8 +879,8 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                 </DropdownInput>
                 <p className="text-sm text-text-secondary">
                   {isLinkOut
-                    ? 'Link-out part: NC/ND licenses are allowed — the files are never hosted here.'
-                    : 'Only whitelist licenses (no NC/ND) are offered — hosting requires them.'}
+                    ? 'This part is referenced at its source, so NC and ND licenses are allowed — the files are never hosted here.'
+                    : 'Only licenses allowing commercial use and modification are offered — hosting the files here requires them.'}
                 </p>
               </div>
             </CardContent>
@@ -1177,7 +1177,7 @@ export function CurationTool({ draftId: initialDraftId, onExit }: CurationToolPr
                   <div className="space-y-2xs">
                     <Label>Model files</Label>
                     <p className="rounded-md border border-border-subtle bg-bg-subtle p-sm text-sm text-text-secondary">
-                      Link-out part: the model files stay on the source platform and are never uploaded here. Verify at the source that they open correctly.
+                      This part is referenced: the model files stay at the source and are never uploaded here. Check at the source that they open correctly.
                     </p>
                   </div>
                 ) : (

@@ -25,12 +25,12 @@ export const CURATION_BLOCKING_CRITERIA: readonly CurationCriterion[] = [
   {
     key: 'license',
     label: 'License verified',
-    description: 'SPDX license identified. Hosting requires the whitelist (no NC/ND); NC/ND parts must link out to the source instead of hosting files.',
+    description: 'SPDX license identified. Hosting the files here requires a license allowing commercial use and modification; NC or ND terms mean the part is referenced at its source instead.',
   },
   {
     key: 'file',
     label: 'Valid file',
-    description: 'STL, 3MF or STEP file present — uploaded here, or verified at the source for link-out — and opens correctly in a viewer or slicer.',
+    description: 'STL, 3MF or STEP file present — uploaded here, or checked at the source for a referenced part — and opens correctly in a viewer or slicer.',
   },
   {
     key: 'attribution',

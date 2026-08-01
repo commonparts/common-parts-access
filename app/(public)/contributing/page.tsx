@@ -15,7 +15,7 @@ export default function ContributingPage() {
           <div>
             <h1 className="text-h1">Contributing a part to the Common Parts Index</h1>
             <p className="mt-md text-text-secondary">
-              The Common Parts Index is a public catalog of spare part models — curated, structured, and maintained
+              The Common Parts Index is a public catalog of spare part models — reviewed, structured, and maintained
               to help people repair the objects they own. Anyone can contribute. Some parts are hosted directly on
               Common Parts; others are referenced here with a link to the original platform. This guide explains what
               we accept, how to submit, and what happens after.
@@ -154,13 +154,18 @@ export default function ContributingPage() {
 
           <section className="space-y-sm">
             <h2 className="text-h3">How to submit</h2>
+            <p className="text-text-secondary">
+              One question decides how a part is published: where does it come from? Not who designed it — where it
+              is already available. A part you designed but published on your own site or repository comes from
+              elsewhere, and you are still credited as its original author.
+            </p>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you are publishing a part you designed</h3>
+              <h3 className="text-h4">If you designed it and are publishing it here for the first time</h3>
               <p className="text-text-secondary">
                 This is what{' '}
                 <Link href="/upload" className="underline" target="_blank" rel="noopener noreferrer">
-                  upload
+                  Publish a part
                 </Link>{' '}
                 is for: your own design, with the files hosted here and kept downloadable. Your progress is saved at
                 every step, so you can stop and come back.
@@ -173,25 +178,37 @@ export default function ContributingPage() {
                 <li>Review the page as it will appear, then publish</li>
               </ol>
               <p className="text-text-secondary">
-                Because the registry hosts and redistributes the files, the license must allow commercial use and
-                modification. Licenses with NC or ND restrictions cannot be uploaded — see below.
+                Because Common Parts hosts and redistributes the files, the license must allow commercial use and
+                modification. Licenses with NC or ND restrictions cannot be published this way — see below.
+              </p>
+              <p className="text-text-secondary">
+                A part published this way carries the <strong className="font-medium text-text-primary">Original</strong> badge.
               </p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you found a part someone else published</h3>
+              <h3 className="text-h4">If it is already published elsewhere</h3>
               <p className="text-text-secondary">
-                Parts from Printables, Thingiverse, GitHub or anywhere else are not uploaded — they are curated, so
-                that attribution to the original author and the terms of their license are handled properly. This
-                applies whether the license is open (the file can be hosted here) or restrictive such as NC or ND
-                (the file stays at the source and we link to it).
+                Parts from Printables, Thingiverse, GitHub or anywhere else follow a second path, so that attribution
+                to the original author and the terms of their license are handled properly. The license decides what
+                happens to the files, and you do not choose it — it follows from what the source permits:
               </p>
+              <ul className="list-disc space-y-xs pl-md text-text-secondary">
+                <li>
+                  An open license means Common Parts can host the files — the part carries the{' '}
+                  <strong className="font-medium text-text-primary">Hosted</strong> badge.
+                </li>
+                <li>
+                  An NC or ND license does not permit redistribution, so the files stay at the source and we link to
+                  them — the part carries the <strong className="font-medium text-text-primary">Referenced</strong> badge.
+                </li>
+              </ul>
               <p className="text-text-secondary">
                 Send us the source URL through the feedback widget or at{' '}
                 <Link href="mailto:contact@commonparts.org" className="underline">
                   contact@commonparts.org
                 </Link>
-                , and tell us which product it fits. Curation is done by the Common Parts team, one part at a time.
+                , and tell us which product it fits. Parts from elsewhere are reviewed one at a time.
               </p>
             </div>
           </section>
@@ -199,10 +216,10 @@ export default function ContributingPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">After submission</h2>
             <p className="text-text-secondary">
-              A part you upload goes live as soon as it clears the publication checks: a license the registry may
-              host under, at least one model file, and at least one product it fits. If something is missing, the
-              review step names it and the part stays a draft until you complete it. A part you sent us to curate
-              is reviewed by the Common Parts team before it is published.
+              A part you publish yourself goes live as soon as it clears the publication checks: a license Common
+              Parts may host under, at least one model file, and at least one product it fits. If something is
+              missing, the review step names it and the part stays a draft until you complete it. A part you sent us
+              from elsewhere is reviewed by the Common Parts team before it is published.
             </p>
             <p className="text-text-secondary">
               We do not modify your model or its metadata without contacting you. Attribution is permanent and public.

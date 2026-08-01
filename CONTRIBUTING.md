@@ -20,17 +20,21 @@ There are two meaningful ways to contribute to Common Parts:
 
 The most direct contribution is adding a part to the registry.
 
-Go to [access.commonparts.org/upload](https://access.commonparts.org/upload) and fill in the form. You can publish:
+Go to [access.commonparts.org/upload](https://access.commonparts.org/upload) and follow the guided steps. Your progress is saved at every step, so you can stop and come back.
 
-- **An original model** — a part you designed yourself. You retain authorship. The form collects the 3D files, images, metadata (compatible products, print settings, material), and license.
+One question decides how a part is published: **where does it come from?** Not who designed it — where it is already available. A part you designed but published on your own site or repository comes from elsewhere, and you are still credited as its original author.
 
-- **A curated model (hosted)** — a part you found on an external platform (Printables, Thingiverse, GitHub, etc.) published under an open license (CC0, CC BY, CC BY-SA, MIT, or GPL). The file is stored and served by Common Parts. The form includes a dedicated attribution section: source URL, original author name and profile link, source license, and original publication date.
+- **Original** — you designed it and are publishing it here for the first time. You retain authorship. The flow collects the 3D files, images, metadata (compatible products, print settings, material), and the license you publish under. Because Common Parts hosts and redistributes the files, that license must allow commercial use and modification.
 
-- **A curated model (referenced)** — a part published under a restrictive license (NC, ND, or proprietary) that cannot be redistributed. The file stays on the original platform; Common Parts hosts the metadata and links to the source. Attribution is still required. Select *Link to source* in the upload form instead of uploading a file.
+- **Hosted** — the part is already published on another platform (Printables, Thingiverse, GitHub, etc.) under an open license (CC0, CC BY, CC BY-SA, MIT, or GPL), so Common Parts can host the files. Attribution is required: source URL, original author name and profile link, and the source license.
+
+- **Referenced** — the part is already published elsewhere under a license that does not permit redistribution (NC, ND, or proprietary). The files stay at the source and Common Parts links to them. Attribution is still required, and no file upload is needed.
+
+Hosted and Referenced are not a choice you make: the license declared at the source decides which one applies.
 
 **Quality expectations**
 
-Whether original or curated, a published part should meet the following criteria:
+Whichever of the three applies, a published part should meet the following criteria:
 
 - The part is identifiable: brand, product name, and part function are clearly described.
 - The part contributes to repairability or longevity — not purely decorative, not a repair tool.
@@ -38,8 +42,8 @@ Whether original or curated, a published part should meet the following criteria
 - The 3D file is printable. Prefer formats in this order: 3MF, STL, STEP.
 - Print settings are provided where known (material, layer height, infill, supports).
 - The license is correctly identified.
-- For **hosted** curated parts: the license must permit redistribution (CC0, CC BY, CC BY-SA, MIT, GPL). Attribution is complete: source URL, author name, and source license are all required.
-- For **referenced** curated parts: the model must be publicly accessible at the source URL. Attribution is still required. No file upload needed.
+- For **Hosted** parts: the license must permit redistribution (CC0, CC BY, CC BY-SA, MIT, GPL). Attribution is complete: source URL, author name, and source license are all required.
+- For **Referenced** parts: the model must be publicly accessible at the source URL. Attribution is still required. No file upload needed.
 
 Parts that do not meet these criteria may be flagged for review or removed from the index.
 
@@ -71,7 +75,7 @@ By publishing a part on Common Parts Access, you confirm that:
 - For hosted parts: the model is published under a license that permits redistribution with attribution, and you have provided complete and accurate attribution.
 - For referenced parts: the model is publicly accessible at the source URL and attribution is complete.
 
-Common Parts does not claim ownership of models it does not author. All published parts retain their original license. Attribution to original creators is mandatory and displayed publicly. The distinction between uploader (curator) and original author is always made explicit on the part page.
+Common Parts does not claim ownership of models it does not author. All published parts retain their original license. Attribution to original creators is mandatory and displayed publicly. The distinction between the account that added the part and its original author is always made explicit on the part page.
 
 ---
 
