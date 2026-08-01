@@ -38,7 +38,7 @@ export function RegisteredImages({ urls, className }: RegisteredImagesProps) {
               className="object-cover"
             />
             {index === 0 && (
-              <span className="absolute inset-x-0 bottom-0 bg-background/70 py-px text-center text-xs text-text-primary">
+              <span className="absolute inset-x-0 bottom-0 bg-background/70 py-3xs text-center text-xs text-text-primary">
                 Thumbnail
               </span>
             )}
