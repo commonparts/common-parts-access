@@ -604,7 +604,12 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {model.originType === 'curated' ? 'Referenced by' : 'Created by'}
+                  {/* "Added by", not "Referenced by": the badge above reserves
+                      *Referenced* for a part whose files stay at the source, so
+                      reusing it here would label a Hosted part as referenced.
+                      This card names the account that brought the part in — the
+                      original author is credited under the title. */}
+                  {model.originType === 'curated' ? 'Added by' : 'Created by'}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
