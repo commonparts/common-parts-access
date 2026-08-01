@@ -104,6 +104,13 @@ const emptyCreateProduct: CreateProductFormData = {
   imageFile: null,
 }
 
+/**
+ * The full state object the hook returns. Named so the shared publish steps
+ * (`components/publish/*`) can take it as a prop without each one restating
+ * the two dozen fields it forwards.
+ */
+export type ModelUploadFormState = ReturnType<typeof useModelUploadFormState>
+
 export function useModelUploadFormState() {
   const [formData, setFormData] = React.useState<ModelFormData>({
     title: "",

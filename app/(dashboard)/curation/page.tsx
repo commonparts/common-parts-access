@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
-import { CurationTool } from '@/components/curation/curation-tool'
+import { ElsewhereTrack } from '@/components/publish/elsewhere-track'
 import { CURATION_BLOCKING_CRITERIA } from '@/lib/curation/checklist'
 import type { CurationChecklist } from '@/types/database'
 
@@ -149,7 +149,7 @@ export default function CurationPage() {
       )}
 
       {session.mode !== 'idle' && (
-        <CurationTool
+        <ElsewhereTrack
           draftId={session.mode === 'resume' ? session.draftId : null}
           onExit={exitSession}
         />
