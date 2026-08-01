@@ -40,6 +40,8 @@ It is recorded on the row at **creation**, not at publish: a draft in this flow 
 
 Model files and photos go through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/models/[slug]/files`), which keeps file bytes out of the serverless body-size limit. Files are registered as soon as they upload, so leaving the session does not lose them.
 
+The upload button stays disabled until the session is ready — the storage path needs the owner id, which arrives from an async auth call, and without the guard there is a window where a click silently does nothing.
+
 Registered images are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — the same treatment as curation, so it is obvious the gallery is in place rather than an opaque count.
 
 ### 3. Details
@@ -114,14 +116,18 @@ File registration reuses `POST /api/models/[slug]/files`; deletion reuses `DELET
 
 ## Data model
 
-Migration `supabase/migrations/20260731120000_upload_originality_attestation.sql`.
+Migration `supabase/migrations/20260731134450_upload_originality_attestation.sql` (applied to production 2026-07-31).
+
+> The filename timestamp is the version `schema_migrations` recorded, not the one the file was drafted under — `apply_migration` stamps its own. If the two ever diverge, `supabase db push` reads the file as un-applied and runs it again.
 
 **On `models`:**
 
 | Column | Type | Notes |
 |--------|------|-------|
 | `originality_attested` | boolean, not null, default false | The declaration was made. **Blocking** condition of the publish gate. |
-| `originality_attested_at` | timestamptz | When it was made. Set together with the flag (DB CHECK). |
+| `originality_attested_at` | timestamptz | When it was made. |
+
+A DB CHECK ties the pair in **both** directions — `originality_attested = (originality_attested_at is not null)` — so neither a flag without a timestamp nor a timestamp without a flag can be stored. The second direction matters as much as the first: a timestamp alone would date a declaration nobody made.
 
 Plus `idx_models_owner_origin_status` on `(user_id, origin_type, status, updated_at desc)` — the drafts-list access path, shared with the curation drafts list.
 
@@ -129,7 +135,7 @@ Everything else reuses columns that already existed on `models`.
 
 The attestation deliberately does **not** reuse `curation_checklist`: that column records a curator's judgement of someone else's part. Conflating it with a contributor's declaration about their own work would make neither auditable.
 
-Parts published before this flow existed carry `originality_attested = false`. They are not backfilled — a declaration that was never made should not be recorded as if it had been. The flag gates publishing from draft, so existing published parts are unaffected.
+Rows that predate this flow carry `originality_attested = false`, and are not backfilled — a declaration nobody made should not be recorded as if it had been. Nothing is lost by that: at the time the migration ran every existing part was `origin_type = 'curated'`, so no original upload was left unattested. The flag gates publishing from draft, so already-published parts are unaffected either way.
 
 ## What it deliberately does not do
 
