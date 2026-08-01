@@ -57,14 +57,23 @@ describe('mergeDraftLists', () => {
     expect(second.thumbnailUrl).toBeNull()
   })
 
-  // Both endpoints are scoped to their own origin_type, so the same id can
-  // never appear twice — but the merge must not assume ids are unique across
-  // the two lists when building keys.
-  it('keeps both rows when the two lists share an id', () => {
-    const merged = mergeDraftLists(
-      [original('same', '2026-08-01T10:00:00Z')],
-      [elsewhere('same', '2026-08-01T09:00:00Z')],
+  // Both list endpoints select an explicit column set, but the optional ones
+  // arrive absent rather than null when the column is empty.
+  it('normalises absent optional fields to null', () => {
+    const [fromOriginal, fromElsewhere] = mergeDraftLists(
+      [{ id: 'a', name: 'A', slug: 'a' }],
+      [{ id: 'b', name: 'B', slug: 'b' }],
     )
-    expect(merged).toHaveLength(2)
+    expect(fromOriginal).toMatchObject({ updatedAt: null, thumbnailUrl: null, sourceUrl: null })
+    expect(fromElsewhere).toMatchObject({ updatedAt: null, thumbnailUrl: null, sourceUrl: null })
+  })
+
+  it('keeps every row from both lists', () => {
+    const merged = mergeDraftLists(
+      [original('a', '2026-08-01T10:00:00Z'), original('b', '2026-08-01T09:00:00Z')],
+      [elsewhere('c', '2026-08-01T08:00:00Z')],
+    )
+    expect(merged).toHaveLength(3)
+    expect(new Set(merged.map((d) => d.id))).toEqual(new Set(['a', 'b', 'c']))
   })
 })

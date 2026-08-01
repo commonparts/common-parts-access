@@ -133,9 +133,7 @@ export default function PublishPage() {
             ) : (
               <div className="space-y-sm">
                 {drafts.map((draft) => (
-                  // The two engines own separate rows, so ids cannot collide —
-                  // but the key spans both lists, so it names the track too.
-                  <Card key={`${draft.track}-${draft.id}`}>
+                  <Card key={draft.id}>
                     <CardHeader className="flex flex-row items-center justify-between gap-sm space-y-0">
                       <CardTitle className="text-base">{draft.name}</CardTitle>
                       <Badge variant="outline">{publishTrackDefinition(draft.track).badge}</Badge>
