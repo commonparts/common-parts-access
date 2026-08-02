@@ -11,7 +11,7 @@ export const Hero: React.FC = () => {
     <Section>
       <Container size="xl">
         <Grid columns={12} className="items-center gap-2xl">
-          <div className="col-span-12 mx-auto flex w-full max-w-xl flex-col space-y-lg lg:col-span-6">
+          <div className="col-span-12 mx-auto flex w-full max-w-xl flex-col space-y-lg">
             <div className="space-y-xl">
               <h1 className="text-heading-lg font-heading leading-tight">
                 Repair starts with access to the right part.
