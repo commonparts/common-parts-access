@@ -1,46 +1,46 @@
-import type { Brand, Category, License, Model, ModelStatus, Product, UserProfile } from './database';
+import type { Brand, License, Model, ModelStatus, Product, UserProfile } from './database';
 export type { SourcePlatform } from './database';
 
-export type ModelCardRow = Pick<
+type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
+
+export type PartCardRow = Pick<
 	Model,
-	| 'id'
-	| 'name'
-	| 'slug'
-	| 'description'
-	| 'thumbnail_url'
-	| 'download_count'
-	| 'like_count'
-	| 'view_count'
-	| 'tags'
-	| 'created_at'
+	'id' | 'name' | 'slug' | 'description' | 'thumbnail_url'
 > & {
-	user_profiles?: UserProfile | UserProfile[];
-	categories?: Pick<Category, 'name' | 'slug'> | Pick<Category, 'name' | 'slug'>[];
-	brands?: Pick<Brand, 'name' | 'slug' | 'verified'> | Pick<Brand, 'name' | 'slug' | 'verified'>[];
+	brands?: Pick<Brand, 'name' | 'slug'> | Pick<Brand, 'name' | 'slug'>[] | null;
+	/** Truncated preview of the model_products links — see CARD_PRODUCT_PREVIEW_COUNT. */
+	fits?: { products: PartCardProductRef | PartCardProductRef[] | null }[] | null;
+	/** Aggregate embed holding the untruncated number of linked products. */
+	fits_count?: { count: number }[] | null;
 };
 
-export interface ModelCardData {
+/** A product the part is mounted on, as listed on the card's "Fits" line. */
+export interface PartCardProductFit {
+	name: string;
+	/** Null when the source has no linkable slug (search results carry names only). */
+	slug: string | null;
+}
+
+export interface PartCardData {
 	id: string;
 	slug: string;
 	title: string;
 	description?: string | null;
 	thumbnailUrl?: string | null;
-	author: {
-		username: string;
-		avatar?: string | null;
-	};
-	stats: {
-		downloads: number;
-		likes: number;
-		views: number;
-	};
-	tags: string[];
-	category: string;
-	createdAt: Date;
+	/** Brand the part belongs to — the card's primary attribution. */
+	brand: { name: string; slug: string } | null;
+	/** First few compatible products; `productCount` holds the real total. */
+	products: PartCardProductFit[];
+	productCount: number;
 	isPremium?: boolean;
+	// Optional part metadata (e.g. product page). Rendered as a compact meta
+	// row + license badge when any is provided; other usages are unaffected.
+	material?: string | null;
+	license?: string | null;
+	estimatedPrintTime?: number | null; // minutes
 }
 
-export interface ModelListOptions {
+export interface PartListOptions {
 	page?: number;
 	limit?: number;
 	sortBy?: 'popularity' | 'likes' | 'views' | 'newest' | 'created_at';
@@ -52,8 +52,8 @@ export interface ModelListOptions {
 	product?: string;
 }
 
-export interface ModelListResult {
-	models: ModelCardData[];
+export interface PartListResult {
+	parts: PartCardData[];
 	pagination: {
 		page: number;
 		limit: number;

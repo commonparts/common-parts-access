@@ -1,14 +1,15 @@
 import { NextResponse } from 'next/server'
-import { fetchFeaturedModelCards } from '@/lib/supabase/queries/model'
+import { fetchFeaturedPartCards } from '@/lib/supabase/queries/model'
 
-// GET /api/models/featured - Get the most downloaded models
+// GET /api/models/featured - Get the most downloaded parts
 export async function GET() {
   try {
-    const models = await fetchFeaturedModelCards(8)
+    const parts = await fetchFeaturedPartCards(8)
 
-    return NextResponse.json({ 
-      models,
-      total: models.length
+    // Payload key stays `models` — see the note in ../route.ts.
+    return NextResponse.json({
+      models: parts,
+      total: parts.length,
     })
   } catch (error) {
     console.error('Unexpected error fetching featured models:', error)

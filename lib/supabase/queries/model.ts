@@ -6,36 +6,47 @@ import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import type { ModelStatus } from '@/types/database';
 import type {
-  ModelCardData,
-  ModelCardRow,
-  ModelListOptions,
-  ModelListResult,
+  PartCardData,
+  PartCardRow,
+  PartListOptions,
+  PartListResult,
   ModelSeoData,
   ModelSeoRow,
   MyModelListItem,
   MyModelListResult,
 } from '@/types/models';
 
-const MODEL_SELECT = `
+/**
+ * How many compatible products a card lists by name before collapsing the rest
+ * into "+N more". The untruncated total comes from the `fits_count` aggregate,
+ * so the preview stays bounded no matter how many products a part fits.
+ */
+const CARD_PRODUCT_PREVIEW_COUNT = 2;
+
+/** Sort key of the `fits` embed — the linked product's name, matching search_all. */
+const CARD_PRODUCT_ORDER = 'products(name)';
+
+// Every embed of model_products is aliased (`fits`, `fits_count`, and
+// `fit_filter` below). PostgREST resolves an unaliased filter or limit against
+// the first embed of that table, so without the aliases the product filter
+// would land on the preview list instead of the join it belongs to.
+const PART_CARD_SELECT = `
   id,
   name,
   slug,
   description,
   thumbnail_url,
-  download_count,
-  like_count,
-  view_count,
-  tags,
-  created_at,
-  user_profiles!inner(
-    username,
-    display_name,
-    avatar_url
-  ),
-  categories(
+  brands(
     name,
     slug
-  )
+  ),
+  fits:model_products(
+    products(
+      name,
+      slug
+    )
+  ),
+  fits_count:model_products(count)
 `;
 
 /**
@@ -71,37 +82,37 @@ export async function ensureUniqueModelSlug(
   }
 }
 
-function mapModelRowToCard(model: ModelCardRow): ModelCardData {
-  const userProfile = Array.isArray(model.user_profiles)
-    ? model.user_profiles[0]
-    : model.user_profiles;
-  const category = Array.isArray(model.categories)
-    ? model.categories[0]
-    : model.categories;
+// Supabase returns joined rows as T | T[] depending on cardinality —
+// normalize to a single record.
+function firstJoined<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function mapPartRowToCard(row: PartCardRow): PartCardData {
+  const brand = firstJoined(row.brands);
+
+  const products = (row.fits ?? [])
+    .map((link) => firstJoined(link.products))
+    .filter((product): product is NonNullable<typeof product> => product !== null)
+    .map((product) => ({ name: product.name, slug: product.slug }));
 
   return {
-    id: model.id,
-    slug: model.slug,
-    title: model.name,
-    description: model.description,
-    thumbnailUrl: model.thumbnail_url,
-    author: {
-      username: userProfile?.username || 'Unknown',
-      avatar: userProfile?.avatar_url ?? null,
-    },
-    stats: {
-      downloads: model.download_count || 0,
-      likes: model.like_count || 0,
-      views: model.view_count || 0,
-    },
-    tags: Array.isArray(model.tags) ? model.tags : [],
-    category: category?.name || 'Uncategorized',
-    createdAt: model.created_at ? new Date(model.created_at) : new Date(),
+    id: row.id,
+    slug: row.slug,
+    title: row.name,
+    description: row.description,
+    thumbnailUrl: row.thumbnail_url,
+    brand: brand ? { name: brand.name, slug: brand.slug } : null,
+    products,
+    // The aggregate covers every link; the preview list is capped, so falling
+    // back to its length would under-report the "+N more" overflow.
+    productCount: row.fits_count?.[0]?.count ?? products.length,
     isPremium: false,
   };
 }
 
-function resolveOrderColumn(sortBy?: ModelListOptions['sortBy']) {
+function resolveOrderColumn(sortBy?: PartListOptions['sortBy']) {
   switch (sortBy) {
     case 'popularity':
       return 'download_count';
@@ -117,7 +128,7 @@ function resolveOrderColumn(sortBy?: ModelListOptions['sortBy']) {
 }
 
 // Paged list with optional filters/search/sorting for browse screens.
-export async function fetchModelCards(options: ModelListOptions = {}): Promise<ModelListResult> {
+export async function fetchPartCards(options: PartListOptions = {}): Promise<PartListResult> {
   const page = Math.max(1, options.page || 1);
   const limit = Math.max(1, options.limit || 20);
   const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -127,24 +138,34 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
 
   // Filtering by product goes through the model_products junction (models no
   // longer carry a direct product_id). An inner join keeps pagination and the
-  // exact count correct regardless of how many models a product links to.
+  // exact count correct regardless of how many models a product links to. It is
+  // aliased so it never collides with the `fits` preview embed of the same table.
   let query = options.product
     ? supabase
         .from('models')
-        .select(`${MODEL_SELECT}, model_products!inner(product_id)`, { count: 'exact' })
+        .select(`${PART_CARD_SELECT}, fit_filter:model_products!inner(product_id)`, { count: 'exact' })
     : supabase
         .from('models')
-        .select(MODEL_SELECT, { count: 'exact' });
+        .select(PART_CARD_SELECT, { count: 'exact' });
 
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
   if (options.brand) query = query.eq('brand_id', options.brand);
-  if (options.product) query = query.eq('model_products.product_id', options.product);
+  if (options.product) query = query.eq('fit_filter.product_id', options.product);
   if (search) query = query.ilike('name', `%${search}%`);
 
   query = query.order(resolveOrderColumn(options.sortBy), {
     ascending: sortOrder === 'asc',
   });
+
+  // Order before truncating, by the linked product's name: without an order the
+  // embed returns a different subset per request, and ordering by anything else
+  // would surface different products here than search_all does for the same
+  // part (it orders by name too), so the card would change between /browse and
+  // /search. PostgREST resolves `products(name)` against the embed's own join.
+  query = query
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -156,12 +177,12 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
     throw error;
   }
 
-  const models = ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+  const parts = ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
   const total = count || 0;
   const totalPages = Math.ceil(total / limit) || 1;
 
   return {
-    models,
+    parts,
     pagination: {
       page,
       limit,
@@ -173,22 +194,24 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   };
 }
 
-// Top models by downloads for the featured section.
-export async function fetchFeaturedModelCards(limit = 8) {
+// Top parts by downloads for the featured section.
+export async function fetchFeaturedPartCards(limit = 8) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('models')
-    .select(MODEL_SELECT)
+    .select(PART_CARD_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
     .limit(limit);
 
   if (error) {
     throw error;
   }
 
-  return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+  return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
 }
 
 const MODEL_SEO_SELECT = `
@@ -208,13 +231,6 @@ const MODEL_SEO_SELECT = `
   source_licenses:licenses!models_source_license_id_fkey(name, url),
   model_products(products(name, brands(name)))
 `;
-
-// Supabase returns joined rows as T | T[] depending on cardinality —
-// normalize to a single record, matching mapModelRowToCard above.
-function firstJoined<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
 
 /**
  * Fetches the minimal published-model dataset needed for part page SEO:

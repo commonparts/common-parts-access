@@ -7,29 +7,9 @@ import { Pagination } from '@/components/browse/pagination'
 import { SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
 import { Grid } from '@/components/layout/grid'
 import { SearchBar } from '@/components/layout/search-bar'
-import { ModelGrid } from '@/components/model/model-grid'
+import { PartGrid } from '@/components/model/part-grid'
 import { Button } from '@/components/ui/button'
-
-interface Model {
-  id: string
-  slug: string
-  title: string
-  description?: string
-  thumbnailUrl?: string
-  author: {
-    username: string
-    avatar?: string
-  }
-  stats: {
-    downloads: number
-    likes: number
-    views: number
-  }
-  tags: string[]
-  category: string
-  createdAt: Date
-  isPremium?: boolean
-}
+import type { PartCardData } from '@/types/models'
 
 interface PaginationInfo {
   page: number
@@ -40,8 +20,8 @@ interface PaginationInfo {
   hasPrev: boolean
 }
 
-interface ModelsResponse {
-  models: Model[]
+interface PartsResponse {
+  models: PartCardData[]
   pagination: PaginationInfo
 }
 
@@ -56,7 +36,7 @@ export function BrowsePartsGrid() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  const [models, setModels] = useState<Model[]>([])
+  const [parts, setParts] = useState<PartCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -94,7 +74,7 @@ export function BrowsePartsGrid() {
     [router, searchParams],
   )
 
-  const fetchModels = useCallback(async () => {
+  const fetchParts = useCallback(async () => {
     try {
       setLoading(true)
       setError(null)
@@ -118,14 +98,9 @@ export function BrowsePartsGrid() {
         throw new Error(`Failed to fetch parts: ${response.statusText}`)
       }
 
-      const data: ModelsResponse = await response.json()
+      const data: PartsResponse = await response.json()
 
-      const modelsWithDates = data.models.map((model) => ({
-        ...model,
-        createdAt: new Date(model.createdAt),
-      }))
-
-      setModels(modelsWithDates)
+      setParts(data.models)
       setPagination(data.pagination)
     } catch (err) {
       console.error('Error fetching parts:', err)
@@ -136,8 +111,8 @@ export function BrowsePartsGrid() {
   }, [currentPage, currentSort, currentSearch, currentProduct])
 
   useEffect(() => {
-    fetchModels()
-  }, [fetchModels])
+    fetchParts()
+  }, [fetchParts])
 
   const handleSortChange = (sortBy: string) => updateURL({ sortBy })
   const handleSearchChange = (search: string) => updateURL({ search: search || '' })
@@ -156,7 +131,7 @@ export function BrowsePartsGrid() {
           <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
           <p className="text-body text-text-secondary">{error}</p>
         </div>
-        <Button onClick={() => fetchModels()}>Try again</Button>
+        <Button onClick={() => fetchParts()}>Try again</Button>
       </div>
     )
   }
@@ -183,14 +158,7 @@ export function BrowsePartsGrid() {
         </div>
       </Grid>
 
-      <ModelGrid
-        models={models}
-        loading={loading}
-        variant="default"
-        showAuthor={true}
-        showStats={true}
-        className="mb-lg"
-      />
+      <PartGrid parts={parts} loading={loading} variant="default" className="mb-lg" />
 
       <Pagination
         currentPage={pagination.page}

@@ -4,12 +4,13 @@ import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { ModelCard } from "@/components/model/model-card"
+import { PartGrid } from "@/components/model/part-grid"
 import { pluralize } from "@/lib/utils/formatters"
 import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
 import type { BrandSuggestion } from "@/lib/supabase/queries/search"
+import type { PartCardData } from "@/types/models"
 import {
   SEARCH_TYPES,
   type SearchModelResult,
@@ -20,19 +21,22 @@ import {
 // How many items each section previews in the "All" view before "See all".
 const PREVIEW_COUNT = 4
 
-// Map a lean search hit onto the existing ModelCard shape. Stats are hidden
-// (search doesn't return them) so only image, title and author are shown.
-function toModelCardModel(model: SearchModelResult) {
+// Map a search hit onto the shared PartCard shape, so a part looks the same
+// here as on /browse. Falls back to the single unlinked `product_name` when the
+// RPC predates 20260802141500_search_all_part_card_fields.
+function toPartCardData(hit: SearchModelResult): PartCardData {
+  const fits =
+    hit.products?.map((product) => ({ name: product.name, slug: product.slug })) ??
+    (hit.product_name ? [{ name: hit.product_name, slug: null }] : [])
+
   return {
-    id: model.id,
-    slug: model.slug,
-    title: model.name,
-    thumbnailUrl: model.thumbnail_url ?? undefined,
-    author: { username: model.author_username ?? "unknown" },
-    stats: { downloads: 0, likes: 0, views: 0 },
-    tags: [] as string[],
-    category: "",
-    createdAt: new Date(),
+    id: hit.id,
+    slug: hit.slug,
+    title: hit.name,
+    thumbnailUrl: hit.thumbnail_url,
+    brand: hit.brand ?? null,
+    products: fits,
+    productCount: hit.product_count ?? fits.length,
   }
 }
 
@@ -183,14 +187,14 @@ export function SearchResultsView({
           seeAllLabel={`See all ${pluralize(counts.parts, "part")}`}
         >
           {counts.parts > 0 ? (
-            <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
-              {(activeType === "all"
+            // Same grid as /browse and the home page — search results are the
+            // same parts and must not be sized or spaced differently.
+            <PartGrid
+              parts={(activeType === "all"
                 ? results.models.slice(0, PREVIEW_COUNT)
                 : results.models
-              ).map((model) => (
-                <ModelCard key={model.id} model={toModelCardModel(model)} showStats={false} />
-              ))}
-            </div>
+              ).map(toPartCardData)}
+            />
           ) : (
             <SectionEmpty label="parts" query={query} />
           )}
