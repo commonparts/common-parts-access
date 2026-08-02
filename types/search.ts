@@ -18,8 +18,13 @@ export interface SearchModelResult {
   part_number: string | null
   thumbnail_url: string | null
   product_name: string | null // a linked product; null => "Generic part"
-  author_username: string | null
   license: string | null // license short name, e.g. "CC BY-NC-ND 4.0"
+  // Part card fields, added by 20260802141500_search_all_part_card_fields.
+  // Optional so a deployment that runs ahead of the migration degrades to a
+  // card without a brand eyebrow or fit line instead of crashing.
+  brand?: { name: string; slug: string } | null
+  products?: { name: string; slug: string }[]
+  product_count?: number
 }
 
 export interface SearchBrandResult {
