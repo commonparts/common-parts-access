@@ -2,37 +2,15 @@ import * as React from "react"
 
 import { Grid } from "@/components/layout/grid"
 import { cn } from "@/lib/utils"
+import type { ModelCardData } from "@/types/models"
 import { ModelCard } from "./model-card"
 
-interface Model {
-  id: string
-  slug: string
-  title: string
-  description?: string
-  thumbnailUrl?: string
-  author: {
-    username: string
-    avatar?: string
-  }
-  stats: {
-    downloads: number
-    likes: number
-    views: number
-  }
-  tags: string[]
-  category: string
-  createdAt: Date
-  isPremium?: boolean
-}
-
 interface ModelGridProps {
-  models: Model[]
+  models: ModelCardData[]
   loading?: boolean
   variant?: "default" | "compact" | "detailed"
   columns?: 12 | 6 | 4
   className?: string
-  showAuthor?: boolean
-  showStats?: boolean
 }
 
 export function ModelGrid({
@@ -41,8 +19,6 @@ export function ModelGrid({
   variant = "default",
   columns,
   className,
-  showAuthor = true,
-  showStats = true
 }: ModelGridProps) {
   const gridColumns = columns ?? 12
 
@@ -101,12 +77,7 @@ export function ModelGrid({
     <Grid columns={gridColumns} className={className}>
       {models.map((model) => (
         <div key={model.id} className={itemSpans}>
-          <ModelCard
-            model={model}
-            variant={variant}
-            showAuthor={showAuthor}
-            showStats={showStats}
-          />
+          <ModelCard model={model} variant={variant} />
         </div>
       ))}
     </Grid>

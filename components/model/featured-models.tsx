@@ -6,35 +6,15 @@ import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
-
-interface Model {
-  id: string
-  slug: string
-  title: string
-  description?: string
-  thumbnailUrl?: string
-  author: {
-    username: string
-    avatar?: string
-  }
-  stats: {
-    downloads: number
-    likes: number
-    views: number
-  }
-  tags: string[]
-  category: string
-  createdAt: Date
-  isPremium?: boolean
-}
+import type { ModelCardData } from '@/types/models'
 
 interface FeaturedModelsResponse {
-  models: (Omit<Model, 'createdAt'> & { createdAt: string })[]
+  models: ModelCardData[]
   total: number
 }
 
 export function FeaturedModels() {
-  const [models, setModels] = useState<Model[]>([])
+  const [models, setModels] = useState<ModelCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -48,12 +28,7 @@ export function FeaturedModels() {
         }
 
         const data: FeaturedModelsResponse = await response.json()
-        // Convert createdAt strings back to Date objects
-        const modelsWithDates = data.models.map(model => ({
-          ...model,
-          createdAt: new Date(model.createdAt)
-        }))
-        setModels(modelsWithDates)
+        setModels(data.models)
       } catch (err) {
         console.error('Error fetching featured models:', err)
         setError(err instanceof Error ? err.message : 'Failed to load models')
@@ -88,14 +63,7 @@ export function FeaturedModels() {
       <Container size="xl" className="space-y-lg">
         <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most downloaded parts</h2>
 
-        <ModelGrid 
-          models={models}
-          loading={loading}
-          variant="default"
-          showAuthor={true}
-          showStats={true}
-          className="mb-lg"
-        />
+        <ModelGrid models={models} loading={loading} variant="default" className="mb-lg" />
 
         {!loading && models.length > 0 && (
           <div className="text-center">

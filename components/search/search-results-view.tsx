@@ -10,6 +10,7 @@ import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
 import type { BrandSuggestion } from "@/lib/supabase/queries/search"
+import type { ModelCardData } from "@/types/models"
 import {
   SEARCH_TYPES,
   type SearchModelResult,
@@ -20,19 +21,20 @@ import {
 // How many items each section previews in the "All" view before "See all".
 const PREVIEW_COUNT = 4
 
-// Map a lean search hit onto the existing ModelCard shape. Stats are hidden
-// (search doesn't return them) so only image, title and author are shown.
-function toModelCardModel(model: SearchModelResult) {
+// Map a lean search hit onto the shared ModelCard shape. The search RPC returns
+// one compatible product by name and no brand, so the card shows the fit line
+// without links and omits the brand eyebrow.
+function toModelCardModel(model: SearchModelResult): ModelCardData {
+  const products = model.product_name ? [{ name: model.product_name, slug: null }] : []
+
   return {
     id: model.id,
     slug: model.slug,
     title: model.name,
-    thumbnailUrl: model.thumbnail_url ?? undefined,
-    author: { username: model.author_username ?? "unknown" },
-    stats: { downloads: 0, likes: 0, views: 0 },
-    tags: [] as string[],
-    category: "",
-    createdAt: new Date(),
+    thumbnailUrl: model.thumbnail_url,
+    brand: null,
+    products,
+    productCount: products.length,
   }
 }
 
@@ -188,7 +190,7 @@ export function SearchResultsView({
                 ? results.models.slice(0, PREVIEW_COUNT)
                 : results.models
               ).map((model) => (
-                <ModelCard key={model.id} model={toModelCardModel(model)} showStats={false} />
+                <ModelCard key={model.id} model={toModelCardModel(model)} />
               ))}
             </div>
           ) : (

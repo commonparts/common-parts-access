@@ -16,26 +16,34 @@ import type {
   MyModelListResult,
 } from '@/types/models';
 
+/**
+ * How many compatible products a card lists by name before collapsing the rest
+ * into "+N more". The untruncated total comes from the `fits_count` aggregate,
+ * so the preview stays bounded no matter how many products a part fits.
+ */
+const CARD_PRODUCT_PREVIEW_COUNT = 2;
+
+// Every embed of model_products is aliased (`fits`, `fits_count`, and
+// `fit_filter` below). PostgREST resolves an unaliased filter or limit against
+// the first embed of that table, so without the aliases the product filter
+// would land on the preview list instead of the join it belongs to.
 const MODEL_SELECT = `
   id,
   name,
   slug,
   description,
   thumbnail_url,
-  download_count,
-  like_count,
-  view_count,
-  tags,
-  created_at,
-  user_profiles!inner(
-    username,
-    display_name,
-    avatar_url
-  ),
-  categories(
+  brands(
     name,
     slug
-  )
+  ),
+  fits:model_products(
+    products(
+      name,
+      slug
+    )
+  ),
+  fits_count:model_products(count)
 `;
 
 /**
@@ -71,13 +79,20 @@ export async function ensureUniqueModelSlug(
   }
 }
 
+// Supabase returns joined rows as T | T[] depending on cardinality —
+// normalize to a single record.
+function firstJoined<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
 function mapModelRowToCard(model: ModelCardRow): ModelCardData {
-  const userProfile = Array.isArray(model.user_profiles)
-    ? model.user_profiles[0]
-    : model.user_profiles;
-  const category = Array.isArray(model.categories)
-    ? model.categories[0]
-    : model.categories;
+  const brand = firstJoined(model.brands);
+
+  const products = (model.fits ?? [])
+    .map((link) => firstJoined(link.products))
+    .filter((product): product is NonNullable<typeof product> => product !== null)
+    .map((product) => ({ name: product.name, slug: product.slug }));
 
   return {
     id: model.id,
@@ -85,18 +100,11 @@ function mapModelRowToCard(model: ModelCardRow): ModelCardData {
     title: model.name,
     description: model.description,
     thumbnailUrl: model.thumbnail_url,
-    author: {
-      username: userProfile?.username || 'Unknown',
-      avatar: userProfile?.avatar_url ?? null,
-    },
-    stats: {
-      downloads: model.download_count || 0,
-      likes: model.like_count || 0,
-      views: model.view_count || 0,
-    },
-    tags: Array.isArray(model.tags) ? model.tags : [],
-    category: category?.name || 'Uncategorized',
-    createdAt: model.created_at ? new Date(model.created_at) : new Date(),
+    brand: brand ? { name: brand.name, slug: brand.slug } : null,
+    products,
+    // The aggregate covers every link; the preview list is capped, so falling
+    // back to its length would under-report the "+N more" overflow.
+    productCount: model.fits_count?.[0]?.count ?? products.length,
     isPremium: false,
   };
 }
@@ -127,11 +135,12 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
 
   // Filtering by product goes through the model_products junction (models no
   // longer carry a direct product_id). An inner join keeps pagination and the
-  // exact count correct regardless of how many models a product links to.
+  // exact count correct regardless of how many models a product links to. It is
+  // aliased so it never collides with the `fits` preview embed of the same table.
   let query = options.product
     ? supabase
         .from('models')
-        .select(`${MODEL_SELECT}, model_products!inner(product_id)`, { count: 'exact' })
+        .select(`${MODEL_SELECT}, fit_filter:model_products!inner(product_id)`, { count: 'exact' })
     : supabase
         .from('models')
         .select(MODEL_SELECT, { count: 'exact' });
@@ -139,12 +148,18 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
   if (options.brand) query = query.eq('brand_id', options.brand);
-  if (options.product) query = query.eq('model_products.product_id', options.product);
+  if (options.product) query = query.eq('fit_filter.product_id', options.product);
   if (search) query = query.ilike('name', `%${search}%`);
 
   query = query.order(resolveOrderColumn(options.sortBy), {
     ascending: sortOrder === 'asc',
   });
+
+  // Deterministic preview: without an explicit order the truncated embed can
+  // return a different subset of products from one request to the next.
+  query = query
+    .order('product_id', { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -182,6 +197,8 @@ export async function fetchFeaturedModelCards(limit = 8) {
     .select(MODEL_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
+    .order('product_id', { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
     .limit(limit);
 
   if (error) {
@@ -208,13 +225,6 @@ const MODEL_SEO_SELECT = `
   source_licenses:licenses!models_source_license_id_fkey(name, url),
   model_products(products(name, brands(name)))
 `;
-
-// Supabase returns joined rows as T | T[] depending on cardinality —
-// normalize to a single record, matching mapModelRowToCard above.
-function firstJoined<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
 
 /**
  * Fetches the minimal published-model dataset needed for part page SEO:

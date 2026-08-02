@@ -36,7 +36,6 @@ export interface ProductPart {
   download_count: number
   estimated_print_time: number | null // minutes
   created_at: string | null
-  author_username: string | null
   license_short_name: string | null
 }
 
@@ -115,7 +114,6 @@ interface ModelRow {
   download_count: number | null
   estimated_print_time: number | null
   created_at: string | null
-  user_profiles: { username: string } | { username: string }[] | null
   licenses: { short_name: string } | { short_name: string }[] | null
 }
 
@@ -140,7 +138,6 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
       models!inner(
         id, name, slug, thumbnail_url, part_name, part_number, material,
         download_count, estimated_print_time, created_at, status,
-        user_profiles(username),
         licenses!models_license_id_fkey(short_name)
       )
     `,
@@ -169,7 +166,6 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
       download_count: model.download_count ?? 0,
       estimated_print_time: model.estimated_print_time,
       created_at: model.created_at,
-      author_username: firstOf(model.user_profiles)?.username ?? null,
       license_short_name: firstOf(model.licenses)?.short_name ?? null,
     })
   }
