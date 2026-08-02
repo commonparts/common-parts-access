@@ -287,7 +287,6 @@ export function SearchBar({
         <div className="truncate text-sm font-medium text-text-primary">{model.name}</div>
         <div className="truncate text-caption text-text-secondary">
           {model.product_name ?? "Generic part"}
-          {model.author_username ? ` · @${model.author_username}` : ""}
         </div>
       </div>
       {model.license && (
