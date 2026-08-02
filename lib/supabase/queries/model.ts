@@ -23,6 +23,9 @@ import type {
  */
 const CARD_PRODUCT_PREVIEW_COUNT = 2;
 
+/** Sort key of the `fits` embed — the linked product's name, matching search_all. */
+const CARD_PRODUCT_ORDER = 'products(name)';
+
 // Every embed of model_products is aliased (`fits`, `fits_count`, and
 // `fit_filter` below). PostgREST resolves an unaliased filter or limit against
 // the first embed of that table, so without the aliases the product filter
@@ -155,10 +158,13 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
     ascending: sortOrder === 'asc',
   });
 
-  // Deterministic preview: without an explicit order the truncated embed can
-  // return a different subset of products from one request to the next.
+  // Order before truncating, by the linked product's name: without an order the
+  // embed returns a different subset per request, and ordering by anything else
+  // would surface different products here than search_all does for the same
+  // part (it orders by name too), so the card would change between /browse and
+  // /search. PostgREST resolves `products(name)` against the embed's own join.
   query = query
-    .order('product_id', { referencedTable: 'fits' })
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
 
   const from = (page - 1) * limit;
@@ -197,7 +203,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
     .select(PART_CARD_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
-    .order('product_id', { referencedTable: 'fits' })
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
     .limit(limit);
 

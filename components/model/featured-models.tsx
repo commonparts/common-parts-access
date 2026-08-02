@@ -24,14 +24,14 @@ export function FeaturedModels() {
         const response = await fetch('/api/models/featured')
         
         if (!response.ok) {
-          throw new Error(`Failed to fetch models: ${response.statusText}`)
+          throw new Error(`Failed to fetch parts: ${response.statusText}`)
         }
 
         const data: FeaturedPartsResponse = await response.json()
         setParts(data.models)
       } catch (err) {
-        console.error('Error fetching featured models:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load models')
+        console.error('Error fetching featured parts:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load parts')
       } finally {
         setLoading(false)
       }
@@ -50,7 +50,7 @@ export function FeaturedModels() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">Unable to load models</h3>
+            <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
             <p className="text-body text-text-secondary">{error}</p>
           </div>
         </Container>

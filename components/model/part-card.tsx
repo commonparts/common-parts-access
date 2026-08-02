@@ -130,10 +130,9 @@ export function PartCard({
             </div>
           )}
           {part.isPremium && (
-            <Badge className="absolute right-2 top-2 bg-yellow-500">Premium</Badge>
+            <Badge className="absolute right-sm top-sm">Premium</Badge>
           )}
           {badge && <div className="absolute left-sm top-sm z-10">{badge}</div>}
-          <div className="absolute inset-0 bg-black/0 transition-colors duration-200 group-hover:bg-black/10" />
         </div>
       </Link>
 
