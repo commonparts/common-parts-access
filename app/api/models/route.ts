@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { fetchModelCards } from '@/lib/supabase/queries/model'
-import type { ModelListOptions } from '@/types/models'
+import { fetchPartCards } from '@/lib/supabase/queries/model'
+import type { PartListOptions } from '@/types/models'
 
 // GET /api/models - List all models with pagination, sorting, and search
 export async function GET(request: NextRequest) {
@@ -9,9 +9,9 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const sortByParam = searchParams.get('sortBy') || 'created_at'
-    const allowedSort: ModelListOptions['sortBy'][] = ['popularity', 'likes', 'views', 'newest', 'created_at']
-    const sortBy = allowedSort.includes(sortByParam as ModelListOptions['sortBy'])
-      ? (sortByParam as ModelListOptions['sortBy'])
+    const allowedSort: PartListOptions['sortBy'][] = ['popularity', 'likes', 'views', 'newest', 'created_at']
+    const sortBy = allowedSort.includes(sortByParam as PartListOptions['sortBy'])
+      ? (sortByParam as PartListOptions['sortBy'])
       : 'created_at'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
     const search = searchParams.get('search') || ''
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const brandId = searchParams.get('brandId') || undefined
     const categoryId = searchParams.get('categoryId') || undefined
 
-    const { models, pagination } = await fetchModelCards({
+    const { parts, pagination } = await fetchPartCards({
       page,
       limit,
       sortBy,
@@ -31,9 +31,12 @@ export async function GET(request: NextRequest) {
       status: 'published',
     })
 
-    return NextResponse.json({ 
-      models,
-      pagination
+    // The payload key stays `models`: this route and its siblings under
+    // /api/models still speak the database's vocabulary. Only the card layer
+    // was renamed to "part".
+    return NextResponse.json({
+      models: parts,
+      pagination,
     })
   } catch (error) {
     console.error('Unexpected error fetching models:', error)

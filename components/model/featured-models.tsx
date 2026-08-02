@@ -1,25 +1,25 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ModelGrid } from '@/components/model/model-grid'
+import { PartGrid } from '@/components/model/part-grid'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
-import type { ModelCardData } from '@/types/models'
+import type { PartCardData } from '@/types/models'
 
-interface FeaturedModelsResponse {
-  models: ModelCardData[]
+interface FeaturedPartsResponse {
+  models: PartCardData[]
   total: number
 }
 
 export function FeaturedModels() {
-  const [models, setModels] = useState<ModelCardData[]>([])
+  const [parts, setParts] = useState<PartCardData[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    async function fetchFeaturedModels() {
+    async function fetchFeaturedParts() {
       try {
         const response = await fetch('/api/models/featured')
         
@@ -27,8 +27,8 @@ export function FeaturedModels() {
           throw new Error(`Failed to fetch models: ${response.statusText}`)
         }
 
-        const data: FeaturedModelsResponse = await response.json()
-        setModels(data.models)
+        const data: FeaturedPartsResponse = await response.json()
+        setParts(data.models)
       } catch (err) {
         console.error('Error fetching featured models:', err)
         setError(err instanceof Error ? err.message : 'Failed to load models')
@@ -37,7 +37,7 @@ export function FeaturedModels() {
       }
     }
 
-    fetchFeaturedModels()
+    fetchFeaturedParts()
   }, [])
 
   if (error) {
@@ -63,9 +63,9 @@ export function FeaturedModels() {
       <Container size="xl" className="space-y-lg">
         <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most downloaded parts</h2>
 
-        <ModelGrid models={models} loading={loading} variant="default" className="mb-lg" />
+        <PartGrid parts={parts} loading={loading} variant="default" className="mb-lg" />
 
-        {!loading && models.length > 0 && (
+        {!loading && parts.length > 0 && (
           <div className="text-center">
             <Button asChild variant="outline">
               <Link href="/browse">

@@ -1,27 +1,27 @@
 import type { Brand, License, Model, ModelStatus, Product, UserProfile } from './database';
 export type { SourcePlatform } from './database';
 
-type ModelCardProductRef = Pick<Product, 'name' | 'slug'>;
+type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
 
-export type ModelCardRow = Pick<
+export type PartCardRow = Pick<
 	Model,
 	'id' | 'name' | 'slug' | 'description' | 'thumbnail_url'
 > & {
 	brands?: Pick<Brand, 'name' | 'slug'> | Pick<Brand, 'name' | 'slug'>[] | null;
 	/** Truncated preview of the model_products links — see CARD_PRODUCT_PREVIEW_COUNT. */
-	fits?: { products: ModelCardProductRef | ModelCardProductRef[] | null }[] | null;
+	fits?: { products: PartCardProductRef | PartCardProductRef[] | null }[] | null;
 	/** Aggregate embed holding the untruncated number of linked products. */
 	fits_count?: { count: number }[] | null;
 };
 
 /** A product the part is mounted on, as listed on the card's "Fits" line. */
-export interface ModelCardProductFit {
+export interface PartCardProductFit {
 	name: string;
 	/** Null when the source has no linkable slug (search results carry names only). */
 	slug: string | null;
 }
 
-export interface ModelCardData {
+export interface PartCardData {
 	id: string;
 	slug: string;
 	title: string;
@@ -30,7 +30,7 @@ export interface ModelCardData {
 	/** Brand the part belongs to — the card's primary attribution. */
 	brand: { name: string; slug: string } | null;
 	/** First few compatible products; `productCount` holds the real total. */
-	products: ModelCardProductFit[];
+	products: PartCardProductFit[];
 	productCount: number;
 	isPremium?: boolean;
 	// Optional part metadata (e.g. product page). Rendered as a compact meta
@@ -40,7 +40,7 @@ export interface ModelCardData {
 	estimatedPrintTime?: number | null; // minutes
 }
 
-export interface ModelListOptions {
+export interface PartListOptions {
 	page?: number;
 	limit?: number;
 	sortBy?: 'popularity' | 'likes' | 'views' | 'newest' | 'created_at';
@@ -52,8 +52,8 @@ export interface ModelListOptions {
 	product?: string;
 }
 
-export interface ModelListResult {
-	models: ModelCardData[];
+export interface PartListResult {
+	parts: PartCardData[];
 	pagination: {
 		page: number;
 		limit: number;

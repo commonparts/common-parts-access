@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { ModelCard } from "@/components/model/model-card"
+import { PartCard } from "@/components/model/part-card"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
-import type { ModelCardData } from "@/types/models"
+import type { PartCardData } from "@/types/models"
 
 type SortKey = "downloads" | "newest"
 
@@ -20,10 +20,10 @@ function sortParts(parts: ProductPart[], sortKey: SortKey): ProductPart[] {
   })
 }
 
-// Map a product part onto the shared ModelCard shape. Brand and compatibility
+// Map a product part onto the shared PartCard shape. Brand and compatibility
 // are omitted — this grid already sits on the page of the product these parts
 // fit — so the card carries material, print time and the license badge instead.
-function toModelCardModel(part: ProductPart): ModelCardData {
+function toPartCardData(part: ProductPart): PartCardData {
   return {
     id: part.id,
     slug: part.slug,
@@ -61,7 +61,7 @@ export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
 
       <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((part) => (
-          <ModelCard key={part.id} model={toModelCardModel(part)} showPartMeta />
+          <PartCard key={part.id} part={toPartCardData(part)} showPartMeta />
         ))}
       </div>
     </div>

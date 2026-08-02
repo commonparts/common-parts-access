@@ -6,10 +6,10 @@ import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import type { ModelStatus } from '@/types/database';
 import type {
-  ModelCardData,
-  ModelCardRow,
-  ModelListOptions,
-  ModelListResult,
+  PartCardData,
+  PartCardRow,
+  PartListOptions,
+  PartListResult,
   ModelSeoData,
   ModelSeoRow,
   MyModelListItem,
@@ -27,7 +27,7 @@ const CARD_PRODUCT_PREVIEW_COUNT = 2;
 // `fit_filter` below). PostgREST resolves an unaliased filter or limit against
 // the first embed of that table, so without the aliases the product filter
 // would land on the preview list instead of the join it belongs to.
-const MODEL_SELECT = `
+const PART_CARD_SELECT = `
   id,
   name,
   slug,
@@ -86,30 +86,30 @@ function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function mapModelRowToCard(model: ModelCardRow): ModelCardData {
-  const brand = firstJoined(model.brands);
+function mapPartRowToCard(row: PartCardRow): PartCardData {
+  const brand = firstJoined(row.brands);
 
-  const products = (model.fits ?? [])
+  const products = (row.fits ?? [])
     .map((link) => firstJoined(link.products))
     .filter((product): product is NonNullable<typeof product> => product !== null)
     .map((product) => ({ name: product.name, slug: product.slug }));
 
   return {
-    id: model.id,
-    slug: model.slug,
-    title: model.name,
-    description: model.description,
-    thumbnailUrl: model.thumbnail_url,
+    id: row.id,
+    slug: row.slug,
+    title: row.name,
+    description: row.description,
+    thumbnailUrl: row.thumbnail_url,
     brand: brand ? { name: brand.name, slug: brand.slug } : null,
     products,
     // The aggregate covers every link; the preview list is capped, so falling
     // back to its length would under-report the "+N more" overflow.
-    productCount: model.fits_count?.[0]?.count ?? products.length,
+    productCount: row.fits_count?.[0]?.count ?? products.length,
     isPremium: false,
   };
 }
 
-function resolveOrderColumn(sortBy?: ModelListOptions['sortBy']) {
+function resolveOrderColumn(sortBy?: PartListOptions['sortBy']) {
   switch (sortBy) {
     case 'popularity':
       return 'download_count';
@@ -125,7 +125,7 @@ function resolveOrderColumn(sortBy?: ModelListOptions['sortBy']) {
 }
 
 // Paged list with optional filters/search/sorting for browse screens.
-export async function fetchModelCards(options: ModelListOptions = {}): Promise<ModelListResult> {
+export async function fetchPartCards(options: PartListOptions = {}): Promise<PartListResult> {
   const page = Math.max(1, options.page || 1);
   const limit = Math.max(1, options.limit || 20);
   const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
@@ -140,10 +140,10 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   let query = options.product
     ? supabase
         .from('models')
-        .select(`${MODEL_SELECT}, fit_filter:model_products!inner(product_id)`, { count: 'exact' })
+        .select(`${PART_CARD_SELECT}, fit_filter:model_products!inner(product_id)`, { count: 'exact' })
     : supabase
         .from('models')
-        .select(MODEL_SELECT, { count: 'exact' });
+        .select(PART_CARD_SELECT, { count: 'exact' });
 
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
@@ -171,12 +171,12 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
     throw error;
   }
 
-  const models = ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+  const parts = ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
   const total = count || 0;
   const totalPages = Math.ceil(total / limit) || 1;
 
   return {
-    models,
+    parts,
     pagination: {
       page,
       limit,
@@ -188,13 +188,13 @@ export async function fetchModelCards(options: ModelListOptions = {}): Promise<M
   };
 }
 
-// Top models by downloads for the featured section.
-export async function fetchFeaturedModelCards(limit = 8) {
+// Top parts by downloads for the featured section.
+export async function fetchFeaturedPartCards(limit = 8) {
   const supabase = await createClient();
 
   const { data, error } = await supabase
     .from('models')
-    .select(MODEL_SELECT)
+    .select(PART_CARD_SELECT)
     .eq('status', 'published')
     .order('download_count', { ascending: false })
     .order('product_id', { referencedTable: 'fits' })
@@ -205,7 +205,7 @@ export async function fetchFeaturedModelCards(limit = 8) {
     throw error;
   }
 
-  return ((data ?? []) as ModelCardRow[]).map(mapModelRowToCard);
+  return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
 }
 
 const MODEL_SEO_SELECT = `

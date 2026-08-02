@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrintTime } from "@/lib/utils/formatters"
-import type { ModelCardData, ModelCardProductFit } from "@/types/models"
+import type { PartCardData, PartCardProductFit } from "@/types/models"
 
-interface ModelCardProps {
-  model: ModelCardData
+interface PartCardProps {
+  part: PartCardData
   className?: string
   variant?: "default" | "compact" | "detailed"
   // Optional overlay on the thumbnail (e.g. compatibility badge on a product
@@ -34,7 +34,7 @@ const BRAND_LINE_CLASS =
  * Brand attribution above the part name. The brand — not the contributor who
  * uploaded the file — is what identifies a spare part, so it leads the card.
  */
-function BrandLine({ brand }: { brand: NonNullable<ModelCardData["brand"]> }) {
+function BrandLine({ brand }: { brand: NonNullable<PartCardData["brand"]> }) {
   return (
     <Link href={`/brands/${brand.slug}`} className={BRAND_LINE_CLASS}>
       {brand.name}
@@ -51,7 +51,7 @@ function ProductFitLine({
   products,
   total,
 }: {
-  products: ModelCardProductFit[]
+  products: PartCardProductFit[]
   total: number
 }) {
   const overflow = Math.max(0, total - products.length)
@@ -79,15 +79,15 @@ function ProductFitLine({
   )
 }
 
-export function ModelCard({
-  model,
+export function PartCard({
+  part,
   className,
   variant = "default",
   badge,
   showPartMeta = false,
-}: ModelCardProps) {
-  const partHref = `/parts/${model.slug}`
-  const printTime = formatPrintTime(model.estimatedPrintTime)
+}: PartCardProps) {
+  const partHref = `/parts/${part.slug}`
+  const printTime = formatPrintTime(part.estimatedPrintTime)
   const isCompact = variant === "compact"
 
   return (
@@ -104,10 +104,10 @@ export function ModelCard({
             isCompact ? "aspect-square" : "aspect-video",
           )}
         >
-          {model.thumbnailUrl ? (
+          {part.thumbnailUrl ? (
             <Image
-              src={model.thumbnailUrl}
-              alt={model.title}
+              src={part.thumbnailUrl}
+              alt={part.title}
               fill
               sizes={
                 isCompact
@@ -129,7 +129,7 @@ export function ModelCard({
               </svg>
             </div>
           )}
-          {model.isPremium && (
+          {part.isPremium && (
             <Badge className="absolute right-2 top-2 bg-yellow-500">Premium</Badge>
           )}
           {badge && <div className="absolute left-sm top-sm z-10">{badge}</div>}
@@ -139,40 +139,45 @@ export function ModelCard({
 
       {/* Padded directly rather than through CardContent: that primitive hard-sets
           `pt-0` for footer-style stacking, which no className can override here. */}
-      <div className={cn("space-y-2xs", isCompact ? "p-md" : "p-lg")}>
-        {model.brand && <BrandLine brand={model.brand} />}
+      <div className={cn("space-y-2xs", isCompact ? "p-sm" : "p-md")}>
+        {/* Brand and name are one unit, tighter than the gaps around them. */}
+        <div className="space-y-3xs">
+          {part.brand && <BrandLine brand={part.brand} />}
 
-        <Link href={partHref} className={cn("block", FOCUS_RING)}>
-          {/* Colour is inherited from the Card (text-text-primary) — setting it
-              here would make cn() drop the size token. */}
-          <h3
-            className={cn(
-              "line-clamp-2 min-h-[2lh] font-heading font-semibold transition-colors hover:text-primary",
-              isCompact ? "text-body" : "text-subtitle",
-            )}
-          >
-            {model.title}
-          </h3>
-        </Link>
+          <Link href={partHref} className={cn("block", FOCUS_RING)}>
+            {/* No reserved second line: a one-line name would otherwise leave an
+                empty row above the fit line. Colour is inherited from the Card
+                (text-text-primary) — setting it here would make cn() drop the
+                size token. */}
+            <h3
+              className={cn(
+                "line-clamp-2 font-heading font-semibold leading-snug transition-colors hover:text-primary",
+                isCompact ? "text-body" : "text-subtitle",
+              )}
+            >
+              {part.title}
+            </h3>
+          </Link>
+        </div>
 
-        {model.description && variant === "detailed" && (
-          <p className="line-clamp-2 text-body text-text-secondary">{model.description}</p>
+        {part.description && variant === "detailed" && (
+          <p className="line-clamp-2 text-body text-text-secondary">{part.description}</p>
         )}
 
-        {model.products.length > 0 && (
-          <ProductFitLine products={model.products} total={model.productCount} />
+        {part.products.length > 0 && (
+          <ProductFitLine products={part.products} total={part.productCount} />
         )}
 
         {/* Part metadata (material, print time) + license badge */}
         {showPartMeta && (
-          <div className="space-y-xs pt-2xs">
-            {(model.material || printTime) && (
+          <div className="space-y-2xs">
+            {(part.material || printTime) && (
               <div className="flex flex-wrap items-center gap-x-md gap-y-xs text-caption text-text-secondary">
-                {model.material && <span>{model.material}</span>}
+                {part.material && <span>{part.material}</span>}
                 {printTime && <span>{printTime}</span>}
               </div>
             )}
-            {model.license && <Badge variant="outline">{model.license}</Badge>}
+            {part.license && <Badge variant="outline">{part.license}</Badge>}
           </div>
         )}
       </div>

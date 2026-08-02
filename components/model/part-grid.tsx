@@ -2,24 +2,24 @@ import * as React from "react"
 
 import { Grid } from "@/components/layout/grid"
 import { cn } from "@/lib/utils"
-import type { ModelCardData } from "@/types/models"
-import { ModelCard } from "./model-card"
+import type { PartCardData } from "@/types/models"
+import { PartCard } from "./part-card"
 
-interface ModelGridProps {
-  models: ModelCardData[]
+interface PartGridProps {
+  parts: PartCardData[]
   loading?: boolean
   variant?: "default" | "compact" | "detailed"
   columns?: 12 | 6 | 4
   className?: string
 }
 
-export function ModelGrid({
-  models,
+export function PartGrid({
+  parts,
   loading = false,
   variant = "default",
   columns,
   className,
-}: ModelGridProps) {
+}: PartGridProps) {
   const gridColumns = columns ?? 12
 
   const getItemSpans = () => {
@@ -59,7 +59,7 @@ export function ModelGrid({
     )
   }
 
-  if (models.length === 0) {
+  if (parts.length === 0) {
     return (
       <div className="py-xl text-center">
         <div className="mx-auto mb-sm flex h-16 w-16 items-center justify-center rounded-full bg-border-subtle">
@@ -67,7 +67,7 @@ export function ModelGrid({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </div>
-        <h3 className="text-heading-sm font-semibold text-text-primary">No models found</h3>
+        <h3 className="text-heading-sm font-semibold text-text-primary">No parts found</h3>
         <p className="text-body text-text-secondary">Try adjusting your search or filters</p>
       </div>
     )
@@ -75,9 +75,9 @@ export function ModelGrid({
 
   return (
     <Grid columns={gridColumns} className={className}>
-      {models.map((model) => (
-        <div key={model.id} className={itemSpans}>
-          <ModelCard model={model} variant={variant} />
+      {parts.map((part) => (
+        <div key={part.id} className={itemSpans}>
+          <PartCard part={part} variant={variant} />
         </div>
       ))}
     </Grid>
