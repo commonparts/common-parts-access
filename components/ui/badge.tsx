@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * and a soft danger badge share geometry but nothing else.
  */
 const badgeVariants = cva(
-  "inline-flex max-w-full select-none items-center whitespace-nowrap border align-middle font-medium leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
+  "inline-flex max-w-full items-center whitespace-nowrap border align-middle font-medium leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
   {
     variants: {
       /** Surface treatment — colours are resolved per tone below. */
@@ -40,9 +40,13 @@ const badgeVariants = cva(
         pill: "rounded-pill",
         rounded: "rounded-md",
       },
-      /** Adds affordances for badges used as links, filters or toggles. */
+      /**
+       * Adds affordances for badges used as links, filters or toggles.
+       * `select-none` belongs here and not in the base: a static badge holds
+       * text worth copying (a licence name, a tag), a clickable one does not.
+       */
       interactive: {
-        true: "cursor-pointer hover:opacity-80 active:opacity-70",
+        true: "cursor-pointer select-none hover:opacity-80 active:opacity-70",
         false: "",
       },
     },
