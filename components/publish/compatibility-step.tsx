@@ -118,7 +118,7 @@ export function CompatibilityStep({
             {formData.productIds.length > 0 && (
               <div className="mt-2xs flex flex-wrap gap-2xs">
                 {formData.productIds.map((pid) => (
-                  <Badge key={pid} variant="secondary">
+                  <Badge key={pid} variant="soft">
                     {productNames[pid] ?? 'Product'}
                     <button
                       type="button"

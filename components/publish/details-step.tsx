@@ -141,7 +141,7 @@ export function DetailsStep({
             {formData.tags.length > 0 && (
               <div className="mt-2xs flex flex-wrap gap-2xs">
                 {formData.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
+                  <Badge key={tag} variant="soft">
                     {tag}
                     <button
                       type="button"

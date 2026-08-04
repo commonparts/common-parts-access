@@ -34,7 +34,7 @@ export function ChecklistRollup({ checklist, onJumpTo, className }: ChecklistRol
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Before publishing</CardTitle>
         {unmet.length === 0 ? (
-          <Badge variant="secondary">All checks confirmed</Badge>
+          <Badge variant="soft">All checks confirmed</Badge>
         ) : (
           <Badge variant="outline">
             {unmet.length} of {CURATION_BLOCKING_CRITERIA.length} still to confirm

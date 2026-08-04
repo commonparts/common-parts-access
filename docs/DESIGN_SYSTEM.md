@@ -20,6 +20,20 @@ Refer to [CONTROL_SIZING.md](./CONTROL_SIZING.md) for the detailed control recip
 - **Combobox**: Input inherits Input styling; dropdown rows (options/empty/create) use `px-md py-sm text-sm` with `shadow-overlay` surface.
 - **File uploader**: Surface uses `p-lg`, `rounded-lg`, `border-dashed border-border-subtle`, `bg-bg-surface`, `shadow-surface`. Drag-over uses action tint; disabled reduces opacity and blocks pointer events.
 
+## Badges
+Badges are labels, not controls — they sit well below the standard control size. The API has two axes:
+- **`variant`** (treatment): `solid` for the one thing that must be noticed, `soft` (default) for ordinary labels, `outline` for neutral metadata, `ghost` for near-invisible annotations.
+- **`tone`** (meaning): `neutral` (default), `accent`, `success`, `warning`, `danger`. Reach for a coloured tone only when the colour carries information — a licence name or a count stays neutral.
+
+Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`pill` default, `rounded` for label-like chips), `dot` for a leading status dot, `interactive` for badges that are clickable, and `asChild` to render the styles onto a link or button.
+
+```tsx
+<Badge>Draft</Badge>
+<Badge variant="soft" tone="success" dot>Published</Badge>
+<Badge variant="outline" size="md">CC BY-SA 4.0</Badge>
+<Badge asChild interactive tone="accent"><Link href="/browse">12 parts</Link></Badge>
+```
+
 ## Layout & Components
 - **Cards**: Use the shared `Card` primitives; default padding and `rounded-lg` with `shadow-surface`. Respect existing spacing patterns (`space-y-*` inside content).
 - **Navbar**: Buttons (auth/upload/logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.

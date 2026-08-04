@@ -71,11 +71,11 @@ export function FilesStep({
         <CardTitle className="text-base">Files</CardTitle>
         <div className="flex gap-2xs">
           {!referenced && (
-            <Badge variant={modelFileCount > 0 ? 'secondary' : 'outline'}>
+            <Badge variant={modelFileCount > 0 ? 'soft' : 'outline'}>
               {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
             </Badge>
           )}
-          <Badge variant={imageUrls.length > 0 ? 'secondary' : 'outline'}>
+          <Badge variant={imageUrls.length > 0 ? 'soft' : 'outline'}>
             {imageUrls.length} {imageUrls.length === 1 ? 'image' : 'images'}
           </Badge>
         </div>

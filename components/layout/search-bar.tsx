@@ -290,7 +290,7 @@ export function SearchBar({
         </div>
       </div>
       {model.license && (
-        <Badge variant="secondary" className="shrink-0">
+        <Badge variant="soft" className="shrink-0">
           {model.license}
         </Badge>
       )}
