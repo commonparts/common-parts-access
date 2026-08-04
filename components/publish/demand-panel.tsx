@@ -75,7 +75,7 @@ export function DemandPanel({ productIds, productNames, className }: DemandPanel
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
         <CardTitle className="text-base">Captured demand</CardTitle>
-        {totalRequests > 0 && <Badge variant="secondary">{totalRequests} open requests</Badge>}
+        {totalRequests > 0 && <Badge variant="soft">{totalRequests} open requests</Badge>}
       </CardHeader>
       <CardContent className="space-y-sm">
         {loading && <p className="text-sm text-text-secondary">Loading demand…</p>}

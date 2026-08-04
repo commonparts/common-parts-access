@@ -12,8 +12,9 @@ interface StepperProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 /**
- * Progress indicator for the guided draft flows (curation, upload): completed
- * steps read as secondary, the active one as default, the rest as outline.
+ * Progress indicator for the guided draft flows (curation, upload): the active
+ * step carries the accent tone, completed ones read as neutral soft badges and
+ * the rest as outlines.
  * Display only — navigation happens through each step's own controls, which
  * persist the draft before moving.
  */
@@ -24,7 +25,9 @@ export function Stepper({ labels, current, ariaLabel, className, ...props }: Ste
         <React.Fragment key={label}>
           {index > 0 && <span aria-hidden="true" className="text-text-disabled">→</span>}
           <Badge
-            variant={index === current ? 'default' : index < current ? 'secondary' : 'outline'}
+            variant={index > current ? 'outline' : 'soft'}
+            tone={index === current ? 'accent' : 'neutral'}
+            size="md"
             aria-current={index === current ? 'step' : undefined}
           >
             {index + 1}. {label}

@@ -130,7 +130,9 @@ export function PartCard({
             </div>
           )}
           {part.isPremium && (
-            <Badge className="absolute right-sm top-sm">Premium</Badge>
+            <Badge tone="accent" className="absolute right-sm top-sm">
+              Premium
+            </Badge>
           )}
           {badge && <div className="absolute left-sm top-sm z-10">{badge}</div>}
         </div>

@@ -27,7 +27,11 @@ function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
       >
         {brand.name}
       </span>
-      {hasParts && <Badge className="shrink-0">{pluralize(brand.parts_count, 'part')}</Badge>}
+      {hasParts && (
+        <Badge tone="accent" className="shrink-0">
+          {pluralize(brand.parts_count, 'part')}
+        </Badge>
+      )}
     </Link>
   )
 }

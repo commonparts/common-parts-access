@@ -407,7 +407,10 @@ import { Checkbox } from '@/components/ui/checkbox'
 ```
 
 Button variants: `default` (primary), `secondary`, `outline`, `ghost`, `link`
-Badge variants: `default`, `secondary`, `outline`, `ghost`
+Badge variants: `solid`, `soft` (default), `outline`, `ghost` — combined with a
+`tone` (`neutral` default, `accent`, `success`, `warning`, `danger`) and, when
+needed, `size` (`sm` default, `md`), `shape` (`pill` default, `rounded`), `dot`,
+`interactive` and `asChild`. See the Badges section of `docs/DESIGN_SYSTEM.md`.
 
 ### Layout components
 

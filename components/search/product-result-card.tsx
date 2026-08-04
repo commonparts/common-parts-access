@@ -42,7 +42,7 @@ export function ProductResultCard({ product }: { product: ProductCardData }) {
           <div className="truncate text-caption text-text-secondary">{product.category}</div>
         )}
       </div>
-      <Badge variant="secondary" className="shrink-0">
+      <Badge variant="soft" className="shrink-0">
         {pluralize(product.parts_count, "part")}
       </Badge>
     </Link>

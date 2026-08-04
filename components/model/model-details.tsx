@@ -501,7 +501,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
           {model.tags.length > 0 && (
             <div className="flex flex-wrap gap-xs">
               {model.tags.map((tag) => (
-                <Badge key={tag} variant="outline" className="text-xs uppercase tracking-wide">
+                <Badge key={tag} variant="outline" className="uppercase tracking-wide">
                   #{tag}
                 </Badge>
               ))}
@@ -634,7 +634,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                       {model.author.displayName || model.author.username}
                     </span>
                     {model.author.verifiedMaker && (
-                      <Badge variant="secondary" className="text-xs">
+                      <Badge variant="soft">
                         Verified Maker
                       </Badge>
                     )}
@@ -797,7 +797,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                     {typeof model.printSettings === 'object' && Object.entries(model.printSettings).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                        <Badge variant="outline" className="text-xs">{String(value)}</Badge>
+                        <Badge variant="outline">{String(value)}</Badge>
                       </div>
                     ))}
                   </div>
@@ -821,7 +821,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
             {/* Verification Status — always rendered */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground font-medium">Status:</span>
-              <Badge variant="secondary" className="text-xs capitalize">
+              <Badge variant="soft" className="capitalize">
                 {model.verificationStatus === 'unverified' && '⊘ Unverified'}
                 {model.verificationStatus === 'author_tested' && '✓ Author Tested'}
                 {model.verificationStatus === 'community_validated' && '✓✓ Community Validated'}
@@ -948,7 +948,7 @@ export function ModelDetails({ slug, className }: ModelDetailsProps) {
                             {p.brand.name}
                           </Link>
                           {p.brand.verified && (
-                            <Badge variant="secondary" className="text-xs">
+                            <Badge variant="soft">
                               ✓ Verified
                             </Badge>
                           )}
