@@ -2,7 +2,7 @@
  * Application constants and configuration values.
  *
  * The project skeleton shipped a large set of constants that were never wired
- * to anything — pricing tiers, quality levels, cache keys, a model-category
+ * to anything — pricing tiers, quality levels, cache keys, a part-category
  * list superseded by the categories table, an API endpoint map nothing read.
  * They were removed in issue #295. What remains is what the app actually uses.
  */

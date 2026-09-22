@@ -1,4 +1,4 @@
-export type ModelFileCategory = 'model' | 'image' | 'documentation'
+export type PartFileCategory = 'model' | 'image' | 'documentation'
 
 export interface UploadValidationIssue {
 	field: 'title' | 'category' | 'files' | 'thumbnails' | 'tags' | 'payload'
@@ -10,7 +10,7 @@ export interface ValidatedUploadFile {
 	originalName: string
 	extension: string
 	size: number
-	category: ModelFileCategory
+	category: PartFileCategory
 }
 
 export interface UploadedAsset {
@@ -22,7 +22,7 @@ export interface UploadedAsset {
 	extension: string
 	size: number
 	contentType?: string
-	category: ModelFileCategory
+	category: PartFileCategory
 }
 
 export interface UploadAssetsResult {

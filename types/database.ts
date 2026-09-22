@@ -83,7 +83,7 @@ export interface PartRequest {
   user_id?: string | null;
   page_url?: string | null;
   status: PartRequestStatus;
-  fulfilled_by_model_id?: string | null;
+  fulfilled_by_part_id?: string | null;
   created_at?: string;
 }
 
@@ -95,10 +95,10 @@ export interface PartRequestCount {
 }
 
 // ============================================================================
-// Model JSONB column shapes
+// Part JSONB column shapes
 // ============================================================================
 
-export interface ModelDimensions {
+export interface PartDimensions {
   length?: number;
   width?: number;
   height?: number;
@@ -107,20 +107,20 @@ export interface ModelDimensions {
 
 export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
 
-export interface ModelPrintSettings {
+export interface PartPrintSettings {
   layer_height?: number; // mm, non-negative
   infill?: number;       // 0–100 %
   supports?: SupportType;
 }
 
 // ============================================================================
-// Model enum types — declared before Model so the interface can reference them
+// Part enum types — declared before Part so the interface can reference them
 // ============================================================================
 
-export type ModelStatus = 'draft' | 'published' | 'archived';
+export type PartStatus = 'draft' | 'published' | 'archived';
 
 // The six blocking criteria of curation checklist v1 (Flow P3 §4.3.3).
-// Stored on models.curation_checklist as a partial {criterion: boolean} map;
+// Stored on parts.curation_checklist as a partial {criterion: boolean} map;
 // all six must be true for a curated part to be publishable.
 export type CurationCriterionKey =
   | 'eligibility'
@@ -131,11 +131,11 @@ export type CurationCriterionKey =
   | 'duplicate';
 
 export type CurationChecklist = Partial<Record<CurationCriterionKey, boolean>>;
-export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
-export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
-export type ModelFileHostingType = 'hosted' | 'link_out';
+export type PartOriginType = 'original' | 'curated' | 'manufacturer';
+export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+export type PartFileHostingType = 'hosted' | 'link_out';
 
-export interface Model {
+export interface Part {
   id: string;
   name: string;
   slug: string;
@@ -149,10 +149,10 @@ export interface Model {
   part_number?: string | null;
   material?: string | null;
   color?: string | null;
-  dimensions?: ModelDimensions | null;
+  dimensions?: PartDimensions | null;
   
   // 3D Print settings
-  print_settings?: ModelPrintSettings | null;
+  print_settings?: PartPrintSettings | null;
   estimated_print_time?: number | null; // minutes
   estimated_material_usage?: number | null; // grams (stored as DECIMAL)
   
@@ -161,17 +161,17 @@ export interface Model {
   images?: string[] | null; // Array of image URLs (text[])
   
   // Status and metrics
-  status?: ModelStatus;
+  status?: PartStatus;
   download_count?: number;
   view_count?: number;
   like_count?: number;
   
   // Origin tracking
-  origin_type: ModelOriginType;
+  origin_type: PartOriginType;
   source_url?: string | null;
   source_platform?: string | null;   // FK to source_platforms.slug
   source_published_at?: string | null;
-  file_hosting_type?: ModelFileHostingType;
+  file_hosting_type?: PartFileHostingType;
 
   // Attribution (required when origin_type = 'curated')
   original_author?: string | null;
@@ -182,7 +182,7 @@ export interface Model {
   source_license_id?: string | null;
 
   // Validation
-  verification_status: ModelVerificationStatus;
+  verification_status: PartVerificationStatus;
   makes_count?: number;
 
   // Metadata
@@ -212,7 +212,7 @@ export interface Model {
 }
 
 // Rejection traceability (Flow P3 §4.3.3): a rejected source is recorded with
-// its reason and failed criteria, independently of any model row.
+// its reason and failed criteria, independently of any part row.
 export interface CurationRejection {
   id: string;
   source_url: string;
@@ -222,15 +222,15 @@ export interface CurationRejection {
   created_at?: string;
 }
 
-// Junction table model_products: links a model (part) to a compatible product.
-export interface ModelProduct {
-  model_id: string;
+// Junction table part_products: links a part (part) to a compatible product.
+export interface PartProduct {
+  part_id: string;
   product_id: string;
 }
 
-export interface ModelFile {
+export interface PartFile {
   id: string;
-  model_id: string;
+  part_id: string;
   filename: string; // max 255 chars
   original_filename: string; // max 255 chars
   file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
@@ -242,26 +242,26 @@ export interface ModelFile {
   created_at?: string;
 }
 
-export interface ModelLike {
+export interface PartLike {
   id: string;
   user_id: string;
-  model_id: string;
+  part_id: string;
   liked_at?: string;
 }
 
-export interface ModelDownload {
+export interface PartDownload {
   id: string;
   user_id?: string | null;
-  model_id: string;
+  part_id: string;
   file_id: string | null; // Nullable for archive/ZIP downloads
   ip_hash?: string | null; // SHA-256 of IP + UA
   user_agent?: string | null;
   downloaded_at?: string;
 }
 
-export interface ModelComment {
+export interface PartComment {
   id: string;
-  model_id: string;
+  part_id: string;
   user_id: string;
   parent_id?: string | null; // For nested comments
   content: string;
@@ -281,9 +281,9 @@ export interface Collection {
   updated_at?: string;
 }
 
-export interface CollectionModel {
+export interface CollectionPart {
   collection_id: string;
-  model_id: string;
+  part_id: string;
   added_at?: string;
 }
 
@@ -291,7 +291,7 @@ export interface CollectionModel {
 // Enhanced Types with Relations - Used in queries and API responses
 // ============================================================================
 
-export interface ModelWithRelations extends Model {
+export interface PartWithRelations extends Part {
   user_profiles?: UserProfile | UserProfile[];
   brands?: Brand | Brand[];
   categories?: Category | Category[];
@@ -303,11 +303,11 @@ export interface ModelWithRelations extends Model {
 // Database Filter Types
 // ============================================================================
 
-export interface ModelFilters {
+export interface PartFilters {
   category_id?: string;
   brand_id?: string;
   product_id?: string;
-  status?: ModelStatus;
+  status?: PartStatus;
   user_id?: string;
   tags?: string[];
 }

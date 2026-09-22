@@ -1,5 +1,5 @@
 import { htmlToPlainText } from '@/lib/utils/formatters'
-import { MATERIAL_MAX_LENGTH } from '@/lib/utils/model-metadata'
+import { MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 /**

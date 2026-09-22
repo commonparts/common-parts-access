@@ -38,7 +38,7 @@ It is recorded on the row at **creation**, not at publish: a draft in this flow 
 
 ### 2. Files
 
-Model files and photos go through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/models/[slug]/files`), which keeps file bytes out of the serverless body-size limit. Files are registered as soon as they upload, so leaving the session does not lose them.
+Model files and photos go through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/parts/[slug]/files`), which keeps file bytes out of the serverless body-size limit. Files are registered as soon as they upload, so leaving the session does not lose them.
 
 The upload button stays disabled until the session is ready — the storage path needs the owner id, which arrives from an async auth call, and without the guard there is a window where a click silently does nothing.
 
@@ -46,7 +46,7 @@ Registered images are shown as a thumbnail grid in canonical order, the first ta
 
 ### 3. Details
 
-Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializeModelMetadata` in `lib/utils/model-metadata.ts` — the same serializer curation uses — and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
+Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` — the same serializer curation uses — and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
 
 ### 4. Compatibility
 
@@ -60,7 +60,7 @@ The curator-facing demand panel is deliberately absent — open part-request cou
 
 ### 5. Review & publish
 
-The review screen renders the **actual part page** (`components/model/model-details.tsx`) against the draft; the model-details API serves the owner their own draft so the preview is faithful. **Publish** calls the gate below and, on success, redirects to `/parts/[slug]`. **Save as draft** exits to the drafts list.
+The review screen renders the **actual part page** (`components/part/part-details.tsx`) against the draft; the part-details API serves the owner their own draft so the preview is faithful. **Publish** calls the gate below and, on success, redirects to `/parts/[slug]`. **Save as draft** exits to the drafts list.
 
 ## Publish gate
 
@@ -91,10 +91,10 @@ Covered by `lib/upload/payload.test.ts`.
 
 ## Persistent drafts
 
-- A draft is a `models` row with `origin_type = 'original'` and `status = 'draft'`.
+- A draft is a `parts` row with `origin_type = 'original'` and `status = 'draft'`.
 - Created on the Part step; every later step transition sends a partial `PATCH /api/upload/drafts/[id]` (autosave). Only fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
 - The drafts list (`GET /api/upload/drafts`) shows the contributor's open drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, metadata and registered images from `GET /api/upload/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review.
-- **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/models/[slug]` — it removes the row and cleans up storage.
+- **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/parts/[slug]` — it removes the row and cleans up storage.
 
 Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated'` scoping in `queries/curation.ts`. That single filter is what keeps the flows apart: **upload endpoints cannot mutate a curation draft, and curation endpoints cannot mutate an upload draft**, in either direction and regardless of who owns the row.
 
@@ -110,17 +110,17 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 | `/api/upload/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. |
 | `/api/upload/drafts/[id]/publish` | POST | Publication gate; 422 with `blockers[]` on failure. |
 
-File registration reuses `POST /api/models/[slug]/files`; deletion reuses `DELETE /api/models/[slug]`. Neither is upload-specific.
+File registration reuses `POST /api/parts/[slug]/files`; deletion reuses `DELETE /api/parts/[slug]`. Neither is upload-specific.
 
-`POST /api/models/upload` — the single-shot endpoint of the old form — is **removed**. It accepted origin type, hosting type and verification status from the client, which is exactly what this flow exists to prevent, and leaving it would have kept a second, unguarded way in. (`/api/models/upload` now falls through to the `[slug]` route, which does not handle POST.)
+`POST /api/parts/upload` — the single-shot endpoint of the old form — is **removed**. It accepted origin type, hosting type and verification status from the client, which is exactly what this flow exists to prevent, and leaving it would have kept a second, unguarded way in. (`/api/parts/upload` now falls through to the `[slug]` route, which does not handle POST.)
 
-## Data model
+## Data part
 
 Migration `supabase/migrations/20260731134450_upload_originality_attestation.sql` (applied to production 2026-07-31).
 
 > The filename timestamp is the version `schema_migrations` recorded, not the one the file was drafted under — `apply_migration` stamps its own. If the two ever diverge, `supabase db push` reads the file as un-applied and runs it again.
 
-**On `models`:**
+**On `parts`:**
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -129,9 +129,9 @@ Migration `supabase/migrations/20260731134450_upload_originality_attestation.sql
 
 A DB CHECK ties the pair in **both** directions — `originality_attested = (originality_attested_at is not null)` — so neither a flag without a timestamp nor a timestamp without a flag can be stored. The second direction matters as much as the first: a timestamp alone would date a declaration nobody made.
 
-Plus `idx_models_owner_origin_status` on `(user_id, origin_type, status, updated_at desc)` — the drafts-list access path, shared with the curation drafts list.
+Plus `idx_parts_owner_origin_status` on `(user_id, origin_type, status, updated_at desc)` — the drafts-list access path, shared with the curation drafts list.
 
-Everything else reuses columns that already existed on `models`.
+Everything else reuses columns that already existed on `parts`.
 
 The attestation deliberately does **not** reuse `curation_checklist`: that column records a curator's judgement of someone else's part. Conflating it with a contributor's declaration about their own work would make neither auditable.
 
@@ -143,7 +143,7 @@ Rows that predate this flow carry `originality_attested = false`, and are not ba
 - No source attribution. The uploader is the author; there is no other author to credit.
 - No self-declared verification status. New parts are `unverified`; verification is granted by the registry, not claimed by the uploader.
 - No `manufacturer` origin. Brand-official uploads need a way to verify a brand identity, which does not exist yet.
-- No editing of an already-published part (`PUT /api/models/[slug]` is still unimplemented).
+- No editing of an already-published part (`PUT /api/parts/[slug]` is still unimplemented).
 - No contributor-facing brand creation; brands stay DB-curated.
 
 ## References

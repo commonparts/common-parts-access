@@ -10,7 +10,7 @@
 - Purely navigational; no form state. Uses the `use client` hero wrapper.
 
 ## Search Card
-- Uses `useModelUploadFormState` to share brand/category/product state with the upload flow.
+- Uses `usePartUploadFormState` to share brand/category/product state with the upload flow.
 - Brand combobox filters products; selecting a product can backfill category path via `setCategoryPathFromCategoryId`.
 - Product selection is required to enable the "Find parts" submit button; submit pushes to `/browse?productId={id}`.
 - Reset clears brand/product/category selections and search terms, resetting dependent combobox state.
@@ -22,6 +22,6 @@
 
 ## Key Files
 - Hero component: `components/layout/hero.tsx`
-- Shared form state: `hooks/use-model-upload-form-state.ts`
+- Shared form state: `hooks/use-part-upload-form-state.ts`
 - Combobox UI: `components/ui/combobox.tsx`
 - Button UI: `components/ui/button.tsx`

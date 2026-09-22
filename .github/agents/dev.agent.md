@@ -58,21 +58,21 @@ const MyCard = () => <div style={{ padding: 24 }}>My content</div>
 
 - **Database queries**: always paginate — never fetch unbounded lists. Use `.range()` or `.limit()` on every list query.
 - **API routes**: validate all inputs before touching the database. Never trust `request.json()` blindly.
-- **Components**: use `React.memo` for list items rendered in large grids (ModelCard, FileRow, etc.).
+- **Components**: use `React.memo` for list items rendered in large grids (PartCard, FileRow, etc.).
 - **Indexes**: if you write a query that filters or orders by a column, mention it — the human will add the index.
 - **State**: keep state as local as possible. Don't lift state to the top of the tree unless multiple siblings genuinely need it.
 
 ```typescript
 // Scalable — paginated, minimal columns
 const { data } = await supabase
-  .from('models')
+  .from('parts')
   .select('id, name, slug')
   .eq('status', 'published')
   .order('created_at', { ascending: false })
   .range(offset, offset + limit - 1)
 
 // Not scalable — unbounded, full row
-const { data } = await supabase.from('models').select('*')
+const { data } = await supabase.from('parts').select('*')
 ```
 
 ### Security — non-negotiable
@@ -110,19 +110,19 @@ export async function POST(request: NextRequest) {
   }
 
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .insert({ title: body.title.trim(), user_id: user.id })
     .select('id, slug')
     .single()
 
   if (error) return NextResponse.json({ error: 'Insert failed' }, { status: 500 })
-  return NextResponse.json({ model: data }, { status: 201 })
+  return NextResponse.json({ part: data }, { status: 201 })
 }
 
 // Insecure — trusts input, exposes full row, no auth check
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { data } = await supabase.from('models').insert(body).select('*').single()
+  const { data } = await supabase.from('parts').insert(body).select('*').single()
   return NextResponse.json(data)
 }
 ```
@@ -141,11 +141,11 @@ const MAX_TITLE_LENGTH = 200
 const ALLOWED_FILE_TYPES = ['.stl', '.obj', '.stp', '.step'] as const
 
 /**
- * Validates a model upload payload.
+ * Validates a part upload payload.
  * Returns ok:true with sanitized values, or ok:false with a list of issues.
  * Does not throw — callers decide how to handle failures.
  */
-export function validateModelUpload(payload: unknown): ValidationResult { ... }
+export function validatePartUpload(payload: unknown): ValidationResult { ... }
 
 // Not maintainable
 if (title.length > 200) { ... }   // where does 200 come from?
@@ -211,8 +211,8 @@ Example PR description:
 ```
 Implement user dashboard for published parts
 
-- Adds /dashboard/my-models route with list of user's published models
-- Edit and delete actions per model
+- Adds /dashboard/my-parts route with list of user's published parts
+- Edit and delete actions per part
 - Pagination with 20 items per page
 
 Closes #12
@@ -226,7 +226,7 @@ Closes #12
 app/
   (auth)/         # Unauthenticated pages — login, sign-up, password reset
   (dashboard)/    # Protected pages — upload, collections, settings
-  (public)/       # Public pages — browse, model detail, user profiles
+  (public)/       # Public pages — browse, part detail, user profiles
   api/            # API route handlers
   layout.tsx      # Root layout — do not modify without instruction
 
@@ -234,9 +234,9 @@ components/
   auth/           # Auth forms and buttons
   browse/         # Browse UI — filters, sort, pagination
   feedback/       # Feedback widget (form + floating button)
-  forms/          # Complex forms — model upload, brand, product
+  forms/          # Complex forms — part upload, brand, product
   layout/         # Structural components — navbar, footer, hero, shells
-  model/          # Model display — card, grid, details, file list
+  part/           # Part display — card, grid, details, file list
   ui/             # Primitive components — Button, Input, Card, Badge, etc.
   user/           # User profile components
 
@@ -271,7 +271,7 @@ supabase/
 import { createClient } from '@/lib/supabase/server'
 
 const supabase = await createClient()
-const { data, error } = await supabase.from('models').select('id, name, slug')
+const { data, error } = await supabase.from('parts').select('id, name, slug')
 if (error) throw error
 ```
 
@@ -314,7 +314,7 @@ export async function getFeedbackById(id: string) {
 
 ## Adding new API routes
 
-Follow `app/api/models/route.ts` as the canonical example:
+Follow `app/api/parts/route.ts` as the canonical example:
 - Use `createClient` from `@/lib/supabase/server`
 - Return `NextResponse.json()`
 - Always handle errors with appropriate status codes
@@ -352,8 +352,8 @@ Read `docs/DESIGN_SYSTEM.md` before building any UI. The rules below are the min
 - Titles, buttons, tabs, chips, and short labels must use sentence case.
 - Capitalize only the first word (and proper nouns/acronyms), not every word.
 - Always preserve official proper nouns exactly as written (for example: `Common Parts Access`, `Common Parts`).
-- Correct: `Browse parts`, `Upload model`, `My collections`
-- Wrong: `Browse Parts`, `Upload Model`, `My Collections`
+- Correct: `Browse parts`, `Upload part`, `My collections`
+- Wrong: `Browse Parts`, `Upload Part`, `My Collections`
 
 ### Colors — always use semantic tokens, never hex
 
@@ -455,16 +455,16 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | Table | Purpose |
 |---|---|
 | `user_profiles` | Public user data, extends `auth.users` |
-| `models` | 3D model records — status: draft/published/archived |
-| `model_files` | Files attached to a model |
-| `model_likes` | Like tracking |
-| `model_views` | View tracking |
-| `model_downloads` | Download tracking |
-| `model_comments` | Comments (hidden in MVP) |
-| `products` | Physical products that models are parts for |
+| `parts` | Spare part records — status: draft/published/archived |
+| `part_files` | Files attached to a part |
+| `part_likes` | Like tracking |
+| `part_views` | View tracking |
+| `part_downloads` | Download tracking |
+| `part_comments` | Comments (hidden in MVP) |
+| `products` | Physical products that parts fit |
 | `brands` | Brand records |
 | `categories` | Hierarchical categories with `path` and `parent_id` |
-| `collections` | User-curated model collections |
+| `collections` | User-curated part collections |
 | `feedback` | User feedback — entry point of the agent pipeline |
 
 All tables have RLS enabled. Always check policies before inserting or selecting.

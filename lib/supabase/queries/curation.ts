@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
-import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
+import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
 import type {
   CurationChecklist,
   CurationCriterionKey,
-  Model,
-  ModelDimensions,
-  ModelPrintSettings,
+  Part,
+  PartDimensions,
+  PartPrintSettings,
 } from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
@@ -35,16 +35,16 @@ export interface SourceUrlMatch {
 }
 
 /**
- * Finds a model with the given source_url — the duplicate check behind the
- * source step (unique index idx_models_source_url enforces this at the DB).
- * RLS scope: published models plus the caller's own rows. A draft owned by a
+ * Finds a part with the given source_url — the duplicate check behind the
+ * source step (unique index idx_parts_source_url enforces this at the DB).
+ * RLS scope: published parts plus the caller's own rows. A draft owned by a
  * different user is invisible here but still rejected by the unique index on
  * insert, which callers must handle.
  */
-export async function findModelBySourceUrl(sourceUrl: string): Promise<SourceUrlMatch | null> {
+export async function findPartBySourceUrl(sourceUrl: string): Promise<SourceUrlMatch | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .select('id, name, slug, status')
     .eq('source_url', sourceUrl)
     .limit(1)
@@ -71,7 +71,7 @@ export interface CurationDraftListItem {
 export async function listCurationDrafts(userId: string): Promise<CurationDraftListItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .select('id, name, slug, source_url, curation_checklist, updated_at')
     .eq('user_id', userId)
     .eq('origin_type', 'curated')
@@ -83,7 +83,7 @@ export async function listCurationDrafts(userId: string): Promise<CurationDraftL
   return (data ?? []) as CurationDraftListItem[]
 }
 
-export interface CurationDraft extends Partial<Model> {
+export interface CurationDraft extends Partial<Part> {
   id: string
   name: string
   slug: string
@@ -100,19 +100,19 @@ export interface CurationDraft extends Partial<Model> {
 export async function getCurationDraft(id: string): Promise<CurationDraft | null> {
   const supabase = await createClient()
 
-  const { data: model, error } = await supabase
-    .from('models')
+  const { data: part, error } = await supabase
+    .from('parts')
     .select(CURATION_DRAFT_SELECT)
     .eq('id', id)
     .eq('origin_type', 'curated')
     .maybeSingle()
 
   if (error) throw error
-  if (!model) return null
+  if (!part) return null
 
   const [{ data: links, error: linksError }, { data: files, error: filesError }] = await Promise.all([
-    supabase.from('model_products').select('product_id').eq('model_id', id).limit(50),
-    supabase.from('model_files').select('id, file_category').eq('model_id', id).limit(100),
+    supabase.from('part_products').select('product_id').eq('part_id', id).limit(50),
+    supabase.from('part_files').select('id, file_category').eq('part_id', id).limit(100),
   ])
 
   if (linksError) throw linksError
@@ -120,7 +120,7 @@ export async function getCurationDraft(id: string): Promise<CurationDraft | null
 
   const fileRows = files ?? []
   return {
-    ...(model as unknown as Model),
+    ...(part as unknown as Part),
     product_ids: (links ?? []).map((l) => l.product_id as string),
     model_file_count: fileRows.filter((f) => f.file_category === 'model').length,
     image_file_count: fileRows.filter((f) => f.file_category === 'image').length,
@@ -143,17 +143,17 @@ export interface CreateCurationDraftInput {
  * origin_type 'curated' requires source_url + original_author +
  * source_license_id at the DB level (curated_requires_source), which is why
  * these three are the creation minimum — everything else arrives via PATCH.
- * Covered by the "Users can manage own models" RLS policy.
+ * Covered by the "Users can manage own parts" RLS policy.
  */
 export async function createCurationDraft(
   userId: string,
   input: CreateCurationDraftInput,
 ): Promise<{ id: string; slug: string }> {
   const supabase = await createClient()
-  const slug = await ensureUniqueModelSlug(input.name, supabase)
+  const slug = await ensureUniquePartSlug(input.name, supabase)
 
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .insert({
       name: input.name,
       slug,
@@ -200,8 +200,8 @@ export interface CurationDraftPatch {
   file_hosting_type?: 'hosted' | 'link_out'
   material?: string | null
   color?: string | null
-  dimensions?: ModelDimensions | null
-  print_settings?: ModelPrintSettings | null
+  dimensions?: PartDimensions | null
+  print_settings?: PartPrintSettings | null
   estimated_print_time?: number | null
   estimated_material_usage?: number | null
   curation_checklist?: CurationChecklist
@@ -217,7 +217,7 @@ export interface CurationDraftPatch {
 
 /**
  * Applies a partial update to a curated draft and, when productIds is given,
- * syncs model_products to exactly that set. Ownership is enforced by RLS plus
+ * syncs part_products to exactly that set. Ownership is enforced by RLS plus
  * the explicit user filter; the update is scoped to curated rows so the
  * endpoint can never mutate a regular upload.
  */
@@ -231,7 +231,7 @@ export async function updateCurationDraft(
 
   if (Object.keys(patch).length > 0) {
     const { error } = await supabase
-      .from('models')
+      .from('parts')
       .update(patch)
       .eq('id', id)
       .eq('user_id', userId)
@@ -242,9 +242,9 @@ export async function updateCurationDraft(
 
   if (productIds) {
     const { data: existing, error: readError } = await supabase
-      .from('model_products')
+      .from('part_products')
       .select('product_id')
-      .eq('model_id', id)
+      .eq('part_id', id)
       .limit(50)
 
     if (readError) throw readError
@@ -256,17 +256,17 @@ export async function updateCurationDraft(
 
     if (toRemove.length > 0) {
       const { error } = await supabase
-        .from('model_products')
+        .from('part_products')
         .delete()
-        .eq('model_id', id)
+        .eq('part_id', id)
         .in('product_id', toRemove)
       if (error) throw error
     }
 
     if (toAdd.length > 0) {
       const { error } = await supabase
-        .from('model_products')
-        .insert(toAdd.map((pid) => ({ model_id: id, product_id: pid })))
+        .from('part_products')
+        .insert(toAdd.map((pid) => ({ part_id: id, product_id: pid })))
       if (error) throw error
     }
   }

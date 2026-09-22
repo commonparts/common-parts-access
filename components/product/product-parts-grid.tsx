@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { PartCard } from "@/components/model/part-card"
+import { PartCard } from "@/components/part/part-card"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
-import type { PartCardData } from "@/types/models"
+import type { PartCardData } from "@/types/parts"
 
 type SortKey = "downloads" | "newest"
 

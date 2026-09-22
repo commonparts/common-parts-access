@@ -145,7 +145,7 @@ function EmptyState({
         </div>
         <p className="max-w-container-md text-body text-text-secondary">
           This product is indexed and ready — the catalog grows with demand. Request the part you
-          need, or contribute a model if you have one.
+          need, or contribute a part if you have one.
         </p>
       </div>
 

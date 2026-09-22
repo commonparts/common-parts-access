@@ -1,4 +1,4 @@
-import type { ModelFileHostingType, ModelOriginType } from '@/types/database'
+import type { PartFileHostingType, PartOriginType } from '@/types/database'
 
 /**
  * The user-facing vocabulary of the publish flow (issue #301).
@@ -52,8 +52,8 @@ const PUBLICATION_LABELS: Record<PublicationKind, PublicationLabel> = {
  * elsewhere track with the designer as the original author.
  */
 export function describePublication(
-  originType: ModelOriginType,
-  fileHostingType: ModelFileHostingType | null | undefined,
+  originType: PartOriginType,
+  fileHostingType: PartFileHostingType | null | undefined,
 ): PublicationLabel {
   if (originType !== 'curated') return PUBLICATION_LABELS.original
   return fileHostingType === 'link_out' ? PUBLICATION_LABELS.referenced : PUBLICATION_LABELS.hosted

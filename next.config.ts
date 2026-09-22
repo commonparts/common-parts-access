@@ -12,16 +12,16 @@ const nextConfig: NextConfig = {
         permanent: true,
       },
       // Public naming decision (issue #258): part pages live at /parts/[slug].
-      // The old /model routes may already be externally indexed (canonical URLs
+      // The old /part routes may already be externally indexed (canonical URLs
       // shipped in #273), so redirect permanently, including subpages
       // (download, edit, embed).
       {
-        source: '/model/:path*',
+        source: '/part/:path*',
         destination: '/parts/:path*',
         permanent: true,
       },
       {
-        source: '/user/:username/models',
+        source: '/user/:username/parts',
         destination: '/user/:username/parts',
         permanent: true,
       },

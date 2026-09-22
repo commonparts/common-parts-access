@@ -8,7 +8,7 @@ import { PUBLISH_STEPS, type PublishStepIndex } from '@/lib/publish/steps'
  *
  * Nothing about the criteria themselves changes: the six blocking criteria
  * keep their definitions in `lib/curation/checklist.ts`, their storage in
- * `models.curation_checklist`, and their enforcement in the publish gate. Only
+ * `parts.curation_checklist`, and their enforcement in the publish gate. Only
  * the location of the checkbox moves — next to the evidence it judges, so the
  * contributor is deciding with the field in front of them rather than
  * recalling it two steps later.

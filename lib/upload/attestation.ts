@@ -20,7 +20,7 @@ export interface AttestationClause {
 export const ATTESTATION_CLAUSES: readonly AttestationClause[] = [
   {
     key: 'authorship',
-    text: 'I designed this part myself. It is not a copy, a re-upload, or a derivative of someone else’s model.',
+    text: 'I designed this part myself. It is not a copy, a re-upload, or a derivative of someone else’s part.',
   },
   {
     key: 'rights',

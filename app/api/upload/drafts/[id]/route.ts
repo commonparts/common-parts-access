@@ -16,7 +16,7 @@ import {
   parseNonNegativeFloat,
   parseNonNegativeInt,
   parsePrintSettings,
-} from '@/lib/utils/model-metadata'
+} from '@/lib/utils/part-metadata'
 import { isValidUuid, trimmedString } from '@/lib/utils/validation'
 
 type RouteContext = { params: Promise<{ id: string }> }

@@ -17,7 +17,7 @@ describe('describePublication', () => {
     expect(describePublication('curated', 'link_out').badge).toBe('Referenced')
   })
 
-  // file_hosting_type is nullable on models, and rows predating the column
+  // file_hosting_type is nullable on parts, and rows predating the column
   // carry no value. Hosted is the safe reading: the badge must never claim
   // the files are elsewhere when the record does not say so.
   it('falls back to Hosted when the hosting type is absent', () => {

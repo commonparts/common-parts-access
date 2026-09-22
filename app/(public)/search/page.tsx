@@ -30,9 +30,9 @@ export default async function SearchPage({
   // handles type filtering without another round-trip.
   const results = query
     ? await searchAll(query, SEARCH_MAX_LIMIT)
-    : { products: [], models: [], brands: [] }
+    : { products: [], parts: [], brands: [] }
 
-  const total = results.products.length + results.models.length + results.brands.length
+  const total = results.products.length + results.parts.length + results.brands.length
   const brandSuggestion = query && total === 0 ? await findExactBrandMatch(query) : null
 
   return (

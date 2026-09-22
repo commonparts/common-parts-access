@@ -4,16 +4,16 @@ import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { PartGrid } from "@/components/model/part-grid"
+import { PartGrid } from "@/components/part/part-grid"
 import { pluralize } from "@/lib/utils/formatters"
 import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
 import type { BrandSuggestion } from "@/lib/supabase/queries/search"
-import type { PartCardData } from "@/types/models"
+import type { PartCardData } from "@/types/parts"
 import {
   SEARCH_TYPES,
-  type SearchModelResult,
+  type SearchPartResult,
   type SearchResults,
   type SearchType,
 } from "@/types/search"
@@ -24,7 +24,7 @@ const PREVIEW_COUNT = 4
 // Map a search hit onto the shared PartCard shape, so a part looks the same
 // here as on /browse. Falls back to the single unlinked `product_name` when the
 // RPC predates 20260802141500_search_all_part_card_fields.
-function toPartCardData(hit: SearchModelResult): PartCardData {
+function toPartCardData(hit: SearchPartResult): PartCardData {
   const fits =
     hit.products?.map((product) => ({ name: product.name, slug: product.slug })) ??
     (hit.product_name ? [{ name: hit.product_name, slug: null }] : [])
@@ -63,7 +63,7 @@ export function SearchResultsView({
 
   const counts = {
     products: results.products.length,
-    parts: results.models.length,
+    parts: results.parts.length,
     brands: results.brands.length,
   }
   const total = counts.products + counts.parts + counts.brands
@@ -191,8 +191,8 @@ export function SearchResultsView({
             // same parts and must not be sized or spaced differently.
             <PartGrid
               parts={(activeType === "all"
-                ? results.models.slice(0, PREVIEW_COUNT)
-                : results.models
+                ? results.parts.slice(0, PREVIEW_COUNT)
+                : results.parts
               ).map(toPartCardData)}
             />
           ) : (

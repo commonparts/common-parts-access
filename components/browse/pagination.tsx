@@ -71,7 +71,7 @@ export function Pagination({
         <div className="text-sm text-muted-foreground">
           Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
           {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
-          {totalItems} models
+          {totalItems} parts
         </div>
       )}
 

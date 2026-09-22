@@ -8,12 +8,12 @@ import { DropdownInput } from '@/components/ui/dropdown-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { ModelUploadFormState } from '@/hooks/use-model-upload-form-state'
-import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/model-metadata'
+import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
+import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 interface DetailsStepProps {
-  form: ModelUploadFormState
+  form: PartUploadFormState
   /** Namespaces the DOM ids so both tracks can mount their own instance. */
   idPrefix: string
   /**

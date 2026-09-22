@@ -1,7 +1,7 @@
 /**
- * Detects the domain-level not-found error used by model metrics query helpers.
+ * Detects the domain-level not-found error used by part metrics query helpers.
  */
-export function isModelNotFoundError(error: unknown): boolean {
+export function isPartNotFoundError(error: unknown): boolean {
   if (error instanceof Error && error.message === 'MODEL_NOT_FOUND') {
     return true
   }

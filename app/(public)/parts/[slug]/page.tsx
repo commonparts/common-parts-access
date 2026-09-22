@@ -2,15 +2,15 @@ import { Metadata } from 'next'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
-import { ModelDetails } from '@/components/model/model-details'
+import { PartDetails } from '@/components/part/part-details'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
-import { fetchModelSeoBySlug } from '@/lib/supabase/queries/model'
+import { fetchPartSeoBySlug } from '@/lib/supabase/queries/part'
 import {
-  buildModelJsonLd,
-  buildModelSeoDescription,
-  buildModelSeoTitle,
+  buildPartJsonLd,
+  buildPartSeoDescription,
+  buildPartSeoTitle,
   serializeJsonLd,
 } from '@/lib/utils/seo'
 import { resolveStorageUrl } from '@/lib/storage/url'
@@ -20,7 +20,7 @@ import { APP_NAME } from '@/lib/utils/constants'
 // so it cannot be statically rendered at build time.
 export const dynamic = 'force-dynamic'
 
-interface ModelPageProps {
+interface PartPageProps {
   params: Promise<{
     slug: string
   }>
@@ -29,30 +29,30 @@ interface ModelPageProps {
 /**
  * SEO metadata per part (issue #252): title/description carrying the brand
  * and product name, Open Graph tags, and the canonical URL. Shares the
- * cached fetchModelSeoBySlug query with the page component.
+ * cached fetchPartSeoBySlug query with the page component.
  */
-export async function generateMetadata({ params }: ModelPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PartPageProps): Promise<Metadata> {
   try {
     const { slug } = await params
-    const model = await fetchModelSeoBySlug(slug)
+    const part = await fetchPartSeoBySlug(slug)
 
-    if (!model) {
+    if (!part) {
       return {
         title: 'Part not found',
         description: 'The requested part could not be found.',
       }
     }
 
-    const title = buildModelSeoTitle(model)
-    const description = buildModelSeoDescription(model)
-    const canonicalPath = `/parts/${model.slug}`
-    const image = resolveStorageUrl(model.thumbnailUrl)
+    const title = buildPartSeoTitle(part)
+    const description = buildPartSeoDescription(part)
+    const canonicalPath = `/parts/${part.slug}`
+    const image = resolveStorageUrl(part.thumbnailUrl)
 
     // Relative URLs resolve against metadataBase (set in the root layout).
     return {
       title,
       description,
-      keywords: model.tags.length > 0 ? model.tags.join(', ') : undefined,
+      keywords: part.tags.length > 0 ? part.tags.join(', ') : undefined,
       alternates: {
         canonical: canonicalPath,
       },
@@ -62,7 +62,7 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
         url: canonicalPath,
         siteName: APP_NAME,
         type: 'website',
-        images: image ? [{ url: image, alt: model.name }] : undefined,
+        images: image ? [{ url: image, alt: part.name }] : undefined,
       },
       twitter: {
         card: 'summary_large_image',
@@ -80,13 +80,13 @@ export async function generateMetadata({ params }: ModelPageProps): Promise<Meta
   }
 }
 
-export default async function ModelPage({ params }: ModelPageProps) {
+export default async function PartPage({ params }: PartPageProps) {
   const { slug } = await params
 
   // Cached — reuses the generateMetadata query within the same request.
-  const model = await fetchModelSeoBySlug(slug)
+  const part = await fetchPartSeoBySlug(slug)
 
-  if (!model) {
+  if (!part) {
     notFound()
   }
 
@@ -95,19 +95,19 @@ export default async function ModelPage({ params }: ModelPageProps) {
       <Container size="xl" className="space-y-lg">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildModelJsonLd(model)) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPartJsonLd(part)) }}
         />
 
         <Breadcrumbs
           items={[
             { label: 'Home', href: '/' },
             { label: 'Browse', href: '/browse' },
-            { label: model.name },
+            { label: part.name },
           ]}
           className="text-text-secondary"
         />
 
-        <ModelDetails slug={slug} />
+        <PartDetails slug={slug} />
 
         <div className="text-center">
           <Button asChild variant="outline" className="inline-flex items-center gap-sm">

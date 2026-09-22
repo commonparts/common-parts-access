@@ -7,9 +7,9 @@ import { Pagination } from '@/components/browse/pagination'
 import { SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
 import { Grid } from '@/components/layout/grid'
 import { SearchBar } from '@/components/layout/search-bar'
-import { PartGrid } from '@/components/model/part-grid'
+import { PartGrid } from '@/components/part/part-grid'
 import { Button } from '@/components/ui/button'
-import type { PartCardData } from '@/types/models'
+import type { PartCardData } from '@/types/parts'
 
 interface PaginationInfo {
   page: number
@@ -21,13 +21,13 @@ interface PaginationInfo {
 }
 
 interface PartsResponse {
-  models: PartCardData[]
+  parts: PartCardData[]
   pagination: PaginationInfo
 }
 
 /**
  * The filterable parts grid of the /browse hub: sort, in-grid filtering and
- * pagination over /api/models. Client-side by necessity (interactive state);
+ * pagination over /api/parts. Client-side by necessity (interactive state);
  * the navigation sections around it are server-rendered by the page. Its
  * filters are exploration tools — never query-result semantics, which belong
  * to /search (Flow P2 strict separation).
@@ -92,7 +92,7 @@ export function BrowsePartsGrid() {
 
       if (currentProduct) params.set('productId', currentProduct)
 
-      const response = await fetch(`/api/models?${params.toString()}`)
+      const response = await fetch(`/api/parts?${params.toString()}`)
 
       if (!response.ok) {
         throw new Error(`Failed to fetch parts: ${response.statusText}`)
@@ -100,7 +100,7 @@ export function BrowsePartsGrid() {
 
       const data: PartsResponse = await response.json()
 
-      setParts(data.models)
+      setParts(data.parts)
       setPagination(data.pagination)
     } catch (err) {
       console.error('Error fetching parts:', err)

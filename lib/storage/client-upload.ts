@@ -62,13 +62,13 @@ async function uploadFileToStorage(params: {
   supabase: BrowserSupabaseClient
   file: File
   userId: string
-  modelId: string
+  partId: string
   kind: 'model' | 'thumbnail'
 }): Promise<ClientUploadedFile> {
   const extension = getFileExtension(params.file.name)
   const filename = uniqueFilename(params.file.name)
   const folder = params.kind === 'thumbnail' ? 'thumbnails' : 'files'
-  const path = `${params.userId}/${params.modelId}/${folder}/${filename}`
+  const path = `${params.userId}/${params.partId}/${folder}/${filename}`
   const bucket = params.kind === 'thumbnail'
     ? STORAGE_BUCKETS.MODEL_THUMBNAILS
     : STORAGE_BUCKETS.MODEL_FILES
@@ -110,7 +110,7 @@ export interface UploadProgress {
  */
 export async function uploadFilesFromClient(params: {
   userId: string
-  modelId: string
+  partId: string
   modelFiles: File[]
   thumbnails: File[]
   onProgress?: (progress: UploadProgress) => void
@@ -136,7 +136,7 @@ export async function uploadFilesFromClient(params: {
         supabase,
         file,
         userId: params.userId,
-        modelId: params.modelId,
+        partId: params.partId,
         kind: 'model',
       })
       uploaded.push(result)
@@ -156,7 +156,7 @@ export async function uploadFilesFromClient(params: {
         supabase,
         file: thumb,
         userId: params.userId,
-        modelId: params.modelId,
+        partId: params.partId,
         kind: 'thumbnail',
       })
       uploaded.push(result)

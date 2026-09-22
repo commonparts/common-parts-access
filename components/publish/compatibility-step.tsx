@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
-import type { ModelUploadFormState } from '@/hooks/use-model-upload-form-state'
+import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 interface CompatibilityStepProps {
-  form: ModelUploadFormState
+  form: PartUploadFormState
   idPrefix: string
   /** True when the publish gate requires a brand, not only a product. */
   brandRequired?: boolean

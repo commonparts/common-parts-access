@@ -17,7 +17,7 @@ import {
   parseNonNegativeFloat,
   parseNonNegativeInt,
   parsePrintSettings,
-} from '@/lib/utils/model-metadata'
+} from '@/lib/utils/part-metadata'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
 
 const SOURCE_URL_MAX_LENGTH = 2048

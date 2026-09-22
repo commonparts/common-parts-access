@@ -77,7 +77,7 @@ export default function PublishPage() {
 
   const exitSession = React.useCallback(() => setSession({ mode: 'idle' }), [])
 
-  // Drafts are models rows, so deletion reuses the owner-gated model delete
+  // Drafts are parts rows, so deletion reuses the owner-gated part delete
   // endpoint, which removes the row and cleans up the stored files. For a
   // draft on the elsewhere track it also frees its source URL for a new one.
   const handleConfirmDelete = async () => {
@@ -86,7 +86,7 @@ export default function PublishPage() {
     setDeleting(true)
     setError(null)
     try {
-      const res = await fetch(`/api/models/${encodeURIComponent(target.slug)}`, {
+      const res = await fetch(`/api/parts/${encodeURIComponent(target.slug)}`, {
         method: 'DELETE',
       })
       if (!res.ok) {
