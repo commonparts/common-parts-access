@@ -22,7 +22,11 @@ export interface SearchPartResult {
   // Part card fields, added by 20260802141500_search_all_part_card_fields.
   // Optional so a deployment that runs ahead of the migration degrades to a
   // card without a brand eyebrow or fit line instead of crashing.
-  brand?: { name: string; slug: string } | null
+  //
+  // `brands` is the distinct set behind the part's linked products since
+  // 20260922213250 (issue #315) — a part fitting products of several brands
+  // is filed under all of them.
+  brands?: { name: string; slug: string }[]
   products?: { name: string; slug: string }[]
   product_count?: number
 }

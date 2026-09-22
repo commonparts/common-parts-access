@@ -11,8 +11,6 @@ import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 interface CompatibilityStepProps {
   form: PartUploadFormState
   idPrefix: string
-  /** True when the publish gate requires a brand, not only a product. */
-  brandRequired?: boolean
   /**
    * Adopts the product's category when one is picked. Kept to the elsewhere
    * track, where the category is often a best guess — on the original track
@@ -28,24 +26,24 @@ interface CompatibilityStepProps {
 /**
  * The Compatibility step, shared by both tracks (issue #302).
  *
- * Brand comes first and gates the product picker on both tracks: products are
- * scoped to the brand and changing the brand clears the selection, so offering
- * the picker earlier would only invite choices the next click throws away.
+ * Brand comes first and gates the product picker on both tracks: the picker
+ * lists one brand's catalog at a time, so offering it before a brand is
+ * chosen would only invite choices with nothing to choose from.
+ *
+ * The brand itself is not stored on the part (issue #315). It is a filter over
+ * the product catalog, and the part is filed under whichever brands its linked
+ * products belong to — which is why switching brands keeps the products
+ * already picked instead of clearing them: that is how one part is linked to a
+ * Bosch machine and a Siemens one.
  */
 export function CompatibilityStep({
   form,
   idPrefix,
-  brandRequired = false,
   syncCategoryFromProduct = false,
   demandPanel,
   judgements,
 }: CompatibilityStepProps) {
   const { formData, setFormData } = form
-
-  const productNames = React.useMemo(
-    () => Object.fromEntries(form.products.map((p) => [p.id, p.name])),
-    [form.products],
-  )
 
   const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
@@ -57,12 +55,13 @@ export function CompatibilityStep({
       <CardContent className="space-y-md">
         <p className="text-sm text-text-secondary">
           A spare part is found by the device it repairs: visitors browse brand, then product, then
-          parts. At least one product is required to publish.
+          parts. At least one product is required to publish. Add products from as many brands as
+          the part fits — the part is listed under each of them.
         </p>
 
         <div className="grid grid-cols-1 gap-md md:grid-cols-2">
           <div className="space-y-2xs">
-            <Label htmlFor={`${idPrefix}-brand`}>Brand{brandRequired ? ' *' : ''}</Label>
+            <Label htmlFor={`${idPrefix}-brand`}>Brand</Label>
             <Combobox
               id={`${idPrefix}-brand`}
               placeholder={form.loadingMeta ? 'Loading brands…' : 'Search brands'}
@@ -70,7 +69,7 @@ export function CompatibilityStep({
               searchTerm={form.brandSearch}
               onSearchChange={form.setBrandSearch}
               onSelect={(option) => {
-                setFormData((prev) => ({ ...prev, brandId: option.id, productIds: [] }))
+                setFormData((prev) => ({ ...prev, brandId: option.id }))
                 form.setBrandSearch(option.name)
               }}
               isOpen={form.brandOpen}
@@ -79,7 +78,9 @@ export function CompatibilityStep({
               emptyMessage={form.brandSearch ? 'No matching brands' : 'No brands found'}
             />
             <p className="text-sm text-text-secondary">
-              Brands are maintained by Common Parts. If yours is missing, send feedback.
+              Narrows the product list below. Switch it to add products from another brand — the
+              ones already linked are kept. Brands are maintained by Common Parts; if yours is
+              missing, send feedback.
             </p>
           </div>
 
@@ -119,12 +120,12 @@ export function CompatibilityStep({
               <div className="mt-2xs flex flex-wrap gap-2xs">
                 {formData.productIds.map((pid) => (
                   <Badge key={pid} variant="soft">
-                    {productNames[pid] ?? 'Product'}
+                    {form.productNames[pid] ?? 'Product'}
                     <button
                       type="button"
                       onClick={() => form.removeProduct(pid)}
                       className="ml-2xs rounded-full hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                      aria-label={`Remove ${productNames[pid] ?? 'product'}`}
+                      aria-label={`Remove ${form.productNames[pid] ?? 'product'}`}
                     >
                       ×
                     </button>

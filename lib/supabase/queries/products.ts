@@ -10,6 +10,14 @@ export interface FetchProductsParams {
   includeDescendants?: boolean
   search?: string
   limit?: number
+  /**
+   * Explicit product ids to resolve, bypassing the brand/category filters.
+   * The publish tools use it to name the products a draft already links to:
+   * since the part's brand column was dropped (issue #315) those links can
+   * span brands, so the brand-scoped list is no longer guaranteed to contain
+   * them all.
+   */
+  ids?: string[]
 }
 
 export interface CreateProductInput {
@@ -25,6 +33,21 @@ export interface CreateProductInput {
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
   const supabase = await createClient()
   const limit = params.limit && params.limit > 0 ? params.limit : 100
+
+  // An explicit id list is a lookup, not a browse: the caller already knows
+  // which rows it wants, so the brand and category filters would only be able
+  // to hide them.
+  if (params.ids && params.ids.length > 0) {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .in('id', params.ids)
+      .order('name', { ascending: true })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Product[]
+  }
 
   const resolveCategoryIds = async (): Promise<string[] | undefined> => {
     if (!params.categoryId) return undefined
@@ -86,6 +109,44 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   }
 
   return (data ?? []) as Product[]
+}
+
+/**
+ * Checks the products a draft links to, for both publication gates.
+ *
+ * Two things must hold: every id resolves to a real product, and every one of
+ * those products belongs to a brand. A part is found by descending brand ->
+ * product -> part, and since #315 a part's brands are its products' — so a
+ * product with no brand leaves the part unreachable however it is browsed.
+ *
+ * Products of *different* brands are expected, not an error: one part
+ * legitimately fits a Bosch machine and a Siemens one.
+ *
+ * Returns the blocker to report, or null when the links are sound. Lives here
+ * rather than in `lib/publish/blockers.ts` so the two server gates share it
+ * without that pure, client-imported module gaining a database call.
+ */
+export async function findProductLinkBlocker(productIds: string[]): Promise<string | null> {
+  const uniqueIds = [...new Set(productIds)]
+  if (uniqueIds.length === 0) return null
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, brand_id')
+    .in('id', uniqueIds)
+
+  // A failed read must not pass for "links are fine" — publishing on an
+  // unverified list is exactly what this gate exists to prevent.
+  if (error || !data || data.length !== uniqueIds.length) {
+    return 'The linked products could not be verified'
+  }
+
+  if (data.some((product) => !product.brand_id)) {
+    return 'Every linked product must belong to a brand — the part is browsed by brand, then product'
+  }
+
+  return null
 }
 
 // Upper bound on brand-scoped rows scanned by the duplicate guard. A brand

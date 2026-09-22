@@ -29,7 +29,7 @@ function toPartCardData(part: ProductPart): PartCardData {
     slug: part.slug,
     title: part.name,
     thumbnailUrl: part.thumbnail_url,
-    brand: null,
+    brands: [],
     products: [],
     productCount: 0,
     material: part.material,

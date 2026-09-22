@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrintTime } from "@/lib/utils/formatters"
-import type { PartCardData, PartCardProductFit } from "@/types/parts"
+import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
 
 interface PartCardProps {
   part: PartCardData
@@ -27,18 +27,49 @@ const FOCUS_RING =
 // utility and drops the first. Classes that pair the two are concatenated
 // rather than passed through cn().
 const BRAND_LINE_CLASS =
-  "block truncate text-micro font-medium uppercase tracking-caps text-text-secondary transition-colors hover:text-text-primary " +
-  FOCUS_RING
+  "flex items-center gap-3xs overflow-hidden text-micro font-medium uppercase tracking-caps text-text-secondary"
+
+// Truncation sits on each name, not on the row: the row is a flex container,
+// where `truncate` would clip without ever showing an ellipsis.
+const BRAND_NAME_CLASS =
+  "truncate transition-colors hover:text-text-primary " + FOCUS_RING
+
+/**
+ * How many brands the eyebrow names before collapsing the rest into "+N".
+ * Matches the product fit line below it, so the card header keeps the same
+ * height whether a part fits one brand or six.
+ */
+const CARD_BRAND_PREVIEW_COUNT = 2
 
 /**
  * Brand attribution above the part name. The brand — not the contributor who
  * uploaded the file — is what identifies a spare part, so it leads the card.
+ *
+ * A part is filed under every brand whose products it fits (issue #315): a
+ * dishwasher wheel shared by Bosch, Siemens and Neff names all three, because
+ * each is a place the visitor could have reached this card from.
  */
-function BrandLine({ brand }: { brand: NonNullable<PartCardData["brand"]> }) {
+function BrandLine({ brands }: { brands: PartCardBrand[] }) {
+  const shown = brands.slice(0, CARD_BRAND_PREVIEW_COUNT)
+  const overflow = brands.length - shown.length
+
   return (
-    <Link href={`/brands/${brand.slug}`} className={BRAND_LINE_CLASS}>
-      {brand.name}
-    </Link>
+    <p className={BRAND_LINE_CLASS}>
+      {shown.map((brand, index) => (
+        <React.Fragment key={brand.slug}>
+          {index > 0 && <span aria-hidden="true">·</span>}
+          <Link href={`/brands/${brand.slug}`} className={BRAND_NAME_CLASS}>
+            {brand.name}
+          </Link>
+        </React.Fragment>
+      ))}
+      {overflow > 0 && (
+        <span className="shrink-0 text-text-tertiary">
+          +{overflow}
+          <span className="sr-only"> more brands</span>
+        </span>
+      )}
+    </p>
   )
 }
 
@@ -143,7 +174,7 @@ export function PartCard({
       <div className={cn("space-y-2xs", isCompact ? "p-sm" : "p-md")}>
         {/* Brand and name are one unit, tighter than the gaps around them. */}
         <div className="space-y-3xs">
-          {part.brand && <BrandLine brand={part.brand} />}
+          {part.brands.length > 0 && <BrandLine brands={part.brands} />}
 
           <Link href={partHref} className={cn("block", FOCUS_RING)}>
             {/* No reserved second line: a one-line name would otherwise leave an

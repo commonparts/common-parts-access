@@ -2,12 +2,42 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
+import { distinctBrands } from '@/lib/utils/catalog'
+import type { Brand } from '@/types/database'
 
 // Supabase returns joined rows as T | T[] depending on cardinality.
 // This helper normalises both shapes to a single record or null.
 function first<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null
   return Array.isArray(value) ? (value[0] ?? null) : value
+}
+
+/** A brand as this route exposes it — camelCased, storage columns renamed. */
+interface BrandPayload {
+  id: string
+  name: string
+  slug: string
+  description: string | null
+  logo: string | null
+  website: string | null
+  verified: boolean
+}
+
+/**
+ * Maps a brands row to the response shape. Shared by the part's derived brand
+ * list and by the brand carried on each compatible product, which are the same
+ * rows read through the same join (issue #315).
+ */
+function toBrandPayload(brand: Brand): BrandPayload {
+  return {
+    id: brand.id,
+    name: brand.name,
+    slug: brand.slug,
+    description: brand.description ?? null,
+    logo: brand.logo_url ?? null,
+    website: brand.website_url ?? null,
+    verified: brand.verified ?? false,
+  }
 }
 
 // GET /api/parts/[slug]/details - Get detailed part information by slug
@@ -99,15 +129,6 @@ export async function GET(
             description,
             icon,
             path
-          ),
-          brands(
-            id,
-            name,
-            slug,
-            description,
-            logo_url,
-            website_url,
-            verified
           )
         `)
         .eq('slug', slug)
@@ -203,7 +224,6 @@ export async function GET(
 
     const author = first(part.user_profiles)
     const category = first(part.categories)
-    const brand = first(part.brands)
     const license = first(part.licenses)
     const sourceLicense = first(part.source_licenses)
 
@@ -211,6 +231,16 @@ export async function GET(
     const compatibleProducts = (partProducts ?? [])
       .map((row) => first(row.products))
       .filter((p): p is NonNullable<typeof p> => p !== null)
+
+    // The part's brands, derived from those products (issue #315). Same rule as
+    // the part card, so a part never shows one set of brands on /browse and
+    // another on its own page.
+    const derivedBrands = distinctBrands(
+      compatibleProducts.map((product) => {
+        const brand = first(product.brands)
+        return brand ? toBrandPayload(brand) : null
+      }),
+    )
 
     return NextResponse.json({
       part: {
@@ -294,15 +324,7 @@ export async function GET(
             releaseYear: p.release_year,
             discontinued: p.discontinued,
             image: resolveStorageUrl(p.image_url),
-            brand: pBrand ? {
-              id: pBrand.id,
-              name: pBrand.name,
-              slug: pBrand.slug,
-              description: pBrand.description,
-              logo: pBrand.logo_url,
-              website: pBrand.website_url,
-              verified: pBrand.verified,
-            } : null,
+            brand: pBrand ? toBrandPayload(pBrand) : null,
           }
         }),
         category: category ? {
@@ -313,15 +335,7 @@ export async function GET(
           icon: resolveStorageUrl(category.icon),
           path: category.path,
         } : null,
-        brand: brand ? {
-          id: brand.id,
-          name: brand.name,
-          slug: brand.slug,
-          description: brand.description,
-          logo: brand.logo_url,
-          website: brand.website_url,
-          verified: brand.verified,
-        } : null,
+        brands: derivedBrands,
         files: files || [],
         comments: (comments || []).map(comment => {
           const commentAuthor = first(comment.user_profiles)

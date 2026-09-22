@@ -152,6 +152,12 @@ export function usePartUploadFormState() {
   const [licenses, setLicenses] = React.useState<LicenseOption[]>([])
   const [sourcePlatforms, setSourcePlatforms] = React.useState<SourcePlatform[]>([])
   const [products, setProducts] = React.useState<ProductOption[]>([])
+  // Names of every product seen this session, keyed by id. `products` only
+  // holds the brand currently selected in the picker, but the linked set can
+  // span brands since #315 (and survives a brand switch), so the chips read
+  // their label from here instead — otherwise every product from another
+  // brand, and every one restored from a draft, would render as "Product".
+  const [productNames, setProductNames] = React.useState<Record<string, string>>({})
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
   const [categoryPath, setCategoryPath] = React.useState<string[]>([])
@@ -360,6 +366,52 @@ export function usePartUploadFormState() {
     }
   }, [showCreateProduct])
 
+  // Remember the name of every product the picker loads, so it stays available
+  // once the brand filter moves on to another catalog.
+  React.useEffect(() => {
+    if (products.length === 0) return
+    setProductNames(prev => {
+      const next = { ...prev }
+      let changed = false
+      for (const product of products) {
+        if (next[product.id] !== product.name) {
+          next[product.id] = product.name
+          changed = true
+        }
+      }
+      return changed ? next : prev
+    })
+  }, [products])
+
+  // Resolve linked products the picker has not loaded — the case on a resumed
+  // draft, whose links no longer come with a brand to scope the list by.
+  React.useEffect(() => {
+    const missing = formData.productIds.filter(id => !productNames[id])
+    if (missing.length === 0) return
+
+    let cancelled = false
+
+    async function resolveNames(ids: string[]) {
+      try {
+        const res = await fetch(`/api/products?ids=${encodeURIComponent(ids.join(","))}`)
+        const json = await res.json().catch(() => ({ products: [] }))
+        const resolved: ProductOption[] = Array.isArray(json.products) ? json.products : []
+        if (cancelled || resolved.length === 0) return
+        setProductNames(prev => ({
+          ...prev,
+          ...Object.fromEntries(resolved.map(product => [product.id, product.name])),
+        }))
+      } catch (error) {
+        console.error("Failed to resolve linked products", error)
+      }
+    }
+
+    resolveNames(missing)
+    return () => {
+      cancelled = true
+    }
+  }, [formData.productIds, productNames])
+
   const handleCategorySelect = (level: number, value: string) => {
     setCategoryPath(prev => {
       const next = [...prev]
@@ -549,6 +601,7 @@ export function usePartUploadFormState() {
     licenses,
     sourcePlatforms,
     products,
+    productNames,
     loadingProducts,
     loadingMeta,
     categoryLevels,

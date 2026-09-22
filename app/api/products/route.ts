@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
-import { trimmedString } from '@/lib/utils/validation'
+import { isValidUuid, trimmedString } from '@/lib/utils/validation'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
@@ -13,7 +14,38 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined
     const limit = Number.parseInt(searchParams.get('limit') || '100', 10) || 100
 
-    const products = await fetchProducts({ brandId, categoryId, includeDescendants, search, limit })
+    // `ids` resolves specific products by id — the publish tools use it to
+    // name the products a draft links to, which can span brands since #315.
+    //
+    // It is an exact lookup, so the list is taken whole or refused: dropping
+    // the malformed entries would report a corrupted link list as a success,
+    // and an empty `ids=` would fall through to the unfiltered catalog. The
+    // cap rejects rather than truncates for the same reason.
+    const idsParam = searchParams.get('ids')
+    let ids: string[] | undefined
+
+    if (idsParam !== null) {
+      const tokens = idsParam.split(',').map((id) => id.trim())
+      if (tokens.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
+        return NextResponse.json(
+          { error: `Too many product ids (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` },
+          { status: 400 },
+        )
+      }
+      if (!tokens.every(isValidUuid)) {
+        return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
+      }
+      ids = tokens
+    }
+
+    const products = await fetchProducts({
+      brandId,
+      categoryId,
+      includeDescendants,
+      search,
+      limit,
+      ids,
+    })
     return NextResponse.json({ products })
   } catch (error) {
     console.error('Failed to fetch products', error)

@@ -168,7 +168,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           description: draft.description ?? '',
           instructions: draft.instructions ?? '',
           categoryId: draft.category_id ?? '',
-          brandId: draft.brand_id ?? '',
           productIds: Array.isArray(draft.product_ids) ? draft.product_ids : [],
           licenseId: draft.license_id ?? '',
           tags: Array.isArray(draft.tags) ? draft.tags : [],
@@ -467,7 +466,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
 
         if (stepIndex === PUBLISH_STEPS.COMPATIBILITY) {
           return await patchDraft({
-            brandId: formData.brandId ?? '',
             productIds: formData.productIds,
             checklist,
           })
@@ -598,11 +596,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
       setPublishing(false)
     }
   }
-
-  const productNames = React.useMemo(
-    () => Object.fromEntries(form.products.map((p) => [p.id, p.name])),
-    [form.products],
-  )
 
   const toggleCriterion = (key: CurationCriterionKey, checked: boolean) =>
     setChecklist((prev) => ({ ...prev, [key]: checked }))
@@ -1092,7 +1085,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             idPrefix="elsewhere"
             syncCategoryFromProduct
             demandPanel={
-              <DemandPanel productIds={formData.productIds} productNames={productNames} />
+              <DemandPanel productIds={formData.productIds} productNames={form.productNames} />
             }
             judgements={renderCriterion('product_target')}
           />

@@ -25,7 +25,6 @@ export interface OriginalTrackState {
   licenseId: string
   attested: boolean
   modelFileCount: number
-  brandId: string
   productCount: number
 }
 
@@ -47,9 +46,6 @@ export function originalTrackBlockers(state: OriginalTrackState): PublishBlocker
   }
   if (state.modelFileCount < 1) {
     blockers.push({ step: PUBLISH_STEPS.FILES, message: 'Upload at least one model file' })
-  }
-  if (!state.brandId) {
-    blockers.push({ step: PUBLISH_STEPS.COMPATIBILITY, message: 'Select the brand it fits' })
   }
   if (state.productCount < 1) {
     blockers.push({

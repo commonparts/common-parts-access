@@ -106,7 +106,6 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
           description: draft.description ?? '',
           instructions: draft.instructions ?? '',
           categoryId: draft.category_id ?? '',
-          brandId: draft.brand_id ?? '',
           productIds: Array.isArray(draft.product_ids) ? draft.product_ids : [],
           licenseId: draft.license_id ?? '',
           tags: Array.isArray(draft.tags) ? draft.tags : [],
@@ -143,7 +142,6 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
               licenseId: draft.license_id ?? '',
               attested: draft.originality_attested === true,
               modelFileCount: draft.model_file_count ?? 0,
-              brandId: draft.brand_id ?? '',
               productCount: Array.isArray(draft.product_ids) ? draft.product_ids.length : 0,
             }),
           ),
@@ -240,7 +238,6 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
         if (stepIndex === PUBLISH_STEPS.COMPATIBILITY) {
           return await patchDraft({
-            brandId: formData.brandId ?? '',
             productIds: formData.productIds,
           })
         }
@@ -341,7 +338,6 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
     licenseId: formData.licenseId,
     attested,
     modelFileCount,
-    brandId: formData.brandId ?? '',
     productCount: formData.productIds.length,
   })
 
@@ -524,7 +520,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
       {step === PUBLISH_STEPS.COMPATIBILITY && (
         <div className="space-y-md">
-          <CompatibilityStep form={form} idPrefix="original" brandRequired />
+          <CompatibilityStep form={form} idPrefix="original" />
           <StepNav
             onBack={() => goTo(PUBLISH_STEPS.DETAILS)}
             onSaveAndExit={saveAndExit}

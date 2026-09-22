@@ -18,7 +18,7 @@ import type { Part, PartDimensions, PartPrintSettings } from '@/types/database'
 // every curation draft 404 for its own owner, 2026-07-18).
 const UPLOAD_DRAFT_SELECT = `
   id, name, slug, user_id, description, instructions, status, origin_type,
-  category_id, brand_id, license_id, tags, thumbnail_url, images,
+  category_id, license_id, tags, thumbnail_url, images,
   verification_status, file_hosting_type,
   material, color, dimensions, print_settings,
   estimated_print_time, estimated_material_usage,
@@ -167,7 +167,6 @@ export interface UploadDraftPatch {
   description?: string | null
   instructions?: string | null
   category_id?: string
-  brand_id?: string | null
   license_id?: string
   tags?: string[]
   material?: string | null
