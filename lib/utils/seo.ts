@@ -21,13 +21,12 @@ function partCanonicalUrl(slug: string): string {
 
 /**
  * "Bosch MUM5" — the brand + product the part fits, from the first linked
- * product. Falls back to the part's own brand when no product is linked,
- * and null when neither exists.
+ * product, and null when the part links to none. Since #315 a part has no
+ * brand of its own to fall back on: a part with no product has no brand.
  */
 function primaryFitLabel(part: PartSeoData): string | null {
   const fit = part.products[0]
-  if (fit) return [fit.brandName, fit.name].filter(Boolean).join(' ')
-  return part.brandName
+  return fit ? [fit.brandName, fit.name].filter(Boolean).join(' ') : null
 }
 
 /** Page title carrying the part name plus the brand/product it fits. */

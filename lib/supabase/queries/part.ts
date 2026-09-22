@@ -4,6 +4,7 @@ import { STORAGE_BUCKETS } from '@/constants/app';
 import { extractBucketStoragePath } from '@/lib/storage/path-utils';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
+import { distinctBrands } from '@/lib/utils/catalog';
 import type { PartStatus } from '@/types/database';
 import type {
   PartCardData,
@@ -26,28 +27,56 @@ const CARD_PRODUCT_PREVIEW_COUNT = 2;
 /** Sort key of the `fits` embed — the linked product's name, matching search_all. */
 const CARD_PRODUCT_ORDER = 'products(name)';
 
-// Every embed of part_products is aliased (`fits`, `fits_count`, and
-// `fit_filter` below). PostgREST resolves an unaliased filter or limit against
-// the first embed of that table, so without the aliases the product filter
-// would land on the preview list instead of the join it belongs to.
+/**
+ * Cap on the `brand_fits` embed. The brand set must not be truncated below the
+ * number of products a part can carry, and the publish gate already refuses
+ * more links than this, so the embed is complete at that bound while staying
+ * a bounded read.
+ */
+const CARD_BRAND_FITS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT;
+
+// Every embed of part_products is aliased (`fits`, `brand_fits`, `fits_count`,
+// and `fit_filter` / `brand_filter` below). PostgREST resolves an unaliased
+// filter or limit against the first embed of that table, so without the
+// aliases the product filter would land on the preview list instead of the
+// join it belongs to.
+//
+// `brand_fits` repeats the junction for the brands alone (issue #315): the
+// part has no brand of its own any more, and reusing `fits` would derive the
+// brand set from a list truncated to CARD_PRODUCT_PREVIEW_COUNT products.
+// It is bounded instead by the same cap the publish gate enforces on links.
 const PART_CARD_SELECT = `
   id,
   name,
   slug,
   description,
   thumbnail_url,
-  brands(
-    name,
-    slug
-  ),
   fits:part_products(
     products(
       name,
       slug
     )
   ),
+  brand_fits:part_products(
+    products(
+      brands(
+        name,
+        slug
+      )
+    )
+  ),
   fits_count:part_products(count)
 `;
+
+/** Inner join restricting the page to parts linked to one product. */
+const FIT_FILTER_JOIN = 'fit_filter:part_products!inner(product_id)';
+
+/**
+ * Inner join restricting the page to parts linked to any product of one brand
+ * — how a part is filed under a brand since #315, the part itself no longer
+ * carrying one.
+ */
+const BRAND_FILTER_JOIN = 'brand_filter:part_products!inner(products!inner(brand_id))';
 
 /**
  * Derives a slug from the part name and suffixes it until it is unique in
@@ -89,9 +118,21 @@ function firstJoined<T>(value: T | T[] | null | undefined): T | null {
   return Array.isArray(value) ? (value[0] ?? null) : value;
 }
 
-function mapPartRowToCard(row: PartCardRow): PartCardData {
-  const brand = firstJoined(row.brands);
+/**
+ * The brands of a card's part, read off the untruncated `brand_fits` embed.
+ * The ordering and deduplication rule is shared with the part detail payload
+ * — see distinctBrands.
+ */
+function deriveCardBrands(row: PartCardRow): PartCardData['brands'] {
+  return distinctBrands(
+    (row.brand_fits ?? []).map((link) => {
+      const brand = firstJoined(firstJoined(link.products)?.brands);
+      return brand ? { name: brand.name, slug: brand.slug } : null;
+    }),
+  );
+}
 
+function mapPartRowToCard(row: PartCardRow): PartCardData {
   const products = (row.fits ?? [])
     .map((link) => firstJoined(link.products))
     .filter((product): product is NonNullable<typeof product> => product !== null)
@@ -103,7 +144,7 @@ function mapPartRowToCard(row: PartCardRow): PartCardData {
     title: row.name,
     description: row.description,
     thumbnailUrl: row.thumbnail_url,
-    brand: brand ? { name: brand.name, slug: brand.slug } : null,
+    brands: deriveCardBrands(row),
     products,
     // The aggregate covers every link; the preview list is capped, so falling
     // back to its length would under-report the "+N more" overflow.
@@ -137,20 +178,28 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   const supabase = await createClient();
 
   // Filtering by product goes through the part_products junction (parts no
-  // longer carry a direct product_id). An inner join keeps pagination and the
-  // exact count correct regardless of how many parts a product links to. It is
-  // aliased so it never collides with the `fits` preview embed of the same table.
-  let query = options.product
-    ? supabase
-        .from('parts')
-        .select(`${PART_CARD_SELECT}, fit_filter:part_products!inner(product_id)`, { count: 'exact' })
-    : supabase
-        .from('parts')
-        .select(PART_CARD_SELECT, { count: 'exact' });
+  // longer carry a direct product_id), and so does filtering by brand since
+  // the part's own brand column was dropped (issue #315) — a brand matches a
+  // part when any product it fits belongs to that brand. Both are inner joins,
+  // which keep pagination and the exact count correct however many products a
+  // part links to, and both are aliased so they never collide with the `fits`
+  // and `brand_fits` display embeds of the same table.
+  // Spelled out per combination rather than assembled from an array: the
+  // Supabase client infers the row type from the select string, and only a
+  // literal one carries that type through.
+  const select = options.product
+    ? options.brand
+      ? `${PART_CARD_SELECT}, ${FIT_FILTER_JOIN}, ${BRAND_FILTER_JOIN}`
+      : `${PART_CARD_SELECT}, ${FIT_FILTER_JOIN}`
+    : options.brand
+      ? `${PART_CARD_SELECT}, ${BRAND_FILTER_JOIN}`
+      : PART_CARD_SELECT;
+
+  let query = supabase.from('parts').select(select, { count: 'exact' });
 
   if (options.status) query = query.eq('status', options.status);
   if (options.category) query = query.eq('category_id', options.category);
-  if (options.brand) query = query.eq('brand_id', options.brand);
+  if (options.brand) query = query.eq('brand_filter.products.brand_id', options.brand);
   if (options.product) query = query.eq('fit_filter.product_id', options.product);
   if (search) query = query.ilike('name', `%${search}%`);
 
@@ -165,7 +214,8 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   // /search. PostgREST resolves `products(name)` against the embed's own join.
   query = query
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
-    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
+    .limit(CARD_BRAND_FITS_LIMIT, { referencedTable: 'brand_fits' });
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -177,7 +227,11 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
     throw error;
   }
 
-  const parts = ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
+  // Cast through unknown: the client's type-level select parser gives up on
+  // the card select once a filter join is appended to it (the string is valid
+  // PostgREST — the plain select parses, and the same joins are exercised at
+  // runtime). PartCardRow is the contract either way, as for PART_SEO_SELECT.
+  const parts = ((data ?? []) as unknown as PartCardRow[]).map(mapPartRowToCard);
   const total = count || 0;
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -205,6 +259,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
     .order('download_count', { ascending: false })
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
+    .limit(CARD_BRAND_FITS_LIMIT, { referencedTable: 'brand_fits' })
     .limit(limit);
 
   if (error) {
@@ -226,7 +281,6 @@ const PART_SEO_SELECT = `
   original_author,
   original_author_url,
   user_profiles!inner(username, display_name),
-  brands(name),
   licenses!parts_license_id_fkey(name, url),
   source_licenses:licenses!parts_source_license_id_fkey(name, url),
   part_products(products(name, brands(name)))
@@ -258,7 +312,6 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
 
   const part = data as unknown as PartSeoRow;
   const author = firstJoined(part.user_profiles);
-  const brand = firstJoined(part.brands);
   // Curated parts are governed by the source license — same precedence as the
   // details route and the download license notice.
   const license = firstJoined(part.source_licenses) ?? firstJoined(part.licenses);
@@ -283,7 +336,6 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     authorName: author?.display_name || author?.username || null,
     originalAuthor: part.original_author ?? null,
     originalAuthorUrl: part.original_author_url ?? null,
-    brandName: brand?.name ?? null,
     licenseName: license?.name ?? null,
     licenseUrl: license?.url ?? null,
     products,

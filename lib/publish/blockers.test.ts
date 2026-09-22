@@ -17,7 +17,6 @@ const publishableOriginal: OriginalTrackState = {
   licenseId: 'license-uuid',
   attested: true,
   modelFileCount: 1,
-  brandId: 'brand-uuid',
   productCount: 1,
 }
 
@@ -60,14 +59,13 @@ describe('originalTrackBlockers', () => {
     expect(blockers[0].step).toBe(PUBLISH_STEPS.FILES)
   })
 
-  it('puts the brand and product pair on Compatibility', () => {
-    const blockers = originalTrackBlockers({
-      ...publishableOriginal,
-      brandId: '',
-      productCount: 0,
-    })
-    expect(blockers).toHaveLength(2)
-    expect(blockers.every((b) => b.step === PUBLISH_STEPS.COMPATIBILITY)).toBe(true)
+  // The brand is no longer part of the gate (issue #315): it is derived from
+  // the linked products, so the product link is the only compatibility
+  // condition left.
+  it('puts a missing product link on Compatibility', () => {
+    const blockers = originalTrackBlockers({ ...publishableOriginal, productCount: 0 })
+    expect(blockers).toHaveLength(1)
+    expect(blockers[0].step).toBe(PUBLISH_STEPS.COMPATIBILITY)
   })
 
   // The title has a minimum length, so a stray space is not a title.

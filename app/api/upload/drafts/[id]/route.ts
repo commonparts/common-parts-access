@@ -132,18 +132,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       patch.license_id = licenseId
     }
 
-    if (payload.brandId !== undefined) {
-      const brandId = trimmedString(payload.brandId)
-      if (brandId) {
-        if (!isValidUuid(brandId)) {
-          return NextResponse.json({ error: 'Invalid brand' }, { status: 400 })
-        }
-        const { data: brand, error } = await supabase.from('brands').select('id').eq('id', brandId).maybeSingle()
-        if (error || !brand) return NextResponse.json({ error: 'Invalid brand selected' }, { status: 400 })
-      }
-      patch.brand_id = brandId || null
-    }
-
     if (payload.tags !== undefined) {
       if (!Array.isArray(payload.tags)) {
         return NextResponse.json({ error: 'Tags must be an array' }, { status: 400 })

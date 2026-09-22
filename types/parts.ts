@@ -2,14 +2,28 @@ import type { Brand, License, Part, PartStatus, Product, UserProfile } from './d
 export type { SourcePlatform } from './database';
 
 type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
+type PartCardBrandRef = Pick<Brand, 'name' | 'slug'>;
 
 export type PartCardRow = Pick<
 	Part,
 	'id' | 'name' | 'slug' | 'description' | 'thumbnail_url'
 > & {
-	brands?: Pick<Brand, 'name' | 'slug'> | Pick<Brand, 'name' | 'slug'>[] | null;
 	/** Truncated preview of the part_products links — see CARD_PRODUCT_PREVIEW_COUNT. */
 	fits?: { products: PartCardProductRef | PartCardProductRef[] | null }[] | null;
+	/**
+	 * Second, untruncated embed of the same junction, carrying only each linked
+	 * product's brand. The card's brands are derived from it rather than from
+	 * `fits` (issue #315): that preview is capped at two products and would
+	 * drop the brands of the rest.
+	 */
+	brand_fits?:
+		| {
+				products:
+					| { brands: PartCardBrandRef | PartCardBrandRef[] | null }
+					| { brands: PartCardBrandRef | PartCardBrandRef[] | null }[]
+					| null;
+		  }[]
+		| null;
 	/** Aggregate embed holding the untruncated number of linked products. */
 	fits_count?: { count: number }[] | null;
 };
@@ -21,14 +35,24 @@ export interface PartCardProductFit {
 	slug: string | null;
 }
 
+/** A brand the part is filed under, derived from one of its compatible products. */
+export interface PartCardBrand {
+	name: string;
+	slug: string;
+}
+
 export interface PartCardData {
 	id: string;
 	slug: string;
 	title: string;
 	description?: string | null;
 	thumbnailUrl?: string | null;
-	/** Brand the part belongs to — the card's primary attribution. */
-	brand: { name: string; slug: string } | null;
+	/**
+	 * Every distinct brand behind the part's compatible products, by name — the
+	 * card's primary attribution. A part shared across brands (issue #315)
+	 * carries them all; an unlinked part carries none.
+	 */
+	brands: PartCardBrand[];
 	/** First few compatible products; `productCount` holds the real total. */
 	products: PartCardProductFit[];
 	productCount: number;
@@ -81,7 +105,6 @@ export type PartSeoRow = Pick<
 	user_profiles?:
 		| Pick<UserProfile, 'username' | 'display_name'>
 		| Pick<UserProfile, 'username' | 'display_name'>[];
-	brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null;
 	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	source_licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	part_products?: {
@@ -113,8 +136,6 @@ export interface PartSeoData {
 	/** Source author for curated parts — takes precedence for attribution. */
 	originalAuthor: string | null;
 	originalAuthorUrl: string | null;
-	/** Brand set directly on the part, used when no product is linked. */
-	brandName: string | null;
 	/** Effective license: the source license when present, else the platform license. */
 	licenseName: string | null;
 	licenseUrl: string | null;

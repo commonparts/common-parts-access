@@ -155,7 +155,11 @@ interface PartData {
     icon?: string
     path?: string
   }
-  brand?: {
+  /**
+   * Every brand the part is filed under, derived from its compatible products
+   * (issue #315). Empty when the part links to no product.
+   */
+  brands?: {
     id: string
     name: string
     slug: string
@@ -163,7 +167,7 @@ interface PartData {
     logo?: string
     website?: string
     verified: boolean
-  }
+  }[]
   files: PartFile[]
   // comments: PartComment[] // Hidden for MVP
 }
@@ -447,6 +451,21 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               {publication.badge}
               <span className="sr-only"> — {publication.description}</span>
             </Badge>
+            {part.brands && part.brands.length > 0 && (
+              <p className="text-micro font-medium uppercase tracking-caps text-text-secondary">
+                {part.brands.map((brand, index) => (
+                  <React.Fragment key={brand.id}>
+                    {index > 0 && <span aria-hidden="true"> · </span>}
+                    <Link
+                      href={`/brands/${brand.slug}`}
+                      className="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                    >
+                      {brand.name}
+                    </Link>
+                  </React.Fragment>
+                ))}
+              </p>
+            )}
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{part.name}</h1>
             {part.originType === 'curated' && part.originalAuthor && (
               <p className="text-body text-text-secondary">

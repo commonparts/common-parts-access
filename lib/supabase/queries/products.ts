@@ -10,6 +10,14 @@ export interface FetchProductsParams {
   includeDescendants?: boolean
   search?: string
   limit?: number
+  /**
+   * Explicit product ids to resolve, bypassing the brand/category filters.
+   * The publish tools use it to name the products a draft already links to:
+   * since the part's brand column was dropped (issue #315) those links can
+   * span brands, so the brand-scoped list is no longer guaranteed to contain
+   * them all.
+   */
+  ids?: string[]
 }
 
 export interface CreateProductInput {
@@ -25,6 +33,21 @@ export interface CreateProductInput {
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
   const supabase = await createClient()
   const limit = params.limit && params.limit > 0 ? params.limit : 100
+
+  // An explicit id list is a lookup, not a browse: the caller already knows
+  // which rows it wants, so the brand and category filters would only be able
+  // to hide them.
+  if (params.ids && params.ids.length > 0) {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .in('id', params.ids)
+      .order('name', { ascending: true })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Product[]
+  }
 
   const resolveCategoryIds = async (): Promise<string[] | undefined> => {
     if (!params.categoryId) return undefined

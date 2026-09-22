@@ -15,9 +15,11 @@ type RouteContext = { params: Promise<{ id: string }> }
 //   - a license that permits hosting here (no NC/ND) — the flow only hosts
 //   - the originality declaration recorded on the row
 //   - at least one registered model file
-//   - a brand, and at least one linked product belonging to it — without the
-//     pair the part is unreachable through the device-based navigation of
-//     Flow P2, which descends brand -> product -> part
+//   - at least one linked product, each belonging to a brand — without that
+//     the part is unreachable through the device-based navigation of Flow P2,
+//     which descends brand -> product -> part. The brands are the products'
+//     (issue #315), so linking products of several brands files the part
+//     under all of them.
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
@@ -68,16 +70,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
       blockers.push('At least one model file must be uploaded')
     }
 
-    if (!draft.brand_id) {
-      blockers.push('A brand is required — the part is browsed by brand, then product')
-    }
-
     if (draft.product_ids.length < 1) {
       blockers.push('At least one compatible product must be linked — without it the part cannot be found by device')
-    } else if (draft.brand_id) {
-      // Guards the one case the UI cannot: the brand was changed after the
-      // products were picked. A part filed under one brand but fitting
-      // another's products is browsable at the wrong place in the tree.
+    } else {
+      // The links carry the brands now (issue #315), so what has to hold is
+      // that each one resolves to a real product and that product is filed
+      // under a brand — a product with no brand leaves the part unreachable
+      // through the brand -> product -> part navigation of Flow P2. Products
+      // of different brands are expected, not an error: one part legitimately
+      // fits a Bosch and a Siemens machine.
       const { data: products, error } = await supabase
         .from('products')
         .select('id, brand_id')
@@ -85,8 +86,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
       if (error || !products || products.length !== draft.product_ids.length) {
         blockers.push('The linked products could not be verified')
-      } else if (products.some((product) => product.brand_id !== draft.brand_id)) {
-        blockers.push('Every linked product must belong to the selected brand')
+      } else if (products.some((product) => !product.brand_id)) {
+        blockers.push('Every linked product must belong to a brand — the part is browsed by brand, then product')
       }
     }
 

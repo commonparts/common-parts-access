@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
-import { trimmedString } from '@/lib/utils/validation'
+import { isValidUuid, trimmedString } from '@/lib/utils/validation'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
@@ -13,7 +14,31 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined
     const limit = Number.parseInt(searchParams.get('limit') || '100', 10) || 100
 
-    const products = await fetchProducts({ brandId, categoryId, includeDescendants, search, limit })
+    // `ids` resolves specific products by id — the publish tools use it to
+    // name the products a draft links to, which can span brands since #315.
+    // Capped at the number of links a part may carry and validated as UUIDs,
+    // so the parameter can never widen into an unbounded read.
+    const idsParam = searchParams.get('ids')
+    const ids = idsParam
+      ? idsParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter(isValidUuid)
+          .slice(0, VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT)
+      : undefined
+
+    if (idsParam && (!ids || ids.length === 0)) {
+      return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
+    }
+
+    const products = await fetchProducts({
+      brandId,
+      categoryId,
+      includeDescendants,
+      search,
+      limit,
+      ids,
+    })
     return NextResponse.json({ products })
   } catch (error) {
     console.error('Failed to fetch products', error)

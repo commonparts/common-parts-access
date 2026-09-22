@@ -168,7 +168,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           description: draft.description ?? '',
           instructions: draft.instructions ?? '',
           categoryId: draft.category_id ?? '',
-          brandId: draft.brand_id ?? '',
           productIds: Array.isArray(draft.product_ids) ? draft.product_ids : [],
           licenseId: draft.license_id ?? '',
           tags: Array.isArray(draft.tags) ? draft.tags : [],
@@ -467,7 +466,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
 
         if (stepIndex === PUBLISH_STEPS.COMPATIBILITY) {
           return await patchDraft({
-            brandId: formData.brandId ?? '',
             productIds: formData.productIds,
             checklist,
           })

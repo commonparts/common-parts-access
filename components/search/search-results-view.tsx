@@ -34,7 +34,7 @@ function toPartCardData(hit: SearchPartResult): PartCardData {
     slug: hit.slug,
     title: hit.name,
     thumbnailUrl: hit.thumbnail_url,
-    brand: hit.brand ?? null,
+    brands: hit.brands ?? [],
     products: fits,
     productCount: hit.product_count ?? fits.length,
   }

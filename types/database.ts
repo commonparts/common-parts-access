@@ -141,9 +141,10 @@ export interface Part {
   slug: string;
   description?: string | null;
   user_id: string;
-  brand_id?: string | null;
+  // No brand_id: a part's brands are the distinct brands of the products it
+  // fits, read through part_products (issue #315).
   category_id?: string | null;
-  
+
   // Part details
   part_name?: string | null;
   part_number?: string | null;
