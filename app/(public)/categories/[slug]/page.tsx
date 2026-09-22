@@ -92,9 +92,11 @@ function childDrillHint(childrenCount: number): string | null {
  * Hierarchical category drill-down page (issue #276, Flow P2): one crawlable
  * server-rendered route per category at any depth. Shows the direct children
  * with subtree-aggregated counts and, when the category has direct products,
- * the brands covering them (mixed nodes render both sections). Single-child
+ * the brands covering them (mixed nodes render both sections). Only children
+ * and brands with published parts are listed (issue #312); a category with
+ * none renders the availability notice and an upward link. Single-child
  * chains are collapsed by inlining the lone child's content — a click never
- * reveals only one option. Zero-count entries stay visible but muted (P-3).
+ * reveals only one option.
  */
 export default async function CategoryPage({ params }: CategoryPageProps) {
   const { slug } = await params
