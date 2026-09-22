@@ -24,7 +24,7 @@ export interface SearchPartResult {
   // card without a brand eyebrow or fit line instead of crashing.
   //
   // `brands` is the distinct set behind the part's linked products since
-  // 20260922150000 (issue #315) — a part fitting products of several brands
+  // 20260922213250 (issue #315) — a part fitting products of several brands
   // is filed under all of them.
   brands?: { name: string; slug: string }[]
   products?: { name: string; slug: string }[]
