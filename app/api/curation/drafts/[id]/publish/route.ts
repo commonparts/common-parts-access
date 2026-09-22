@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurationDraft, updateCurationDraft } from '@/lib/supabase/queries/curation'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
+import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
 import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { isValidUuid } from '@/lib/utils/validation'
@@ -17,7 +18,10 @@ type RouteContext = { params: Promise<{ id: string }> }
 //     link-out parts keep their files at the source, so NC/ND is acceptable
 //   - hosted: at least one registered model file
 //   - link-out: a source platform, and NO registered model files
-//   - at least one linked product (the product_target criterion made concrete)
+//   - at least one linked product (the product_target criterion made concrete),
+//     each belonging to a brand — same invariant as the upload gate. Since
+//     #315 a part's brands are its products', so a brandless product leaves
+//     the part unreachable through brand -> product -> part navigation.
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
@@ -87,6 +91,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     if (draft.product_ids.length < 1) {
       blockers.push('At least one product must be linked')
+    } else {
+      const linkBlocker = await findProductLinkBlocker(draft.product_ids)
+      if (linkBlocker) blockers.push(linkBlocker)
     }
 
     if (blockers.length > 0) {

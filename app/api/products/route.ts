@@ -16,19 +16,26 @@ export async function GET(request: NextRequest) {
 
     // `ids` resolves specific products by id — the publish tools use it to
     // name the products a draft links to, which can span brands since #315.
-    // Capped at the number of links a part may carry and validated as UUIDs,
-    // so the parameter can never widen into an unbounded read.
+    //
+    // It is an exact lookup, so the list is taken whole or refused: dropping
+    // the malformed entries would report a corrupted link list as a success,
+    // and an empty `ids=` would fall through to the unfiltered catalog. The
+    // cap rejects rather than truncates for the same reason.
     const idsParam = searchParams.get('ids')
-    const ids = idsParam
-      ? idsParam
-          .split(',')
-          .map((id) => id.trim())
-          .filter(isValidUuid)
-          .slice(0, VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT)
-      : undefined
+    let ids: string[] | undefined
 
-    if (idsParam && (!ids || ids.length === 0)) {
-      return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
+    if (idsParam !== null) {
+      const tokens = idsParam.split(',').map((id) => id.trim())
+      if (tokens.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
+        return NextResponse.json(
+          { error: `Too many product ids (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` },
+          { status: 400 },
+        )
+      }
+      if (!tokens.every(isValidUuid)) {
+        return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
+      }
+      ids = tokens
     }
 
     const products = await fetchProducts({

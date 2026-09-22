@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getUploadDraft, updateUploadDraft } from '@/lib/supabase/queries/upload'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
+import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { ATTESTATION_BLOCKER } from '@/lib/upload/attestation'
 import { isValidUuid } from '@/lib/utils/validation'
@@ -73,22 +74,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     if (draft.product_ids.length < 1) {
       blockers.push('At least one compatible product must be linked — without it the part cannot be found by device')
     } else {
-      // The links carry the brands now (issue #315), so what has to hold is
-      // that each one resolves to a real product and that product is filed
-      // under a brand — a product with no brand leaves the part unreachable
-      // through the brand -> product -> part navigation of Flow P2. Products
-      // of different brands are expected, not an error: one part legitimately
-      // fits a Bosch and a Siemens machine.
-      const { data: products, error } = await supabase
-        .from('products')
-        .select('id, brand_id')
-        .in('id', draft.product_ids)
-
-      if (error || !products || products.length !== draft.product_ids.length) {
-        blockers.push('The linked products could not be verified')
-      } else if (products.some((product) => !product.brand_id)) {
-        blockers.push('Every linked product must belong to a brand — the part is browsed by brand, then product')
-      }
+      const linkBlocker = await findProductLinkBlocker(draft.product_ids)
+      if (linkBlocker) blockers.push(linkBlocker)
     }
 
     if (blockers.length > 0) {

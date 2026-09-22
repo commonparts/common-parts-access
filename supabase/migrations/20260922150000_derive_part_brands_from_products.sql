@@ -31,6 +31,20 @@
 -- `products.brand_id`, never through the part.
 --
 -- `products.brand_id` stays -- a product does belong to exactly one brand.
+--
+-- ROLLOUT ORDER -- deploy the application first, then run this.
+--
+-- Step 1 is destructive, so the order is not free. The application of this PR
+-- never reads `parts.brand_id` and runs correctly against the schema as it
+-- stands today (verified against production), so deploying it first is safe.
+-- The reverse is not: the previous version selects `brands` through
+-- `parts_brand_id_fkey` on the browse, part and draft queries, and those
+-- requests fail the moment the column is gone.
+--
+-- Between the deploy and this migration, `search_all` still returns the old
+-- per-part `brand` key. That degrades quietly rather than breaking: the
+-- client reads `brands` as optional and falls back to an empty list, so
+-- search result cards show no brand eyebrow until this runs.
 
 -- 1. Drop the column, its foreign key and its index.
 alter table public.parts drop column brand_id;

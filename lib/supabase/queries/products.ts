@@ -111,6 +111,44 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   return (data ?? []) as Product[]
 }
 
+/**
+ * Checks the products a draft links to, for both publication gates.
+ *
+ * Two things must hold: every id resolves to a real product, and every one of
+ * those products belongs to a brand. A part is found by descending brand ->
+ * product -> part, and since #315 a part's brands are its products' — so a
+ * product with no brand leaves the part unreachable however it is browsed.
+ *
+ * Products of *different* brands are expected, not an error: one part
+ * legitimately fits a Bosch machine and a Siemens one.
+ *
+ * Returns the blocker to report, or null when the links are sound. Lives here
+ * rather than in `lib/publish/blockers.ts` so the two server gates share it
+ * without that pure, client-imported module gaining a database call.
+ */
+export async function findProductLinkBlocker(productIds: string[]): Promise<string | null> {
+  const uniqueIds = [...new Set(productIds)]
+  if (uniqueIds.length === 0) return null
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, brand_id')
+    .in('id', uniqueIds)
+
+  // A failed read must not pass for "links are fine" — publishing on an
+  // unverified list is exactly what this gate exists to prevent.
+  if (error || !data || data.length !== uniqueIds.length) {
+    return 'The linked products could not be verified'
+  }
+
+  if (data.some((product) => !product.brand_id)) {
+    return 'Every linked product must belong to a brand — the part is browsed by brand, then product'
+  }
+
+  return null
+}
+
 // Upper bound on brand-scoped rows scanned by the duplicate guard. A brand
 // exceeding it degrades gracefully: rows beyond the limit escape the
 // normalized check, but exact matches are still caught by the DB unique

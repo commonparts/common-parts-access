@@ -27,14 +27,6 @@ const CARD_PRODUCT_PREVIEW_COUNT = 2;
 /** Sort key of the `fits` embed — the linked product's name, matching search_all. */
 const CARD_PRODUCT_ORDER = 'products(name)';
 
-/**
- * Cap on the `brand_fits` embed. The brand set must not be truncated below the
- * number of products a part can carry, and the publish gate already refuses
- * more links than this, so the embed is complete at that bound while staying
- * a bounded read.
- */
-const CARD_BRAND_FITS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT;
-
 // Every embed of part_products is aliased (`fits`, `brand_fits`, `fits_count`,
 // and `fit_filter` / `brand_filter` below). PostgREST resolves an unaliased
 // filter or limit against the first embed of that table, so without the
@@ -44,7 +36,14 @@ const CARD_BRAND_FITS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT;
 // `brand_fits` repeats the junction for the brands alone (issue #315): the
 // part has no brand of its own any more, and reusing `fits` would derive the
 // brand set from a list truncated to CARD_PRODUCT_PREVIEW_COUNT products.
-// It is bounded instead by the same cap the publish gate enforces on links.
+//
+// It carries no limit of its own, deliberately. The brand set is what files a
+// part in the navigation, so a partial one misattributes it — and the publish
+// gate's cap on links is not a database constraint (production already holds
+// a part with 17, above it), so any cap here would silently drop brands from
+// exactly the parts that have the most, and nondeterministically: PostgREST
+// returns no guaranteed order. The fan-out is one small row per link, under a
+// top-level page of 20, and `fits_count` reports the true total.
 const PART_CARD_SELECT = `
   id,
   name,
@@ -214,8 +213,7 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   // /search. PostgREST resolves `products(name)` against the embed's own join.
   query = query
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
-    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
-    .limit(CARD_BRAND_FITS_LIMIT, { referencedTable: 'brand_fits' });
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
 
   const from = (page - 1) * limit;
   const to = from + limit - 1;
@@ -259,7 +257,6 @@ export async function fetchFeaturedPartCards(limit = 8) {
     .order('download_count', { ascending: false })
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
-    .limit(CARD_BRAND_FITS_LIMIT, { referencedTable: 'brand_fits' })
     .limit(limit);
 
   if (error) {

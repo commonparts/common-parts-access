@@ -597,11 +597,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     }
   }
 
-  const productNames = React.useMemo(
-    () => Object.fromEntries(form.products.map((p) => [p.id, p.name])),
-    [form.products],
-  )
-
   const toggleCriterion = (key: CurationCriterionKey, checked: boolean) =>
     setChecklist((prev) => ({ ...prev, [key]: checked }))
 
@@ -1090,7 +1085,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             idPrefix="elsewhere"
             syncCategoryFromProduct
             demandPanel={
-              <DemandPanel productIds={formData.productIds} productNames={productNames} />
+              <DemandPanel productIds={formData.productIds} productNames={form.productNames} />
             }
             judgements={renderCriterion('product_target')}
           />
