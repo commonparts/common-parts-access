@@ -19,7 +19,6 @@ interface PartFile {
 
 interface PartFileListProps {
   files: PartFile[]
-  partSlug?: string
   showCard?: boolean
   className?: string
   onFileDownload?: (file: PartFile) => Promise<void>
@@ -32,7 +31,8 @@ const FILE_SIZE_UNITS = ["Bytes", "KB", "MB", "GB", "TB"] as const
 const SECTION_ORDER: FileCategory[] = ["model", "documentation", "image"]
 
 const SECTION_CONFIG = {
-  part: {
+  // Keyed by the stored file_category, so this stays "model" (the 3D files).
+  model: {
     label: "PART FILES",
     iconWrapperClass: "bg-primary/10 text-primary",
     icon: (
@@ -127,7 +127,6 @@ FileRow.displayName = "FileRow"
 
 export function PartFileList({ 
   files, 
-  partSlug,
   showCard = true, 
   className = "",
   onFileDownload 
@@ -146,7 +145,6 @@ export function PartFileList({
         if (onFileDownload) {
           await onFileDownload(file)
         } else {
-          console.log("Downloading file:", file.original_filename, partSlug)
           window.open(file.file_url, "_blank")
         }
       } catch (error) {
@@ -159,7 +157,7 @@ export function PartFileList({
         })
       }
     },
-    [downloadingFiles, partSlug, onFileDownload]
+    [downloadingFiles, onFileDownload]
   )
 
   const sections = React.useMemo(() => {

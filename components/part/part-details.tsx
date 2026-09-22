@@ -969,7 +969,6 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <PartFileList
             files={part.files}
             showCard={true}
-            partSlug={part.slug}
             onFileDownload={async (file: PartFile) => {
               setLicenseNoticeVisible(true)
               const { downloadFile } = await import('@/lib/storage/download')
