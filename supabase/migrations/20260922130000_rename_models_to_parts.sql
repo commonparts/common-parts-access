@@ -350,6 +350,15 @@ create trigger parts_status_parts_count
 drop function public.trg_model_products_parts_count();
 drop function public.trg_models_status_parts_count();
 
+-- 20260714000001 revoked the default PUBLIC execute on these SECURITY DEFINER
+-- maintenance functions so anon/authenticated cannot invoke them directly
+-- through PostgREST /rpc. The two trigger helpers above are new identities and
+-- were granted that default again on creation, so revoke it once more.
+-- recompute_product_parts_count kept its name, and `create or replace`
+-- preserves privileges, so its revoked grant still stands.
+revoke execute on function public.trg_part_products_parts_count() from public, anon, authenticated;
+revoke execute on function public.trg_parts_status_parts_count() from public, anon, authenticated;
+
 -- ============================================================================
 -- 5c. Public RPCs -- same logic as 20260922120000 with the tables renamed
 -- ============================================================================

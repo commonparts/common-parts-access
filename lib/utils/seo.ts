@@ -54,7 +54,7 @@ export function buildPartSeoDescription(part: PartSeoData): string {
 /**
  * Builds the schema.org JSON-LD graph for a part page.
  *
- * The main entity is a 3DPart (CreativeWork) rather than a Product: parts
+ * The main entity is a 3DModel (CreativeWork) rather than a Product: parts
  * are free printable files with no offers/price, so Product markup would not
  * qualify for rich results and would misrepresent the page. A BreadcrumbList
  * (a supported rich result type) is included alongside it so the Google Rich
@@ -70,7 +70,10 @@ export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
   const creatorName = part.originalAuthor || part.authorName
 
   const partEntity: Record<string, unknown> = {
-    '@type': '3DPart',
+    // Schema.org vocabulary, not ours: `3DModel` is the registered type name
+    // (issue #314 renamed the entity everywhere else). An invented `3DPart`
+    // would make the entity unrecognized and fail structured data validation.
+    '@type': '3DModel',
     '@id': `${url}#part`,
     name: part.name,
     url,

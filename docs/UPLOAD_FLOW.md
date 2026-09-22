@@ -114,7 +114,7 @@ File registration reuses `POST /api/parts/[slug]/files`; deletion reuses `DELETE
 
 `POST /api/parts/upload` — the single-shot endpoint of the old form — is **removed**. It accepted origin type, hosting type and verification status from the client, which is exactly what this flow exists to prevent, and leaving it would have kept a second, unguarded way in. (`/api/parts/upload` now falls through to the `[slug]` route, which does not handle POST.)
 
-## Data part
+## Data model
 
 Migration `supabase/migrations/20260731134450_upload_originality_attestation.sql` (applied to production 2026-07-31).
 

@@ -134,7 +134,7 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 
 Draft deletion reuses `DELETE /api/parts/[slug]` (not curation-specific).
 
-## Data part
+## Data model
 
 Migration `supabase/migrations/20260717120000_curation_tool_fields.sql` (applied to production 2026-07-18).
 
