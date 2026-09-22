@@ -6,7 +6,7 @@ import { pluralize } from '@/lib/utils/formatters'
 interface CategoryTileProps {
   name: string
   href: string
-  /** Subtree-aggregated counts, displayed as-is — including zeros. */
+  /** Subtree-aggregated counts; the navigation only yields tiles with parts. */
   partsCount: number
   productCount: number
   /** One-line microcopy under the counts, e.g. example leaf names. */
@@ -16,10 +16,9 @@ interface CategoryTileProps {
 
 /**
  * Navigation tile for one category of the drill-down (hub roots and
- * subcategory grids, issue #276). Availability is the emphasis system: a
- * non-zero parts count is the only highlighted element on the tile, and
- * zero-count tiles stay visible but muted — never hidden (P-3, status
- * honesty).
+ * subcategory grids, issue #276). The parts count is the only highlighted
+ * element on the tile: categories without parts are not surfaced at all
+ * (issue #312), so every tile advertises availability.
  */
 export function CategoryTile({
   name,
@@ -29,8 +28,6 @@ export function CategoryTile({
   hint,
   className,
 }: CategoryTileProps) {
-  const hasParts = partsCount > 0
-
   return (
     <Link
       href={href}
@@ -39,16 +36,11 @@ export function CategoryTile({
         className,
       )}
     >
-      <span
-        className={cn(
-          'truncate font-heading text-sm font-semibold',
-          hasParts ? 'text-text-primary' : 'text-text-secondary',
-        )}
-      >
+      <span className="truncate font-heading text-sm font-semibold text-text-primary">
         {name}
       </span>
       <span className="text-caption text-text-secondary">
-        <span className={cn(hasParts && 'font-semibold text-text-primary')}>
+        <span className="font-semibold text-text-primary">
           {pluralize(partsCount, 'part')}
         </span>
         {' · '}

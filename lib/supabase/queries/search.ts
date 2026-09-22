@@ -59,9 +59,11 @@ export interface BrandSuggestion {
 /**
  * Conservative empty-state suggestion: returns a brand only when the whole
  * query or one of its tokens is an EXACT (case-insensitive) match for a brand
- * name — never a fuzzy/partial match. Used on the /search zero-result state to
- * point at a real brand page (e.g. query "magimix blender" → the Magimix brand).
- * Tokens are sanitized to [a-z0-9-] before building the filter.
+ * name — never a fuzzy/partial match — and only when the brand has at least
+ * one product with a published part, the same visibility rule as search_all
+ * (issue #312): the zero-result state must not point at an empty brand page.
+ * Used on /search (e.g. query "magimix blender" → the Magimix brand). Tokens
+ * are sanitized to [a-z0-9-] before building the filter.
  */
 export async function findExactBrandMatch(query: string): Promise<BrandSuggestion | null> {
   const tokens = Array.from(
@@ -76,10 +78,15 @@ export async function findExactBrandMatch(query: string): Promise<BrandSuggestio
   const supabase = await createClient()
   // `name.ilike.<token>` with no wildcards is a case-insensitive exact match.
   const orFilter = tokens.map((t) => `name.ilike.${t}`).join(',')
+  // `products!inner` with a filter on the embedded rows keeps only brands
+  // that have a matching product (an EXISTS in PostgREST terms); the embed is
+  // bounded to one row so the payload never grows with the brand's catalog.
   const { data, error } = await supabase
     .from('brands')
-    .select('name, slug')
+    .select('name, slug, products!inner(id)')
     .or(orFilter)
+    .gt('products.parts_count', 0)
+    .limit(1, { referencedTable: 'products' })
     .limit(1)
 
   if (error) {
@@ -87,5 +94,6 @@ export async function findExactBrandMatch(query: string): Promise<BrandSuggestio
     return null
   }
 
-  return (data?.[0] as BrandSuggestion | undefined) ?? null
+  const match = data?.[0] as { name: string; slug: string } | undefined
+  return match ? { name: match.name, slug: match.slug } : null
 }

@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { withPublishedParts } from '@/lib/utils/catalog'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
 export const NAV_LISTING_PAGE_SIZE = 24
@@ -75,13 +76,14 @@ export const fetchBrandBySlug = cache(async (slug: string): Promise<BrandPageBra
 
 /**
  * Fetches a brand's accurate totals and covered categories via the
- * fetch_brand_nav RPC (replaced by migration 20260716181406: parts counts
- * are distinct published parts, a part fitting several products counts
- * once) — aggregated in the database so the counts are never derived from a
- * truncated product list.
- * Wrapped in React cache() so generateMetadata and the page component share
- * a single query per request. The RPC is SECURITY INVOKER; reads are covered
- * by the public read policies.
+ * fetch_brand_nav RPC (migration 20260716181406: parts counts are distinct
+ * published parts, a part fitting several products counts once;
+ * 20260922120000: only products with a published part count, and only
+ * categories holding such products are returned — issue #312) — aggregated
+ * in the database so the counts are never derived from a truncated product
+ * list. Wrapped in React cache() so generateMetadata and the page component
+ * share a single query per request. The RPC is SECURITY INVOKER; reads are
+ * covered by the public read policies.
  */
 export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> => {
   const supabase = await createClient()
@@ -92,7 +94,7 @@ export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> =>
   return {
     parts_count: nav?.parts_count ?? 0,
     product_count: nav?.product_count ?? 0,
-    categories: nav?.categories ?? [],
+    categories: withPublishedParts(nav?.categories ?? []),
   }
 })
 
@@ -107,9 +109,12 @@ interface ProductRow {
 
 /**
  * Fetches one page of a brand's products with their category and denormalized
- * parts_count, ordered by name. Wrapped in React cache() (primitive args so
- * the per-request key works) in case a future caller shares it with metadata.
- * Covered by the public read policies on products and categories.
+ * parts_count, ordered by name. Products without a published part are left
+ * out (issue #312) — parts_count is trigger-maintained (#227), so the filter
+ * runs in the database and the pagination stays exact. Wrapped in React
+ * cache() (primitive args so the per-request key works) in case a future
+ * caller shares it with metadata. Covered by the public read policies on
+ * products and categories.
  */
 export const fetchBrandProductsPage = cache(
   async (brandId: string, rawPage: number): Promise<ProductListingPage<BrandPageProduct>> => {
@@ -122,6 +127,7 @@ export const fetchBrandProductsPage = cache(
         count: 'exact',
       })
       .eq('brand_id', brandId)
+      .gt('parts_count', 0)
       .order('name', { ascending: true })
       .range(from, to)
 
@@ -150,12 +156,12 @@ export interface BrandCategoryListing extends ProductListingPage<BrandPageProduc
 
 /**
  * Loads the /brands/[brand]/[category] listing: the category by slug plus the
- * brand's products in that category, paginated. Returns null when the category
- * slug does not resolve (the route 404s); an empty products array with a valid
- * category renders the empty state instead. Wrapped in React cache() with
- * primitive args so generateMetadata and the page component share the two
- * queries per request. Covered by the public read policies on categories and
- * products.
+ * brand's products in that category that have a published part (issue #312),
+ * paginated. Returns null when the category slug does not resolve (the route
+ * 404s); an empty products array with a valid category renders the empty
+ * state instead. Wrapped in React cache() with primitive args so
+ * generateMetadata and the page component share the two queries per request.
+ * Covered by the public read policies on categories and products.
  */
 export const fetchBrandCategoryListing = cache(
   async (
@@ -181,6 +187,7 @@ export const fetchBrandCategoryListing = cache(
       .select('id, name, slug, image_url, parts_count', { count: 'exact' })
       .eq('brand_id', brandId)
       .eq('category_id', category.id)
+      .gt('parts_count', 0)
       .order('name', { ascending: true })
       .range(from, to)
 
