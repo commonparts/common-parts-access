@@ -30,7 +30,7 @@ export const APP_URL = resolveAppUrl()
 
 // Form validation limits
 export const VALIDATION_LIMITS = {
-  MODEL: {
+  PART: {
     TITLE_MIN_LENGTH: 3,
     TITLE_MAX_LENGTH: 200,
     DESCRIPTION_MAX_LENGTH: 250,

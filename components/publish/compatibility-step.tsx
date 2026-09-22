@@ -47,7 +47,7 @@ export function CompatibilityStep({
     [form.products],
   )
 
-  const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
+  const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
   return (
     <Card>
@@ -93,7 +93,7 @@ export function CompatibilityStep({
                   : !formData.brandId
                     ? 'Select a brand first'
                     : atProductLimit
-                      ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
+                      ? `Maximum ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT} products reached`
                       : 'Search and add a product'
               }
               options={form.products

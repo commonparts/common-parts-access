@@ -214,7 +214,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
   return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
 }
 
-const MODEL_SEO_SELECT = `
+const PART_SEO_SELECT = `
   id,
   name,
   slug,
@@ -245,10 +245,10 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
 
   const { data, error } = await supabase
     .from('parts')
-    .select(MODEL_SEO_SELECT)
+    .select(PART_SEO_SELECT)
     .eq('slug', slug)
     .eq('status', 'published')
-    .limit(VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT, { referencedTable: 'part_products' })
+    .limit(VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT, { referencedTable: 'part_products' })
     .single();
 
   if (error) {
@@ -347,7 +347,7 @@ export async function fetchUserParts(
  * Deletes a part by slug after verifying the caller is the owner.
  * Deletes the database row first, then removes associated storage objects
  * (model files + thumbnail) as a best-effort cleanup step.
- * Throws 'MODEL_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
+ * Throws 'PART_NOT_FOUND' if not found, 'FORBIDDEN' if not owner.
  */
 export async function deletePart(slug: string, userId: string): Promise<void> {
   const supabase = await createClient();
@@ -359,10 +359,10 @@ export async function deletePart(slug: string, userId: string): Promise<void> {
     .single();
 
   if (fetchError) {
-    if (fetchError.code === 'PGRST116') throw new Error('MODEL_NOT_FOUND');
+    if (fetchError.code === 'PGRST116') throw new Error('PART_NOT_FOUND');
     throw fetchError;
   }
-  if (!part) throw new Error('MODEL_NOT_FOUND');
+  if (!part) throw new Error('PART_NOT_FOUND');
   if (part.user_id !== userId) throw new Error('FORBIDDEN');
 
   const filePaths = (part.part_files as { upload_path: string }[])

@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
-import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
 
 export const runtime = 'nodejs'
 
 const MAX_FILES_PER_REQUEST =
-  MODEL_UPLOAD_LIMITS.maxModelFiles + MODEL_UPLOAD_LIMITS.maxThumbnailFiles
+  PART_UPLOAD_LIMITS.maxModelFiles + PART_UPLOAD_LIMITS.maxThumbnailFiles
 const MAX_PATH_LENGTH = 500
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
@@ -148,8 +148,8 @@ export async function POST(
 
       // Enforce per-file size limits matching phase-1 validation
       const maxFileSize = category === 'model'
-        ? MODEL_UPLOAD_LIMITS.maxModelFileSize
-        : MODEL_UPLOAD_LIMITS.maxThumbnailSize
+        ? PART_UPLOAD_LIMITS.maxModelFileSize
+        : PART_UPLOAD_LIMITS.maxThumbnailSize
       if (size > maxFileSize) {
         return NextResponse.json(
           { error: `File ${originalName.slice(0, 50)} exceeds size limit (${Math.round(maxFileSize / (1024 * 1024))}MB)` },
@@ -195,7 +195,7 @@ export async function POST(
 
     // Enforce total size limit across all files in this request
     const newBatchSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
-    if (newBatchSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+    if (newBatchSize > PART_UPLOAD_LIMITS.maxTotalSize) {
       return NextResponse.json({ error: 'Total upload size exceeds limit' }, { status: 400 })
     }
 
@@ -203,15 +203,15 @@ export async function POST(
     const modelFileCount = fileRows.filter((f) => f.file_category === 'model').length
     const imageCount = fileRows.filter((f) => f.file_category === 'image').length
 
-    if (modelFileCount > MODEL_UPLOAD_LIMITS.maxModelFiles) {
+    if (modelFileCount > PART_UPLOAD_LIMITS.maxModelFiles) {
       return NextResponse.json(
-        { error: `Too many model files (max ${MODEL_UPLOAD_LIMITS.maxModelFiles})` },
+        { error: `Too many model files (max ${PART_UPLOAD_LIMITS.maxModelFiles})` },
         { status: 400 },
       )
     }
-    if (imageCount > MODEL_UPLOAD_LIMITS.maxThumbnailFiles) {
+    if (imageCount > PART_UPLOAD_LIMITS.maxThumbnailFiles) {
       return NextResponse.json(
-        { error: `Too many thumbnails (max ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles})` },
+        { error: `Too many thumbnails (max ${PART_UPLOAD_LIMITS.maxThumbnailFiles})` },
         { status: 400 },
       )
     }
@@ -236,7 +236,7 @@ export async function POST(
         .from('part_files')
         .select('file_size')
         .eq('part_id', partId)
-        .limit(MODEL_UPLOAD_LIMITS.maxModelFiles + MODEL_UPLOAD_LIMITS.maxThumbnailFiles),
+        .limit(PART_UPLOAD_LIMITS.maxModelFiles + PART_UPLOAD_LIMITS.maxThumbnailFiles),
     ])
 
     if (modelFileCountError || imageCountError || existingSizeError) {
@@ -247,15 +247,15 @@ export async function POST(
     const existingModelFileCount = existingModelFileCountRaw ?? 0
     const existingImageCount = existingImageCountRaw ?? 0
 
-    if (existingModelFileCount + modelFileCount > MODEL_UPLOAD_LIMITS.maxModelFiles) {
+    if (existingModelFileCount + modelFileCount > PART_UPLOAD_LIMITS.maxModelFiles) {
       return NextResponse.json(
-        { error: `Adding ${modelFileCount} model file(s) would exceed the limit of ${MODEL_UPLOAD_LIMITS.maxModelFiles} (${existingModelFileCount} already registered)` },
+        { error: `Adding ${modelFileCount} model file(s) would exceed the limit of ${PART_UPLOAD_LIMITS.maxModelFiles} (${existingModelFileCount} already registered)` },
         { status: 400 },
       )
     }
-    if (existingImageCount + imageCount > MODEL_UPLOAD_LIMITS.maxThumbnailFiles) {
+    if (existingImageCount + imageCount > PART_UPLOAD_LIMITS.maxThumbnailFiles) {
       return NextResponse.json(
-        { error: `Adding ${imageCount} thumbnail(s) would exceed the limit of ${MODEL_UPLOAD_LIMITS.maxThumbnailFiles} (${existingImageCount} already registered)` },
+        { error: `Adding ${imageCount} thumbnail(s) would exceed the limit of ${PART_UPLOAD_LIMITS.maxThumbnailFiles} (${existingImageCount} already registered)` },
         { status: 400 },
       )
     }
@@ -265,7 +265,7 @@ export async function POST(
       (sum, f) => sum + (typeof f.file_size === 'number' ? f.file_size : 0),
       0,
     )
-    if (existingTotalSize + newBatchSize > MODEL_UPLOAD_LIMITS.maxTotalSize) {
+    if (existingTotalSize + newBatchSize > PART_UPLOAD_LIMITS.maxTotalSize) {
       return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
     }
 

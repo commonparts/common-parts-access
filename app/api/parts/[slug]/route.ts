@@ -42,7 +42,7 @@ export async function DELETE(
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
-      if (error.message === 'MODEL_NOT_FOUND') {
+      if (error.message === 'PART_NOT_FOUND') {
         return NextResponse.json({ error: 'Not found' }, { status: 404 })
       }
       if (error.message === 'FORBIDDEN') {

@@ -5,7 +5,7 @@ import { parsePrintablesModelId } from '@/lib/curation/prefill-parsing'
 import { PRINTABLES_BASE_URL } from '@/lib/curation/printables-api'
 import { fetchPrintablesImageUrls, numberedImageFilename } from '@/lib/curation/source-images'
 import { inferImageContentType } from '@/lib/storage/image-processing'
-import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
 import { isValidUuid, normalizedHostname } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
     const imageUrls = (await fetchPrintablesImageUrls(printId)).slice(
       0,
-      MODEL_UPLOAD_LIMITS.maxThumbnailFiles,
+      PART_UPLOAD_LIMITS.maxThumbnailFiles,
     )
     if (imageUrls.length === 0) {
       return NextResponse.json({ imported: 0, images: draft.images ?? [] })
@@ -97,13 +97,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         // Reject oversized responses before buffering, when the server
         // advertises the size — avoids pulling a large body just to drop it.
         const declaredSize = Number(res.headers.get('content-length'))
-        if (Number.isFinite(declaredSize) && declaredSize > MODEL_UPLOAD_LIMITS.maxThumbnailSize) continue
+        if (Number.isFinite(declaredSize) && declaredSize > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
         bytes = await res.arrayBuffer()
       } catch {
         continue
       }
       // Content-Length may be absent or wrong, so the buffered size is still checked.
-      if (bytes.byteLength === 0 || bytes.byteLength > MODEL_UPLOAD_LIMITS.maxThumbnailSize) continue
+      if (bytes.byteLength === 0 || bytes.byteLength > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
 
       const extension = filename.slice(filename.lastIndexOf('.'))
       const path = `${user.id}/${id}/thumbnails/${filename}`

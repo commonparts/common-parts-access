@@ -16,8 +16,8 @@ async function getPublishedPart(slug: string, columns: string, supabase: Supabas
 		data && typeof data === 'object' && 'error' in data;
 
 	if (error || !data || hasEmbeddedError) {
-		const err = new Error('MODEL_NOT_FOUND') as Error & { code?: string };
-		err.code = 'MODEL_NOT_FOUND';
+		const err = new Error('PART_NOT_FOUND') as Error & { code?: string };
+		err.code = 'PART_NOT_FOUND';
 		throw err;
 	}
 

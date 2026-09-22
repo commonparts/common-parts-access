@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
     }
 
-    if (name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
+    if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
       return NextResponse.json(
-        { error: `Title must be between ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` },
+        { error: `Title must be between ${VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH} characters` },
         { status: 400 },
       )
     }

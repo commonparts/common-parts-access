@@ -78,9 +78,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (payload.title !== undefined) {
       const name = trimmedString(payload.title)
-      if (name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
+      if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
         return NextResponse.json(
-          { error: `Title must be between ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` },
+          { error: `Title must be between ${VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH} characters` },
           { status: 400 },
         )
       }
@@ -89,16 +89,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (payload.description !== undefined) {
       const description = trimmedString(payload.description)
-      if (description.length > VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH) {
-        return NextResponse.json({ error: `Description must be at most ${VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH} characters` }, { status: 400 })
+      if (description.length > VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH) {
+        return NextResponse.json({ error: `Description must be at most ${VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH} characters` }, { status: 400 })
       }
       patch.description = description || null
     }
 
     if (payload.instructions !== undefined) {
       const instructions = trimmedString(payload.instructions)
-      if (instructions.length > VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH) {
-        return NextResponse.json({ error: `Instructions must be at most ${VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH} characters` }, { status: 400 })
+      if (instructions.length > VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH) {
+        return NextResponse.json({ error: `Instructions must be at most ${VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH} characters` }, { status: 400 })
       }
       patch.instructions = instructions || null
     }
@@ -192,13 +192,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         return NextResponse.json({ error: 'Tags must be an array' }, { status: 400 })
       }
       const tags = payload.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
-      if (tags.length > VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT) {
-        return NextResponse.json({ error: `Too many tags (max ${VALIDATION_LIMITS.MODEL.TAGS_MAX_COUNT})` }, { status: 400 })
+      if (tags.length > VALIDATION_LIMITS.PART.TAGS_MAX_COUNT) {
+        return NextResponse.json({ error: `Too many tags (max ${VALIDATION_LIMITS.PART.TAGS_MAX_COUNT})` }, { status: 400 })
       }
       for (const tag of tags) {
-        if (tag.length < VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH || tag.length > VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH) {
+        if (tag.length < VALIDATION_LIMITS.PART.TAG_MIN_LENGTH || tag.length > VALIDATION_LIMITS.PART.TAG_MAX_LENGTH) {
           return NextResponse.json(
-            { error: `Tags must be between ${VALIDATION_LIMITS.MODEL.TAG_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TAG_MAX_LENGTH} characters` },
+            { error: `Tags must be between ${VALIDATION_LIMITS.PART.TAG_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TAG_MAX_LENGTH} characters` },
             { status: 400 },
           )
         }
@@ -378,8 +378,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       if (ids.length !== payload.productIds.length) {
         return NextResponse.json({ error: 'productIds must be unique product UUIDs' }, { status: 400 })
       }
-      if (ids.length > VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) {
-        return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT})` }, { status: 400 })
+      if (ids.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
+        return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` }, { status: 400 })
       }
       if (ids.length > 0) {
         const { data: rows, error } = await supabase.from('products').select('id').in('id', ids)

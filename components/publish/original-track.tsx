@@ -348,7 +348,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
   // Draft creation needs everything the Origin step owns; later steps are free
   // to advance with blockers outstanding, which Review lists.
   const originStepReady =
-    formData.title.trim().length >= VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH &&
+    formData.title.trim().length >= VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH &&
     formData.categoryId.length > 0 &&
     formData.licenseId.length > 0 &&
     attested
@@ -381,7 +381,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Dishwasher rack wheel clip"
-                  maxLength={VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH}
+                  maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                   required
                 />
               </div>

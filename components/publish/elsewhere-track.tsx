@@ -656,7 +656,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
 
   // Draft creation needs the DB minimum for a part from elsewhere.
   const originStepReady =
-    formData.title.trim().length >= VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH &&
+    formData.title.trim().length >= VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH &&
     formData.sourceUrl.trim().length > 0 &&
     formData.originalAuthor.trim().length > 0 &&
     formData.sourceLicenseId.length > 0 &&
@@ -779,7 +779,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                     value={formData.title}
                     onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     placeholder="e.g. Dishwasher rack wheel clip"
-                    maxLength={VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH}
+                    maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                     required
                   />
                 </div>

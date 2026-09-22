@@ -506,7 +506,7 @@ export function usePartUploadFormState() {
 
   const addProduct = (id: string) => {
     setFormData(prev => {
-      if (prev.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT) return prev
+      if (prev.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) return prev
       return {
         ...prev,
         productIds: prev.productIds.includes(id) ? prev.productIds : [...prev.productIds, id],

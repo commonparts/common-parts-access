@@ -31,7 +31,7 @@ const DRAFTS_LIST_LIMIT = 50
 // Linked-product and file reads are bounded by the same limits the rest of
 // the flow enforces, so neither can grow into an unbounded fetch.
 const PRODUCT_LINKS_LIMIT = 50
-const MODEL_FILES_LIMIT = 100
+const PART_FILES_LIMIT = 100
 
 export interface UploadDraftListItem {
   id: string
@@ -92,7 +92,7 @@ export async function getUploadDraft(id: string): Promise<UploadDraft | null> {
 
   const [{ data: links, error: linksError }, { data: files, error: filesError }] = await Promise.all([
     supabase.from('part_products').select('product_id').eq('part_id', id).limit(PRODUCT_LINKS_LIMIT),
-    supabase.from('part_files').select('id, file_category').eq('part_id', id).limit(MODEL_FILES_LIMIT),
+    supabase.from('part_files').select('id, file_category').eq('part_id', id).limit(PART_FILES_LIMIT),
   ])
 
   if (linksError) throw linksError

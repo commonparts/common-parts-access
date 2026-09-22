@@ -91,11 +91,11 @@ export function DetailsStep({
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="What the part is and what it fixes"
-              maxLength={VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
+              maxLength={VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
               <span>
-                {formData.description.length}/{VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
+                {formData.description.length}/{VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
               </span>
             </div>
           </div>
@@ -110,11 +110,11 @@ export function DetailsStep({
               value={formData.instructions}
               onChange={(e) => setFormData((prev) => ({ ...prev, instructions: e.target.value }))}
               placeholder="How to print it, and how to fit it to the product"
-              maxLength={VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+              maxLength={VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
               <span>
-                {formData.instructions.length}/{VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+                {formData.instructions.length}/{VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
               </span>
             </div>
           </div>
