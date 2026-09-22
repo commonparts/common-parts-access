@@ -32,11 +32,18 @@
 -- Deliberately NOT renamed: the storage buckets `model-files` and
 -- `model-thumbnails`. Their ids are embedded in every stored object URL
 -- (parts.thumbnail_url, part_files.file_url); renaming them is a data
--- migration of its own and is tracked separately. Their policies keep the
--- bucket prefix in their name and only drop the word "model" from the suffix.
+-- migration of its own and is tracked separately. Their RLS policies keep
+-- their names too — see the note in step 4.
 --
 -- Index note: no new index is needed; every existing index is carried over
 -- under its new name.
+--
+-- Applied to production on 2026-09-22 via the Supabase MCP at the human's
+-- explicit instruction (recorded as version 20260922130000). Verified first by
+-- running the whole script inside a transaction and rolling it back:
+-- fetch_browse_nav returned a byte-identical payload, search_all's three result
+-- groups were byte-identical (only the top-level `models` key became `parts`),
+-- and row counts were unchanged (16 parts, 65 files, 48 links, 115 views).
 
 -- ============================================================================
 -- 1. Tables
@@ -179,8 +186,13 @@ alter policy "Users can insert comments on published models" on public.part_comm
 alter policy "Collection models are readable for public collections" on public.collection_parts rename to "Collection parts are readable for public collections";
 alter policy "Users can manage own collection models" on public.collection_parts rename to "Users can manage own collection parts";
 
-alter policy "model-files: owner or published model read" on storage.objects rename to "model-files: owner or published part read";
-alter policy "model-thumbnails: owner or published model read" on storage.objects rename to "model-thumbnails: owner or published part read";
+-- The two storage.objects policies that read `models` (now `parts`) keep their
+-- names. Their expressions already resolve to `parts`, but the policy names
+-- cannot be changed from a migration: storage.objects is owned by
+-- supabase_storage_admin and `alter policy ... rename` requires table
+-- ownership, which the migration role (postgres) does not have. That is
+-- consistent anyway — those policies are named after their bucket, and the
+-- buckets deliberately keep their `model-*` ids (see the header).
 
 -- ============================================================================
 -- 5a. Counter trigger functions
