@@ -33,7 +33,7 @@ export interface OriginalTrackState {
 export function originalTrackBlockers(state: OriginalTrackState): PublishBlocker[] {
   const blockers: PublishBlocker[] = []
 
-  if (state.title.trim().length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH) {
+  if (state.title.trim().length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH) {
     blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Give the part a title' })
   }
   if (!state.categoryId) {

@@ -1,0 +1,1020 @@
+'use client'
+
+import * as React from "react"
+import { useState, useEffect, useCallback, useMemo, useRef } from "react"
+import Image from "next/image"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+import { isValidHttpUrl } from "@/lib/utils/validation"
+import { formatLicenseNotice } from "@/lib/utils/formatters"
+import { sortImageUrls } from "@/lib/utils/images"
+import { describePublication } from "@/lib/utils/publication"
+import { Grid } from "@/components/layout/grid"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PartFileList } from "./part-file-list"
+
+
+interface PartDetailsProps {
+  slug: string
+  className?: string
+}
+
+interface PartFile {
+  id: string
+  filename: string
+  original_filename: string
+  file_type: string
+  file_size: number
+  file_url: string
+  file_category: string
+  created_at: string
+}
+
+interface PartDimensions {
+  length?: number
+  width?: number
+  height?: number
+  diameter?: number
+  thickness?: number
+  unit?: string
+}
+
+type PrintSettings = Record<string, string | number | boolean | null>
+
+// PartComment interface hidden for MVP
+// interface PartComment {
+//   id: string
+//   content: string
+//   rating?: number
+//   createdAt: string
+//   updatedAt: string
+//   author: {
+//     username: string
+//     displayName?: string
+//     avatar?: string
+//     verifiedMaker: boolean
+//   } | null
+// }
+
+interface PartData {
+  id: string
+  slug: string
+  name: string
+  description?: string
+  partDetails: {
+    partName?: string
+    partNumber?: string
+    material?: string
+    color?: string
+    dimensions?: PartDimensions | string | null
+  }
+  printSettings?: PrintSettings | null
+  estimatedPrintTime?: number
+  estimatedMaterialUsage?: number
+  thumbnailUrl?: string
+  images: string[]
+  stats: {
+    downloads: number
+    likes: number
+    views: number
+  }
+  viewerHasLiked?: boolean
+  tags: string[]
+  license: {
+    id: string
+    spdxId: string
+    name: string
+    shortName: string
+    url: string
+    allowsRedistribution: boolean
+    requiresAttribution: boolean
+    allowsCommercial: boolean
+    isCopyleft: boolean
+  } | null
+  originType: 'original' | 'curated' | 'manufacturer'
+  verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
+  fileHostingType: 'hosted' | 'link_out'
+  sourcePlatform?: string | null
+  sourcePlatformName?: string | null
+  sourcePlatformBaseUrl?: string | null
+  sourceUrl?: string | null
+  originalAuthor?: string | null
+  originalAuthorUrl?: string | null
+  sourceLicense?: {
+    id: string
+    spdxId: string
+    name: string
+    shortName: string
+    url: string
+    allowsRedistribution: boolean
+    requiresAttribution: boolean
+    allowsCommercial: boolean
+    isCopyleft: boolean
+  } | null
+  instructions?: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  author: {
+    id: string
+    username: string
+    displayName?: string
+    bio?: string
+    avatar?: string
+    website?: string
+    location?: string
+    reputationScore: number
+    verifiedMaker: boolean
+    memberSince: string
+  } | null
+  products?: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    releaseYear?: number
+    discontinued: boolean
+    image?: string
+    brand?: {
+      id: string
+      name: string
+      slug: string
+      description?: string
+      logo?: string
+      website?: string
+      verified: boolean
+    }
+  }[]
+  category?: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    icon?: string
+    path?: string
+  }
+  brand?: {
+    id: string
+    name: string
+    slug: string
+    description?: string
+    logo?: string
+    website?: string
+    verified: boolean
+  }
+  files: PartFile[]
+  // comments: PartComment[] // Hidden for MVP
+}
+
+export function PartDetails({ slug, className }: PartDetailsProps) {
+  const [part, setPart] = useState<PartData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0)
+  const [likePending, setLikePending] = useState(false)
+  const [downloadPending, setDownloadPending] = useState(false)
+  const [licenseNoticeVisible, setLicenseNoticeVisible] = useState(false)
+  const viewTrackedRef = useRef(false)
+
+  // Non-blocking license notice shown once a download is triggered (issue #250).
+  // Curated parts are governed by the source license and credit the original author.
+  const licenseNotice = useMemo(() => {
+    if (!part) return null
+    const effectiveLicense = part.sourceLicense ?? part.license
+    if (!effectiveLicense) return null
+    const author =
+      part.originalAuthor || part.author?.displayName || part.author?.username || null
+    return formatLicenseNotice({
+      licenseName: effectiveLicense.shortName || effectiveLicense.name,
+      requiresAttribution: effectiveLicense.requiresAttribution,
+      isCopyleft: effectiveLicense.isCopyleft,
+      author,
+    })
+  }, [part])
+
+  const adjustLikes = useCallback((liked: boolean, delta: number) => {
+    setPart(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        viewerHasLiked: liked,
+        stats: {
+          ...prev.stats,
+          likes: Math.max(0, prev.stats.likes + delta)
+        }
+      }
+    })
+  }, [])
+
+  const syncLikes = useCallback((liked: boolean, likes?: number) => {
+    setPart(prev => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        viewerHasLiked: liked,
+        stats: {
+          ...prev.stats,
+          likes: typeof likes === 'number' ? Math.max(0, likes) : prev.stats.likes
+        }
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    async function fetchPart() {
+      try {
+        setLoading(true)
+        setError(null)
+        
+        const response = await fetch(`/api/parts/${slug}/details`)
+        
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Part not found')
+          }
+          throw new Error(`Failed to fetch part: ${response.statusText}`)
+        }
+        
+        const data = await response.json()
+        const normalizedPart = data?.part
+          ? { ...data.part, viewerHasLiked: Boolean(data.part.viewerHasLiked) }
+          : null
+        setPart(normalizedPart)
+      } catch (err) {
+        console.error('Error fetching part:', err)
+        setError(err instanceof Error ? err.message : 'Failed to load part')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    if (slug) {
+      fetchPart()
+    }
+  }, [slug])
+
+  useEffect(() => {
+    if (!part || viewTrackedRef.current) return
+
+    viewTrackedRef.current = true
+    const controller = new AbortController()
+
+    const trackView = async () => {
+      try {
+        await fetch(`/api/parts/${part.slug}/view`, {
+          method: 'POST',
+          signal: controller.signal,
+        })
+      } catch (err) {
+        // DOMException from AbortController is not an Error subclass, so check safely
+        if (typeof err === 'object' && err !== null && 'name' in err && (err as { name?: unknown }).name === 'AbortError') return
+        console.error('View tracking failed:', err)
+      }
+    }
+
+    trackView()
+
+    return () => {
+      controller.abort()
+    }
+  }, [part])
+
+  const handleLikeToggle = useCallback(async () => {
+    if (!part || likePending) {
+      return
+    }
+
+    const nextLiked = !(part.viewerHasLiked ?? false)
+    const targetSlug = part.slug
+
+    adjustLikes(nextLiked, nextLiked ? 1 : -1)
+    setLikePending(true)
+
+    try {
+      const response = await fetch(`/api/parts/${targetSlug}/likes`, {
+        method: nextLiked ? 'POST' : 'DELETE'
+      })
+
+      if (response.status === 401) {
+        adjustLikes(!nextLiked, nextLiked ? -1 : 1)
+        if (typeof window !== 'undefined') {
+          const redirectTarget = `/login?redirect=${encodeURIComponent(window.location.pathname)}`
+          window.location.href = redirectTarget
+        }
+        return
+      }
+
+      if (!response.ok) {
+        throw new Error('Failed to update like status')
+      }
+
+      const payload = await response.json()
+      syncLikes(payload.liked ?? nextLiked, payload.likes)
+    } catch (err) {
+      console.error('Like toggle failed:', err)
+      adjustLikes(!nextLiked, nextLiked ? -1 : 1)
+      alert('Unable to update like. Please try again.')
+    } finally {
+      setLikePending(false)
+    }
+  }, [part, likePending, adjustLikes, syncLikes])
+
+  const formatPrintTime = (minutes?: number) => {
+    if (!minutes) return 'Not specified'
+    if (minutes < 60) return `${minutes}m`
+    const hours = Math.floor(minutes / 60)
+    const mins = minutes % 60
+    return `${hours}h ${mins > 0 ? `${mins}m` : ''}`
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }).format(new Date(dateString))
+  }
+
+  if (loading) {
+    return (
+      <div className={cn("w-full", className)}>
+        <div className="animate-pulse space-y-lg">
+          <Grid columns={12} className="items-start gap-lg">
+            <div className="col-span-12 lg:col-span-7">
+              <div className="aspect-video rounded-lg border border-border-subtle bg-muted" />
+            </div>
+            <div className="col-span-12 lg:col-span-5 space-y-sm">
+              <div className="h-8 w-3/4 rounded bg-muted" />
+              <div className="h-4 w-full rounded bg-muted" />
+              <div className="h-4 w-2/3 rounded bg-muted" />
+              <div className="h-10 w-40 rounded bg-muted" />
+            </div>
+          </Grid>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className={cn("w-full", className)}>
+        <div className="text-center py-12">
+          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-semibold mb-2">Unable to load part</h3>
+          <p className="text-muted-foreground">{error}</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!part) {
+    return null
+  }
+
+  const allImages = sortImageUrls([...new Set([
+    ...(part.thumbnailUrl ? [part.thumbnailUrl] : []),
+    ...part.images,
+  ].filter(Boolean))])
+
+  // How the part entered the registry, in the reader's vocabulary (#301).
+  const publication = describePublication(part.originType, part.fileHostingType)
+
+  // File filtering is now handled by PartFileList component
+
+  return (
+    <div className={cn("w-full space-y-lg", className)}>
+      <Grid columns={12} className="items-start gap-lg">
+        <div className="col-span-12 lg:col-span-7 space-y-sm">
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle bg-muted">
+            {allImages.length > 0 ? (
+              <Image
+                src={allImages[selectedImageIndex]}
+                alt={part.name}
+                fill
+                className="object-cover"
+                sizes="(min-width: 1024px) 50vw, 100vw"
+                priority
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-text-secondary">
+                <svg className="h-16 w-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {allImages.length > 1 && (
+            <div className="flex gap-sm overflow-x-auto pb-2">
+              {allImages.map((image, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={cn(
+                    "flex-shrink-0 overflow-hidden rounded border",
+                    "h-16 w-16",
+                    index === selectedImageIndex
+                      ? "border-primary ring-2 ring-primary"
+                      : "hover:opacity-80",
+                  )}
+                >
+                  <Image
+                    src={image}
+                    alt={`${part.name} ${index + 1}`}
+                    width={64}
+                    height={64}
+                    className="h-full w-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="col-span-12 lg:col-span-5 space-y-md">
+          <div className="space-y-xs">
+            {/* The badge is a one-word summary, so what it means is carried as
+                visually hidden text rather than a title attribute — keyboard
+                users and most screen readers never surface a tooltip. It is
+                absolutely positioned, so it is not a flex item and adds no gap. */}
+            <Badge variant="outline">
+              {publication.badge}
+              <span className="sr-only"> — {publication.description}</span>
+            </Badge>
+            <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{part.name}</h1>
+            {part.originType === 'curated' && part.originalAuthor && (
+              <p className="text-body text-text-secondary">
+                Original design by{' '}
+                {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+                  <a
+                    href={part.originalAuthorUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-text-primary hover:underline"
+                  >
+                    {part.originalAuthor}
+                  </a>
+                ) : (
+                  <span className="font-medium text-text-primary">{part.originalAuthor}</span>
+                )}
+              </p>
+            )}
+            {part.partDetails.partName && (
+              <p className="text-body text-text-secondary">Part: {part.partDetails.partName}</p>
+            )}
+            {part.description && (
+              <p className="text-body text-text-secondary leading-relaxed">{part.description}</p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
+            <div className="flex items-center gap-1">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="font-semibold text-text-primary">{part.stats.downloads}</span>
+              <span>downloads</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+              <span className="font-semibold text-text-primary">{part.stats.likes}</span>
+              <span>likes</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+              </svg>
+              <span className="font-semibold text-text-primary">{part.stats.views}</span>
+              <span>views</span>
+            </div>
+          </div>
+
+          {part.tags.length > 0 && (
+            <div className="flex flex-wrap gap-xs">
+              {part.tags.map((tag) => (
+                <Badge key={tag} variant="outline" className="uppercase tracking-wide">
+                  #{tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+
+          <div className="space-y-sm">
+            <div className="flex flex-wrap gap-sm">
+              {part.fileHostingType === 'link_out' ? (
+                part.sourceUrl && isValidHttpUrl(part.sourceUrl) ? (
+                  <Button asChild className="inline-flex items-center gap-xs">
+                    <a
+                      href={part.sourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      View on {part.sourcePlatformName ?? 'the original source'}
+                    </a>
+                  </Button>
+                ) : (
+                  <Button className="inline-flex items-center gap-xs" disabled>
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    View on {part.sourcePlatformName ?? 'the original source'}
+                  </Button>
+                )
+              ) : (
+                <Button
+                  className="inline-flex items-center gap-xs"
+                  disabled={downloadPending}
+                  aria-busy={downloadPending}
+                  onClick={async () => {
+                    setDownloadPending(true)
+                    setLicenseNoticeVisible(true)
+                    try {
+                      const { downloadAllPartFiles } = await import('@/lib/storage/download')
+                      const result = await downloadAllPartFiles(part.files, part.slug, part.name)
+                      if (!result.success) {
+                        console.error('Download failed:', result.error)
+                        alert(`Download failed: ${result.error}`)
+                      }
+                    } catch (error) {
+                      console.error('Download error:', error)
+                      alert('Download failed. Please try again.')
+                    } finally {
+                      setDownloadPending(false)
+                    }
+                  }}
+                >
+                  {downloadPending ? (
+                    <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                  ) : (
+                    <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  )}
+                  {downloadPending ? 'Preparing download...' : 'Download'}
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                className="inline-flex items-center gap-xs"
+                onClick={handleLikeToggle}
+                disabled={likePending}
+                aria-pressed={part.viewerHasLiked}
+              >
+                {likePending ? (
+                  <svg className="h-4 w-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                ) : (
+                  <svg
+                    className="h-5 w-5"
+                    fill={part.viewerHasLiked ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                  </svg>
+                )}
+                {part.viewerHasLiked ? 'Liked' : 'Like'}
+              </Button>
+            </div>
+
+            {licenseNoticeVisible && licenseNotice && (
+              <p role="status" className="text-sm text-text-secondary">
+                {licenseNotice}
+              </p>
+            )}
+
+          </div>
+
+          {part.author && (
+            <Card className="border-border-subtle">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
+                  {/* "Added by", not "Referenced by": the badge above reserves
+                      *Referenced* for a part whose files stay at the source, so
+                      reusing it here would label a Hosted part as referenced.
+                      This card names the account that brought the part in — the
+                      original author is credited under the title. */}
+                  {part.originType === 'curated' ? 'Added by' : 'Created by'}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex items-center gap-sm">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted">
+                  {part.author.avatar ? (
+                    <Image
+                      src={part.author.avatar}
+                      alt={part.author.username}
+                      width={48}
+                      height={48}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <svg className="h-6 w-6 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  )}
+                </div>
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-body font-semibold text-text-primary">
+                      {part.author.displayName || part.author.username}
+                    </span>
+                    {part.author.verifiedMaker && (
+                      <Badge variant="soft">
+                        Verified Maker
+                      </Badge>
+                    )}
+                  </div>
+                  <p className="text-sm text-text-secondary">@{part.author.username}</p>
+                  {part.author.location && (
+                    <p className="text-sm text-text-secondary">📍 {part.author.location}</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </Grid>
+
+      <Grid columns={12} className="items-start gap-lg">
+        {part.instructions && (
+          <Card className="col-span-12 lg:col-span-8 border-border-subtle">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Instructions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{part.instructions}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+              </svg>
+              Part Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {part.partDetails.partNumber && (
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span className="text-muted-foreground font-medium">Part Number</span>
+                <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{part.partDetails.partNumber}</span>
+              </div>
+            )}
+            {part.partDetails.material && (
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span className="text-muted-foreground font-medium">Material</span>
+                <span className="font-medium">{part.partDetails.material}</span>
+              </div>
+            )}
+            {part.partDetails.color && (
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span className="text-muted-foreground font-medium">Color</span>
+                <span className="font-medium">{part.partDetails.color}</span>
+              </div>
+            )}
+            {part.partDetails.dimensions && (
+              <div className="flex flex-col gap-2">
+                <span className="text-muted-foreground font-medium">Dimensions</span>
+                <div className="bg-muted/50 p-3 rounded-lg">
+                  {typeof part.partDetails.dimensions === 'object' ? (
+                    <div className="space-y-1 text-sm">
+                      {part.partDetails.dimensions.length && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Length:</span>
+                          <span className="font-mono">{part.partDetails.dimensions.length} {part.partDetails.dimensions.unit || 'mm'}</span>
+                        </div>
+                      )}
+                      {part.partDetails.dimensions.width && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Width:</span>
+                          <span className="font-mono">{part.partDetails.dimensions.width} {part.partDetails.dimensions.unit || 'mm'}</span>
+                        </div>
+                      )}
+                      {part.partDetails.dimensions.height && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Height:</span>
+                          <span className="font-mono">{part.partDetails.dimensions.height} {part.partDetails.dimensions.unit || 'mm'}</span>
+                        </div>
+                      )}
+                      {part.partDetails.dimensions.diameter && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Diameter:</span>
+                          <span className="font-mono">{part.partDetails.dimensions.diameter} {part.partDetails.dimensions.unit || 'mm'}</span>
+                        </div>
+                      )}
+                      {part.partDetails.dimensions.thickness && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Thickness:</span>
+                          <span className="font-mono">{part.partDetails.dimensions.thickness} {part.partDetails.dimensions.unit || 'mm'}</span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm font-mono">{String(part.partDetails.dimensions)}</p>
+                  )}
+                </div>
+              </div>
+            )}
+            {part.category && (
+              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+                <span className="text-muted-foreground font-medium">Category</span>
+                <span className="font-medium">
+                  {part.category.name}
+                </span>
+              </div>
+            )}
+            <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
+              <span className="text-muted-foreground font-medium">Uploaded</span>
+              <span className="text-sm">{formatDate(part.createdAt)}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Print Settings */}
+        {(part.printSettings || part.estimatedPrintTime || part.estimatedMaterialUsage) && (
+          <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H9.5a2 2 0 01-2-2V5a2 2 0 012-2H14" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7v10l3-3 3 3V7z" />
+                </svg>
+                Print Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {part.estimatedPrintTime && (
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                  <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Print Time</p>
+                    <p className="font-semibold">{formatPrintTime(part.estimatedPrintTime)}</p>
+                  </div>
+                </div>
+              )}
+              {part.estimatedMaterialUsage && (
+                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                  <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                  </svg>
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground">Material Usage</p>
+                    <p className="font-semibold">{part.estimatedMaterialUsage}g</p>
+                  </div>
+                </div>
+              )}
+              {part.printSettings && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Recommended Settings</h4>
+                  <div className="space-y-2">
+                    {typeof part.printSettings === 'object' && Object.entries(part.printSettings).map(([key, value]) => (
+                      <div key={key} className="flex justify-between items-center text-sm">
+                        <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                        <Badge variant="outline">{String(value)}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Attribution & License */}
+        <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Attribution & License
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Verification Status — always rendered */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground font-medium">Status:</span>
+              <Badge variant="soft" className="capitalize">
+                {part.verificationStatus === 'unverified' && '⊘ Unverified'}
+                {part.verificationStatus === 'author_tested' && '✓ Author Tested'}
+                {part.verificationStatus === 'community_validated' && '✓✓ Community Validated'}
+                {part.verificationStatus === 'certified' && '✓✓✓ Certified'}
+              </Badge>
+            </div>
+
+            {/* Source Attribution — only rendered when a source URL is present */}
+            {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (
+              <div className="space-y-3 border-t border-border-subtle pt-3">
+                {part.sourcePlatform && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
+                    <span className="text-sm font-medium">{part.sourcePlatformName ?? part.sourcePlatform}</span>
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <span className="text-sm text-muted-foreground font-medium">Original Post</span>
+                  <a
+                    href={part.sourceUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-primary hover:underline break-all"
+                  >
+                    {part.sourcePlatform ? `View on ${part.sourcePlatformName ?? part.sourcePlatform}` : 'View original post'}
+                  </a>
+                </div>
+
+                {part.originalAuthor && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Original Author</span>
+                    {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+                      <a
+                        href={part.originalAuthorUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm font-medium text-primary hover:underline"
+                      >
+                        {part.originalAuthor}
+                      </a>
+                    ) : (
+                      <span className="text-sm font-medium">{part.originalAuthor}</span>
+                    )}
+                  </div>
+                )}
+
+                {part.sourceLicense && (
+                  <div className="flex flex-col gap-2">
+                    <span className="text-sm text-muted-foreground font-medium">Source License</span>
+                    <a
+                      href={part.sourceLicense.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                    >
+                      <Badge variant="outline">{part.sourceLicense.shortName}</Badge>
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* CP License — always rendered for all origin types */}
+            <div className="border-t border-border-subtle pt-3">
+              <div className="flex flex-col gap-2">
+                <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
+                {part.license ? (
+                  <a
+                    href={part.license.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 hover:opacity-80 transition"
+                  >
+                    <Badge variant="outline">{part.license.shortName}</Badge>
+                  </a>
+                ) : (
+                  <Badge variant="outline">—</Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Compatible products */}
+        {part.products && part.products.length > 0 && (
+          <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+                Compatible with
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-md">
+                {part.products.map((p) => (
+                  <div key={p.id} className="flex items-start gap-3">
+                    {p.image && (
+                      <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                        <Image
+                          src={p.image}
+                          alt={p.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/product/${p.slug}`}
+                        className="block font-medium line-clamp-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                      >
+                        {p.name}
+                      </Link>
+                      {p.brand && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Link
+                            href={`/brands/${p.brand.slug}`}
+                            className="text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                          >
+                            {p.brand.name}
+                          </Link>
+                          {p.brand.verified && (
+                            <Badge variant="soft">
+                              ✓ Verified
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Files */}
+        {/* Files — only shown for hosted parts */}
+        {part.fileHostingType !== 'link_out' && (
+        <div className="col-span-12 space-y-sm lg:col-span-6 xl:col-span-8">
+          <PartFileList
+            files={part.files}
+            showCard={true}
+            onFileDownload={async (file: PartFile) => {
+              setLicenseNoticeVisible(true)
+              const { downloadFile } = await import('@/lib/storage/download')
+
+              try {
+                const result = await downloadFile(file, part.slug)
+                if (!result.success) {
+                  console.error('Download failed:', result.error)
+                  alert(`Download failed: ${result.error}`)
+                }
+              } catch (error) {
+                console.error('Download error:', error)
+                alert('Download failed. Please try again.')
+              }
+            }}
+          />
+          {licenseNoticeVisible && licenseNotice && (
+            <p role="status" className="text-sm text-text-secondary">
+              {licenseNotice}
+            </p>
+          )}
+        </div>
+        )}
+
+        {/* Notes */}
+        {part.notes && (
+          <Card className="col-span-12 lg:col-span-6 border-border-subtle">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                </svg>
+                Additional Notes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="prose prose-sm max-w-none">
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{part.notes}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </Grid>
+
+      {/* Comments Section - Hidden for MVP */}
+      {/* Comments functionality will be added in a future release */}
+    </div>
+  )
+}

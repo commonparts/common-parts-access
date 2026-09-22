@@ -10,7 +10,7 @@ export interface SearchProductResult {
   parts_count: number
 }
 
-export interface SearchModelResult {
+export interface SearchPartResult {
   id: string
   name: string
   slug: string
@@ -37,7 +37,7 @@ export interface SearchBrandResult {
 
 export interface SearchResults {
   products: SearchProductResult[]
-  models: SearchModelResult[]
+  parts: SearchPartResult[]
   brands: SearchBrandResult[]
 }
 
@@ -62,5 +62,5 @@ export const SEARCH_MAX_QUERY_LENGTH = 100
 // Factory (not a shared constant) so each caller gets its own arrays — a shared
 // object could be mutated by one caller and leak across requests.
 export function emptySearchResults(): SearchResults {
-  return { products: [], models: [], brands: [] }
+  return { products: [], parts: [], brands: [] }
 }

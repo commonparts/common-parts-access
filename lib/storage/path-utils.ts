@@ -79,9 +79,9 @@ function sanitizeSegment(segment: string, fallback: string) {
 export function buildZipEntryPath(params: {
   storagePath: string
   fallbackName: string
-  modelId?: string
+  partId?: string
 }): string {
-  const { storagePath, fallbackName, modelId } = params
+  const { storagePath, fallbackName, partId } = params
   const normalizedPath = storagePath.replace(/^\/+/, '')
 
   if (!normalizedPath) {
@@ -92,9 +92,9 @@ export function buildZipEntryPath(params: {
 
   let startIndex = 0
   if (segments.length > 0) {
-    if (modelId) {
+    if (partId) {
       const modelMarkerIndex = segments.findIndex(
-        (segment) => segment === modelId || segment === `model-${modelId}`
+        (segment) => segment === partId || segment === `model-${partId}`
       )
       if (modelMarkerIndex !== -1) {
         startIndex = modelMarkerIndex + 1

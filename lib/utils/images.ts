@@ -1,6 +1,6 @@
 /**
  * Sorts an array of image URLs alphanumerically by filename, numeric-aware.
- * Defines the canonical display order for model images across all surfaces —
+ * Defines the canonical display order for part images across all surfaces —
  * both at write time (API route) and at render time (legacy data fallback).
  */
 export function sortImageUrls(urls: string[]): string[] {
@@ -12,7 +12,7 @@ export function sortImageUrls(urls: string[]): string[] {
 }
 
 /**
- * Merges a model's current thumbnail and gallery with newly registered image
+ * Merges a part's current thumbnail and gallery with newly registered image
  * URLs (deduplicated) and returns the canonical display order. The first
  * entry becomes the thumbnail. Shared by every write path that registers
  * images so thumbnail selection can never diverge between them.

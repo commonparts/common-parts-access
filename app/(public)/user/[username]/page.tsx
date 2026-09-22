@@ -16,7 +16,7 @@ export default function UserProfilePage({ params }: { params: { username: string
             </div>
           </div>
           <div className="col-span-12 md:col-span-8">
-            <p className="text-body text-text-secondary">User&apos;s models and activity will be displayed here</p>
+            <p className="text-body text-text-secondary">User&apos;s parts and activity will be displayed here</p>
           </div>
         </Grid>
       </Container>

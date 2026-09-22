@@ -2,7 +2,7 @@
 
 import { toZipSafeName } from '@/lib/storage/path-utils'
 
-interface ModelFile {
+interface PartFile {
   id: string
   filename: string
   original_filename: string
@@ -24,10 +24,10 @@ interface DownloadResult {
  * Anonymous — no account or cookie-based identification is required (issue #250).
  * Fires a non-blocking POST that increments the anonymous download counter.
  */
-export async function downloadFile(file: ModelFile, modelSlug: string): Promise<DownloadResult> {
+export async function downloadFile(file: PartFile, partSlug: string): Promise<DownloadResult> {
   try {
     // Get a download URL from the API
-    const urlResponse = await fetch(`/api/models/${modelSlug}/files/${file.id}/download-url`)
+    const urlResponse = await fetch(`/api/parts/${partSlug}/files/${file.id}/download-url`)
 
     if (!urlResponse.ok) {
       const errorData = await urlResponse.json().catch(() => ({ error: 'Failed to get download URL' }))
@@ -40,7 +40,7 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
     const { downloadUrl, filename } = await urlResponse.json()
 
     // Increment the anonymous download counter (non-blocking)
-    fetch(`/api/models/${modelSlug}/download`, {
+    fetch(`/api/parts/${partSlug}/download`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -83,7 +83,7 @@ export async function downloadFile(file: ModelFile, modelSlug: string): Promise<
  * Anonymous — the archive endpoint requires no authentication and
  * increments the anonymous download counter server-side (issue #250).
  */
-export async function downloadAllModelFiles(files: ModelFile[], modelSlug: string, modelName?: string): Promise<DownloadResult> {
+export async function downloadAllPartFiles(files: PartFile[], partSlug: string, partName?: string): Promise<DownloadResult> {
   if (!files || files.length === 0) {
     return {
       success: false,
@@ -92,7 +92,7 @@ export async function downloadAllModelFiles(files: ModelFile[], modelSlug: strin
   }
 
   try {
-    const response = await fetch(`/api/models/${modelSlug}/files/archive`)
+    const response = await fetch(`/api/parts/${partSlug}/files/archive`)
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ error: 'Failed to download archive' }))
@@ -103,7 +103,7 @@ export async function downloadAllModelFiles(files: ModelFile[], modelSlug: strin
     }
 
     const blob = await response.blob()
-    const archiveName = `${toZipSafeName(modelName || modelSlug, modelSlug)}.zip`
+    const archiveName = `${toZipSafeName(partName || partSlug, partSlug)}.zip`
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url

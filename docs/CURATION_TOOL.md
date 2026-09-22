@@ -28,7 +28,7 @@ The dedicated Checklist and Flags steps were dissolved in issue #302: the criter
 
 ### 1. Source
 
-- **Duplicate check.** As the curator types the source URL, a debounced `GET /api/curation/source-check` looks it up against the `idx_models_source_url` unique index. A hit blocks the step and links to the existing part.
+- **Duplicate check.** As the curator types the source URL, a debounced `GET /api/curation/source-check` looks it up against the `idx_parts_source_url` unique index. A hit blocks the step and links to the existing part.
 - **Pre-fill.** The same debounce also calls `GET /api/curation/prefill` — see [Pre-fill from the source URL](#pre-fill-from-the-source-url). Every field stays editable and manual entry always works.
 - **Hosting choice** (`hosted` vs `link_out`) — see [File hosting](#file-hosting-hosted-vs-link-out). A declared NC/ND source license forces `link_out` (the hosted option is disabled).
 - Creating the draft requires the DB minimum for `origin_type = 'curated'`: title, source URL, original author, and source license.
@@ -58,24 +58,24 @@ The six criteria of **curation checklist v1**, defined once in `lib/curation/che
 | `attribution` | Attribution complete | Original author, source URL and source license captured. |
 | `duplicate` | No duplicate | Source and part are not already in the registry. |
 
-Every criterion must be explicitly checked to publish. Checklist state is stored as `models.curation_checklist` (jsonb `{criterion: boolean}`).
+Every criterion must be explicitly checked to publish. Checklist state is stored as `parts.curation_checklist` (jsonb `{criterion: boolean}`).
 
 **Legal-review flag.** `needs_legal_review` is a manual escalation (ambiguous/suspicious license). It is **blocking** — the part is saved but never publishable while set — and requires a justification (enforced both in the API and by a DB CHECK constraint).
 
-**Rejection.** If a blocking criterion can't be met, the curator records a rejection via `POST /api/curation/rejections`: a reason plus the auto-traced failed criteria, written to `curation_rejections` independently of any model row (rejection traceability, Flow P3 §4.3.3).
+**Rejection.** If a blocking criterion can't be met, the curator records a rejection via `POST /api/curation/rejections`: a reason plus the auto-traced failed criteria, written to `curation_rejections` independently of any part row (rejection traceability, Flow P3 §4.3.3).
 
 ### 3. Details & entity assignment
 
 - **Text fields:** short description, instructions, category (drill-down), publication license. The publication-license select defaults to the declared source license and stays editable.
 - **Entity assignment:** brand autocomplete (read-only list — brands are curated directly in the DB, not created here) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 - **Demand context:** `components/publish/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
-- **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Applies to hosted and link-out parts alike. Serialized by the shared `serializeModelMetadata` in `lib/utils/model-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
+- **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Applies to hosted and link-out parts alike. Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
 
 ### 4. Non-blocking flags & files
 
 - **Completeness flags**, defined in `CURATION_FLAGS` and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
-- **Files:** hosted parts upload STL/3MF/STEP model files and photos through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/models/[slug]/files`), which bypasses the Vercel body-size limit. Link-out parts upload no model files (they stay at the source); photos are still allowed.
-- **Image previews.** Registered images (imported or uploaded) are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — so it is obvious the gallery is in place rather than an opaque count. Both `POST /api/models/[slug]/files` and the import endpoint return the model's `images` list so the grid updates without a refetch.
+- **Files:** hosted parts upload STL/3MF/STEP model files and photos through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/parts/[slug]/files`), which bypasses the Vercel body-size limit. Link-out parts upload no model files (they stay at the source); photos are still allowed.
+- **Image previews.** Registered images (imported or uploaded) are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — so it is obvious the gallery is in place rather than an opaque count. Both `POST /api/parts/[slug]/files` and the import endpoint return the part's `images` list so the grid updates without a refetch.
 
 #### Source-image import
 
@@ -83,7 +83,7 @@ Right after the draft is created (Printables sources only), the tool fires `POST
 
 ### 5. Review & publish
 
-- The review screen renders the **actual part page** (`components/model/model-details.tsx`) against the draft. The model-details API serves the owner their own draft so the preview is faithful.
+- The review screen renders the **actual part page** (`components/part/part-details.tsx`) against the draft. The part-details API serves the owner their own draft so the preview is faithful.
 - **Publish** calls `POST /api/curation/drafts/[id]/publish`, the single publication gate (see below). On success the part flips to `published` and the curator is redirected to `/parts/[slug]`. On failure it returns **422** with a list of named blockers.
 - **Save as draft** exits without publishing; the draft appears in the drafts list for resume.
 
@@ -110,10 +110,10 @@ A declared **NC/ND source license forces `link_out`**: the tool auto-switches ho
 
 ## Persistent drafts
 
-- A draft is a `models` row with `origin_type = 'curated'` and `status = 'draft'`.
+- A draft is a `parts` row with `origin_type = 'curated'` and `status = 'draft'`.
 - Created on the Source step; every later step transition sends a partial `PATCH /api/curation/drafts/[id]` (autosave). Only the fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
 - The drafts list (`GET /api/curation/drafts`) shows the curator's open curated drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, checklist, flags, hosting type, metadata and registered images from `GET /api/curation/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review.
-- **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/models/[slug]` — it removes the row and cleans up storage, and frees the source URL for a new session (issue #288).
+- **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/parts/[slug]` — it removes the row and cleans up storage, and frees the source URL for a new session (issue #288).
 
 ## API endpoints
 
@@ -132,13 +132,13 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 | `/api/curation/rejections` | POST | Record a rejection (source URL, reason, failed criteria). |
 | `/api/curation/demand?productId=` | GET | Aggregate open part-request counts for a product. |
 
-Draft deletion reuses `DELETE /api/models/[slug]` (not curation-specific).
+Draft deletion reuses `DELETE /api/parts/[slug]` (not curation-specific).
 
 ## Data model
 
 Migration `supabase/migrations/20260717120000_curation_tool_fields.sql` (applied to production 2026-07-18).
 
-**On `models`:**
+**On `parts`:**
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -151,9 +151,9 @@ Migration `supabase/migrations/20260717120000_curation_tool_fields.sql` (applied
 | `legal_review_justification` | text | ≤ 1000 chars (DB CHECK). |
 | `curation_checklist` | jsonb, default `{}` | The six blocking criteria as `{criterion: boolean}`. |
 
-Print metadata (`material`, `color`, `dimensions`, `print_settings`, `estimated_print_time`, `estimated_material_usage`) reuses columns that already existed on `models`.
+Print metadata (`material`, `color`, `dimensions`, `print_settings`, `estimated_print_time`, `estimated_material_usage`) reuses columns that already existed on `parts`.
 
-**Table `curation_rejections`** — rejection traceability, independent of any model row:
+**Table `curation_rejections`** — rejection traceability, independent of any part row:
 
 | Column | Type |
 |--------|------|
@@ -191,7 +191,7 @@ lib/curation/
   source-images.ts                          Gallery listing + numbered-filename builder
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
-lib/utils/model-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
+lib/utils/part-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
 lib/utils/licenses.ts                       isHostableLicense (NC/ND exclusion), shared by tool + gates
 lib/utils/images.ts                         sortImageUrls + mergeImageUrls (thumbnail selection)
 app/api/curation/**                         Endpoints above (incl. prefill, drafts/[id]/import-images)

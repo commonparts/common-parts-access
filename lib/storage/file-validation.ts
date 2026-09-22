@@ -7,7 +7,7 @@
  * from the browser to storage and never reach a route handler.
  */
 
-export const MODEL_UPLOAD_LIMITS = {
+export const PART_UPLOAD_LIMITS = {
 	maxModelFiles: 10,
 	maxThumbnailFiles: 10,
 	maxModelFileSize: 100 * 1024 * 1024,

@@ -5,10 +5,10 @@ import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { formatDate } from '@/lib/utils/formatters'
-import type { MyModelListItem } from '@/types/models'
+import type { MyPartListItem } from '@/types/parts'
 
 interface MyPartsListProps {
-  initialModels: MyModelListItem[]
+  initialParts: MyPartListItem[]
   hasNextPage: boolean
   currentPage: number
 }
@@ -18,9 +18,9 @@ interface MyPartsListProps {
  * Renders a paginated list of the user's published parts with per-row delete actions.
  * Deletion is confirmed via a modal dialog before the API call is made.
  */
-export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyPartsListProps) {
-  const [models, setModels] = useState<MyModelListItem[]>(initialModels)
-  const [pendingDelete, setPendingDelete] = useState<MyModelListItem | null>(null)
+export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsListProps) {
+  const [parts, setParts] = useState<MyPartListItem[]>(initialParts)
+  const [pendingDelete, setPendingDelete] = useState<MyPartListItem | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
 
@@ -31,7 +31,7 @@ export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyParts
     setDeleteError(null)
 
     try {
-      const response = await fetch(`/api/models/${target.slug}`, {
+      const response = await fetch(`/api/parts/${target.slug}`, {
         method: 'DELETE',
       })
 
@@ -41,10 +41,10 @@ export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyParts
       }
 
       let updatedCount = 0
-      setModels((currentModels) => {
-        const updatedModels = currentModels.filter((model) => model.id !== target.id)
-        updatedCount = updatedModels.length
-        return updatedModels
+      setParts((currentParts) => {
+        const updatedParts = currentParts.filter((part) => part.id !== target.id)
+        updatedCount = updatedParts.length
+        return updatedParts
       })
       setPendingDelete(null)
 
@@ -62,7 +62,7 @@ export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyParts
     }
   }
 
-  if (models.length === 0) {
+  if (parts.length === 0) {
     if (currentPage > 1) {
       return (
         <div className="space-y-md">
@@ -103,22 +103,22 @@ export function MyPartsList({ initialModels, hasNextPage, currentPage }: MyParts
       )}
 
       <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-bg-surface">
-        {models.map((model) => (
+        {parts.map((part) => (
           <li
-            key={model.id}
+            key={part.id}
             className="flex items-center justify-between gap-md px-lg py-sm"
           >
             <div className="min-w-0 space-y-xs">
-              <p className="truncate text-sm font-medium text-text-primary">{model.name}</p>
+              <p className="truncate text-sm font-medium text-text-primary">{part.name}</p>
               <p className="text-xs text-text-secondary">
-                {model.createdAt ? `Uploaded ${formatDate(model.createdAt, 'medium')}` : 'Upload date unknown'}
+                {part.createdAt ? `Uploaded ${formatDate(part.createdAt, 'medium')}` : 'Upload date unknown'}
               </p>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Delete ${model.name}`}
-              onClick={() => setPendingDelete(model)}
+              aria-label={`Delete ${part.name}`}
+              onClick={() => setPendingDelete(part)}
             >
               <Trash2 />
             </Button>

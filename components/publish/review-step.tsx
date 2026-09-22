@@ -3,7 +3,7 @@
 import * as React from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ModelDetails } from '@/components/model/model-details'
+import { PartDetails } from '@/components/part/part-details'
 import { PUBLISH_STEP_LABELS, type PublishBlocker, type PublishStepIndex } from '@/lib/publish/steps'
 
 interface ReviewStepProps {
@@ -49,7 +49,7 @@ export function ReviewStep({
           <CardTitle className="text-base">Review — the page as it will appear</CardTitle>
         </CardHeader>
         <CardContent>
-          <ModelDetails slug={slug} />
+          <PartDetails slug={slug} />
         </CardContent>
       </Card>
 

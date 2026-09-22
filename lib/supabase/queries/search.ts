@@ -8,7 +8,7 @@ import {
 } from '@/types/search'
 
 /**
- * Runs a multi-entity search (products, models, brands) via the public.search_all
+ * Runs a multi-entity search (products, parts, brands) via the public.search_all
  * RPC and returns grouped, ranked results.
  *
  * All matching, ranking, per-group bounding and the published-only filter happen
@@ -46,7 +46,7 @@ export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LI
   const results = (data ?? {}) as Partial<SearchResults>
   return {
     products: results.products ?? [],
-    models: results.models ?? [],
+    parts: results.parts ?? [],
     brands: results.brands ?? [],
   }
 }

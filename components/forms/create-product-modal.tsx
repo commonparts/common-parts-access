@@ -7,7 +7,7 @@ import { FileUploader } from "@/components/ui/file-uploader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import type { BrandOption, CreateProductFormData } from "@/hooks/use-model-upload-form-state"
+import type { BrandOption, CreateProductFormData } from "@/hooks/use-part-upload-form-state"
 
 interface FlatCategoryOption {
   id: string

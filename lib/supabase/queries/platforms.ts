@@ -3,7 +3,7 @@ import type { SourcePlatform } from '@/types/database'
 
 /**
  * Returns all active source platforms ordered by name.
- * Used to populate the platform selector in the upload form and for display in model details.
+ * Used to populate the platform selector in the upload form and for display in part details.
  */
 export async function getActiveSourcePlatforms(): Promise<SourcePlatform[]> {
   const supabase = await createClient()
@@ -18,7 +18,7 @@ export async function getActiveSourcePlatforms(): Promise<SourcePlatform[]> {
 
 /**
  * Returns a single source platform by slug, or null if not found.
- * Used by the model details API to resolve the display name and base URL.
+ * Used by the part details API to resolve the display name and base URL.
  */
 export async function getSourcePlatformBySlug(slug: string): Promise<SourcePlatform | null> {
   const supabase = await createClient()
@@ -37,7 +37,7 @@ export type SourcePlatformUrlCheck =
 
 /**
  * Verifies that the platform exists and that the source URL's host matches
- * its base_url host (www-insensitive) — required for link-out models, where
+ * its base_url host (www-insensitive) — required for link-out parts, where
  * the platform claim must match where the files actually live. Platforms
  * without a base_url pass. Never throws: every failure comes back as
  * ok:false with the HTTP status it should map to (400 for client mistakes,

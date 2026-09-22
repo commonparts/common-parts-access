@@ -5,7 +5,7 @@ import { parsePrintablesModelId } from '@/lib/curation/prefill-parsing'
 import { PRINTABLES_BASE_URL } from '@/lib/curation/printables-api'
 import { fetchPrintablesImageUrls, numberedImageFilename } from '@/lib/curation/source-images'
 import { inferImageContentType } from '@/lib/storage/image-processing'
-import { MODEL_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
 import { isValidUuid, normalizedHostname } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
     const imageUrls = (await fetchPrintablesImageUrls(printId)).slice(
       0,
-      MODEL_UPLOAD_LIMITS.maxThumbnailFiles,
+      PART_UPLOAD_LIMITS.maxThumbnailFiles,
     )
     if (imageUrls.length === 0) {
       return NextResponse.json({ imported: 0, images: draft.images ?? [] })
     }
 
     const fileRows: {
-      model_id: string
+      part_id: string
       filename: string
       original_filename: string
       file_type: string
@@ -97,13 +97,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         // Reject oversized responses before buffering, when the server
         // advertises the size — avoids pulling a large body just to drop it.
         const declaredSize = Number(res.headers.get('content-length'))
-        if (Number.isFinite(declaredSize) && declaredSize > MODEL_UPLOAD_LIMITS.maxThumbnailSize) continue
+        if (Number.isFinite(declaredSize) && declaredSize > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
         bytes = await res.arrayBuffer()
       } catch {
         continue
       }
       // Content-Length may be absent or wrong, so the buffered size is still checked.
-      if (bytes.byteLength === 0 || bytes.byteLength > MODEL_UPLOAD_LIMITS.maxThumbnailSize) continue
+      if (bytes.byteLength === 0 || bytes.byteLength > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
 
       const extension = filename.slice(filename.lastIndexOf('.'))
       const path = `${user.id}/${id}/thumbnails/${filename}`
@@ -121,7 +121,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.MODEL_THUMBNAILS).getPublicUrl(path)
       const originalName = imageUrl.split('/').pop() ?? filename
       fileRows.push({
-        model_id: id,
+        part_id: id,
         filename,
         original_filename: originalName.slice(0, MAX_FILENAME_LENGTH),
         file_type: extension.replace(/^\./, ''),
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ imported: 0, images: draft.images ?? [] })
     }
 
-    const { error: insertError } = await supabase.from('model_files').insert(fileRows)
+    const { error: insertError } = await supabase.from('part_files').insert(fileRows)
     if (insertError) {
       console.error('Image import: failed to register files', insertError)
       // Best-effort storage rollback so a retry does not hit upsert conflicts.
@@ -149,11 +149,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
     const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, fileRows.map((f) => f.file_url))
     const { error: updateError } = await supabase
-      .from('models')
+      .from('parts')
       .update({ images: sortedImages, thumbnail_url: sortedImages[0] })
       .eq('id', id)
     if (updateError) {
-      console.error('Image import: failed to update model thumbnail', updateError)
+      console.error('Image import: failed to update part thumbnail', updateError)
     }
 
     return NextResponse.json({ imported: fileRows.length, images: sortedImages })

@@ -1,0 +1,80 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { STORAGE_BUCKETS } from '@/constants/app'
+import { extractModelStoragePath } from '@/lib/storage/path-utils'
+
+/**
+ * Constructs a public storage URL for a file in Supabase Storage
+ * @param storagePath - The path within the bucket (e.g., "user-id/part-id/file.stl")
+ * @returns The full public URL
+ */
+function getPublicStorageUrl(storagePath: string): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKETS.MODEL_FILES}/${storagePath}`
+}
+
+// GET /api/parts/[slug]/files/[fileId]/download-url - Get a download URL for a file
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ slug: string; fileId: string }> }
+) {
+  try {
+    const { slug, fileId } = await params
+    const supabase = await createClient()
+    
+    // Find the part by slug
+    const { data: part, error: partError } = await supabase
+      .from('parts')
+      .select('id')
+      .eq('slug', slug)
+      .eq('status', 'published')
+      .single()
+
+    if (partError || !part) {
+      return NextResponse.json(
+        { error: 'Part not found' },
+        { status: 404 }
+      )
+    }
+
+    // Get the file details
+    const { data: file, error: fileError } = await supabase
+      .from('part_files')
+      .select('*')
+      .eq('id', fileId)
+      .eq('part_id', part.id)
+      .single()
+
+    if (fileError || !file) {
+      return NextResponse.json(
+        { error: 'File not found' },
+        { status: 404 }
+      )
+    }
+
+    // Extract the storage path from the stored URL
+    // Try upload_path first (more likely to have full path), then fallback to file_url
+    const storagePath = extractModelStoragePath(file.upload_path) || 
+               extractModelStoragePath(file.file_url) || 
+               file.filename
+
+    // Construct public URL for the file
+    const publicUrl = getPublicStorageUrl(storagePath)
+
+    return NextResponse.json({
+      downloadUrl: publicUrl,
+      filename: file.original_filename,
+      expiresIn: 3600
+    })
+
+  } catch (error) {
+    console.error('Error generating download URL:', error)
+    return NextResponse.json(
+      { 
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
+      { status: 500 }
+    )
+  }
+}

@@ -7,15 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileUploader } from '@/components/ui/file-uploader'
 import { Label } from '@/components/ui/label'
 import { RegisteredImages } from '@/components/publish/registered-images'
-import type { ModelUploadFormState } from '@/hooks/use-model-upload-form-state'
+import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { FILE_TYPES } from '@/constants/app'
 import { isValidHttpUrl } from '@/lib/utils/validation'
 
 interface FilesStepProps {
-  form: ModelUploadFormState
+  form: PartUploadFormState
   idPrefix: string
   /**
-   * True when the files stay at the source. The model-file drop zone is then
+   * True when the files stay at the source. The part-file drop zone is then
    * hidden entirely rather than shown disabled — a control that cannot be used
    * is not an explanation of why.
    */
@@ -44,7 +44,7 @@ interface FilesStepProps {
  * The Files step, shared by both tracks (issue #302). Files register as soon
  * as they upload, so leaving the session never loses them.
  *
- * A referenced part has no model-file drop zone at all: the files are at the
+ * A referenced part has no part-file drop zone at all: the files are at the
  * source and uploading them here would contradict the reason it is referenced.
  * Photos are still welcome either way.
  */
@@ -72,7 +72,7 @@ export function FilesStep({
         <div className="flex gap-2xs">
           {!referenced && (
             <Badge variant={modelFileCount > 0 ? 'soft' : 'outline'}>
-              {modelFileCount} model {modelFileCount === 1 ? 'file' : 'files'}
+              {modelFileCount} part {modelFileCount === 1 ? 'file' : 'files'}
             </Badge>
           )}
           <Badge variant={imageUrls.length > 0 ? 'soft' : 'outline'}>

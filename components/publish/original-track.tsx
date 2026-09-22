@@ -15,7 +15,7 @@ import { DetailsStep } from '@/components/publish/details-step'
 import { FilesStep } from '@/components/publish/files-step'
 import { ReviewStep } from '@/components/publish/review-step'
 import { StepNav } from '@/components/publish/step-nav'
-import { useModelUploadFormState } from '@/hooks/use-model-upload-form-state'
+import { usePartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { ATTESTATION_CLAUSES, ATTESTATION_SUMMARY } from '@/lib/upload/attestation'
 import { originalTrackBlockers } from '@/lib/publish/blockers'
@@ -27,7 +27,7 @@ import {
 } from '@/lib/publish/steps'
 import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { serializeModelMetadata } from '@/lib/utils/model-metadata'
+import { serializePartMetadata } from '@/lib/utils/part-metadata'
 
 interface OriginalTrackProps {
   /** Existing draft to resume, or null to start a new part. */
@@ -51,7 +51,7 @@ const numToStr = (value: number | null | undefined): string =>
  */
 export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrackProps) {
   const router = useRouter()
-  const form = useModelUploadFormState()
+  const form = usePartUploadFormState()
   const { formData, setFormData } = form
 
   const [step, setStep] = React.useState<PublishStepIndex>(PUBLISH_STEPS.ORIGIN)
@@ -234,7 +234,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
             description: formData.description,
             instructions: formData.instructions,
             tags: formData.tags,
-            ...serializeModelMetadata(formData),
+            ...serializePartMetadata(formData),
           })
         }
 
@@ -275,12 +275,12 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
     try {
       const uploads = await uploadFilesFromClient({
         userId,
-        modelId: draftId,
+        partId: draftId,
         modelFiles: formData.files,
         thumbnails: formData.thumbnails,
       })
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
-      const res = await fetch(`/api/models/${encodeURIComponent(draftSlug)}/files`, {
+      const res = await fetch(`/api/parts/${encodeURIComponent(draftSlug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: allFiles }),
@@ -348,7 +348,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
   // Draft creation needs everything the Origin step owns; later steps are free
   // to advance with blockers outstanding, which Review lists.
   const originStepReady =
-    formData.title.trim().length >= VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH &&
+    formData.title.trim().length >= VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH &&
     formData.categoryId.length > 0 &&
     formData.licenseId.length > 0 &&
     attested
@@ -381,7 +381,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                   placeholder="e.g. Dishwasher rack wheel clip"
-                  maxLength={VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH}
+                  maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                   required
                 />
               </div>

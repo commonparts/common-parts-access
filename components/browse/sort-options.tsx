@@ -20,7 +20,7 @@ const sortOptions: SortOption[] = [
   {
     key: 'popularity',
     label: 'Most popular',
-    description: 'Most downloaded models'
+    description: 'Most downloaded parts'
   },
   {
     key: 'newest',
@@ -35,7 +35,7 @@ const sortOptions: SortOption[] = [
   {
     key: 'views',
     label: 'Most viewed',
-    description: 'Trending models'
+    description: 'Trending parts'
   }
 ]
 

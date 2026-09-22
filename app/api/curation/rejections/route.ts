@@ -12,7 +12,7 @@ const CRITERION_KEYS = new Set<string>(CURATION_BLOCKING_CRITERIA.map((c) => c.k
 
 // POST /api/curation/rejections — rejection traceability (Flow P3 §4.3.3).
 // Records which source was rejected, why, and which blocking criteria failed;
-// no model row is required.
+// no part row is required.
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()

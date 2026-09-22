@@ -1,5 +1,5 @@
 import { htmlToPlainText } from '@/lib/utils/formatters'
-import { MATERIAL_MAX_LENGTH } from '@/lib/utils/model-metadata'
+import { MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 /**
@@ -119,10 +119,10 @@ export function derivePrintablesTexts(print: {
   description?: string | null
 }): PrintablesTexts {
   return {
-    description: capped(print.summary ?? '', VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH),
+    description: capped(print.summary ?? '', VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH),
     instructions: capped(
       print.description ? htmlToPlainText(print.description) : '',
-      VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH,
+      VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH,
     ),
   }
 }

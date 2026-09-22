@@ -103,7 +103,7 @@ export async function fetchProductNameBySlug(slug: string): Promise<string | nul
   return (data?.name as string | undefined) ?? null
 }
 
-interface ModelRow {
+interface PartRow {
   id: string
   name: string
   slug: string
@@ -119,56 +119,56 @@ interface ModelRow {
 
 interface PartLinkRow {
   product_id: string
-  models: ModelRow | ModelRow[] | null
+  parts: PartRow | PartRow[] | null
 }
 
 /**
- * Fetches the published parts shown on a product page, deduplicated per model.
- * The model_products "Public or owner read" RLS policy restricts rows to
- * published models (or the caller's own). Sorting/ranking is left to the caller.
+ * Fetches the published parts shown on a product page, deduplicated per part.
+ * The part_products "Public or owner read" RLS policy restricts rows to
+ * published parts (or the caller's own). Sorting/ranking is left to the caller.
  */
 export async function fetchProductPageParts(input: { productId: string }): Promise<ProductPart[]> {
   const supabase = await createClient()
 
   const { data, error } = await supabase
-    .from('model_products')
+    .from('part_products')
     .select(
       `
       product_id,
-      models!inner(
+      parts!inner(
         id, name, slug, thumbnail_url, part_name, part_number, material,
         download_count, estimated_print_time, created_at, status,
-        licenses!models_license_id_fkey(short_name)
+        licenses!parts_license_id_fkey(short_name)
       )
     `,
     )
     .eq('product_id', input.productId)
-    .eq('models.status', 'published')
+    .eq('parts.status', 'published')
     .limit(MAX_PART_LINKS)
 
   if (error) throw error
 
-  const byModel = new Map<string, ProductPart>()
+  const byPart = new Map<string, ProductPart>()
 
   for (const link of (data ?? []) as PartLinkRow[]) {
-    const model = firstOf(link.models)
-    if (!model) continue
-    if (byModel.has(model.id)) continue
+    const part = firstOf(link.parts)
+    if (!part) continue
+    if (byPart.has(part.id)) continue
 
-    byModel.set(model.id, {
-      id: model.id,
-      name: model.name,
-      slug: model.slug,
-      thumbnail_url: model.thumbnail_url,
-      part_name: model.part_name,
-      part_number: model.part_number,
-      material: model.material,
-      download_count: model.download_count ?? 0,
-      estimated_print_time: model.estimated_print_time,
-      created_at: model.created_at,
-      license_short_name: firstOf(model.licenses)?.short_name ?? null,
+    byPart.set(part.id, {
+      id: part.id,
+      name: part.name,
+      slug: part.slug,
+      thumbnail_url: part.thumbnail_url,
+      part_name: part.part_name,
+      part_number: part.part_number,
+      material: part.material,
+      download_count: part.download_count ?? 0,
+      estimated_print_time: part.estimated_print_time,
+      created_at: part.created_at,
+      license_short_name: firstOf(part.licenses)?.short_name ?? null,
     })
   }
 
-  return Array.from(byModel.values())
+  return Array.from(byPart.values())
 }

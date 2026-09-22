@@ -3,7 +3,7 @@
 **Version:** 1.2 — July 2026
 **Status:** Internal working document — basis for GitHub issue breakdown
 **Scope:** Phase 0 (Bootstrap). Excludes CPSP, brand portal, community contributions.
-**Changes in 1.2:** Updated for the flat product schema: parts link directly to products, with no product families or variants. Retains the search-flow batch alignment for `compatibility_status` on `model_products`, dedicated `part_requests` demand capture, `/search` results page, product page redesign, and the strict `/search` / `/browse` separation.
+**Changes in 1.2:** Updated for the flat product schema: parts link directly to products, with no product families or variants. Retains the search-flow batch alignment for `compatibility_status` on `part_products`, dedicated `part_requests` demand capture, `/search` results page, product page redesign, and the strict `/search` / `/browse` separation.
 
 ---
 
@@ -11,8 +11,8 @@
 
 The universal search flow has its own issue batch, which this document builds on and does not respecify. That batch owns:
 
-- **Schema**: products are the direct compatibility targets for parts, linked through `model_products`, which stores `compatibility_status` (`declared` / `verified`). There is no product hierarchy or product variants. Migration validated and executed by the human.
-- **Search backend**: multi-entity full-text search endpoint (`GET /api/search?q=`) over models, products, and brands, with typo tolerance.
+- **Schema**: products are the direct compatibility targets for parts, linked through `part_products`, which stores `compatibility_status` (`declared` / `verified`). There is no product hierarchy or product variants. Migration validated and executed by the human.
+- **Search backend**: multi-entity full-text search endpoint (`GET /api/search?q=`) over parts, products, and brands, with typo tolerance.
 - **`parts_count`** denormalized on `products` for their directly linked parts.
 - **Part requests**: demand capture in a dedicated `part_requests` table (`POST /api/part-requests`), anonymous submission allowed, aggregated per product. Part requests are demand *data*: they never create GitHub issues and are separate from the feedback/triage pipeline.
 - **Frontend**: grouped autocomplete on the existing SearchBar, the `/search` results page, and the **product page redesign** (identification header, compatibility badges, request capture, empty states with demand badge).
@@ -44,7 +44,7 @@ These principles apply to all flows and settle recurring debates once and for al
 
 **P-4 — Every public page is an entry point.** Phase 0 traffic will come mostly from search engines and direct links, not from the homepage. Every part page, product page, brand page, and category page must stand alone: full context, upward navigation (breadcrumb), clean SEO metadata. Consequence: navigation pages are server-rendered crawlable routes — client-side filter states do not qualify as entry points.
 
-**P-5 — Two notions of "verified" coexist and must never be conflated.** *Part verification* concerns the part itself (`unverified` / `author_tested` / `community_validated`). *Compatibility status* concerns a part–product link (`declared` / `verified`, from `model_products`). The interface always makes clear which one is displayed.
+**P-5 — Two notions of "verified" coexist and must never be conflated.** *Part verification* concerns the part itself (`unverified` / `author_tested` / `community_validated`). *Compatibility status* concerns a part–product link (`declared` / `verified`, from `part_products`). The interface always makes clear which one is displayed.
 
 **P-6 — Demand and reports are different mechanisms.** Part requests are demand data (`part_requests` table, aggregated, never GitHub issues). Reports are actionable curation work (feedback + triage pipeline, always reaching the human as a GitHub issue). The two are never merged.
 
@@ -62,7 +62,7 @@ Convert an arrival on a part page (from search, navigation, or an external link)
 - Parts grid on a product page (search-flow batch)
 - Navigation pages (Flow P2)
 - Direct link / external search engine result
-- Canonical URL: `/parts/[slug]` (or existing `/models/[slug]` structure — to be decided, see §5)
+- Canonical URL: `/parts/[slug]` (settled, see §5)
 
 ### 2.3 Nominal path
 
@@ -255,7 +255,7 @@ Curation additionally owns two responsibilities assigned to it by the search-flo
 
 To be settled before or during development. None blocks the start of P1 development, but §5.1 must be settled before P1 ships.
 
-1. **Public naming: models vs parts.** ~~Existing code uses `models` (table, routes, and the search endpoint's grouped payload `{ products, models, brands }`); brand vocabulary uses "part".~~ **Settled (issue #258, July 2026):** public routes use `/parts/` — `/model/[slug]` moved to `/parts/[slug]` (subpages included) and `/user/[username]/models` to `/user/[username]/parts`, with permanent redirects from the old paths. Internal naming (the `models` table, `/api/models/*` routes, and API payload keys such as the search endpoint's `{ products, models, brands }`) stays unchanged.
+1. **Public naming: models vs parts.** ~~Existing code uses `models` (table, routes, and the search endpoint's grouped payload `{ products, models, brands }`); brand vocabulary uses "part".~~ **Settled (issue #258, July 2026):** public routes use `/parts/` — `/model/[slug]` moved to `/parts/[slug]` (subpages included) and `/user/[username]/models` to `/user/[username]/parts`, ~~with permanent redirects from the old paths~~ (those redirects were dropped in #314 — pre-launch, nothing external points at the old paths). ~~Internal naming (the `models` table, `/api/models/*` routes, and API payload keys such as the search endpoint's `{ products, models, brands }`) stays unchanged.~~ **Completed (issue #314, September 2026):** the schema, the API routes and the payload keys follow: `models` → `parts` (and every `model_*` table and `model_id` column), `/api/models/*` → `/api/parts/*` with no redirect, and the search payload is `{ products, parts, brands }`.
 2. **Brand logos on navigation pages.** Nominative use of a brand name to indicate compatibility: defensible. Displaying logos: a distinct risk. Text only by default until the question is properly examined.
 3. **Legality of automated extraction per platform (P3).** Verify the ToS of Printables and Thingiverse regarding automated metadata retrieval, even for an internal tool. Alternative: assisted entry without scraping (the curator copy-pastes, the tool structures).
 4. **Multi-file archive.** Generated on the fly or pre-generated at curation time. Technical decision, left to Agent Dev with a Vercel cost constraint.

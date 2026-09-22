@@ -5,11 +5,11 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
 import { Label } from '@/components/ui/label'
-import type { ModelUploadFormState } from '@/hooks/use-model-upload-form-state'
+import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 interface CompatibilityStepProps {
-  form: ModelUploadFormState
+  form: PartUploadFormState
   idPrefix: string
   /** True when the publish gate requires a brand, not only a product. */
   brandRequired?: boolean
@@ -47,7 +47,7 @@ export function CompatibilityStep({
     [form.products],
   )
 
-  const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT
+  const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
   return (
     <Card>
@@ -93,7 +93,7 @@ export function CompatibilityStep({
                   : !formData.brandId
                     ? 'Select a brand first'
                     : atProductLimit
-                      ? `Maximum ${VALIDATION_LIMITS.MODEL.PRODUCTS_MAX_COUNT} products reached`
+                      ? `Maximum ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT} products reached`
                       : 'Search and add a product'
               }
               options={form.products

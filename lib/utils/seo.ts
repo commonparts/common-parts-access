@@ -8,45 +8,45 @@ import { APP_NAME, APP_URL } from '@/lib/utils/constants'
 import { truncateText } from '@/lib/utils/formatters'
 import { absoluteAppUrl, isValidHttpUrl } from '@/lib/utils/validation'
 import { resolveStorageUrl } from '@/lib/storage/url'
-import type { ModelSeoData } from '@/types/models'
+import type { PartSeoData } from '@/types/parts'
 
 /** Search snippets are cut around 155-160 characters; stay within that budget. */
 const SEO_DESCRIPTION_MAX_LENGTH = 160
 
 /** Canonical URL for a part page (public route is /parts — issue #258). */
-function modelCanonicalUrl(slug: string): string {
+function partCanonicalUrl(slug: string): string {
   return absoluteAppUrl(`/parts/${slug}`)
 }
 
 
 /**
  * "Bosch MUM5" — the brand + product the part fits, from the first linked
- * product. Falls back to the model's own brand when no product is linked,
+ * product. Falls back to the part's own brand when no product is linked,
  * and null when neither exists.
  */
-function primaryFitLabel(model: ModelSeoData): string | null {
-  const fit = model.products[0]
+function primaryFitLabel(part: PartSeoData): string | null {
+  const fit = part.products[0]
   if (fit) return [fit.brandName, fit.name].filter(Boolean).join(' ')
-  return model.brandName
+  return part.brandName
 }
 
 /** Page title carrying the part name plus the brand/product it fits. */
-export function buildModelSeoTitle(model: ModelSeoData): string {
-  const fit = primaryFitLabel(model)
-  return fit ? `${model.name} — spare part for ${fit}` : `${model.name} — spare part`
+export function buildPartSeoTitle(part: PartSeoData): string {
+  const fit = primaryFitLabel(part)
+  return fit ? `${part.name} — spare part for ${fit}` : `${part.name} — spare part`
 }
 
 /**
  * Meta description leading with the brand and product name (issue #252:
- * query matching), followed by the model's own description when available.
+ * query matching), followed by the part's own description when available.
  */
-export function buildModelSeoDescription(model: ModelSeoData): string {
-  const fit = primaryFitLabel(model)
+export function buildPartSeoDescription(part: PartSeoData): string {
+  const fit = primaryFitLabel(part)
   const lead = fit
-    ? `Printable spare part for ${fit}: ${model.name}.`
-    : `Printable spare part: ${model.name}.`
+    ? `Printable spare part for ${fit}: ${part.name}.`
+    : `Printable spare part: ${part.name}.`
   const body =
-    model.description?.trim() ||
+    part.description?.trim() ||
     `Download the 3D model file with license and attribution details on ${APP_NAME}.`
   return truncateText(`${lead} ${body}`, SEO_DESCRIPTION_MAX_LENGTH)
 }
@@ -64,44 +64,47 @@ export function buildModelSeoDescription(model: ModelSeoData): string {
  * parts, falling back to the uploader; the license links to the effective
  * (source-first) license text.
  */
-export function buildModelJsonLd(model: ModelSeoData): Record<string, unknown> {
-  const url = modelCanonicalUrl(model.slug)
-  const image = resolveStorageUrl(model.thumbnailUrl)
-  const creatorName = model.originalAuthor || model.authorName
+export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
+  const url = partCanonicalUrl(part.slug)
+  const image = resolveStorageUrl(part.thumbnailUrl)
+  const creatorName = part.originalAuthor || part.authorName
 
-  const modelEntity: Record<string, unknown> = {
+  const partEntity: Record<string, unknown> = {
+    // Schema.org vocabulary, not ours: `3DModel` is the registered type name
+    // (issue #314 renamed the entity everywhere else). An invented `3DPart`
+    // would make the entity unrecognized and fail structured data validation.
     '@type': '3DModel',
     '@id': `${url}#part`,
-    name: model.name,
+    name: part.name,
     url,
-    description: buildModelSeoDescription(model),
+    description: buildPartSeoDescription(part),
   }
-  if (image) modelEntity.image = image
-  if (model.licenseUrl) modelEntity.license = model.licenseUrl
+  if (image) partEntity.image = image
+  if (part.licenseUrl) partEntity.license = part.licenseUrl
   if (creatorName) {
-    modelEntity.creator = {
+    partEntity.creator = {
       '@type': 'Person',
       name: creatorName,
       // Only the curated source author has a known profile URL. Curation
       // input — include it only when it is a well-formed http(s) URL so a
       // bad value cannot fail structured data validation.
-      ...(model.originalAuthor &&
-      model.originalAuthorUrl &&
-      isValidHttpUrl(model.originalAuthorUrl)
-        ? { url: model.originalAuthorUrl }
+      ...(part.originalAuthor &&
+      part.originalAuthorUrl &&
+      isValidHttpUrl(part.originalAuthorUrl)
+        ? { url: part.originalAuthorUrl }
         : {}),
     }
   }
-  if (model.createdAt) modelEntity.datePublished = model.createdAt
-  if (model.updatedAt) modelEntity.dateModified = model.updatedAt
-  if (model.tags.length > 0) modelEntity.keywords = model.tags.join(', ')
-  if (model.products.length > 0) {
-    // The products this part fits — expressed as the subject of the model.
+  if (part.createdAt) partEntity.datePublished = part.createdAt
+  if (part.updatedAt) partEntity.dateModified = part.updatedAt
+  if (part.tags.length > 0) partEntity.keywords = part.tags.join(', ')
+  if (part.products.length > 0) {
+    // The products this part fits — expressed as the subject of the part.
     // Typed as Thing, not Product: Google treats every Product entity as a
     // product-snippet candidate and flags it invalid without offers/review/
     // aggregateRating, which free printable parts never have. The brand is
     // folded into the name to keep it available for query matching.
-    modelEntity.about = model.products.map((product) => ({
+    partEntity.about = part.products.map((product) => ({
       '@type': 'Thing',
       name: [product.brandName, product.name].filter(Boolean).join(' '),
     }))
@@ -114,13 +117,13 @@ export function buildModelJsonLd(model: ModelSeoData): Record<string, unknown> {
       { '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL },
       { '@type': 'ListItem', position: 2, name: 'Browse', item: absoluteAppUrl('/browse') },
       // Last item: no `item` — per Google, the current page URL is implied.
-      { '@type': 'ListItem', position: 3, name: model.name },
+      { '@type': 'ListItem', position: 3, name: part.name },
     ],
   }
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [modelEntity, breadcrumb],
+    '@graph': [partEntity, breadcrumb],
   }
 }
 

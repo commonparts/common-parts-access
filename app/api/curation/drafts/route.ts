@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import {
   createCurationDraft,
-  findModelBySourceUrl,
+  findPartBySourceUrl,
   listCurationDrafts,
 } from '@/lib/supabase/queries/curation'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
@@ -17,7 +17,7 @@ type FileHostingType = (typeof VALID_FILE_HOSTING_TYPES)[number]
 const SOURCE_URL_MAX_LENGTH = 2048
 const AUTHOR_MAX_LENGTH = 200
 
-// Postgres unique-violation SQLSTATE — raised by idx_models_source_url when a
+// Postgres unique-violation SQLSTATE — raised by idx_parts_source_url when a
 // draft invisible to the caller (another user's) already claims the URL.
 const UNIQUE_VIOLATION = '23505'
 
@@ -74,9 +74,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
     }
 
-    if (name.length < VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH) {
+    if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
       return NextResponse.json(
-        { error: `Title must be between ${VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH} characters` },
+        { error: `Title must be between ${VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH} characters` },
         { status: 400 },
       )
     }
@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const duplicate = await findModelBySourceUrl(sourceUrl)
+    const duplicate = await findPartBySourceUrl(sourceUrl)
     if (duplicate) {
       return NextResponse.json(
         { error: 'This source URL is already in the registry', duplicate },

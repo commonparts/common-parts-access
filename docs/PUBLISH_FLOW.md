@@ -8,7 +8,7 @@ The upload flow and the curation tool are one public publication path behind one
 
 What merged is the **entry, the vocabulary, and the step structure**. What did not merge is the **engines**: the `/api/upload/**` and `/api/curation/**` endpoint families, their publish gates, their payload narrowing, and the `origin_type` query scoping all remain exactly as documented. This is a frontend unification over two unchanged backends.
 
-The reason for keeping the engines apart is inherited from `UPLOAD_FLOW.md` (Flow narrowing): a single endpoint accepting both shapes is the removed `POST /api/models/upload` reintroduced. The scoping (`origin_type = 'original'` vs `'curated'` on every query) is the integrity property that makes cross-track mutation impossible; it is load-bearing and stays.
+The reason for keeping the engines apart is inherited from `UPLOAD_FLOW.md` (Flow narrowing): a single endpoint accepting both shapes is the removed `POST /api/parts/upload` reintroduced. The scoping (`origin_type = 'original'` vs `'curated'` on every query) is the integrity property that makes cross-track mutation impossible; it is load-bearing and stays.
 
 **Access.** Any authenticated user may publish on either track. The curation tool's "internal" framing was a test-phase convention, never a technical restriction (decision 2026-07-17: no curator role; `curation_rejections` RLS already grants insert/read to all authenticated users).
 
@@ -70,7 +70,7 @@ The override deliberately has **no free-text reason field**: no column stores on
 
 ## Checklist dissolution
 
-The dedicated Checklist step is gone **as a step**. The six blocking criteria are unchanged in definition (`CURATION_BLOCKING_CRITERIA`), storage (`models.curation_checklist` jsonb), and gate enforcement. Only *where each checkbox renders* changed — adjacent to the evidence it judges. The mapping is `lib/publish/placement.ts`:
+The dedicated Checklist step is gone **as a step**. The six blocking criteria are unchanged in definition (`CURATION_BLOCKING_CRITERIA`), storage (`parts.curation_checklist` jsonb), and gate enforcement. Only *where each checkbox renders* changed — adjacent to the evidence it judges. The mapping is `lib/publish/placement.ts`:
 
 | Criterion | Rendered on | Adjacent to |
 |---|---|---|

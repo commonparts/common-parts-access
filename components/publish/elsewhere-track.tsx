@@ -22,7 +22,7 @@ import { LegalReviewEscalation } from '@/components/publish/legal-review-escalat
 import { RejectionRecorder } from '@/components/publish/rejection-recorder'
 import { ReviewStep } from '@/components/publish/review-step'
 import { StepNav } from '@/components/publish/step-nav'
-import { useModelUploadFormState } from '@/hooks/use-model-upload-form-state'
+import { usePartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { uploadFilesFromClient } from '@/lib/storage/client-upload'
 import {
   CURATION_BLOCKING_CRITERIA,
@@ -40,11 +40,11 @@ import {
 } from '@/lib/publish/steps'
 import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { serializeModelMetadata } from '@/lib/utils/model-metadata'
+import { serializePartMetadata } from '@/lib/utils/part-metadata'
 import type {
   CurationChecklist,
   CurationCriterionKey,
-  ModelFileHostingType,
+  PartFileHostingType,
 } from '@/types/database'
 
 const SOURCE_CHECK_DEBOUNCE_MS = 500
@@ -97,12 +97,12 @@ const numToStr = (value: number | null | undefined): string =>
  * Same five steps as the original track. The blocking checklist no longer has
  * a step of its own — each criterion is confirmed next to the evidence it
  * judges, and Review rolls them up above the publish button. Their definition,
- * their storage in `models.curation_checklist` and the server-side gate are
+ * their storage in `parts.curation_checklist` and the server-side gate are
  * unchanged.
  */
 export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTrackProps) {
   const router = useRouter()
-  const form = useModelUploadFormState()
+  const form = usePartUploadFormState()
   const { formData, setFormData } = form
 
   const [step, setStep] = React.useState<PublishStepIndex>(PUBLISH_STEPS.ORIGIN)
@@ -461,7 +461,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             // from what the tool shows.
             fileHostingType: formData.fileHostingType,
             ...flagPatchForStep(PUBLISH_STEPS.DETAILS),
-            ...serializeModelMetadata(formData),
+            ...serializePartMetadata(formData),
           })
         }
 
@@ -521,13 +521,13 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     try {
       const uploads = await uploadFilesFromClient({
         userId,
-        modelId: draftId,
+        partId: draftId,
         // A referenced part never hosts model files — only photos are uploaded.
         modelFiles: formData.fileHostingType === 'link_out' ? [] : formData.files,
         thumbnails: formData.thumbnails,
       })
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
-      const res = await fetch(`/api/models/${encodeURIComponent(draftSlug)}/files`, {
+      const res = await fetch(`/api/parts/${encodeURIComponent(draftSlug)}/files`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ files: allFiles }),
@@ -616,7 +616,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
    * closed: the selection survives only when the license is positively
    * confirmed hostable, so an unloaded list or a stale id also clears.
    */
-  const changeHosting = (value: ModelFileHostingType) => {
+  const changeHosting = (value: PartFileHostingType) => {
     setFormData((prev) => {
       const next = { ...prev, fileHostingType: value }
       if (value === 'hosted' && prev.licenseId) {
@@ -656,7 +656,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
 
   // Draft creation needs the DB minimum for a part from elsewhere.
   const originStepReady =
-    formData.title.trim().length >= VALIDATION_LIMITS.MODEL.TITLE_MIN_LENGTH &&
+    formData.title.trim().length >= VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH &&
     formData.sourceUrl.trim().length > 0 &&
     formData.originalAuthor.trim().length > 0 &&
     formData.sourceLicenseId.length > 0 &&
@@ -779,7 +779,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                     value={formData.title}
                     onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                     placeholder="e.g. Dishwasher rack wheel clip"
-                    maxLength={VALIDATION_LIMITS.MODEL.TITLE_MAX_LENGTH}
+                    maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                     required
                   />
                 </div>

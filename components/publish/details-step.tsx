@@ -8,12 +8,12 @@ import { DropdownInput } from '@/components/ui/dropdown-input'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import type { ModelUploadFormState } from '@/hooks/use-model-upload-form-state'
-import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/model-metadata'
+import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
+import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 interface DetailsStepProps {
-  form: ModelUploadFormState
+  form: PartUploadFormState
   /** Namespaces the DOM ids so both tracks can mount their own instance. */
   idPrefix: string
   /**
@@ -91,11 +91,11 @@ export function DetailsStep({
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
               placeholder="What the part is and what it fixes"
-              maxLength={VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
+              maxLength={VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
               <span>
-                {formData.description.length}/{VALIDATION_LIMITS.MODEL.DESCRIPTION_MAX_LENGTH}
+                {formData.description.length}/{VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
               </span>
             </div>
           </div>
@@ -110,11 +110,11 @@ export function DetailsStep({
               value={formData.instructions}
               onChange={(e) => setFormData((prev) => ({ ...prev, instructions: e.target.value }))}
               placeholder="How to print it, and how to fit it to the product"
-              maxLength={VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+              maxLength={VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
               <span>
-                {formData.instructions.length}/{VALIDATION_LIMITS.MODEL.INSTRUCTIONS_MAX_LENGTH}
+                {formData.instructions.length}/{VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
               </span>
             </div>
           </div>

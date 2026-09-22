@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { SEARCH_MIN_QUERY_LENGTH, useSearchAutocomplete } from "@/hooks/use-search-autocomplete"
 import type {
   SearchBrandResult,
-  SearchModelResult,
+  SearchPartResult,
   SearchProductResult,
 } from "@/types/search"
 
@@ -95,7 +95,7 @@ function Row({
 }
 
 export function SearchBar({
-  placeholder = "Search models...",
+  placeholder = "Search parts...",
   className,
   onSearch,
   showFilters = false,
@@ -128,7 +128,7 @@ export function SearchBar({
   const navTargets = React.useMemo(() => {
     const targets = [
       ...results.products.map((p) => `/product/${p.slug}`),
-      ...results.models.map((m) => `/parts/${m.slug}`),
+      ...results.parts.map((m) => `/parts/${m.slug}`),
       ...results.brands.map((b) => `/brands/${b.slug}`),
       searchHref,
     ]
@@ -136,8 +136,8 @@ export function SearchBar({
   }, [results, searchHref])
 
   const productOffset = 0
-  const modelOffset = results.products.length
-  const brandOffset = modelOffset + results.models.length
+  const partOffset = results.products.length
+  const brandOffset = partOffset + results.parts.length
   const footerIndex = navTargets.length - 1
 
   // Unique per instance (there can be two SearchBars on a page) so listbox and
@@ -146,7 +146,7 @@ export function SearchBar({
   const optionId = (index: number) => `${listboxId}-option-${index}`
 
   const hasResults =
-    results.products.length > 0 || results.models.length > 0 || results.brands.length > 0
+    results.products.length > 0 || results.parts.length > 0 || results.brands.length > 0
   const showDropdown =
     autocomplete && isExpanded && trimmedQuery.length >= SEARCH_MIN_QUERY_LENGTH
 
@@ -274,24 +274,24 @@ export function SearchBar({
     </Row>
   )
 
-  const renderModelRow = (model: SearchModelResult, index: number) => (
+  const renderPartRow = (part: SearchPartResult, index: number) => (
     <Row
-      key={model.id}
-      id={optionId(modelOffset + index)}
-      isActive={activeIndex === modelOffset + index}
-      onSelect={() => navigateTo(`/parts/${model.slug}`)}
-      onHover={() => setActiveIndex(modelOffset + index)}
+      key={part.id}
+      id={optionId(partOffset + index)}
+      isActive={activeIndex === partOffset + index}
+      onSelect={() => navigateTo(`/parts/${part.slug}`)}
+      onHover={() => setActiveIndex(partOffset + index)}
     >
-      <Thumbnail src={model.thumbnail_url} alt={model.name} />
+      <Thumbnail src={part.thumbnail_url} alt={part.name} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-medium text-text-primary">{model.name}</div>
+        <div className="truncate text-sm font-medium text-text-primary">{part.name}</div>
         <div className="truncate text-caption text-text-secondary">
-          {model.product_name ?? "Generic part"}
+          {part.product_name ?? "Generic part"}
         </div>
       </div>
-      {model.license && (
+      {part.license && (
         <Badge variant="soft" className="shrink-0">
-          {model.license}
+          {part.license}
         </Badge>
       )}
     </Row>
@@ -394,10 +394,10 @@ export function SearchBar({
                   {results.products.map(renderProductRow)}
                 </div>
               )}
-              {results.models.length > 0 && (
+              {results.parts.length > 0 && (
                 <div>
                   <SectionLabel>Parts</SectionLabel>
-                  {results.models.map(renderModelRow)}
+                  {results.parts.map(renderPartRow)}
                 </div>
               )}
               {results.brands.length > 0 && (

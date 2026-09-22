@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { ensureUniqueModelSlug } from '@/lib/supabase/queries/model'
-import type { Model, ModelDimensions, ModelPrintSettings } from '@/types/database'
+import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
+import type { Part, PartDimensions, PartPrintSettings } from '@/types/database'
 
 /**
  * Draft CRUD for the public upload flow (issue #293) — contributors publishing
@@ -31,7 +31,7 @@ const DRAFTS_LIST_LIMIT = 50
 // Linked-product and file reads are bounded by the same limits the rest of
 // the flow enforces, so neither can grow into an unbounded fetch.
 const PRODUCT_LINKS_LIMIT = 50
-const MODEL_FILES_LIMIT = 100
+const PART_FILES_LIMIT = 100
 
 export interface UploadDraftListItem {
   id: string
@@ -45,12 +45,12 @@ export interface UploadDraftListItem {
  * Lists the contributor's own open upload drafts, most recently touched
  * first, so an interrupted session can be resumed. RLS restricts rows to the
  * owner; the explicit user filter documents intent and keeps the query on
- * idx_models_owner_origin_status.
+ * idx_parts_owner_origin_status.
  */
 export async function listUploadDrafts(userId: string): Promise<UploadDraftListItem[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .select('id, name, slug, thumbnail_url, updated_at')
     .eq('user_id', userId)
     .eq('origin_type', 'original')
@@ -62,7 +62,7 @@ export async function listUploadDrafts(userId: string): Promise<UploadDraftListI
   return (data ?? []) as UploadDraftListItem[]
 }
 
-export interface UploadDraft extends Partial<Model> {
+export interface UploadDraft extends Partial<Part> {
   id: string
   name: string
   slug: string
@@ -80,19 +80,19 @@ export interface UploadDraft extends Partial<Model> {
 export async function getUploadDraft(id: string): Promise<UploadDraft | null> {
   const supabase = await createClient()
 
-  const { data: model, error } = await supabase
-    .from('models')
+  const { data: part, error } = await supabase
+    .from('parts')
     .select(UPLOAD_DRAFT_SELECT)
     .eq('id', id)
     .eq('origin_type', 'original')
     .maybeSingle()
 
   if (error) throw error
-  if (!model) return null
+  if (!part) return null
 
   const [{ data: links, error: linksError }, { data: files, error: filesError }] = await Promise.all([
-    supabase.from('model_products').select('product_id').eq('model_id', id).limit(PRODUCT_LINKS_LIMIT),
-    supabase.from('model_files').select('id, file_category').eq('model_id', id).limit(MODEL_FILES_LIMIT),
+    supabase.from('part_products').select('product_id').eq('part_id', id).limit(PRODUCT_LINKS_LIMIT),
+    supabase.from('part_files').select('id, file_category').eq('part_id', id).limit(PART_FILES_LIMIT),
   ])
 
   if (linksError) throw linksError
@@ -100,7 +100,7 @@ export async function getUploadDraft(id: string): Promise<UploadDraft | null> {
 
   const fileRows = files ?? []
   return {
-    ...(model as unknown as Model),
+    ...(part as unknown as Part),
     product_ids: (links ?? []).map((l) => l.product_id as string),
     model_file_count: fileRows.filter((f) => f.file_category === 'model').length,
     image_file_count: fileRows.filter((f) => f.file_category === 'image').length,
@@ -123,17 +123,17 @@ export interface CreateUploadDraftInput {
  * rather than left to their column defaults — the public flow's whole premise
  * is that these three are not the contributor's to choose.
  *
- * Covered by the "Users can manage own models" RLS policy.
+ * Covered by the "Users can manage own parts" RLS policy.
  */
 export async function createUploadDraft(
   userId: string,
   input: CreateUploadDraftInput,
 ): Promise<{ id: string; slug: string }> {
   const supabase = await createClient()
-  const slug = await ensureUniqueModelSlug(input.name, supabase)
+  const slug = await ensureUniquePartSlug(input.name, supabase)
 
   const { data, error } = await supabase
-    .from('models')
+    .from('parts')
     .insert({
       name: input.name,
       slug,
@@ -172,8 +172,8 @@ export interface UploadDraftPatch {
   tags?: string[]
   material?: string | null
   color?: string | null
-  dimensions?: ModelDimensions | null
-  print_settings?: ModelPrintSettings | null
+  dimensions?: PartDimensions | null
+  print_settings?: PartPrintSettings | null
   estimated_print_time?: number | null
   estimated_material_usage?: number | null
   status?: 'draft' | 'published'
@@ -181,7 +181,7 @@ export interface UploadDraftPatch {
 
 /**
  * Applies a partial update to an upload draft and, when productIds is given,
- * syncs model_products to exactly that set. Ownership is enforced by RLS plus
+ * syncs part_products to exactly that set. Ownership is enforced by RLS plus
  * the explicit user filter; the update is scoped to original rows so the
  * endpoint can never mutate a curation draft.
  */
@@ -195,7 +195,7 @@ export async function updateUploadDraft(
 
   if (Object.keys(patch).length > 0) {
     const { error } = await supabase
-      .from('models')
+      .from('parts')
       .update(patch)
       .eq('id', id)
       .eq('user_id', userId)
@@ -206,9 +206,9 @@ export async function updateUploadDraft(
 
   if (productIds) {
     const { data: existing, error: readError } = await supabase
-      .from('model_products')
+      .from('part_products')
       .select('product_id')
-      .eq('model_id', id)
+      .eq('part_id', id)
       .limit(PRODUCT_LINKS_LIMIT)
 
     if (readError) throw readError
@@ -220,17 +220,17 @@ export async function updateUploadDraft(
 
     if (toRemove.length > 0) {
       const { error } = await supabase
-        .from('model_products')
+        .from('part_products')
         .delete()
-        .eq('model_id', id)
+        .eq('part_id', id)
         .in('product_id', toRemove)
       if (error) throw error
     }
 
     if (toAdd.length > 0) {
       const { error } = await supabase
-        .from('model_products')
-        .insert(toAdd.map((pid) => ({ model_id: id, product_id: pid })))
+        .from('part_products')
+        .insert(toAdd.map((pid) => ({ part_id: id, product_id: pid })))
       if (error) throw error
     }
   }
