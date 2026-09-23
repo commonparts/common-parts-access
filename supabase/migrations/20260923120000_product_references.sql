@@ -34,7 +34,8 @@
 --      RLS), as for brands. The write policy for the reference attachment flow
 --      ships with the search issue.
 --
--- NOT APPLIED -- the human applies this migration.
+-- APPLIED to production on 2026-09-23 as version 20260923120000. Additive only
+-- (new function, table, index and policy), so it is safe ahead of the deploy.
 
 -- 1. Normalization rule, shared by the table and future search queries.
 create or replace function public.normalize_product_reference(value text)
