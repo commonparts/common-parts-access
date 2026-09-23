@@ -208,3 +208,15 @@ export function htmlToPlainText(html: string): string {
     .replace(/\n{3,}/g, '\n\n')
     .trim()
 }
+
+/**
+ * Format an ISO 3166-1 alpha-2 region code as its English name ("FR" → "France").
+ * Falls back to the code itself when the runtime does not know it.
+ */
+export function formatRegionName(code: string): string {
+  try {
+    return new Intl.DisplayNames(["en"], { type: "region" }).of(code) ?? code
+  } catch {
+    return code
+  }
+}
