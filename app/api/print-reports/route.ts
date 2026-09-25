@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAuthSessionMissingError } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import {
   PrintReportSubmissionError,
@@ -38,7 +39,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+    // No session is the anonymous case. Any other auth failure must not
+    // silently file a signed-in user's report under a cookie identity.
+    if (authError && !isAuthSessionMissingError(authError)) {
+      console.error('Print report auth lookup failed:', authError)
+      return NextResponse.json({ error: 'Report failed: could not verify your session, please try again' }, { status: 503 })
+    }
     const userId = user?.id ?? null
     const reporterHash = await getReporterHash(userId)
 

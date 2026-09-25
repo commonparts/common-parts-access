@@ -65,6 +65,7 @@ interface PartData {
   slug: string
   name: string
   description?: string
+  isPublished: boolean
   partDetails: {
     partName?: string
     partNumber?: string
@@ -992,15 +993,17 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                           )}
                         </div>
                       )}
-                      <PrintReportControls
-                        partId={part.id}
-                        productId={p.id}
-                        productName={p.name}
-                        stats={p.reportStats}
-                        references={p.references}
-                        onStatsChange={(stats) => updateReportStats(p.id, stats)}
-                        className="mt-xs"
-                      />
+                      {part.isPublished && (
+                        <PrintReportControls
+                          partId={part.id}
+                          productId={p.id}
+                          productName={p.name}
+                          stats={p.reportStats}
+                          references={p.references}
+                          onStatsChange={(stats) => updateReportStats(p.id, stats)}
+                          className="mt-xs"
+                        />
+                      )}
                     </div>
                   </div>
                 ))}

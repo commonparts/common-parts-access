@@ -88,6 +88,13 @@ comment on column public.part_products.does_not_work_count is
  * Recounts the reports of one part–product pair and the makes of its part.
  * Recounting (rather than incrementing) keeps the numbers right when a
  * reporter changes their result.
+ *
+ * The part and link rows are locked (always in that order) before counting.
+ * Under READ COMMITTED each count then takes its snapshot after any
+ * concurrent report on the same part has committed, instead of two reporters
+ * each counting only their own row. NO KEY UPDATE, not UPDATE: the report
+ * INSERT already holds KEY SHARE on the link row (foreign key check), which
+ * FOR UPDATE would conflict with and deadlock two concurrent reporters.
  */
 create or replace function public.refresh_print_report_stats(p_part_id uuid, p_product_id uuid)
 returns void
@@ -100,6 +107,13 @@ declare
   v_adjusted      integer;
   v_does_not_work integer;
 begin
+  -- No-op when the link itself was just deleted (cascade from part_products):
+  -- the row is gone, nothing is locked and the UPDATE below matches nothing.
+  perform 1 from public.parts where id = p_part_id for no key update;
+  perform 1 from public.part_products
+   where part_id = p_part_id and product_id = p_product_id
+     for no key update;
+
   select count(*) filter (where result = 'works'),
          count(*) filter (where result = 'works_with_adjustments'),
          count(*) filter (where result = 'does_not_work')
@@ -108,7 +122,6 @@ begin
    where part_id = p_part_id
      and product_id = p_product_id;
 
-  -- No-op when the link itself was just deleted (cascade from part_products).
   update public.part_products
      set works_count                  = v_works,
          works_with_adjustments_count = v_adjusted,
@@ -152,7 +165,7 @@ revoke execute on function public.print_reports_refresh_stats() from public, ano
 
 /**
  * Records (or replaces) one reporter's print report on a part–product pair and
- * returns the pair's fresh counters. Called by POST /api/parts/[slug]/print-reports
+ * returns the pair's fresh counters. Called by POST /api/print-reports
  * with the service role; the route has already authenticated the optional user
  * and derived the reporter hash from its cookie.
  *
@@ -187,6 +200,10 @@ declare
   c_max_reports_per_hour constant integer := 20;
   v_comment text := nullif(btrim(p_comment), '');
 begin
+  -- Serialize one reporter's submissions so two concurrent requests cannot
+  -- both pass the rate limit below. Released at commit.
+  perform pg_advisory_xact_lock(hashtextextended(p_reporter_hash, 0));
+
   if not exists (
     select 1
       from public.part_products pp

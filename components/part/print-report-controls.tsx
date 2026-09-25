@@ -8,6 +8,7 @@ import {
   type PrintReportStats,
 } from "@/lib/utils/print-reports"
 import { Button } from "@/components/ui/button"
+import { DropdownInput } from "@/components/ui/dropdown-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -56,7 +57,8 @@ export function PrintReportControls({
   const [message, setMessage] = React.useState<string | null>(null)
   const idPrefix = React.useId()
 
-  const submit = async (result: PrintReportResult, successMessage: string) => {
+  /** Files the report; resolves to whether the server accepted it. */
+  const submit = async (result: PrintReportResult, successMessage: string): Promise<boolean> => {
     setPending(true)
     setMessage(null)
     try {
@@ -75,13 +77,15 @@ export function PrintReportControls({
       const data = await response.json().catch(() => null)
       if (!response.ok) {
         setMessage(data?.error ?? "Report failed: please try again")
-        return
+        return false
       }
       setReportedResult(result)
       onStatsChange(data.stats)
       setMessage(successMessage)
+      return true
     } catch {
       setMessage("Report failed: check your connection and try again")
+      return false
     } finally {
       setPending(false)
     }
@@ -90,8 +94,8 @@ export function PrintReportControls({
   const handleSaveDetails = async (event: React.FormEvent) => {
     event.preventDefault()
     if (!reportedResult) return
-    await submit(reportedResult, "Details saved. Thank you.")
-    setDetailsOpen(false)
+    // Keep the form open on failure so the comment is not lost.
+    if (await submit(reportedResult, "Details saved. Thank you.")) setDetailsOpen(false)
   }
 
   return (
@@ -147,11 +151,11 @@ export function PrintReportControls({
           {references.length > 0 && (
             <div className="space-y-2xs">
               <Label htmlFor={`${idPrefix}-reference`}>Your product reference (optional)</Label>
-              <select
+              <DropdownInput
+                as="select"
                 id={`${idPrefix}-reference`}
                 value={referenceId}
                 onChange={(e) => setReferenceId(e.target.value)}
-                className="w-full rounded-lg border border-border-subtle bg-bg-surface px-md py-sm text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
               >
                 <option value="">Not specified</option>
                 {references.map((reference) => (
@@ -159,7 +163,7 @@ export function PrintReportControls({
                     {reference.value}
                   </option>
                 ))}
-              </select>
+              </DropdownInput>
             </div>
           )}
           <div className="flex gap-xs">
