@@ -30,7 +30,7 @@
 -- nor write the table. Comments are stored but not public; the public page
 -- reads the counters on `part_products` instead.
 --
--- NOT APPLIED yet: the human applies this migration.
+-- APPLIED to production on 2026-09-25 as version 20260925180000.
 
 -- 1. The table.
 create table public.print_reports (
