@@ -41,6 +41,8 @@
 --   exact reference 8, reference prefix 6, token coverage x2, full-text rank
 --   x4, trigram word similarity x1. A reference is the most specific thing a
 --   user can type, so any reference hit outranks a name hit.
+--
+-- APPLIED to production on 2026-09-25 as version 20260925200000.
 
 -- 1. Accent folding.
 create or replace function public.fold_search_text(value text)
