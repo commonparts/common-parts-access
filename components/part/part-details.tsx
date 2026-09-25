@@ -9,13 +9,14 @@ import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
-import type { EvidenceLevel } from "@/lib/utils/evidence-level"
+import type { PrintReportStats } from "@/lib/utils/print-reports"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartFileList } from "./part-file-list"
 import { EvidenceLevelBadge } from "./evidence-level-badge"
+import { PrintReportControls, type PrintReportReference } from "./print-report-controls"
 
 
 interface PartDetailsProps {
@@ -49,7 +50,6 @@ type PrintSettings = Record<string, string | number | boolean | null>
 // interface PartComment {
 //   id: string
 //   content: string
-//   rating?: number
 //   createdAt: string
 //   updatedAt: string
 //   author: {
@@ -65,6 +65,7 @@ interface PartData {
   slug: string
   name: string
   description?: string
+  isPublished: boolean
   partDetails: {
     partName?: string
     partNumber?: string
@@ -148,7 +149,10 @@ interface PartData {
       website?: string
       verified: boolean
     }
-    evidenceLevel: EvidenceLevel
+    /** Print report counters and the evidence level they derive (issues #317, #318). */
+    reportStats: PrintReportStats
+    /** The product's references, offered as optional detail on a print report. */
+    references: PrintReportReference[]
   }[]
   category?: {
     id: string
@@ -225,6 +229,16 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           ...prev.stats,
           likes: typeof likes === 'number' ? Math.max(0, likes) : prev.stats.likes
         }
+      }
+    })
+  }, [])
+
+  const updateReportStats = useCallback((productId: string, reportStats: PrintReportStats) => {
+    setPart(prev => {
+      if (!prev?.products) return prev
+      return {
+        ...prev,
+        products: prev.products.map(p => (p.id === productId ? { ...p, reportStats } : p)),
       }
     })
   }, [])
@@ -962,7 +976,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                         >
                           {p.name}
                         </Link>
-                        <EvidenceLevelBadge level={p.evidenceLevel} className="shrink-0" />
+                        <EvidenceLevelBadge level={p.reportStats.evidenceLevel} className="shrink-0" />
                       </div>
                       {p.brand && (
                         <div className="flex items-center gap-2 mt-2">
@@ -978,6 +992,17 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                             </Badge>
                           )}
                         </div>
+                      )}
+                      {part.isPublished && (
+                        <PrintReportControls
+                          partId={part.id}
+                          productId={p.id}
+                          productName={p.name}
+                          stats={p.reportStats}
+                          references={p.references}
+                          onStatsChange={(stats) => updateReportStats(p.id, stats)}
+                          className="mt-xs"
+                        />
                       )}
                     </div>
                   </div>

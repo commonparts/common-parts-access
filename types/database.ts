@@ -184,7 +184,7 @@ export interface Part {
 
   // Validation
   verification_status: PartVerificationStatus;
-  makes_count?: number;
+  makes_count?: number; // every print report on the part, trigger-maintained (#318)
 
   // Metadata
   tags?: string[] | null;
@@ -260,7 +260,6 @@ export interface PartComment {
   user_id: string;
   parent_id?: string | null; // For nested comments
   content: string;
-  rating?: number | null; // 1-5
   created_at?: string;
   updated_at?: string;
 }
