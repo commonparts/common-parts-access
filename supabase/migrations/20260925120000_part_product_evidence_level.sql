@@ -28,9 +28,9 @@
 --
 -- `parts.verification_status` is left untouched (out of scope for #317).
 --
--- NOT APPLIED. Additive only (new column with a default, new function, grant
--- changes that match what the app already sends), so it is safe to apply
--- ahead of the deploy.
+-- APPLIED to production on 2026-09-25 as version 20260925120000. Additive only
+-- (new column with a default, new function, grant changes that match what the
+-- app already sends), so it is safe ahead of the deploy.
 
 -- 1. The column. Existing rows take the default.
 alter table public.part_products

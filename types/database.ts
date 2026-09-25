@@ -1,5 +1,3 @@
-import type { EvidenceLevel } from '@/lib/utils/evidence-level';
-
 // ============================================================================
 // Core Database Types - Matches Supabase schema exactly
 // ============================================================================
@@ -223,14 +221,6 @@ export interface CurationRejection {
   failed_criteria: CurationCriterionKey[];
   created_by: string;
   created_at?: string;
-}
-
-// Junction table part_products: links a part (part) to a compatible product.
-export interface PartProduct {
-  part_id: string;
-  product_id: string;
-  // Server-owned: clients may only insert part_id and product_id (issue #317).
-  evidence_level: EvidenceLevel;
 }
 
 export interface PartFile {

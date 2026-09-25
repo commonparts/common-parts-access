@@ -1,13 +1,12 @@
 /**
  * How well a part–product fit is established (issue #317). Mirrors the check
- * constraint on `part_products.evidence_level`; the rule deriving it from
- * print reports lives in SQL (`part_product_evidence_level`).
+ * constraint on `part_products.evidence_level`.
  */
-export const EVIDENCE_LEVELS = ['declared', 'confirmed', 'disputed'] as const
+const EVIDENCE_LEVELS = ['declared', 'confirmed', 'disputed'] as const
 export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number]
 
 /** What a link carries until print reports say otherwise — the column default. */
-export const DEFAULT_EVIDENCE_LEVEL: EvidenceLevel = 'declared'
+const DEFAULT_EVIDENCE_LEVEL: EvidenceLevel = 'declared'
 
 /**
  * Narrows a value read from the database to an EvidenceLevel. Anything
