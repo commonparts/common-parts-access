@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import type { ProductReference } from '@/lib/utils/product-references'
+import { toEvidenceLevel, type EvidenceLevel } from '@/lib/utils/evidence-level'
 
 // Upper bound on part links fetched for a product page in one call.
 const MAX_PART_LINKS = 500
@@ -44,6 +45,8 @@ export interface ProductPart {
   estimated_print_time: number | null // minutes
   created_at: string | null
   license_short_name: string | null
+  /** Evidence that this part fits this product — not the part in general (#317). */
+  evidence_level: EvidenceLevel
 }
 
 interface ProductRow {
@@ -120,6 +123,7 @@ interface PartRow {
 
 interface PartLinkRow {
   product_id: string
+  evidence_level: string
   parts: PartRow | PartRow[] | null
 }
 
@@ -136,6 +140,7 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
     .select(
       `
       product_id,
+      evidence_level,
       parts!inner(
         id, name, slug, thumbnail_url, part_name, part_number, material,
         download_count, estimated_print_time, created_at, status,
@@ -168,6 +173,7 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
       estimated_print_time: part.estimated_print_time,
       created_at: part.created_at,
       license_short_name: firstOf(part.licenses)?.short_name ?? null,
+      evidence_level: toEvidenceLevel(link.evidence_level),
     })
   }
 

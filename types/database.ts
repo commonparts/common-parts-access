@@ -223,12 +223,6 @@ export interface CurationRejection {
   created_at?: string;
 }
 
-// Junction table part_products: links a part (part) to a compatible product.
-export interface PartProduct {
-  part_id: string;
-  product_id: string;
-}
-
 export interface PartFile {
   id: string;
   part_id: string;

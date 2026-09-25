@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { PartCard } from "@/components/part/part-card"
+import { EvidenceLevelBadge } from "@/components/part/evidence-level-badge"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
 import type { PartCardData } from "@/types/parts"
 
@@ -61,7 +62,12 @@ export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
 
       <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((part) => (
-          <PartCard key={part.id} part={toPartCardData(part)} showPartMeta />
+          <PartCard
+            key={part.id}
+            part={toPartCardData(part)}
+            badge={<EvidenceLevelBadge level={part.evidence_level} />}
+            showPartMeta
+          />
         ))}
       </div>
     </div>

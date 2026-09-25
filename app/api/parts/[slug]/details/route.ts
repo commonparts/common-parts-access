@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
 import { distinctBrands } from '@/lib/utils/catalog'
+import { toEvidenceLevel } from '@/lib/utils/evidence-level'
 import type { Brand } from '@/types/database'
 
 // Supabase returns joined rows as T | T[] depending on cardinality.
@@ -192,6 +193,7 @@ export async function GET(
       supabase
         .from('part_products')
         .select(`
+          evidence_level,
           products(
             id,
             name,
@@ -229,7 +231,10 @@ export async function GET(
 
     /** All products linked via the part_products junction table. */
     const compatibleProducts = (partProducts ?? [])
-      .map((row) => first(row.products))
+      .map((row) => {
+        const product = first(row.products)
+        return product ? { ...product, evidence_level: toEvidenceLevel(row.evidence_level) } : null
+      })
       .filter((p): p is NonNullable<typeof p> => p !== null)
 
     // The part's brands, derived from those products (issue #315). Same rule as
@@ -325,6 +330,7 @@ export async function GET(
             discontinued: p.discontinued,
             image: resolveStorageUrl(p.image_url),
             brand: pBrand ? toBrandPayload(pBrand) : null,
+            evidenceLevel: p.evidence_level,
           }
         }),
         category: category ? {
