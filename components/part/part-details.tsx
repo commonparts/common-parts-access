@@ -9,11 +9,13 @@ import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
+import type { EvidenceLevel } from "@/lib/utils/evidence-level"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartFileList } from "./part-file-list"
+import { EvidenceLevelBadge } from "./evidence-level-badge"
 
 
 interface PartDetailsProps {
@@ -146,6 +148,7 @@ interface PartData {
       website?: string
       verified: boolean
     }
+    evidenceLevel: EvidenceLevel
   }[]
   category?: {
     id: string
@@ -952,12 +955,15 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <Link
-                        href={`/product/${p.slug}`}
-                        className="block font-medium line-clamp-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                      >
-                        {p.name}
-                      </Link>
+                      <div className="flex items-start justify-between gap-xs">
+                        <Link
+                          href={`/product/${p.slug}`}
+                          className="block min-w-0 font-medium line-clamp-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                        >
+                          {p.name}
+                        </Link>
+                        <EvidenceLevelBadge level={p.evidenceLevel} className="shrink-0" />
+                      </div>
                       {p.brand && (
                         <div className="flex items-center gap-2 mt-2">
                           <Link

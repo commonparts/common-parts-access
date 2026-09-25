@@ -1,3 +1,5 @@
+import type { EvidenceLevel } from '@/lib/utils/evidence-level';
+
 // ============================================================================
 // Core Database Types - Matches Supabase schema exactly
 // ============================================================================
@@ -227,6 +229,8 @@ export interface CurationRejection {
 export interface PartProduct {
   part_id: string;
   product_id: string;
+  // Server-owned: clients may only insert part_id and product_id (issue #317).
+  evidence_level: EvidenceLevel;
 }
 
 export interface PartFile {
