@@ -8,6 +8,9 @@ export interface SearchProductResult {
   image_url: string | null
   category: string | null
   parts_count: number
+  // The manufacturer reference or regional name the query matched (issue
+  // #319), as displayed; null when the product matched by name.
+  reference: string | null
 }
 
 export interface SearchPartResult {

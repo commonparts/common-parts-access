@@ -10,6 +10,8 @@ export interface ProductCardData {
   image_url: string | null
   category: string | null
   parts_count: number
+  // Matched reference on /search (issue #319); absent on the /brands pages.
+  reference?: string | null
 }
 
 // Horizontal product card: image, name, category, parts-count badge. Links to
@@ -38,8 +40,10 @@ export function ProductResultCard({ product }: { product: ProductCardData }) {
         <div className="truncate font-heading text-sm font-semibold text-text-primary">
           {product.name}
         </div>
-        {product.category && (
-          <div className="truncate text-caption text-text-secondary">{product.category}</div>
+        {(product.reference || product.category) && (
+          <div className="truncate text-caption text-text-secondary">
+            {[product.reference, product.category].filter(Boolean).join(" · ")}
+          </div>
         )}
       </div>
       <Badge variant="soft" className="shrink-0">

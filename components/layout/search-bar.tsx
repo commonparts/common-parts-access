@@ -267,8 +267,9 @@ export function SearchBar({
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-text-primary">{product.name}</div>
         <div className="truncate text-caption text-text-secondary">
-          {product.category ? `${product.category} · ` : ""}
-          {pluralize(product.parts_count, "part")}
+          {[product.reference, product.category, pluralize(product.parts_count, "part")]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
       </div>
     </Row>
