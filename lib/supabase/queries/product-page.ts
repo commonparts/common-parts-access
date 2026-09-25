@@ -1,7 +1,13 @@
+import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import type { ProductReference } from '@/lib/utils/product-references'
 
 // Upper bound on part links fetched for a product page in one call.
 const MAX_PART_LINKS = 500
+
+// Upper bound on references embedded in a product page. A product groups tens
+// of manufacturer references at most; this only guards against runaway data.
+const MAX_PRODUCT_REFERENCES = 200
 
 // Supabase embeds a to-one relation as an object, but the generated-less client
 // types it as a possibly-array — normalize to the first row (or null).
@@ -23,6 +29,7 @@ export interface ProductPageProduct {
 
 export interface ProductPageData {
   product: ProductPageProduct
+  references: ProductReference[]
 }
 
 export interface ProductPart {
@@ -48,60 +55,54 @@ interface ProductRow {
   image_url: string | null
   brands: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
   categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
+  product_references: ProductReference[] | null
 }
 
 /**
- * Loads a product page by slug: the product with its brand + category. Returns
- * null when the slug does not resolve. Covered by the public read policy on
- * products.
+ * Loads a product page by slug: the product with its brand, category and known
+ * references (manufacturer refs, commercial names, barcodes). Returns null when
+ * the slug does not resolve. Wrapped in React cache() so generateMetadata and
+ * the page component share a single query per request. Covered by the public
+ * read policies on products and product_references.
  */
-export async function fetchProductPageBySlug(slug: string): Promise<ProductPageData | null> {
-  const supabase = await createClient()
+export const fetchProductPageBySlug = cache(
+  async (slug: string): Promise<ProductPageData | null> => {
+    const supabase = await createClient()
 
-  const { data, error } = await supabase
-    .from('products')
-    .select(
-      `
-      id, name, slug, release_year, discontinued, image_url,
-      brands(id, name, slug),
-      categories(id, name, slug)
-    `,
-    )
-    .eq('slug', slug)
-    .maybeSingle()
+    const { data, error } = await supabase
+      .from('products')
+      .select(
+        `
+        id, name, slug, release_year, discontinued, image_url,
+        brands(id, name, slug),
+        categories(id, name, slug),
+        product_references(id, value, type, region, language)
+      `,
+      )
+      .eq('slug', slug)
+      .order('type', { referencedTable: 'product_references' })
+      .order('value', { referencedTable: 'product_references' })
+      .limit(MAX_PRODUCT_REFERENCES, { referencedTable: 'product_references' })
+      .maybeSingle()
 
-  if (error) throw error
-  if (!data) return null
+    if (error) throw error
+    if (!data) return null
 
-  const row = data as ProductRow
-  const product: ProductPageProduct = {
-    id: row.id,
-    name: row.name,
-    slug: row.slug,
-    release_year: row.release_year,
-    discontinued: Boolean(row.discontinued),
-    image_url: row.image_url,
-    brand: firstOf(row.brands),
-    category: firstOf(row.categories),
-  }
+    const row = data as ProductRow
+    const product: ProductPageProduct = {
+      id: row.id,
+      name: row.name,
+      slug: row.slug,
+      release_year: row.release_year,
+      discontinued: Boolean(row.discontinued),
+      image_url: row.image_url,
+      brand: firstOf(row.brands),
+      category: firstOf(row.categories),
+    }
 
-  return { product }
-}
-
-/**
- * Minimal lookup for metadata: just the product name by slug, so
- * generateMetadata doesn't re-run the full product load.
- */
-export async function fetchProductNameBySlug(slug: string): Promise<string | null> {
-  const supabase = await createClient()
-  const { data, error } = await supabase
-    .from('products')
-    .select('name')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (error) throw error
-  return (data?.name as string | undefined) ?? null
-}
+    return { product, references: row.product_references ?? [] }
+  },
+)
 
 interface PartRow {
   id: string

@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
@@ -7,13 +8,19 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { ProductPartsGrid } from "@/components/product/product-parts-grid"
 import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
+import { ProductReferences } from "@/components/product/product-references"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
-import {
-  fetchProductNameBySlug,
-  fetchProductPageBySlug,
-  fetchProductPageParts,
-} from "@/lib/supabase/queries/product-page"
+import { fetchProductPageBySlug, fetchProductPageParts } from "@/lib/supabase/queries/product-page"
 import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
+import { parseAcceptLanguage } from "@/lib/utils/locale"
+import { pickRegionalName, type ProductReference } from "@/lib/utils/product-references"
+
+// The name a visitor knows the product by: the commercial name of their region
+// (read from Accept-Language) when one is recorded, else products.name.
+async function resolveDisplayName(name: string, references: ProductReference[]): Promise<string> {
+  const locale = parseAcceptLanguage((await headers()).get("accept-language"))
+  return pickRegionalName(references, locale) ?? name
+}
 
 export async function generateMetadata({
   params,
@@ -21,8 +28,9 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const name = await fetchProductNameBySlug(slug)
-  return { title: name ?? "Product" }
+  const data = await fetchProductPageBySlug(slug)
+  if (!data) return { title: "Product" }
+  return { title: await resolveDisplayName(data.product.name, data.references) }
 }
 
 // "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
@@ -40,7 +48,8 @@ export default async function ProductPage({
   const data = await fetchProductPageBySlug(slug)
   if (!data) notFound()
 
-  const { product } = data
+  const { product, references } = data
+  const displayName = await resolveDisplayName(product.name, references)
 
   const parts = await fetchProductPageParts({ productId: product.id })
 
@@ -62,7 +71,7 @@ export default async function ProductPage({
         ? { href: `/brands/${product.brand.slug}/${product.category.slug}` }
         : {}),
     },
-    { label: product.name },
+    { label: displayName },
   ].filter((item): item is { label: string; href?: string } => Boolean(item))
 
   return (
@@ -75,7 +84,7 @@ export default async function ProductPage({
           <div className="relative aspect-square overflow-hidden rounded-lg border border-border-subtle bg-bg-subtle">
             {product.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
+              <img src={product.image_url} alt={displayName} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-text-disabled">
                 <svg aria-hidden="true" className="size-2xl" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -93,7 +102,7 @@ export default async function ProductPage({
                 </p>
               )}
               <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
-                {product.name}
+                {displayName}
               </h1>
               {productionYears && (
                 <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
@@ -101,6 +110,7 @@ export default async function ProductPage({
                 </div>
               )}
             </div>
+            <ProductReferences references={references} displayedName={displayName} />
           </div>
         </div>
 
