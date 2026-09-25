@@ -58,8 +58,10 @@ export default async function SearchDemandPage() {
                 {misses.map((miss) => (
                   <tr key={miss.normalized_query}>
                     <td className={`${CELL} text-text-primary`}>
+                      {/* No prefetch: rendering /search for a miss logs it again. */}
                       <Link
                         href={`/search?q=${encodeURIComponent(miss.raw_query)}`}
+                        prefetch={false}
                         className="text-action-primary hover:text-action-primaryHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                       >
                         {miss.raw_query}
