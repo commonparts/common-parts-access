@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
 import { distinctBrands } from '@/lib/utils/catalog'
-import { toEvidenceLevel } from '@/lib/utils/evidence-level'
+import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 
 // Supabase returns joined rows as T | T[] depending on cardinality.
@@ -12,6 +12,9 @@ function first<T>(value: T | T[] | null | undefined): T | null {
   if (!value) return null
   return Array.isArray(value) ? (value[0] ?? null) : value
 }
+
+/** References offered per compatible product when adding details to a print report (issue #318). */
+const MAX_REPORT_REFERENCES_PER_PRODUCT = 50
 
 /** A brand as this route exposes it — camelCased, storage columns renamed. */
 interface BrandPayload {
@@ -168,7 +171,6 @@ export async function GET(
         .select(`
           id,
           content,
-          rating,
           created_at,
           updated_at,
           user_profiles(
@@ -194,6 +196,9 @@ export async function GET(
         .from('part_products')
         .select(`
           evidence_level,
+          works_count,
+          works_with_adjustments_count,
+          does_not_work_count,
           products(
             id,
             name,
@@ -210,10 +215,14 @@ export async function GET(
               logo_url,
               website_url,
               verified
-            )
+            ),
+            product_references(id, value, type, region, language)
           )
         `)
-        .eq('part_id', part.id),
+        .eq('part_id', part.id)
+        .order('type', { referencedTable: 'products.product_references' })
+        .order('value', { referencedTable: 'products.product_references' })
+        .limit(MAX_REPORT_REFERENCES_PER_PRODUCT, { referencedTable: 'products.product_references' }),
       part.source_platform
         ? getSourcePlatformBySlug(part.source_platform)
         : Promise.resolve(null),
@@ -233,7 +242,7 @@ export async function GET(
     const compatibleProducts = (partProducts ?? [])
       .map((row) => {
         const product = first(row.products)
-        return product ? { ...product, evidence_level: toEvidenceLevel(row.evidence_level) } : null
+        return product ? { ...product, reportStats: toPrintReportStats(row) } : null
       })
       .filter((p): p is NonNullable<typeof p> => p !== null)
 
@@ -330,7 +339,8 @@ export async function GET(
             discontinued: p.discontinued,
             image: resolveStorageUrl(p.image_url),
             brand: pBrand ? toBrandPayload(pBrand) : null,
-            evidenceLevel: p.evidence_level,
+            reportStats: p.reportStats,
+            references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value, type: r.type })),
           }
         }),
         category: category ? {
@@ -348,7 +358,6 @@ export async function GET(
           return {
             id: comment.id,
             content: comment.content,
-            rating: comment.rating,
             createdAt: comment.created_at,
             updatedAt: comment.updated_at,
             author: commentAuthor ? {
