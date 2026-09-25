@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   groupProductReferences,
+  inferReferenceType,
+  MAX_REFERENCE_LENGTH,
   pickRegionalName,
+  validateReferenceAttachment,
   type ProductReference,
 } from './product-references'
 
@@ -66,5 +69,47 @@ describe('groupProductReferences', () => {
 
   it('returns nothing for a product without references', () => {
     expect(groupProductReferences([], 'OneBlade Pro')).toEqual([])
+  })
+})
+
+describe('inferReferenceType', () => {
+  it('reads barcode-length digit strings as EANs', () => {
+    expect(inferReferenceType('8710103900000')).toBe('ean')
+    expect(inferReferenceType('8710 1039')).toBe('ean')
+  })
+
+  it('reads anything else with a digit as a manufacturer reference', () => {
+    expect(inferReferenceType('QP6520/20')).toBe('manufacturer_ref')
+    expect(inferReferenceType('123456')).toBe('manufacturer_ref')
+  })
+
+  it('reads plain words as a commercial name', () => {
+    expect(inferReferenceType('OneBlade Pro')).toBe('commercial_name')
+  })
+})
+
+describe('validateReferenceAttachment', () => {
+  const productId = '1143e0cd-459d-4849-a4b5-b0db0099324a'
+
+  it('accepts a product id and trims the value', () => {
+    expect(validateReferenceAttachment({ productId, value: '  QP6520/20 ' })).toEqual({
+      ok: true,
+      value: { productId, value: 'QP6520/20' },
+    })
+  })
+
+  it('rejects a missing or malformed product id', () => {
+    expect(validateReferenceAttachment({ value: 'QP6520' }).ok).toBe(false)
+    expect(validateReferenceAttachment({ productId: 'nope', value: 'QP6520' }).ok).toBe(false)
+  })
+
+  it('rejects values without a letter or digit, and overlong values', () => {
+    expect(validateReferenceAttachment({ productId, value: ' -/- ' }).ok).toBe(false)
+    expect(validateReferenceAttachment({ productId, value: 'A'.repeat(MAX_REFERENCE_LENGTH + 1) }).ok).toBe(false)
+  })
+
+  it('rejects a non-object body', () => {
+    expect(validateReferenceAttachment(null).ok).toBe(false)
+    expect(validateReferenceAttachment('QP6520').ok).toBe(false)
   })
 })

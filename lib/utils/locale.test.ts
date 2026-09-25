@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseAcceptLanguage } from './locale'
+import { formatLocaleTag, parseAcceptLanguage } from './locale'
 
 describe('parseAcceptLanguage', () => {
   it('reads language and region from a single tag', () => {
@@ -35,5 +35,19 @@ describe('parseAcceptLanguage', () => {
   it('handles a missing or empty header', () => {
     expect(parseAcceptLanguage(null)).toEqual({ language: null, region: null })
     expect(parseAcceptLanguage('')).toEqual({ language: null, region: null })
+  })
+})
+
+describe('formatLocaleTag', () => {
+  it('joins language and region', () => {
+    expect(formatLocaleTag({ language: 'fr', region: 'FR' })).toBe('fr-FR')
+  })
+
+  it('keeps the language alone when no region is known', () => {
+    expect(formatLocaleTag({ language: 'de', region: null })).toBe('de')
+  })
+
+  it('returns null without a language', () => {
+    expect(formatLocaleTag({ language: null, region: null })).toBeNull()
   })
 })

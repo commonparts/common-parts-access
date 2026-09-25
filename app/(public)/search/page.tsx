@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
 import { SearchBar } from "@/components/layout/search-bar"
 import { SearchResultsView } from "@/components/search/search-results-view"
-import { findExactBrandMatch, searchAll } from "@/lib/supabase/queries/search"
-import { isSearchType, SEARCH_MAX_LIMIT } from "@/types/search"
+import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supabase/queries/search"
+import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
+import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
+import { isSearchType, SEARCH_MAX_LIMIT, type ProductCandidate } from "@/types/search"
 
 export const metadata: Metadata = {
   title: "Search",
@@ -33,7 +36,23 @@ export default async function SearchPage({
     : { products: [], parts: [], brands: [] }
 
   const total = results.products.length + results.parts.length + results.brands.length
-  const brandSuggestion = query && total === 0 ? await findExactBrandMatch(query) : null
+  const isMiss = Boolean(query) && total === 0
+
+  // A zero-result search is logged (issue #320) and offers the products the
+  // query may name, so the visitor can attach an unknown reference to one.
+  // Only this page logs: /api/search serves autocomplete keystrokes.
+  let brandSuggestion: BrandSuggestion | null = null
+  let candidates: ProductCandidate[] = []
+  if (isMiss) {
+    const locale = parseAcceptLanguage((await headers()).get("accept-language"))
+    ;[brandSuggestion, candidates] = await Promise.all([
+      findExactBrandMatch(query),
+      // The picker is optional: without candidates the visitor can still
+      // search for the product or request the part.
+      searchProductCandidates(query).catch((): ProductCandidate[] => []),
+      logSearchMiss(query, formatLocaleTag(locale)),
+    ])
+  }
 
   return (
     <Section>
@@ -46,6 +65,7 @@ export default async function SearchPage({
             query={query}
             initialType={initialType}
             brandSuggestion={brandSuggestion}
+            candidates={candidates}
           />
         ) : (
           <p className="text-body text-text-secondary">

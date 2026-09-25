@@ -71,3 +71,15 @@ export const SEARCH_MAX_QUERY_LENGTH = 100
 export function emptySearchResults(): SearchResults {
   return { products: [], parts: [], brands: [] }
 }
+
+// A product offered by the zero-result "which product is it?" picker (issue
+// #320), from the search_product_candidates RPC. Any product, with or without
+// a published part.
+export interface ProductCandidate {
+  id: string
+  name: string
+  slug: string
+  brand_name: string | null
+}
+
+export const PRODUCT_CANDIDATES_LIMIT = 6
