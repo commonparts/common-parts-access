@@ -24,7 +24,7 @@ export default async function Navbar() {
         {/* Primary search — grouped autocomplete; hidden on mobile */}
         <div className="hidden flex-1 justify-center px-lg md:flex">
           <SearchBar
-            placeholder="Search parts, products, brands..."
+            placeholder="Search a brand, product or reference..."
             className="w-full max-w-xl"
           />
         </div>
