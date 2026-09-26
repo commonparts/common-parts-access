@@ -8,8 +8,8 @@ import type { BrowseNav, BrowseNavBrand } from '@/lib/supabase/queries/browse-na
 
 /**
  * One line of the compact brand index: the brand name with its parts count
- * badge. Only brands with published parts reach the index (issue #312), so
- * every line links to a page with something to download.
+ * badge. Only brands holding a listed product — a published part or an open
+ * part request — reach the index (issues #312, #321).
  */
 function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
   return (
@@ -30,7 +30,7 @@ function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
  * for the hierarchical drill-down of issue #276): the level-0 category roots
  * as tiles with subtree-aggregated counts and example-leaf microcopy, and a
  * compact multi-column alphabetical brand index. Both lists only hold
- * entries with published parts (issue #312). Every link targets a dedicated
+ * entries holding a listed product (issues #312, #321). Every link targets a dedicated
  * crawlable route (/categories/[slug], /brands/[brand]); nothing here is a
  * client-side filter state.
  */

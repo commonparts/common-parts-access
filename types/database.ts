@@ -66,6 +66,8 @@ export interface Product {
   discontinued?: boolean;
   image_url?: string | null;
   parts_count?: number; // denormalized count of published parts (trigger-maintained)
+  open_requests_count?: number; // denormalized count of open part requests (trigger-maintained)
+  is_listed?: boolean; // generated: parts_count > 0 or open_requests_count > 0, the public listing rule
   created_at?: string;
   updated_at?: string;
 }

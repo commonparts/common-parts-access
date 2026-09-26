@@ -1,6 +1,5 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
-import { withPublishedParts } from '@/lib/utils/catalog'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
 export const NAV_LISTING_PAGE_SIZE = 24
@@ -78,8 +77,8 @@ export const fetchBrandBySlug = cache(async (slug: string): Promise<BrandPageBra
  * Fetches a brand's accurate totals and covered categories via the
  * fetch_brand_nav RPC (migration 20260716181406: parts counts are distinct
  * published parts, a part fitting several products counts once;
- * 20260922120000: only products with a published part count, and only
- * categories holding such products are returned — issue #312) — aggregated
+ * only products with a published part count; since 20260926120000 the
+ * categories holding a listed product are returned — issues #312, #321) — aggregated
  * in the database so the counts are never derived from a truncated product
  * list. Wrapped in React cache() so generateMetadata and the page component
  * share a single query per request. The RPC is SECURITY INVOKER; reads are
@@ -94,7 +93,7 @@ export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> =>
   return {
     parts_count: nav?.parts_count ?? 0,
     product_count: nav?.product_count ?? 0,
-    categories: withPublishedParts(nav?.categories ?? []),
+    categories: nav?.categories ?? [],
   }
 })
 
@@ -109,9 +108,10 @@ interface ProductRow {
 
 /**
  * Fetches one page of a brand's products with their category and denormalized
- * parts_count, ordered by name. Products without a published part are left
- * out (issue #312) — parts_count is trigger-maintained (#227), so the filter
- * runs in the database and the pagination stays exact. Wrapped in React
+ * parts_count, ordered by name. Only listed products — a published part or
+ * an open part request (issues #312, #321) — are returned; is_listed derives
+ * from trigger-maintained counts, so the filter runs in the database and the
+ * pagination stays exact. Wrapped in React
  * cache() (primitive args so the per-request key works) in case a future
  * caller shares it with metadata. Covered by the public read policies on
  * products and categories.
@@ -127,7 +127,7 @@ export const fetchBrandProductsPage = cache(
         count: 'exact',
       })
       .eq('brand_id', brandId)
-      .gt('parts_count', 0)
+      .eq('is_listed', true)
       .order('name', { ascending: true })
       .range(from, to)
 
@@ -156,7 +156,7 @@ export interface BrandCategoryListing extends ProductListingPage<BrandPageProduc
 
 /**
  * Loads the /brands/[brand]/[category] listing: the category by slug plus the
- * brand's products in that category that have a published part (issue #312),
+ * brand's listed products in that category (issues #312, #321),
  * paginated. Returns null when the category slug does not resolve (the route
  * 404s); an empty products array with a valid category renders the empty
  * state instead. Wrapped in React cache() with primitive args so
@@ -187,7 +187,7 @@ export const fetchBrandCategoryListing = cache(
       .select('id, name, slug, image_url, parts_count', { count: 'exact' })
       .eq('brand_id', brandId)
       .eq('category_id', category.id)
-      .gt('parts_count', 0)
+      .eq('is_listed', true)
       .order('name', { ascending: true })
       .range(from, to)
 

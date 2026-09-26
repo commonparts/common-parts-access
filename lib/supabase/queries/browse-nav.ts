@@ -1,11 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
-import { withPublishedParts } from '@/lib/utils/catalog'
 
 // Row shapes returned by the fetch_browse_nav RPC (migration 20260716181406,
-// availability semantics since 20260922120000). Parts counts are distinct
-// published parts per node (a part fitting several products counts once),
-// aggregated set-based in the RPC — never per-row count queries. Product
-// counts only count products that carry at least one published part.
+// listing rule since 20260926120000). A node is returned when it holds a
+// listed product: one with a published part or an open part request. Parts
+// counts are distinct published parts per node (a part fitting several
+// products counts once), aggregated set-based in the RPC — never per-row
+// count queries. Product counts only count products with a published part,
+// so a node listed through requests alone reads zero on both.
 
 export interface BrowseNavBrand {
   id: string
@@ -33,9 +34,9 @@ export interface BrowseNav {
 
 /**
  * Fetches the /browse hub navigation data in one round-trip: the brands and
- * the level-0 category roots that have at least one published part, with
+ * the level-0 category roots that hold a listed product, with
  * subtree-aggregated counts — the entry tiles of the hierarchical drill-down
- * (issue #276). Entities without parts are not surfaced (issue #312); their
+ * (issue #276). Other entities are not surfaced (issues #312, #321); their
  * pages stay reachable by direct URL. Reads are covered by the public read
  * RLS policies (the RPC is SECURITY INVOKER).
  */
@@ -46,9 +47,7 @@ export async function fetchBrowseNav(): Promise<BrowseNav> {
 
   const nav = data as BrowseNav | null
   return {
-    brands: withPublishedParts(nav?.brands ?? []),
-    // An RPC deployed before migration 20260716181406 has no roots key —
-    // degrade to an empty category section rather than failing the hub.
-    roots: withPublishedParts(nav?.roots ?? []),
+    brands: nav?.brands ?? [],
+    roots: nav?.roots ?? [],
   }
 }
