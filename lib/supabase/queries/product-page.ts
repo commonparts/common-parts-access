@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import type { ProductReference } from '@/lib/utils/product-references'
 import { toEvidenceLevel, type EvidenceLevel } from '@/lib/utils/evidence-level'
+import { firstEmbedded } from '@/lib/utils/supabase-embed'
 
 // Upper bound on part links fetched for a product page in one call.
 const MAX_PART_LINKS = 500
@@ -9,13 +10,6 @@ const MAX_PART_LINKS = 500
 // Upper bound on references embedded in a product page. A product groups tens
 // of manufacturer references at most; this only guards against runaway data.
 const MAX_PRODUCT_REFERENCES = 200
-
-// Supabase embeds a to-one relation as an object, but the generated-less client
-// types it as a possibly-array — normalize to the first row (or null).
-function firstOf<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return value ?? null
-}
 
 export interface ProductPageProduct {
   id: string
@@ -99,8 +93,8 @@ export const fetchProductPageBySlug = cache(
       release_year: row.release_year,
       discontinued: Boolean(row.discontinued),
       image_url: row.image_url,
-      brand: firstOf(row.brands),
-      category: firstOf(row.categories),
+      brand: firstEmbedded(row.brands),
+      category: firstEmbedded(row.categories),
     }
 
     return { product, references: row.product_references ?? [] }
@@ -157,7 +151,7 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
   const byPart = new Map<string, ProductPart>()
 
   for (const link of (data ?? []) as PartLinkRow[]) {
-    const part = firstOf(link.parts)
+    const part = firstEmbedded(link.parts)
     if (!part) continue
     if (byPart.has(part.id)) continue
 
@@ -172,7 +166,7 @@ export async function fetchProductPageParts(input: { productId: string }): Promi
       download_count: part.download_count ?? 0,
       estimated_print_time: part.estimated_print_time,
       created_at: part.created_at,
-      license_short_name: firstOf(part.licenses)?.short_name ?? null,
+      license_short_name: firstEmbedded(part.licenses)?.short_name ?? null,
       evidence_level: toEvidenceLevel(link.evidence_level),
     })
   }

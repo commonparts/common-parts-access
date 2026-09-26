@@ -1,5 +1,6 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
+import { firstEmbedded } from '@/lib/utils/supabase-embed'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
 export const NAV_LISTING_PAGE_SIZE = 24
@@ -39,13 +40,6 @@ export interface ProductListingPage<T> {
   total: number
   page: number
   totalPages: number
-}
-
-// Supabase embeds a to-one relation as an object, but the generated-less client
-// types it as a possibly-array — normalize to the first row (or null).
-function firstOf<T>(value: T | T[] | null | undefined): T | null {
-  if (Array.isArray(value)) return value[0] ?? null
-  return value ?? null
 }
 
 /** Clamps a 1-based page and returns the PostgREST range bounds for it. */
@@ -141,7 +135,7 @@ export const fetchBrandProductsPage = cache(
         slug: row.slug,
         image_url: row.image_url,
         parts_count: row.parts_count ?? 0,
-        category: firstOf(row.categories),
+        category: firstEmbedded(row.categories),
       })),
       total,
       page,

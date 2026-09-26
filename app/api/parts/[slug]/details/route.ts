@@ -5,13 +5,7 @@ import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
 import { distinctBrands } from '@/lib/utils/catalog'
 import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
-
-// Supabase returns joined rows as T | T[] depending on cardinality.
-// This helper normalises both shapes to a single record or null.
-function first<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null
-  return Array.isArray(value) ? (value[0] ?? null) : value
-}
+import { firstEmbedded } from '@/lib/utils/supabase-embed'
 
 /**
  * Compatible products listed on a part page, each rendering print report
@@ -240,15 +234,15 @@ export async function GET(
     if (likeError) console.error('Error checking like status:', likeError)
     if (partProductsError) console.error('Error fetching part products:', partProductsError)
 
-    const author = first(part.user_profiles)
-    const category = first(part.categories)
-    const license = first(part.licenses)
-    const sourceLicense = first(part.source_licenses)
+    const author = firstEmbedded(part.user_profiles)
+    const category = firstEmbedded(part.categories)
+    const license = firstEmbedded(part.licenses)
+    const sourceLicense = firstEmbedded(part.source_licenses)
 
     /** All products linked via the part_products junction table. */
     const compatibleProducts = (partProducts ?? [])
       .map((row) => {
-        const product = first(row.products)
+        const product = firstEmbedded(row.products)
         return product ? { ...product, reportStats: toPrintReportStats(row) } : null
       })
       .filter((p): p is NonNullable<typeof p> => p !== null)
@@ -258,7 +252,7 @@ export async function GET(
     // another on its own page.
     const derivedBrands = distinctBrands(
       compatibleProducts.map((product) => {
-        const brand = first(product.brands)
+        const brand = firstEmbedded(product.brands)
         return brand ? toBrandPayload(brand) : null
       }),
     )
@@ -339,7 +333,7 @@ export async function GET(
           memberSince: author.created_at,
         } : null,
         products: compatibleProducts.map((p) => {
-          const pBrand = first(p.brands)
+          const pBrand = firstEmbedded(p.brands)
           return {
             id: p.id,
             name: p.name,
@@ -364,7 +358,7 @@ export async function GET(
         brands: derivedBrands,
         files: files || [],
         comments: (comments || []).map(comment => {
-          const commentAuthor = first(comment.user_profiles)
+          const commentAuthor = firstEmbedded(comment.user_profiles)
           return {
             id: comment.id,
             content: comment.content,
