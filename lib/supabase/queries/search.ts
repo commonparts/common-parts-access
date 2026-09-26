@@ -59,9 +59,9 @@ export interface BrandSuggestion {
 /**
  * Conservative empty-state suggestion: returns a brand only when the whole
  * query or one of its tokens is an EXACT (case-insensitive) match for a brand
- * name — never a fuzzy/partial match — and only when the brand has at least
- * one product with a published part, the same visibility rule as search_all
- * (issue #312): the zero-result state must not point at an empty brand page.
+ * name — never a fuzzy/partial match — and only when the brand holds a
+ * listed product, the same visibility rule as search_all (issues #312,
+ * #321): the zero-result state must not point at an empty brand page.
  * Used on /search (e.g. query "magimix blender" → the Magimix brand). Tokens
  * are sanitized to [a-z0-9-] before building the filter.
  */
@@ -85,7 +85,7 @@ export async function findExactBrandMatch(query: string): Promise<BrandSuggestio
     .from('brands')
     .select('name, slug, products!inner(id)')
     .or(orFilter)
-    .gt('products.parts_count', 0)
+    .eq('products.is_listed', true)
     .limit(1, { referencedTable: 'products' })
     .limit(1)
 

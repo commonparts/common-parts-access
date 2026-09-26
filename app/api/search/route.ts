@@ -3,7 +3,8 @@ import { searchAll } from '@/lib/supabase/queries/search'
 import { emptySearchResults, SEARCH_DEFAULT_LIMIT } from '@/types/search'
 
 // GET /api/search?q=&limit= — grouped multi-entity search (products, parts,
-// brands) with typo tolerance. Public endpoint; only published parts surface.
+// brands) with typo tolerance. Public endpoint; only published parts surface,
+// every product is searchable and listed products rank first (issue #321).
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)

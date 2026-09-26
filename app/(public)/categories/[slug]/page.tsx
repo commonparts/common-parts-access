@@ -93,7 +93,7 @@ function childDrillHint(childrenCount: number): string | null {
  * server-rendered route per category at any depth. Shows the direct children
  * with subtree-aggregated counts and, when the category has direct products,
  * the brands covering them (mixed nodes render both sections). Only children
- * and brands with published parts are listed (issue #312); a category with
+ * and brands holding a listed product are shown (issues #312, #321); a category with
  * none renders the availability notice and an upward link. Single-child
  * chains are collapsed by inlining the lone child's content — a click never
  * reveals only one option.

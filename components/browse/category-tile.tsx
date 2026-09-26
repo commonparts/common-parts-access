@@ -6,7 +6,7 @@ import { pluralize } from '@/lib/utils/formatters'
 interface CategoryTileProps {
   name: string
   href: string
-  /** Subtree-aggregated counts; the navigation only yields tiles with parts. */
+  /** Subtree-aggregated counts; a tile listed through part requests alone reads zero. */
   partsCount: number
   productCount: number
   /** One-line microcopy under the counts, e.g. example leaf names. */
@@ -17,8 +17,8 @@ interface CategoryTileProps {
 /**
  * Navigation tile for one category of the drill-down (hub roots and
  * subcategory grids, issue #276). The parts count is the only highlighted
- * element on the tile: categories without parts are not surfaced at all
- * (issue #312), so every tile advertises availability.
+ * element on the tile. Only categories holding a listed product — a
+ * published part or an open part request — are surfaced (issues #312, #321).
  */
 export function CategoryTile({
   name,

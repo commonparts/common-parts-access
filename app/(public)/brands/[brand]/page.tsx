@@ -86,7 +86,7 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
  * products with their denormalized parts counts. Totals and categories come
  * from the fetch_brand_nav aggregate so they stay accurate regardless of the
  * paginated product list. Text-only brand name — no logo (rights question
- * not settled). A brand with no remaining published parts keeps its page
+ * not settled). A brand with no remaining listed product keeps its page
  * with an availability notice as long as it exists in the index; only
  * unknown slugs 404.
  */
