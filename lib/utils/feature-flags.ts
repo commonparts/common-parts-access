@@ -1,5 +1,3 @@
-import { notFound } from 'next/navigation'
-
 /**
  * Feature flags read from NEXT_PUBLIC_* environment variables.
  *
@@ -16,13 +14,9 @@ export function parseFeatureFlag(raw: string | undefined): boolean {
 /**
  * Comments, likes and collections (issue #322). Off by default: they have no
  * usage and do not serve stage 1. Their tables and data are kept, so turning
- * the flag back on restores the UI as it was.
+ * the flag back on restores the UI as it was. Only likes have UI today; build
+ * comments and collections behind this flag too.
  */
 export const SOCIAL_FEATURES_ENABLED = parseFeatureFlag(
   process.env.NEXT_PUBLIC_ENABLE_SOCIAL_FEATURES,
 )
-
-/** Renders the 404 page from a social-feature route while the flag is off. */
-export function notFoundUnlessSocialFeatures(): void {
-  if (!SOCIAL_FEATURES_ENABLED) notFound()
-}

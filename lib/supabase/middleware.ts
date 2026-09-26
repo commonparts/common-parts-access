@@ -8,9 +8,7 @@ import { NextResponse, type NextRequest } from "next/server";
 const PROTECTED_ROUTE_PREFIXES = [
   "/publish",
   "/dashboard",
-  "/collections",
   "/downloads",
-  "/likes",
   "/my-parts",
   "/notifications",
   "/settings",
