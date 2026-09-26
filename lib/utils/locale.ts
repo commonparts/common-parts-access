@@ -47,3 +47,14 @@ export function parseAcceptLanguage(header: string | null | undefined): VisitorL
 
   return { language, region }
 }
+
+/**
+ * Compact tag for a visitor locale: "fr-FR", "fr", or null when the language
+ * is unknown. The region may come from a lower-ranked Accept-Language entry
+ * (see parseAcceptLanguage), so this is the locale as the app understands it,
+ * not necessarily a tag the browser sent.
+ */
+export function formatLocaleTag(locale: VisitorLocale): string | null {
+  if (!locale.language) return null
+  return locale.region ? `${locale.language}-${locale.region}` : locale.language
+}

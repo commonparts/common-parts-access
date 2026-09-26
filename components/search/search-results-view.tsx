@@ -9,10 +9,12 @@ import { pluralize } from "@/lib/utils/formatters"
 import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
+import { AttachReference } from "@/components/search/attach-reference"
 import type { BrandSuggestion } from "@/lib/supabase/queries/search"
 import type { PartCardData } from "@/types/parts"
 import {
   SEARCH_TYPES,
+  type ProductCandidate,
   type SearchPartResult,
   type SearchResults,
   type SearchType,
@@ -51,6 +53,8 @@ interface SearchResultsViewProps {
   query: string
   initialType: SearchType
   brandSuggestion: BrandSuggestion | null
+  /** Products a zero-result query may name, for the reference picker. */
+  candidates: ProductCandidate[]
 }
 
 export function SearchResultsView({
@@ -58,6 +62,7 @@ export function SearchResultsView({
   query,
   initialType,
   brandSuggestion,
+  candidates,
 }: SearchResultsViewProps) {
   const [activeType, setActiveType] = React.useState<SearchType>(initialType)
 
@@ -90,7 +95,22 @@ export function SearchResultsView({
           </p>
         </div>
 
-        <RequestPartForm rawQuery={query} defaultDescription={query} />
+        <section className="space-y-sm">
+          <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
+            Is &ldquo;{query}&rdquo; printed on your device?
+          </h2>
+          <p className="text-body text-text-secondary">
+            Tell us which product it belongs to and it becomes searchable once checked.
+          </p>
+          <AttachReference reference={query} initialCandidates={candidates} />
+        </section>
+
+        <section className="space-y-sm">
+          <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
+            Request the part
+          </h2>
+          <RequestPartForm rawQuery={query} defaultDescription={query} />
+        </section>
 
         <div className="flex flex-wrap items-center gap-sm">
           <Button asChild variant="outline">
