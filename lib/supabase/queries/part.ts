@@ -16,6 +16,7 @@ import type {
   MyPartListItem,
   MyPartListResult,
 } from '@/types/parts';
+import { firstEmbedded } from '@/lib/utils/supabase-embed';
 
 /**
  * How many compatible products a card lists by name before collapsing the rest
@@ -110,13 +111,6 @@ export async function ensureUniquePartSlug(
   }
 }
 
-// Supabase returns joined rows as T | T[] depending on cardinality —
-// normalize to a single record.
-function firstJoined<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
-  return Array.isArray(value) ? (value[0] ?? null) : value;
-}
-
 /**
  * The brands of a card's part, read off the untruncated `brand_fits` embed.
  * The ordering and deduplication rule is shared with the part detail payload
@@ -125,7 +119,7 @@ function firstJoined<T>(value: T | T[] | null | undefined): T | null {
 function deriveCardBrands(row: PartCardRow): PartCardData['brands'] {
   return distinctBrands(
     (row.brand_fits ?? []).map((link) => {
-      const brand = firstJoined(firstJoined(link.products)?.brands);
+      const brand = firstEmbedded(firstEmbedded(link.products)?.brands);
       return brand ? { name: brand.name, slug: brand.slug } : null;
     }),
   );
@@ -133,7 +127,7 @@ function deriveCardBrands(row: PartCardRow): PartCardData['brands'] {
 
 function mapPartRowToCard(row: PartCardRow): PartCardData {
   const products = (row.fits ?? [])
-    .map((link) => firstJoined(link.products))
+    .map((link) => firstEmbedded(link.products))
     .filter((product): product is NonNullable<typeof product> => product !== null)
     .map((product) => ({ name: product.name, slug: product.slug }));
 
@@ -308,17 +302,17 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
   }
 
   const part = data as unknown as PartSeoRow;
-  const author = firstJoined(part.user_profiles);
+  const author = firstEmbedded(part.user_profiles);
   // Curated parts are governed by the source license — same precedence as the
   // details route and the download license notice.
-  const license = firstJoined(part.source_licenses) ?? firstJoined(part.licenses);
+  const license = firstEmbedded(part.source_licenses) ?? firstEmbedded(part.licenses);
 
   const products = (part.part_products ?? [])
-    .map((row) => firstJoined(row.products))
+    .map((row) => firstEmbedded(row.products))
     .filter((p): p is NonNullable<typeof p> => p !== null)
     .map((p) => ({
       name: p.name,
-      brandName: firstJoined(p.brands)?.name ?? null,
+      brandName: firstEmbedded(p.brands)?.name ?? null,
     }));
 
   return {
