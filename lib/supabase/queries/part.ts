@@ -274,7 +274,7 @@ const PART_SEO_SELECT = `
   user_profiles!inner(username, display_name),
   licenses!parts_license_id_fkey(name, url),
   source_licenses:licenses!parts_source_license_id_fkey(name, url),
-  part_products(products(name, brands(name)))
+  part_products(products(name, slug, brands(name, slug), categories(name, slug)))
 `;
 
 /**
@@ -293,6 +293,11 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     .select(PART_SEO_SELECT)
     .eq('slug', slug)
     .eq('status', 'published')
+    // Deterministic primary fit: the first product by name drives the SEO
+    // title and the breadcrumb trail, so both stay stable across requests.
+    // Names are unique per brand only, so the (unique) slug breaks ties.
+    .order('products(name)', { referencedTable: 'part_products' })
+    .order('products(slug)', { referencedTable: 'part_products' })
     .limit(VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT, { referencedTable: 'part_products' })
     .single();
 
@@ -310,10 +315,16 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
   const products = (part.part_products ?? [])
     .map((row) => firstEmbedded(row.products))
     .filter((p): p is NonNullable<typeof p> => p !== null)
-    .map((p) => ({
-      name: p.name,
-      brandName: firstEmbedded(p.brands)?.name ?? null,
-    }));
+    .map((p) => {
+      const brand = firstEmbedded(p.brands);
+      const category = firstEmbedded(p.categories);
+      return {
+        name: p.name,
+        slug: p.slug,
+        brand: brand ? { name: brand.name, slug: brand.slug } : null,
+        category: category ? { name: category.name, slug: category.slug } : null,
+      };
+    });
 
   return {
     id: part.id,

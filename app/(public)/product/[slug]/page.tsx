@@ -12,8 +12,18 @@ import { ProductReferences } from "@/components/product/product-references"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
 import { fetchProductPageBySlug, fetchProductPageParts } from "@/lib/supabase/queries/product-page"
 import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
+import { APP_NAME } from "@/lib/utils/constants"
 import { parseAcceptLanguage } from "@/lib/utils/locale"
 import { pickRegionalName, type ProductReference } from "@/lib/utils/product-references"
+import {
+  buildBreadcrumbJsonLd,
+  buildProductBreadcrumbTrail,
+  buildProductSeoDescription,
+  buildProductSeoTitle,
+  productCanonicalPath,
+  serializeJsonLd,
+  toBreadcrumbLinks,
+} from "@/lib/utils/seo"
 
 // The name a visitor knows the product by: the commercial name of their region
 // (read from Accept-Language) when one is recorded, else products.name.
@@ -29,8 +39,33 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const data = await fetchProductPageBySlug(slug)
-  if (!data) return { title: "Product" }
-  return { title: await resolveDisplayName(data.product.name, data.references) }
+  if (!data) return { title: "Product not found" }
+
+  const { product } = data
+  const displayName = await resolveDisplayName(product.name, data.references)
+  const brandName = product.brand?.name ?? null
+  const title = buildProductSeoTitle(brandName, displayName)
+  const description = buildProductSeoDescription({
+    brandName,
+    productName: displayName,
+    categoryName: product.category?.name ?? null,
+  })
+  const canonicalPath = productCanonicalPath(product.slug)
+
+  // Relative URLs resolve against metadataBase (set in the root layout).
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      siteName: APP_NAME,
+      type: "website",
+      images: product.image_url ? [{ url: product.image_url, alt: displayName }] : undefined,
+    },
+  }
 }
 
 // "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
@@ -59,25 +94,18 @@ export default async function ProductPage({
 
   const productionYears = formatProductionYears(product.release_year, product.discontinued)
 
-  // Brand › Category › Product (Flow P2): the brand crumb resolves to the
-  // brand page, the category crumb to the brand-scoped category listing. The
-  // category link needs the brand slug, so it stays plain text for the
-  // (curation-anomalous) case of a product without a brand.
-  const breadcrumbItems = [
-    product.brand && { label: product.brand.name, href: `/brands/${product.brand.slug}` },
-    product.category && {
-      label: product.category.name,
-      ...(product.brand
-        ? { href: `/brands/${product.brand.slug}/${product.category.slug}` }
-        : {}),
-    },
-    { label: displayName },
-  ].filter((item): item is { label: string; href?: string } => Boolean(item))
+  // Brand › Category › Product (Flow P2), shared with part pages.
+  const breadcrumbTrail = buildProductBreadcrumbTrail({ ...product, name: displayName })
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(productCanonicalPath(product.slug), breadcrumbTrail)
 
   return (
     <Section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
       <Container size="lg" className="space-y-xl">
-        <Breadcrumbs items={breadcrumbItems} />
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         {/* Identification header */}
         <div className="grid gap-lg md:grid-cols-[minmax(0,16rem)_1fr]">
