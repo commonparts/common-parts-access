@@ -108,17 +108,27 @@ export type PartSeoRow = Pick<
 	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	source_licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	part_products?: {
-		products:
-			| (Pick<Product, 'name'> & { brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null })
-			| (Pick<Product, 'name'> & { brands?: Pick<Brand, 'name'> | Pick<Brand, 'name'>[] | null })[]
-			| null;
+		products: PartSeoProductRow | PartSeoProductRow[] | null;
 	}[];
 };
 
-/** A product a part fits, reduced to what SEO copy and structured data need. */
+/** Brand or category of a fitted product, as embedded for SEO. */
+type PartSeoNavRow = { name: string; slug: string };
+
+type PartSeoProductRow = Pick<Product, 'name' | 'slug'> & {
+	brands?: PartSeoNavRow | PartSeoNavRow[] | null;
+	categories?: PartSeoNavRow | PartSeoNavRow[] | null;
+};
+
+/**
+ * A product a part fits, reduced to what SEO copy and structured data need:
+ * names for query matching, slugs for the Brand › Category › Product trail.
+ */
 export interface PartSeoProductFit {
 	name: string;
-	brandName: string | null;
+	slug: string;
+	brand: { name: string; slug: string } | null;
+	category: { name: string; slug: string } | null;
 }
 
 /** Normalized part data consumed by part page metadata and structured data. */
