@@ -1,7 +1,10 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Grid } from "@/components/layout/grid"
+import { notFoundUnlessSocialFeatures } from "@/lib/utils/feature-flags"
 
 export default function LikesPage() {
+  notFoundUnlessSocialFeatures()
+
   return (
     <DashboardShell title="Likes" description="Parts you have liked across Common Parts Access.">
       <Grid columns={12}>

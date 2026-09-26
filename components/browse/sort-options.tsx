@@ -3,6 +3,7 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 
 export type SortOption = {
   key: string
@@ -16,7 +17,7 @@ interface SortOptionsProps {
   className?: string
 }
 
-const sortOptions: SortOption[] = [
+const allSortOptions: SortOption[] = [
   {
     key: 'popularity',
     label: 'Most popular',
@@ -38,6 +39,22 @@ const sortOptions: SortOption[] = [
     description: 'Trending parts'
   }
 ]
+
+/** "Most liked" is a social feature (issue #322) and is hidden along with likes. */
+const sortOptions: SortOption[] = SOCIAL_FEATURES_ENABLED
+  ? allSortOptions
+  : allSortOptions.filter((option) => option.key !== 'likes')
+
+const DEFAULT_SORT_KEY = 'popularity'
+
+/**
+ * Resolves the sortBy URL param to an offered sort, so a stale link to a
+ * hidden sort (e.g. ?sortBy=likes) falls back to the default instead of
+ * sorting by something the controls cannot show.
+ */
+export function resolveSortKey(raw: string | null): string {
+  return sortOptions.find((option) => option.key === raw)?.key ?? DEFAULT_SORT_KEY
+}
 
 export function SortOptions({ value, onChange, className }: SortOptionsProps) {
   return (

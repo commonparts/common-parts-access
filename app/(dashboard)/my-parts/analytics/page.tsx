@@ -1,3 +1,5 @@
+import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
+
 export default function AnalyticsPage() {
   return (
     <div>
@@ -11,14 +13,18 @@ export default function AnalyticsPage() {
           <h3 className="text-lg font-semibold mb-2">Downloads</h3>
           <p className="text-2xl font-bold text-green-600">1,234</p>
         </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Likes</h3>
-          <p className="text-2xl font-bold text-red-600">567</p>
-        </div>
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-2">Comments</h3>
-          <p className="text-2xl font-bold text-purple-600">89</p>
-        </div>
+        {SOCIAL_FEATURES_ENABLED && (
+          <>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Likes</h3>
+              <p className="text-2xl font-bold text-red-600">567</p>
+            </div>
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-2">Comments</h3>
+              <p className="text-2xl font-bold text-purple-600">89</p>
+            </div>
+          </>
+        )}
       </div>
       <div className="bg-white p-6 rounded-lg shadow">
         <p className="text-gray-600">Detailed analytics charts will be displayed here</p>

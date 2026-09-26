@@ -1,7 +1,10 @@
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Grid } from "@/components/layout/grid"
+import { notFoundUnlessSocialFeatures } from "@/lib/utils/feature-flags"
 
 export default function CollectionsPage() {
+  notFoundUnlessSocialFeatures()
+
   return (
     <DashboardShell title="Collections" description="Manage and organize your saved part collections.">
       <Grid columns={12}>

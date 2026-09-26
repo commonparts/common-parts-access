@@ -1,7 +1,10 @@
 import { Container } from "@/components/layout/container"
 import { Section } from "@/components/layout/section"
+import { notFoundUnlessSocialFeatures } from "@/lib/utils/feature-flags"
 
 export default function CollectionPage({ params }: { params: { slug: string } }) {
+  notFoundUnlessSocialFeatures()
+
   return (
     <Section>
       <Container size="lg" className="space-y-sm">

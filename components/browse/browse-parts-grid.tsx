@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 import { Pagination } from '@/components/browse/pagination'
-import { SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
+import { resolveSortKey, SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
 import { Grid } from '@/components/layout/grid'
 import { SearchBar } from '@/components/layout/search-bar'
 import { PartGrid } from '@/components/part/part-grid'
@@ -49,7 +49,7 @@ export function BrowsePartsGrid() {
   })
 
   const currentPage = parseInt(searchParams.get('page') || '1')
-  const currentSort = searchParams.get('sortBy') || 'popularity'
+  const currentSort = resolveSortKey(searchParams.get('sortBy'))
   const currentSearch = searchParams.get('search') || ''
   const currentProduct = searchParams.get('productId') || ''
 
