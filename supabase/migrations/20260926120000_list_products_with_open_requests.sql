@@ -28,7 +28,9 @@
 --        - products: every product is searchable again (hidden ones stay
 --          reachable so a visitor can open them and request a part); a listed
 --          product gets a +1 score bonus, which puts it ahead of an unlisted
---          one matching as well without outranking a reference hit (6-8);
+--          one matching as well; reference hits now lead the order
+--          explicitly (exact, then prefix, then name hits) instead of
+--          relying on their score weight, so no bonus can outrank them;
 --        - brands: only brands holding a listed product, product_count still
 --          counting products with a published part;
 --        - parts: unchanged.
@@ -36,12 +38,11 @@
 -- No data is deleted or hidden at row level: unlisted products keep their
 -- pages and remain in the publish flow (/api/products lists everything).
 --
--- Index note: the /brands listings and the nav RPCs filter on
--- products.is_listed. A partial index would keep that cheap as the catalog
--- grows:
---   create index products_listed_brand_idx on public.products (brand_id)
---     where is_listed;
--- Not created here — the human decides on indexes.
+-- Adds a partial index on (brand_id, name) where is_listed: the /brands
+-- listings filter on it by brand and order by name, the brand checks of
+-- search_all and findExactBrandMatch test it per brand, and the nav RPCs
+-- scan every listed product — a small share of the catalog (41 of 871 when
+-- written), so the partial index stays small as unlisted products grow.
 --
 -- To be validated and executed by the human — not applied by the agent.
 
@@ -57,6 +58,14 @@ comment on column public.products.open_requests_count is
 
 -- SECURITY DEFINER: part_requests has no SELECT policy and products no
 -- UPDATE policy, while any visitor (anonymous included) inserts requests.
+--
+-- The product row is locked before counting. Without the lock, two
+-- concurrent writers (a new request and a dismissal on the same product)
+-- each count from a snapshot missing the other's uncommitted row, and the
+-- later UPDATE can store a stale count — e.g. 0 while a request is open,
+-- unlisting the product. With it, the second writer waits for the first to
+-- commit, and its count statement then takes a fresh snapshot (READ
+-- COMMITTED) that includes the first writer's row.
 create or replace function public.recompute_product_open_requests_count(p_product_id uuid)
 returns void
 language plpgsql
@@ -67,6 +76,8 @@ begin
   if p_product_id is null then
     return;
   end if;
+
+  perform 1 from public.products where id = p_product_id for update;
 
   update public.products p
   set open_requests_count = (
@@ -82,6 +93,8 @@ $$;
 -- A request is created open, is later fulfilled or dismissed, and can lose
 -- its product (on delete set null): recompute the old and the new product.
 -- Branches on TG_OP rather than reading a field of the null OLD/NEW record.
+-- A move locks both products in id order, so two opposite moves cannot
+-- deadlock (least/greatest skip a null id).
 create or replace function public.trg_part_requests_open_count()
 returns trigger
 language plpgsql
@@ -93,11 +106,13 @@ begin
     perform public.recompute_product_open_requests_count(new.product_id);
   elsif tg_op = 'DELETE' then
     perform public.recompute_product_open_requests_count(old.product_id);
+  elsif new.product_id is distinct from old.product_id then
+    perform public.recompute_product_open_requests_count(least(old.product_id, new.product_id));
+    if old.product_id is not null and new.product_id is not null then
+      perform public.recompute_product_open_requests_count(greatest(old.product_id, new.product_id));
+    end if;
   else
     perform public.recompute_product_open_requests_count(old.product_id);
-    if new.product_id is distinct from old.product_id then
-      perform public.recompute_product_open_requests_count(new.product_id);
-    end if;
   end if;
 
   return null;
@@ -131,6 +146,10 @@ set open_requests_count = (
 alter table public.products
   add column is_listed boolean
     generated always as (parts_count > 0 or open_requests_count > 0) stored;
+
+create index products_listed_brand_name_idx
+  on public.products (brand_id, name)
+  where is_listed;
 
 comment on column public.products.is_listed is
   'True when the product has a published part or an open part request: the visibility rule of public listings (issues #312, #321).';
@@ -433,8 +452,9 @@ grant execute on function public.fetch_brand_nav(uuid) to anon, authenticated;
 -- ============================================================================
 
 -- Same function as 20260925200000 except: product_docs covers every product
--- and carries is_listed, product_hits adds the listed bonus, and brands
--- require a listed product instead of one with parts.
+-- and carries is_listed, product_hits adds the listed bonus and orders by
+-- ref_score first, and brands require a listed product instead of one with
+-- parts.
 
 create or replace function public.search_all(search_query text, result_limit integer default 5)
 returns jsonb
@@ -503,13 +523,16 @@ as $function$
   product_hits as (
     select
       s.id, s.name, s.slug, s.image_url, s.category, s.parts_count, s.reference,
-      -- Listed bonus 1: ahead of an unlisted product matching as well, never
-      -- ahead of a reference hit.
+      s.ref_score,
+      -- Listed bonus 1: ahead of an unlisted product matching as well.
       s.ref_score + s.coverage * 2 + s.rank * 4 + s.fuzzy
         + case when s.is_listed then 1 else 0 end as score
     from product_scored s
     where s.ref_score > 0 or s.coverage >= 1 or s.fts or s.fuzzy > 0.3
-    order by score desc, s.name
+    -- ref_score leads the order (exact 8, prefix 6, none 0) so a reference
+    -- hit always outranks a name hit, whatever the name-match score and the
+    -- listed bonus add up to; the score orders products within each tier.
+    order by s.ref_score desc, score desc, s.name
     limit (select lim from params)
   ),
   part_docs as (
@@ -609,7 +632,7 @@ as $function$
         'category', category,
         'parts_count', parts_count,
         'reference', reference
-      ) order by score desc, name)
+      ) order by ref_score desc, score desc, name)
       from product_hits
     ), '[]'::jsonb),
     'parts', coalesce((
