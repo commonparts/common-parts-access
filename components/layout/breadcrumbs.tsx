@@ -15,7 +15,9 @@ interface BreadcrumbsProps {
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
   return (
     <nav aria-label="Breadcrumb" className={cn("flex", className)}>
-      <ol className="flex items-center gap-sm">
+      {/* Wraps whole crumbs onto a new line on narrow screens instead of
+          squeezing each label into a column (4-level part trails, #257). */}
+      <ol className="flex flex-wrap items-center gap-x-sm gap-y-xs">
         {items.map((item, index) => (
           <li key={index} className="flex items-center">
             {index > 0 && (

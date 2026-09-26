@@ -4,20 +4,24 @@
  * descriptions must carry the brand and product name for query matching.
  */
 
-import { APP_NAME, APP_URL } from '@/lib/utils/constants'
+import { APP_NAME } from '@/lib/utils/constants'
 import { truncateText } from '@/lib/utils/formatters'
 import { absoluteAppUrl, isValidHttpUrl } from '@/lib/utils/validation'
 import { resolveStorageUrl } from '@/lib/storage/url'
-import type { PartSeoData } from '@/types/parts'
+import type { PartSeoData, PartSeoProductFit } from '@/types/parts'
 
 /** Search snippets are cut around 155-160 characters; stay within that budget. */
 const SEO_DESCRIPTION_MAX_LENGTH = 160
 
-/** Canonical URL for a part page (public route is /parts — issue #258). */
-function partCanonicalUrl(slug: string): string {
-  return absoluteAppUrl(`/parts/${slug}`)
+/** Canonical path for a part page (public route is /parts — issue #258). */
+export function partCanonicalPath(slug: string): string {
+  return `/parts/${slug}`
 }
 
+/** Canonical path for a product page. */
+export function productCanonicalPath(slug: string): string {
+  return `/product/${slug}`
+}
 
 /**
  * "Bosch MUM5" — the brand + product the part fits, from the first linked
@@ -26,7 +30,12 @@ function partCanonicalUrl(slug: string): string {
  */
 function primaryFitLabel(part: PartSeoData): string | null {
   const fit = part.products[0]
-  return fit ? [fit.brandName, fit.name].filter(Boolean).join(' ') : null
+  return fit ? productFullName(fit.brand?.name ?? null, fit.name) : null
+}
+
+/** "Bosch MUM5" — the brand folded into the product name for query matching. */
+function productFullName(brandName: string | null, productName: string): string {
+  return [brandName, productName].filter(Boolean).join(' ')
 }
 
 /** Page title carrying the part name plus the brand/product it fits. */
@@ -64,7 +73,8 @@ export function buildPartSeoDescription(part: PartSeoData): string {
  * (source-first) license text.
  */
 export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
-  const url = partCanonicalUrl(part.slug)
+  const pagePath = partCanonicalPath(part.slug)
+  const url = absoluteAppUrl(pagePath)
   const image = resolveStorageUrl(part.thumbnailUrl)
   const creatorName = part.originalAuthor || part.authorName
 
@@ -105,24 +115,13 @@ export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
     // folded into the name to keep it available for query matching.
     partEntity.about = part.products.map((product) => ({
       '@type': 'Thing',
-      name: [product.brandName, product.name].filter(Boolean).join(' '),
+      name: productFullName(product.brand?.name ?? null, product.name),
     }))
-  }
-
-  const breadcrumb = {
-    '@type': 'BreadcrumbList',
-    '@id': `${url}#breadcrumb`,
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: APP_URL },
-      { '@type': 'ListItem', position: 2, name: 'Browse', item: absoluteAppUrl('/browse') },
-      // Last item: no `item` — per Google, the current page URL is implied.
-      { '@type': 'ListItem', position: 3, name: part.name },
-    ],
   }
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [partEntity, breadcrumb],
+    '@graph': [partEntity, buildBreadcrumbList(pagePath, buildPartBreadcrumbTrail(part))],
   }
 }
 
@@ -232,28 +231,113 @@ export function buildCategorySeoDescription(input: {
 
 export interface BreadcrumbJsonLdItem {
   name: string
-  /** In-app path; omit on the last item — the current page URL is implied. */
+  /**
+   * In-app path. Ignored on the last item: the current page URL is implied
+   * (Google's guidelines), and the visible trail does not link it either.
+   */
   path?: string
 }
 
 /**
- * Builds a standalone BreadcrumbList JSON-LD document for navigation pages.
- * BreadcrumbList is a supported Google rich result type; the last item is
- * emitted without `item` per Google's guidelines.
+ * The BreadcrumbList entity without `@context`, so it can sit in a part
+ * page's `@graph` as well as stand alone. The last item is emitted without
+ * `item` per Google's guidelines.
  */
-export function buildBreadcrumbJsonLd(
+function buildBreadcrumbList(
   pagePath: string,
   items: BreadcrumbJsonLdItem[],
 ): Record<string, unknown> {
   return {
-    '@context': 'https://schema.org',
     '@type': 'BreadcrumbList',
     '@id': `${absoluteAppUrl(pagePath)}#breadcrumb`,
     itemListElement: items.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      ...(item.path ? { item: absoluteAppUrl(item.path) } : {}),
+      ...(item.path && index < items.length - 1 ? { item: absoluteAppUrl(item.path) } : {}),
     })),
   }
+}
+
+/**
+ * Builds a standalone BreadcrumbList JSON-LD document for navigation pages.
+ * BreadcrumbList is a supported Google rich result type.
+ */
+export function buildBreadcrumbJsonLd(
+  pagePath: string,
+  items: BreadcrumbJsonLdItem[],
+): Record<string, unknown> {
+  return { '@context': 'https://schema.org', ...buildBreadcrumbList(pagePath, items) }
+}
+
+/** Maps a breadcrumb trail to the props of the visible Breadcrumbs component. */
+export function toBreadcrumbLinks(
+  items: BreadcrumbJsonLdItem[],
+): { label: string; href?: string }[] {
+  return items.map((item) => ({ label: item.name, href: item.path }))
+}
+
+/**
+ * Brand › Category › Product (Flow P2) — the one trail shared by product and
+ * part pages, visible and in structured data alike. The brand crumb resolves
+ * to the brand page and the category crumb to the brand-scoped category
+ * listing; that listing needs the brand slug, so the category stays unlinked
+ * for the (curation-anomalous) product without a brand. `name` is the name
+ * shown on the page, which may be a regional commercial name.
+ */
+export function buildProductBreadcrumbTrail(
+  product: Pick<PartSeoProductFit, 'name' | 'slug' | 'brand' | 'category'>,
+): BreadcrumbJsonLdItem[] {
+  const { brand, category } = product
+  const trail: BreadcrumbJsonLdItem[] = []
+  if (brand) trail.push({ name: brand.name, path: brandCanonicalPath(brand.slug) })
+  if (category) {
+    trail.push({
+      name: category.name,
+      path: brand ? brandCategoryCanonicalPath(brand.slug, category.slug) : undefined,
+    })
+  }
+  trail.push({ name: product.name, path: productCanonicalPath(product.slug) })
+  return trail
+}
+
+/**
+ * Part page trail: the primary fitted product's trail followed by the part.
+ * A part fitting no product has no brand or category to show and falls back
+ * to Home › Browse.
+ */
+export function buildPartBreadcrumbTrail(part: PartSeoData): BreadcrumbJsonLdItem[] {
+  const fit = part.products[0]
+  const lead: BreadcrumbJsonLdItem[] = fit
+    ? buildProductBreadcrumbTrail(fit)
+    : [
+        { name: 'Home', path: '/' },
+        { name: 'Browse', path: '/browse' },
+      ]
+  return [...lead, { name: part.name, path: partCanonicalPath(part.slug) }]
+}
+
+/** Page title for a product page: "Bosch MUM5 spare parts". */
+export function buildProductSeoTitle(brandName: string | null, productName: string): string {
+  return `${productFullName(brandName, productName)} spare parts`
+}
+
+/**
+ * Meta description for a product page, leading with the brand and product
+ * name. No count: the page covers parts and open requests alike, and an
+ * empty product invites a request rather than showing "0 parts" in a SERP.
+ */
+export function buildProductSeoDescription(input: {
+  brandName: string | null
+  productName: string
+  categoryName: string | null
+}): string {
+  const fullName = productFullName(input.brandName, input.productName)
+  const lead = input.categoryName
+    ? `Printable spare parts for the ${fullName} (${input.categoryName}).`
+    : `Printable spare parts for the ${fullName}.`
+  return truncateText(
+    `${lead} Download with license and attribution details, or request a missing part on ${APP_NAME}.`,
+    SEO_DESCRIPTION_MAX_LENGTH,
+  )
 }

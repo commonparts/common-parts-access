@@ -8,10 +8,13 @@ import { Section } from '@/components/layout/section'
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
 import { fetchPartSeoBySlug } from '@/lib/supabase/queries/part'
 import {
+  buildPartBreadcrumbTrail,
   buildPartJsonLd,
   buildPartSeoDescription,
   buildPartSeoTitle,
+  partCanonicalPath,
   serializeJsonLd,
+  toBreadcrumbLinks,
 } from '@/lib/utils/seo'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { APP_NAME } from '@/lib/utils/constants'
@@ -45,7 +48,7 @@ export async function generateMetadata({ params }: PartPageProps): Promise<Metad
 
     const title = buildPartSeoTitle(part)
     const description = buildPartSeoDescription(part)
-    const canonicalPath = `/parts/${part.slug}`
+    const canonicalPath = partCanonicalPath(part.slug)
     const image = resolveStorageUrl(part.thumbnailUrl)
 
     // Relative URLs resolve against metadataBase (set in the root layout).
@@ -98,12 +101,9 @@ export default async function PartPage({ params }: PartPageProps) {
           dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPartJsonLd(part)) }}
         />
 
+        {/* Brand › Category › Product › Part — same trail as the JSON-LD. */}
         <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Browse', href: '/browse' },
-            { label: part.name },
-          ]}
+          items={toBreadcrumbLinks(buildPartBreadcrumbTrail(part))}
           className="text-text-secondary"
         />
 

@@ -9,8 +9,11 @@ import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/s
 import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
 import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
+// Result pages are query variants, not entry points (issue #257): kept out of
+// the index and the sitemap, while their links stay followable.
 export const metadata: Metadata = {
   title: "Search",
+  robots: { index: false, follow: true },
 }
 
 // Read q as the first value whether the param arrives as a string or string[].
