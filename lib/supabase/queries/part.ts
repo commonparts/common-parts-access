@@ -301,7 +301,9 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     .eq('status', 'published')
     // Deterministic primary fit: the first product by name drives the SEO
     // title and the breadcrumb trail, so both stay stable across requests.
+    // Names are unique per brand only, so the (unique) slug breaks ties.
     .order('products(name)', { referencedTable: 'part_products' })
+    .order('products(slug)', { referencedTable: 'part_products' })
     .limit(VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT, { referencedTable: 'part_products' })
     .single();
 
