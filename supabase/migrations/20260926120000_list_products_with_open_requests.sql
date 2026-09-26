@@ -44,7 +44,8 @@
 -- scan every listed product — a small share of the catalog (41 of 871 when
 -- written), so the partial index stays small as unlisted products grow.
 --
--- To be validated and executed by the human — not applied by the agent.
+-- APPLIED to production on 2026-09-26 via the Supabase MCP at the human's
+-- explicit instruction (recorded as version 20260926120000).
 
 -- ============================================================================
 -- 1. products.open_requests_count (trigger-maintained)
