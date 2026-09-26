@@ -28,6 +28,9 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
   const [candidates, setCandidates] = React.useState(initialCandidates)
   const [productQuery, setProductQuery] = React.useState("")
   const [selectedId, setSelectedId] = React.useState("")
+  // True from a keystroke until its results replace the list, so a product
+  // picked from the previous list cannot be submitted meanwhile.
+  const [isSearching, setIsSearching] = React.useState(false)
   const [state, setState] = React.useState<SubmitState>("idle")
   const idPrefix = React.useId()
 
@@ -49,8 +52,12 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
         if (!res.ok) throw new Error(`Candidate search failed: ${res.status}`)
         const body = (await res.json()) as { candidates: ProductCandidate[] }
         setCandidates(body.candidates)
+        setIsSearching(false)
       } catch (err) {
-        if (!controller.signal.aborted) console.error("AttachReference: candidate search failed", err)
+        if (controller.signal.aborted) return
+        console.error("AttachReference: candidate search failed", err)
+        setCandidates([])
+        setIsSearching(false)
       }
     }, SEARCH_DEBOUNCE_MS)
 
@@ -62,7 +69,7 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
 
   // A selection stays only while its product is listed: searching again
   // must not submit a product the visitor can no longer see.
-  const hasSelection = candidates.some((candidate) => candidate.id === selectedId)
+  const hasSelection = !isSearching && candidates.some((candidate) => candidate.id === selectedId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,12 +103,18 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
       <Input
         type="search"
         value={productQuery}
-        onChange={(e) => setProductQuery(e.target.value)}
+        onChange={(e) => {
+          // A new search drops the current pick; it is made again from the
+          // list the search returns.
+          setProductQuery(e.target.value)
+          setSelectedId("")
+          setIsSearching(e.target.value.trim() !== "")
+        }}
         aria-label="Search for the product by brand or name"
         placeholder="Search by brand or product name…"
       />
 
-      {candidates.length > 0 ? (
+      {!isSearching && candidates.length > 0 ? (
         <RadioGroup
           value={selectedId}
           onValueChange={(value) => {
@@ -128,7 +141,9 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
         </RadioGroup>
       ) : (
         <p className="text-caption text-text-secondary">
-          {productQuery.trim()
+          {isSearching
+            ? "Searching…"
+            : productQuery.trim()
             ? "No product matches that search."
             : "Search for the brand or name of your device."}
         </p>

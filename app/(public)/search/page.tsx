@@ -7,7 +7,7 @@ import { SearchResultsView } from "@/components/search/search-results-view"
 import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supabase/queries/search"
 import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
 import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
-import { isSearchType, SEARCH_MAX_LIMIT, type ProductCandidate } from "@/types/search"
+import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
 export const metadata: Metadata = {
   title: "Search",
@@ -25,7 +25,9 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const params = await searchParams
-  const query = firstParam(params.q).trim()
+  // Bounded once here, so the search, the logged miss and an attached
+  // reference all use the same value; the URL itself has no length limit.
+  const query = firstParam(params.q).trim().slice(0, SEARCH_MAX_QUERY_LENGTH).trim()
   const typeParam = firstParam(params.type)
   const initialType = isSearchType(typeParam) ? typeParam : "all"
 
