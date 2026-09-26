@@ -38,6 +38,8 @@
 --      signed-in users only (as the curation tool, not role-gated):
 --        - `fetch_top_search_misses()` most frequent misses in a window
 --        - `fetch_pending_product_references()` the validation queue
+--
+-- APPLIED to production on 2026-09-26 as version 20260925220000.
 
 -- 1. Validation status.
 alter table public.product_references
