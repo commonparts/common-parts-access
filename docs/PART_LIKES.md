@@ -50,4 +50,4 @@ This document covers how Common Parts Access tracks part likes via a RESTful end
 ## Operational Notes
 - Keep the trigger-based `like_count` authoritative; the API returns optimistic counts for snappy UX but the DB value wins on refresh.
 - Ensure the unique constraint exists to avoid duplicate likes; the API checks and short-circuits if a like already exists.
-- Auditing: If you need analytics, add columns (e.g., `ip_hash`) or a separate logging table rather than expanding `part_likes`.
+- Auditing: If you need analytics, use a separate anonymous logging table rather than expanding `part_likes`. Never store IP addresses or hashes of them (issue #324).

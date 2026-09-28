@@ -64,10 +64,13 @@ export default function PrivacyPage() {
             <h3 className="text-h4">3.3 Usage data</h3>
             <p className="text-text-secondary">When you use Common Parts Access, we automatically record:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Downloads and views associated with your account</li>
               <li>Collections and likes you create</li>
               <li>Date and time of actions performed on the platform</li>
             </ul>
+            <p className="text-text-secondary">
+              Part views and file downloads are counted anonymously. Each one is recorded with the part and the time
+              only - never with your account, your IP address (in any form, hashed or not), or your browser details.
+            </p>
 
             <h3 className="text-h4">3.4 Technical data</h3>
             <p className="text-text-secondary">For technical operation of the service, we process:</p>

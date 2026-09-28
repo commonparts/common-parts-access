@@ -248,11 +248,8 @@ export interface PartLike {
 
 export interface PartDownload {
   id: string;
-  user_id?: string | null;
   part_id: string;
   file_id: string | null; // Nullable for archive/ZIP downloads
-  ip_hash?: string | null; // SHA-256 of IP + UA
-  user_agent?: string | null;
   downloaded_at?: string;
 }
 

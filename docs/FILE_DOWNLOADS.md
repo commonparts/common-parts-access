@@ -51,8 +51,8 @@ Downloads are anonymous: no account or cookie-based identification is required (
 - `original_filename` — Uploader-provided name
 
 **`part_downloads` table:**
-- Columns written: `part_id`, `file_id` (nullable for archive), `downloaded_at`.
-- `user_id`, `ip_hash`, and `user_agent` are legacy columns kept for historical rows; the RLS insert policy ("Anyone can log anonymous downloads on published parts") rejects any new row that sets them.
+- Columns: `id`, `part_id`, `file_id` (nullable for archive), `downloaded_at`. The table holds nothing about the visitor; the former `user_id`, `ip_hash`, and `user_agent` columns were dropped (issue #324).
+- RLS insert policy "Anyone can log anonymous downloads on published parts" accepts rows for published parts only.
 - Trigger: AFTER INSERT increments `parts.download_count` (one row per archive to prevent overcounting).
 - Index: `(part_id, downloaded_at desc)`.
 

@@ -24,63 +24,32 @@ async function getPublishedPart(slug: string, columns: string, supabase: Supabas
 	return data as unknown as PublishedPartSlice;
 }
 
-export interface RecordViewInput {
-	slug: string;
-	userId?: string | null;
-	ipHash: string;
-	userAgent: string;
-	throttleMinutes?: number;
-}
-
-export async function recordPartView(input: RecordViewInput) {
+/**
+ * Resolves a published part by slug, then records an anonymous view.
+ * No user id, IP, or user agent is stored — the row only feeds the
+ * view_count trigger (issue #324). Covered by the RLS policy
+ * "Anyone can log anonymous views on published parts".
+ */
+export async function recordPartView(slug: string) {
 	const supabase = await createClient();
-	const throttleMinutes = input.throttleMinutes ?? 30;
-	const since = new Date(Date.now() - throttleMinutes * 60 * 1000).toISOString();
 
 	const part = await getPublishedPart(
-		input.slug,
+		slug,
 		'id, view_count',
 		supabase,
 	);
 
-	const { data: recentView, error: recentError } = await supabase
+	const { error: insertError } = await supabase
 		.from('part_views')
-		.select('id')
-		.eq('part_id', part.id)
-		.or(
-			input.userId
-				? `user_id.eq.${input.userId}`
-				: `user_id.is.null,ip_hash.eq.${input.ipHash}`,
-		)
-		.gte('viewed_at', since)
-		.maybeSingle();
+		.insert({ part_id: part.id });
 
-	if (recentError && recentError.code !== 'PGRST116') {
-		throw recentError;
-	}
-
-	let inserted = false;
-
-	if (!recentView) {
-		const { error: insertError } = await supabase
-			.from('part_views')
-			.insert({
-				part_id: part.id,
-				user_id: input.userId ?? null,
-				ip_hash: input.ipHash,
-				user_agent: input.userAgent,
-			});
-
-		if (insertError) {
-			throw insertError;
-		}
-		inserted = true;
+	if (insertError) {
+		throw insertError;
 	}
 
 	return {
 		partId: part.id as string,
-		estimatedViews: (part.view_count ?? 0) + (inserted ? 1 : 0),
-		skipped: !inserted,
+		estimatedViews: (part.view_count ?? 0) + 1,
 	};
 }
 
