@@ -45,8 +45,8 @@ export function Footer() {
               <Logo showInterface={false} />
             </div>
             <p className="max-w-[280px] text-caption leading-normal text-text-secondary">
-              Infrastructure for digital spare parts. Standards, protocols, and
-              the public registry.
+              Infrastructure for digital spare parts. An open, public registry of
+              replacement parts.
             </p>
           </div>
 

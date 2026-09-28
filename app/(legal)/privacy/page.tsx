@@ -137,7 +137,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>
-                Supabase, Inc. - Database, authentication, and file storage infrastructure. Supabase is SOC 2 Type II certified.
+                Supabase, Inc. - Database, authentication, and file storage infrastructure. Supabase is SOC 2 Type II compliant.
               </li>
             </ul>
             <p className="text-text-secondary">
