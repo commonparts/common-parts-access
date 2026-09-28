@@ -1,57 +1,40 @@
 # Part View Tracking
 
 ## Overview
-This document explains how Common Parts Access tracks part views using a lightweight POST endpoint plus Supabase triggers to increment `parts.view_count`.
+This document explains how Common Parts Access counts part views using a lightweight POST endpoint plus a Supabase trigger that increments `parts.view_count`.
+
+Views are anonymous, like downloads (issues #250 and #324): a `part_views` row records the part and the time, nothing about the visitor — no user id, no IP address in any form, no user agent.
 
 ## Flow
 1. Part detail page mounts and issues `POST /api/parts/[slug]/view` once (guarded on the client).
-2. API resolves the part by slug (published only) and gathers request metadata.
-3. Request IP and user agent are hashed with SHA-256 to create an `ip_hash` fingerprint.
-4. Server checks `part_views` for a recent view within the throttle window (30 minutes) for either the authenticated user or the hashed IP+UA combo.
-5. If no recent view, the API inserts a row into `part_views` and a DB trigger increments `parts.view_count`.
-6. Response returns `{ success: true, views }`, where `views` is the optimistic count.
+2. API resolves the part by slug (published only).
+3. API inserts one anonymous row into `part_views`; a DB trigger increments `parts.view_count`.
+4. Response returns `{ success: true, views }`, where `views` is the optimistic count.
 
 ## API Contract
 - **Endpoint:** `POST /api/parts/[slug]/view`
-- **Runtime:** `nodejs`
 - **Request body:** none
-- **Headers used:** `user-agent`, `x-forwarded-for` (or `x-real-ip`) for hashing
+- **Headers used:** none
 - **Responses:**
   - `200` with `{ success: true, views: number }`
   - `404` if the part is missing or unpublished
   - `500` for unexpected errors (view not recorded)
 
-## Throttling Rules
-- Window: 30 minutes (`RECENT_WINDOW_MINUTES`).
-- Throttle key priority:
-  - Authenticated users: `user_id` match.
-  - Anonymous users: `ip_hash` (SHA-256 of IP + user agent).
-- If a matching view exists in the window, the insert is skipped and count remains unchanged.
+## Deduplication
+There is no server-side deduplication: deduplicating would require identifying the visitor, which the platform does not do. The only guard is client-side — `components/part/part-details.tsx` posts once per page mount via a `useRef`. A reload counts as a new view.
 
 ## Data Captured
-Inserted into `part_views` when allowed:
+Inserted into `part_views`:
 - `part_id` (FK to `parts`)
-- `user_id` (nullable)
-- `ip_hash` (hashed IP + UA, never the raw IP)
-- `user_agent`
 - `viewed_at` (timestamp, defaults to `now()`)
 
 ## Database Requirements
-- Table: `part_views` with columns above, plus PK `id` and timestamps.
-- Indexes:
-  - `(part_id, viewed_at desc)` for recent lookups
-  - `(user_id, viewed_at desc)` (partial: `WHERE user_id IS NOT NULL`)
-  - `(ip_hash, viewed_at desc)` (partial: `WHERE user_id IS NULL`)
+- Table: `part_views` with `id`, `part_id`, `viewed_at`.
 - Trigger: AFTER INSERT on `part_views` that increments `parts.view_count` for the associated `part_id`.
-- RLS suggestions:
-  - `SELECT` enabled for service roles; optional for analytics UI.
-  - `INSERT` allowed to authenticated users; consider a policy permitting anonymous inserts by the edge function role if needed.
+- RLS:
+  - `INSERT`: "Anyone can log anonymous views on published parts" — any caller, signed in or not, for a published part.
+  - `SELECT`: service role only.
 
 ## Client Usage
 - `components/part/part-details.tsx` calls the endpoint in `useEffect` with a `useRef` guard to avoid duplicate posts.
 - No payload required; failures are logged to the console and do not block the page.
-
-## Operational Notes
-- Hashing means IP addresses are never stored in plaintext.
-- The optimistic `views` field adds `1` only when an insert is attempted; final authority remains the database trigger-maintained `view_count`.
-- Keep the route on the Node runtime because it uses the `crypto` module.
