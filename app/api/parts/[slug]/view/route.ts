@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { recordPartView } from '@/lib/supabase/queries/part-metrics'
 import { isPartNotFoundError } from '@/lib/utils/errors'
+import { isValidSlug } from '@/lib/utils/slug'
 
 export async function POST(
   _request: Request,
@@ -8,6 +9,10 @@ export async function POST(
 ) {
   try {
     const { slug } = await params
+    if (!isValidSlug(slug)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
+
     const result = await recordPartView(slug)
 
     return NextResponse.json({ success: true, views: result.estimatedViews })
