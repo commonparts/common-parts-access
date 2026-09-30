@@ -26,8 +26,8 @@ import { PrintReportControls, type PrintReportReference } from "./print-report-c
  */
 const VERIFICATION_STATUS_LABELS: Partial<Record<PartData['verificationStatus'], string>> = {
   unverified: '⊘ Unverified',
-  author_tested: '✓ Author Tested',
-  community_validated: '✓✓ Community Validated',
+  author_tested: '✓ Author-tested',
+  community_validated: '✓✓ Community-validated',
 }
 
 interface PartDetailsProps {
@@ -873,7 +873,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground font-medium">Status:</span>
-                <Badge variant="soft" className="capitalize">
+                <Badge variant="soft">
                   {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
                 </Badge>
               </div>
