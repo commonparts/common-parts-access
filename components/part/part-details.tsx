@@ -20,6 +20,16 @@ import { EvidenceLevelBadge } from "./evidence-level-badge"
 import { PrintReportControls, type PrintReportReference } from "./print-report-controls"
 
 
+/**
+ * Public badge labels per verification status. `certified` is deliberately
+ * absent: certification is frozen and must not be promised publicly (#326).
+ */
+const VERIFICATION_STATUS_LABELS: Partial<Record<PartData['verificationStatus'], string>> = {
+  unverified: '⊘ Unverified',
+  author_tested: '✓ Author-tested',
+  community_validated: '✓✓ Community-validated',
+}
+
 interface PartDetailsProps {
   slug: string
   className?: string
@@ -859,16 +869,15 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Verification Status — always rendered */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground font-medium">Status:</span>
-              <Badge variant="soft" className="capitalize">
-                {part.verificationStatus === 'unverified' && '⊘ Unverified'}
-                {part.verificationStatus === 'author_tested' && '✓ Author Tested'}
-                {part.verificationStatus === 'community_validated' && '✓✓ Community Validated'}
-                {part.verificationStatus === 'certified' && '✓✓✓ Certified'}
-              </Badge>
-            </div>
+            {/* Verification Status — hidden for statuses with no public label */}
+            {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground font-medium">Status:</span>
+                <Badge variant="soft">
+                  {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
+                </Badge>
+              </div>
+            )}
 
             {/* Source Attribution — only rendered when a source URL is present */}
             {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (

@@ -62,12 +62,6 @@ const config: Config = {
           warningText: "var(--color-status-warningText)",
           warningBorder: "var(--color-status-warningBorder)",
         },
-        certification: {
-          bg: "var(--color-certification-background)",
-          text: "var(--color-certification-text)",
-          outlineBorder: "var(--color-certification-outlineBorder)",
-          outlineText: "var(--color-certification-outlineText)",
-        },
       },
 
       /* ── Spacing ── */

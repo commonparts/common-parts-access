@@ -45,7 +45,7 @@ export const semanticTokens = {
       disabled: colorPrimitives.black[300],
     },
 
-    // Institutional green — the seal, certification marks, symbol imprint
+    // Institutional green — the seal and symbol imprint
     institutional: {
       viridian: colorPrimitives.green[600], // #234F3E — print, formal
       malachite: colorPrimitives.green[500], // #2D6A4F — screen, interface
@@ -60,14 +60,6 @@ export const semanticTokens = {
       warning: colorPrimitives.amber[50],
       warningText: colorPrimitives.amber[600],
       warningBorder: colorPrimitives.amber[200],
-    },
-
-    // Certification marks
-    certification: {
-      background: colorPrimitives.green[600], // Viridian
-      text: colorPrimitives.surface.white,
-      outlineBorder: colorPrimitives.green[600],
-      outlineText: colorPrimitives.green[600],
     },
   },
 

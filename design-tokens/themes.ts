@@ -61,12 +61,5 @@ export const darkTheme = {
       warningText: colorPrimitives.amber[300],
       warningBorder: colorPrimitives.amber[700],
     },
-
-    certification: {
-      background: colorPrimitives.green[600], // unchanged — protected mark
-      text: colorPrimitives.surface.white,
-      outlineBorder: colorPrimitives.green[400],
-      outlineText: colorPrimitives.green[400],
-    },
   },
 } as const

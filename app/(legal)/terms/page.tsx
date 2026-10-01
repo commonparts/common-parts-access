@@ -178,8 +178,8 @@ export default function TermsPage() {
               published under the MIT Licence and is available at the official Common Parts GitHub repository.
             </p>
             <p className="text-text-secondary">
-              The Common Parts name, symbol, and certification marks are protected. No licence to use these marks is
-              granted by these Terms. Use of Common Parts marks requires prior written authorisation from Common Parts.
+              The Common Parts name and symbol are protected. No licence to use these marks is granted by these
+              Terms. Use of Common Parts marks requires prior written authorisation from Common Parts.
             </p>
 
             <h3 className="text-h4">6.2 User content</h3>
