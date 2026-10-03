@@ -1,8 +1,8 @@
 # Common Parts Access — Development Strategy & Process
 
 **Project:** Common Parts Access (`partharbor`)
-**Stack:** Next.js · TypeScript · Supabase · Vercel
-**Last updated:** March 2026
+**Stack:** Next.js · TypeScript · Supabase · Railway
+**Last updated:** October 2026
 
 ---
 
@@ -35,18 +35,18 @@ GitHub Issues (structured, labelled)
         ↓ generates gh CLI commands after human validation
 [ You ] — validate priorities and roadmap
         ↓
-[ Agent Dev ] — GitHub Copilot agent in VS Code
+[ Agent Dev ] — Claude Code
         ↓ reads issues via MCP, proposes approach, implements, opens PRs
         ↓ never merges
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
         ↓ inline comments + summary, never approves
         ↓
-[ Agent Docs ] — GitHub Action + Mistral Medium
+[ Agent Docs ] — Claude Code, run manually on merge to main
         ↓ generates release notes, creates GitHub Release
         ↓ analyses diff → opens PR toward dev with doc updates if needed
         ↓ PR requires human validation before merge
         ↓
-CI/CD Pipeline (GitHub Actions → Vercel)
+CI/CD Pipeline (GitHub Actions → Railway)
         ↓
 [ You ] — review, merge to staging, validate, merge to main
 ```
@@ -58,10 +58,10 @@ CI/CD Pipeline (GitHub Actions → Vercel)
 | Feedback triage | Fully automatic | Supabase Edge Function + Mistral Small |
 | GitHub issue creation | Fully automatic | GitHub API via Edge Function |
 | PM prioritisation | Semi-automatic (human validates) | Claude Project in Claude.ai |
-| Dev (bugs & features) | Dialogue — agent proposes, human validates | GitHub Copilot agent in VS Code |
+| Dev (bugs & features) | Dialogue — agent proposes, human validates | Claude Code |
 | QA review | Fully automatic on every PR | GitHub Copilot code review |
 | Merge to staging/main | Always manual | Human |
-| Docs & changelog | Semi-automatic (release notes fully auto, doc updates via PR) | GitHub Action + Mistral Medium |
+| Docs & changelog | Manual trigger (release notes published directly, doc updates via PR) | Claude Code following `docs.agent.md` |
 
 ---
 
@@ -70,9 +70,9 @@ CI/CD Pipeline (GitHub Actions → Vercel)
 ### Branch Structure
 
 ```
-main        → production (Vercel production deploy)
-staging     → pre-production (Vercel preview, fixed URL)
-dev         → integration branch (push directly OK)
+main        → production (Railway production environment)
+staging     → pre-production (Railway staging environment)
+dev         → integration branch (changes land through PRs only)
 feature/xxx → short-lived feature branches → PR to dev
 ```
 
@@ -113,16 +113,17 @@ Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
 3. Lint (`npm run lint`)
+4. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
-Tests will be added when the MVP stabilises (Vitest, to be configured).
+### Railway Environments
 
-### Vercel Environments
+Railway deploys automatically on push to connected branches.
 
-| Branch | Environment | URL |
-|---|---|---|
-| `main` | Production | `access.commonparts.org` (future) |
-| `staging` | Preview (fixed) | `staging-common-parts.vercel.app` |
-| `dev` + feature branches | Preview (auto) | Generated per push |
+| Branch | Environment |
+|---|---|
+| `main` | `production` |
+| `staging` | `staging` |
+| Pull requests | `common-parts-access-pr-<number>`, generated per PR |
 
 ---
 
@@ -137,24 +138,24 @@ This is the full lifecycle of a change, from issue to production.
 4. Agent Dev implements on feature/issue-xxx branch
 5. Agent Dev opens PR toward dev
          ↓
-6. CI runs automatically (tsc + lint)
+6. CI runs automatically (tsc + lint + tests)
 7. Copilot code review runs automatically
 8. Human reads findings, asks Agent Dev to fix blocking issues
 9. Agent Dev pushes fixes — CI and Copilot re-run
 10. Human merges feature/issue-xxx → dev  (squash)
          ↓
-11. Vercel deploys dev preview automatically
+11. Railway deploys the PR environment automatically
 12. When ready: open PR dev → staging
 13. CI + Copilot review run on the PR
-14. Human merges dev → staging  (squash)
+14. Human merges dev → staging  (merge commit)
          ↓
-15. Vercel deploys staging automatically
+15. Railway deploys staging automatically
 16. Human runs staging validation checklist (see below)
 17. When validated: open PR staging → main
 18. CI + Copilot review run on the PR
-19. Human merges staging → main  (squash)
+19. Human merges staging → main  (merge commit)
          ↓
-20. Vercel deploys production automatically
+20. Railway deploys production automatically
 ```
 
 ### Staging Validation Checklist
@@ -163,8 +164,8 @@ Before merging `staging` → `main`, run through every item below.
 This is the only gate between staging and production.
 
 **Deploy**
-- [ ] Vercel staging deploy is green (no build errors)
-- [ ] No errors in Vercel runtime logs on staging
+- [ ] Railway staging deploy is green (no build errors)
+- [ ] No errors in Railway logs on staging (`railway logs --environment staging`)
 - [ ] No errors in Supabase logs (auth, API, edge functions)
 
 **Feedback pipeline**
@@ -175,8 +176,8 @@ This is the only gate between staging and production.
 
 **Core flows**
 - [ ] Sign up and login work correctly
-- [ ] Model browse page loads without errors
-- [ ] Model detail page loads for a published model
+- [ ] Browse page loads without errors
+- [ ] Part detail page loads for a published part
 - [ ] Upload flow works end to end (if applicable to this PR)
 
 **CI & QA**
@@ -264,16 +265,16 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ### Agent Dev
 
-**Tool:** GitHub Copilot agent mode in VS Code
-**Trigger:** On-demand — human opens a session in VS Code and assigns an issue
-**Interface:** Chat panel in VS Code, directly in the codebase
+**Tool:** Claude Code
+**Trigger:** On-demand — human opens a Claude Code session on the repository and assigns an issue
+**Interface:** Claude Code session, directly in the codebase
 
-**MCP servers connected:**
+**Tools connected:**
 - **GitHub MCP** — reads issues, checks existing PRs, opens PRs
 - **Supabase MCP** — checks table schema, RLS policies, edge function logs
-- **Vercel MCP** — checks deployment status and runtime logs
+- **Railway CLI** (no MCP) — reads runtime logs with `railway logs --environment <name>`
 
-**Instructions file:** `.github/agents/dev.agent.md` (read automatically by the agent)
+**Instructions file:** `.github/agents/dev.agent.md` (read at the start of every session)
 **What it does:**
 - Reads the issue directly via GitHub MCP — no copy-pasting
 - Proposes a technical approach before writing any code
@@ -314,9 +315,8 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ### Agent Docs
 
-**Tool:** GitHub Actions workflow (`.github/workflows/docs.yml`)
-**Model:** Mistral Medium (`mistral-medium-latest`) via Mistral API
-**Trigger:** Automatic on every push to `main` (i.e. after every human-approved merge)
+**Tool:** Claude Code session. The GitHub Actions workflow (`.github/workflows/docs.yml`, Mistral Medium) is disabled.
+**Trigger:** Manual — run after every human-approved merge to `main`
 **Instructions file:** `.github/agents/docs.agent.md`
 
 **What it does — always:**
@@ -339,6 +339,10 @@ Labels are the shared language between humans and agents. All issues must carry 
 ---
 
 ## Database Schema (Supabase)
+
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
+
+The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
 **`feedback`** — user-submitted feedback, entry point of the pipeline
 
@@ -369,7 +373,8 @@ RLS: anyone can insert, users can read their own rows only.
 - Conventional Commits enforced via `commitlint` + `husky`
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
-- GitHub Actions CI: type check + lint on every push and PR
+- GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
+- Schema changes version-controlled in `supabase/migrations/`, applied by the human to the single production database
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 
@@ -401,9 +406,9 @@ RLS: anyone can insert, users can read their own rows only.
 
 ### ✅ Agent Dev
 
-- GitHub Copilot agent mode in VS Code
+- Claude Code
 - Instructions in `.github/agents/dev.agent.md`
-- Connected to GitHub, Supabase, and Vercel via MCP
+- Connected to GitHub and Supabase via MCP; Railway logs via CLI
 - Dialogue mode: proposes approach → human validates → implements → opens PR
 - Reads issues directly via GitHub MCP
 
@@ -417,9 +422,9 @@ RLS: anyone can insert, users can read their own rows only.
 
 ### ✅ Agent Docs
 
-- GitHub Action: `docs.yml` — triggered on every push to `main`
-- Automatic semver tagging: `feat(` → minor bump, anything else → patch bump
-- Mistral-generated release notes published as GitHub Releases (the authoritative changelog; no changelog file is committed to the repository)
+- Run manually in a Claude Code session after every merge to `main`; the `docs.yml` GitHub Action is disabled
+- Semver tagging: `feat(` → minor bump, anything else → patch bump
+- Release notes published as GitHub Releases (the authoritative changelog; no changelog file is committed to the repository)
 - Diff analysis on `docs/` + `.github/agents/` — opens PR toward `dev` when documentation is impacted
 - Doc PRs labelled `type:docs`, `priority:low`, `agent:pm` — always require human approval
 
@@ -431,28 +436,14 @@ RLS: anyone can insert, users can read their own rows only.
 
 A public-facing roadmap page at `access.commonparts.org/roadmap`. To be built and maintained by the agents after the PM session produces a structured backlog.
 
-### 🔲 Testing Infrastructure
-
-- Add Vitest for unit and integration tests
-- Add test script to `package.json`
-- Add test step to CI workflow
-- Define minimum coverage threshold before merge
-
-### 🔲 Supabase Migrations Workflow
-
-Currently all schema changes are made via the Supabase SQL Editor UI. To formalise:
-- Add `supabase/migrations/` folder to repo
-- Version-control all schema changes as `.sql` files
-- Document the process for applying migrations
-
 ### 🔲 Error Monitoring
 
-- Connect Vercel runtime logs to a structured alerting system
+- Connect Railway runtime logs to a structured alerting system
 - Auto-create a `type:bug priority:high` GitHub issue when an unhandled error is detected in production
 
 ### 🔲 Domain & Environment Setup
 
-- Configure `access.commonparts.org` on Vercel production
+- Configure `access.commonparts.org` on Railway production
 - Set up `staging.commonparts.org` as a fixed preview environment
 
 ---
@@ -471,14 +462,14 @@ Structural guarantee: the PM agent and human always have access to what the user
 **Why Claude Project for Agent PM?**
 The PM session requires genuine back-and-forth reasoning. A conversation interface is the right medium. No infrastructure, no deployment.
 
-**Why GitHub Copilot agent for Agent Dev?**
-Native to the human's existing VS Code + Copilot workflow. MCP connections to GitHub, Supabase, and Vercel provide the context an agent needs without additional tooling.
+**Why Claude Code for Agent Dev?**
+It works directly in the repository and the terminal, so it can run the project's checks, read Railway logs through the CLI, and use the GitHub and Supabase MCP connections. That gives the agent the context it needs without additional tooling. The same tool also performs the Agent Docs role.
 
 **Why Copilot code review for Agent QA?**
 Native to GitHub, agentic architecture since March 2026, configurable via a single instructions file, automatic on every PR. Zero infrastructure to maintain.
 
-**Why squash merge only on `main` and `staging`?**
-One commit per feature on the main branches. History stays readable. Changelogs can be generated cleanly.
+**Why squash merges into `dev` and merge commits for promotions?**
+Each feature lands on `dev` as one squashed commit, so history stays readable and release notes list one line per change. Promotions (`dev` → `staging` → `main`) use merge commits: a squash would leave `staging` and `main` without `dev`'s history, and every later promotion would conflict.
 
 **Why 0 required approvals on PRs?**
 Solo project. The goal of PR protection is forcing CI + Copilot review to run. The human reviews and merges manually anyway.
@@ -495,26 +486,34 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   │   └── docs.agent.md           # Agent Docs instructions
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
-│       ├── ci.yml                  # Lint + type check
-│       └── docs.yml                # Agent Docs — releases + doc updates
+│       ├── ci.yml                  # Lint + type check + tests
+│       ├── docs.yml                # Agent Docs workflow (disabled)
+│       └── label-merged-issues.yml # Labels issues referenced by merged PRs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
+│   ├── pre-commit
 │   └── pre-push                    # Block direct push to main/staging
-├── supabase/
-│   └── functions/
-│       └── triage-feedback/
-│           └── index.ts            # Agent Triage edge function
-├── docs/
-│   └── DEV_STRATEGY.md             # This document
-├── lib/
-│   └── supabase/
-│       └── queries/
-│           └── feedback.ts         # Feedback query layer
 ├── app/
-│   └── layout.tsx                  # FeedbackButton mounted here
-├── components/
-│   └── feedback/
-│       ├── feedback-form.tsx       # Feedback form component
-│       └── feedback-button.tsx     # Floating button
+│   ├── (auth)/                     # Sign-up, login, password, account deletion
+│   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
+│   ├── (legal)/                    # Privacy, terms, legal notice
+│   ├── (public)/                   # Browse, brands, categories, product, parts, search
+│   ├── api/                        # API routes (no Server Actions)
+│   ├── layout.tsx                  # FeedbackButton mounted here
+│   ├── robots.ts / sitemap.ts      # Crawler entry points
+├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
+├── constants/
+├── design-tokens/                  # Token sources (edit only with approval)
+├── hooks/
+├── lib/
+│   ├── curation/ publish/ upload/  # Publish-flow logic per track
+│   ├── storage/                    # Upload and download helpers
+│   ├── supabase/queries/           # All Supabase queries, one file per domain
+│   └── utils/                      # Validators, formatters, SEO, feature flags, …
+├── supabase/
+│   ├── functions/triage-feedback/  # Agent Triage edge function
+│   └── migrations/                 # Version-controlled schema changes
+├── types/
+├── docs/                           # Technical documentation (index: docs/README.md)
 └── commitlint.config.mjs           # Commit convention config
 ```

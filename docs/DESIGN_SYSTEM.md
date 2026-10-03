@@ -36,8 +36,8 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 
 ## Layout & Components
 - **Cards**: Use the shared `Card` primitives; default padding and `rounded-lg` with `shadow-surface`. Respect existing spacing patterns (`space-y-*` inside content).
-- **Navbar**: Buttons (auth/upload/logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.
-- **Hero**: Buttons now use default size; inputs/selects/comboboxes use the standard control recipe to align with the upload form.
+- **Navbar**: Buttons (auth / "Publish a part" / logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.
+- **Hero**: Holds only the global search bar (see below); see [HERO_SECTION.md](./HERO_SECTION.md).
 - **Search bar**: Input + button share control height; button is default size with `rounded-l-none` when attached to the input.
 - **Stacks and gaps**: Use `gap-sm` for tight clusters (icons with labels, inline button groups) and `gap-md` for primary layout sections. For vertical rhythm in forms, prefer `space-y-sm` or `space-y-md`.
 
@@ -51,4 +51,4 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 ## Useful References
 - Control sizing recipe: [CONTROL_SIZING.md](./CONTROL_SIZING.md)
 - Tokens: see `design-tokens/` sources and Tailwind semantic classes used throughout components.
-- Patterns: navbar, hero, search-bar, and model upload form demonstrate current canonical control usage.
+- Patterns: navbar, search bar, and the publish flow steps (`components/publish/`) demonstrate current canonical control usage.

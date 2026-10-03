@@ -6,7 +6,7 @@ Read this file entirely before taking any action.
 
 ## What this agent does
 
-Agent Docs runs automatically after every merge to `main`. It has two responsibilities:
+Agent Docs runs after every merge to `main`. The GitHub Actions workflow (`.github/workflows/docs.yml`) is disabled; the role is performed in a Claude Code session following this file. It has two responsibilities:
 
 1. **Release notes** — always, fully automatic. Creates a GitHub Release with a generated changelog entry. The GitHub Release is the authoritative changelog; no changelog file is committed to the repository.
 2. **Technical documentation** — conditional. Reads the diff of the merge, decides whether any file in `docs/` or `.github/agents/` needs updating, and opens a PR toward `dev` with the proposed changes if so.
@@ -30,7 +30,7 @@ Agent Docs never touches application code. It only writes to documentation files
 
 ### Trigger
 
-Runs on every push to `main`.
+Runs after every merge to `main`.
 
 ### Semver logic
 

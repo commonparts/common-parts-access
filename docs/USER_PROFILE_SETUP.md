@@ -14,17 +14,13 @@ This implementation uses a PostgreSQL trigger to automatically create user profi
 
 ## Setup Instructions
 
-### Step 1: Run the Database Trigger SQL
+### Step 1: The Database Trigger
 
-1. Open your **Supabase Dashboard**
-2. Go to **SQL Editor**
-3. Open the file: `supabase/migrations/create_user_profile_trigger.sql`
-4. Copy the SQL and run it in the SQL Editor
-5. You should see: "Success. No rows returned"
+The trigger and its function (`on_auth_user_created` → `public.handle_new_user()`) are part of the initial schema migration, `supabase/migrations/00000000000000_initial_schema.sql`. No manual step is needed on a database built from the migrations.
 
-### Step 2: Verify Your RLS Policies
+### Step 2: RLS Policies
 
-Make sure you have these RLS policies on `user_profiles` table:
+The initial schema creates these RLS policies on the `user_profiles` table:
 
 ```sql
 -- Policy 1: Users can view all profiles
@@ -79,8 +75,8 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 
 -- The profile gets:
 - id: Same as auth.users.id
-- username: From metadata or default 'user_xxxxx'
-- display_name: From metadata or email
+- username: From metadata or default 'user_' + first 8 characters of the id
+- display_name: From metadata, otherwise null
 ```
 
 ## Benefits of This Approach
@@ -114,7 +110,7 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 
 ## Files Modified
 
-- `supabase/migrations/create_user_profile_trigger.sql` - Database trigger
+- `supabase/migrations/00000000000000_initial_schema.sql` - Database trigger (`handle_new_user`)
 - `lib/supabase/queries/auth.client.ts` - Updated signUp function
 - `lib/supabase/queries/users.ts` - User profile queries
 - `types/users.ts` - TypeScript interfaces
