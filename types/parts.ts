@@ -102,9 +102,11 @@ export type PartSeoRow = Pick<
 	| 'original_author'
 	| 'original_author_url'
 > & {
+	// Null when the owning account was deleted (issue #178).
 	user_profiles?:
 		| Pick<UserProfile, 'username' | 'display_name'>
-		| Pick<UserProfile, 'username' | 'display_name'>[];
+		| Pick<UserProfile, 'username' | 'display_name'>[]
+		| null;
 	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	source_licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	part_products?: {

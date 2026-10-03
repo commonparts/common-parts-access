@@ -114,7 +114,7 @@ export async function GET(
             allows_commercial,
             is_copyleft
           ),
-          user_profiles!inner(
+          user_profiles(
             id,
             username,
             display_name,
@@ -234,6 +234,8 @@ export async function GET(
     if (likeError) console.error('Error checking like status:', likeError)
     if (partProductsError) console.error('Error fetching part products:', partProductsError)
 
+    // Null when the owner deleted their account: user_profiles is a left join
+    // so the part stays reachable, and the author card is not rendered (#178).
     const author = firstEmbedded(part.user_profiles)
     const category = firstEmbedded(part.categories)
     const license = firstEmbedded(part.licenses)

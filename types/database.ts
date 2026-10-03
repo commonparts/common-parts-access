@@ -142,7 +142,9 @@ export interface Part {
   name: string;
   slug: string;
   description?: string | null;
-  user_id: string;
+  // Null once the owning account is deleted: the part stays published,
+  // anonymized (issue #178).
+  user_id: string | null;
   // No brand_id: a part's brands are the distinct brands of the products it
   // fits, read through part_products (issue #315).
   category_id?: string | null;
@@ -221,7 +223,7 @@ export interface CurationRejection {
   source_url: string;
   reason: string;
   failed_criteria: CurationCriterionKey[];
-  created_by: string;
+  created_by: string | null; // Null once the curator's account is deleted (issue #178)
   created_at?: string;
 }
 
@@ -241,7 +243,7 @@ export interface PartFile {
 
 export interface PartLike {
   id: string;
-  user_id: string;
+  user_id: string | null; // Null once the liking account is deleted (issue #178)
   part_id: string;
   liked_at?: string;
 }
@@ -256,7 +258,7 @@ export interface PartDownload {
 export interface PartComment {
   id: string;
   part_id: string;
-  user_id: string;
+  user_id: string | null; // Null once the author's account is deleted (issue #178)
   parent_id?: string | null; // For nested comments
   content: string;
   created_at?: string;
