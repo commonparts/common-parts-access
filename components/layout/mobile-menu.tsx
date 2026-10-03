@@ -192,7 +192,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                   className="w-full font-medium"
                   onClick={close}
                 >
-                  <Link href="/upload">Publish a part</Link>
+                  <Link href="/publish">Publish a part</Link>
                 </Button>
               )}
             </div>

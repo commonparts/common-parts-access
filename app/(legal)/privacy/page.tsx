@@ -64,10 +64,13 @@ export default function PrivacyPage() {
             <h3 className="text-h4">3.3 Usage data</h3>
             <p className="text-text-secondary">When you use Common Parts Access, we automatically record:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Downloads and views associated with your account</li>
               <li>Collections and likes you create</li>
               <li>Date and time of actions performed on the platform</li>
             </ul>
+            <p className="text-text-secondary">
+              Part views and file downloads are counted anonymously. Each one is recorded with the part and the time
+              only - never with your account, your IP address (in any form, hashed or not), or your browser details.
+            </p>
 
             <h3 className="text-h4">3.4 Technical data</h3>
             <p className="text-text-secondary">For technical operation of the service, we process:</p>
@@ -102,8 +105,8 @@ export default function PrivacyPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">5. Cookies</h2>
             <p className="text-text-secondary">
-              Common Parts Access uses cookies strictly for authentication and session management. No advertising,
-              tracking, or analytics cookies are used.
+              Common Parts Access uses cookies strictly for authentication, session management and abuse protection
+              on print reports. No advertising, tracking, or analytics cookies are used.
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>Cookie name: Supabase authentication token cookie (sb-*-auth-token pattern)</li>
@@ -111,6 +114,15 @@ export default function PrivacyPage() {
               <li>Type: Strictly necessary. This cookie is essential for the service to function and does not require your consent.</li>
               <li>Provider: Supabase, Inc. (our authentication infrastructure provider).</li>
               <li>Duration: Session and short-term persistence (expires upon logout or session timeout).</li>
+            </ul>
+            <ul className="list-disc space-y-xs pl-md text-text-secondary">
+              <li>Cookie name: cpa_reporter</li>
+              <li>Purpose: Holds a random identifier, set only when you submit a print report without an account, so a
+                repeated report replaces your earlier one and reports can be rate-limited. Only a one-way hash of it is
+                stored with your report; no IP address is stored.</li>
+              <li>Type: Strictly necessary for the print report feature you request.</li>
+              <li>Provider: Common Parts Access (first party).</li>
+              <li>Duration: 12 months.</li>
             </ul>
             <p className="text-text-secondary">
               You may delete cookies at any time through your browser settings. Doing so will log you out of your
@@ -125,7 +137,7 @@ export default function PrivacyPage() {
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>
-                Supabase, Inc. - Database, authentication, and file storage infrastructure. Supabase is SOC 2 Type II certified.
+                Supabase, Inc. - Database, authentication, and file storage infrastructure. Supabase is SOC 2 Type II compliant.
               </li>
             </ul>
             <p className="text-text-secondary">

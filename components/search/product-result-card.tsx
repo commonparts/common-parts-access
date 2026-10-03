@@ -1,11 +1,22 @@
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { pluralize } from "@/lib/utils/formatters"
-import type { SearchProductResult } from "@/types/search"
 
-// Horizontal product card for the /search results page: image, name, category,
-// parts-count badge. Links to the product page.
-export function ProductResultCard({ product }: { product: SearchProductResult }) {
+// Structural shape so any caller with a product row can render the card —
+// SearchProductResult satisfies it, and the /brands pages map their rows to it.
+export interface ProductCardData {
+  name: string
+  slug: string
+  image_url: string | null
+  category: string | null
+  parts_count: number
+  // Matched reference on /search (issue #319); absent on the /brands pages.
+  reference?: string | null
+}
+
+// Horizontal product card: image, name, category, parts-count badge. Links to
+// the product page. Used on /search results and the /brands navigation pages.
+export function ProductResultCard({ product }: { product: ProductCardData }) {
   return (
     <Link
       href={`/product/${product.slug}`}
@@ -29,11 +40,13 @@ export function ProductResultCard({ product }: { product: SearchProductResult })
         <div className="truncate font-heading text-sm font-semibold text-text-primary">
           {product.name}
         </div>
-        {product.category && (
-          <div className="truncate text-caption text-text-secondary">{product.category}</div>
+        {(product.reference || product.category) && (
+          <div className="truncate text-caption text-text-secondary">
+            {[product.reference, product.category].filter(Boolean).join(" · ")}
+          </div>
         )}
       </div>
-      <Badge variant="secondary" className="shrink-0">
+      <Badge variant="soft" className="shrink-0">
         {pluralize(product.parts_count, "part")}
       </Badge>
     </Link>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -92,11 +93,16 @@ export function ConfirmationDialog({
     return () => document.removeEventListener('keydown', handleKeyDown)
   }, [open, onCancel, loading])
 
-  if (!open) return null
+  // Rendered as null on the server (closed by default); the portal target
+  // only exists in the browser.
+  if (!open || typeof document === 'undefined') return null
 
-  return (
+  // Portaled to <body> so the backdrop blur spans the whole viewport. Nested
+  // in the page, a backdrop-filter cannot sample the sticky navbar once it is
+  // "stuck" (its own compositing layer), leaving the header sharp.
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-[60] flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby={`${dialogId}-title`}
@@ -150,6 +156,7 @@ export function ConfirmationDialog({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

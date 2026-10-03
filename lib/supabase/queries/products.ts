@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { normalizeEntityName } from '@/lib/utils/validation'
 import type { Product } from '@/types/database'
 
 const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id'
@@ -9,6 +10,14 @@ export interface FetchProductsParams {
   includeDescendants?: boolean
   search?: string
   limit?: number
+  /**
+   * Explicit product ids to resolve, bypassing the brand/category filters.
+   * The publish tools use it to name the products a draft already links to:
+   * since the part's brand column was dropped (issue #315) those links can
+   * span brands, so the brand-scoped list is no longer guaranteed to contain
+   * them all.
+   */
+  ids?: string[]
 }
 
 export interface CreateProductInput {
@@ -24,6 +33,21 @@ export interface CreateProductInput {
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
   const supabase = await createClient()
   const limit = params.limit && params.limit > 0 ? params.limit : 100
+
+  // An explicit id list is a lookup, not a browse: the caller already knows
+  // which rows it wants, so the brand and category filters would only be able
+  // to hide them.
+  if (params.ids && params.ids.length > 0) {
+    const { data, error } = await supabase
+      .from('products')
+      .select(PRODUCT_SELECT)
+      .in('id', params.ids)
+      .order('name', { ascending: true })
+      .limit(limit)
+
+    if (error) throw error
+    return (data ?? []) as Product[]
+  }
 
   const resolveCategoryIds = async (): Promise<string[] | undefined> => {
     if (!params.categoryId) return undefined
@@ -87,10 +111,84 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
   return (data ?? []) as Product[]
 }
 
+/**
+ * Checks the products a draft links to, for both publication gates.
+ *
+ * Two things must hold: every id resolves to a real product, and every one of
+ * those products belongs to a brand. A part is found by descending brand ->
+ * product -> part, and since #315 a part's brands are its products' — so a
+ * product with no brand leaves the part unreachable however it is browsed.
+ *
+ * Products of *different* brands are expected, not an error: one part
+ * legitimately fits a Bosch machine and a Siemens one.
+ *
+ * Returns the blocker to report, or null when the links are sound. Lives here
+ * rather than in `lib/publish/blockers.ts` so the two server gates share it
+ * without that pure, client-imported module gaining a database call.
+ */
+export async function findProductLinkBlocker(productIds: string[]): Promise<string | null> {
+  const uniqueIds = [...new Set(productIds)]
+  if (uniqueIds.length === 0) return null
+
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from('products')
+    .select('id, brand_id')
+    .in('id', uniqueIds)
+
+  // A failed read must not pass for "links are fine" — publishing on an
+  // unverified list is exactly what this gate exists to prevent.
+  if (error || !data || data.length !== uniqueIds.length) {
+    return 'The linked products could not be verified'
+  }
+
+  if (data.some((product) => !product.brand_id)) {
+    return 'Every linked product must belong to a brand — the part is browsed by brand, then product'
+  }
+
+  return null
+}
+
+// Upper bound on brand-scoped rows scanned by the duplicate guard. A brand
+// exceeding it degrades gracefully: rows beyond the limit escape the
+// normalized check, but exact matches are still caught by the DB unique
+// (brand_id, name) constraint.
+const DUPLICATE_SCAN_LIMIT = 1000
+
+/**
+ * Finds an existing product under a brand whose name matches the given name
+ * case-insensitively after whitespace normalization. Duplicate guard for
+ * creation: the DB unique (brand_id, name) constraint only catches exact
+ * matches, and the slug trigger suffixes collisions instead of failing.
+ * Both sides are normalized in JS so legacy rows stored with irregular
+ * internal whitespace (created before names were normalized) still match.
+ * Covered by the public "Products are publicly readable" RLS policy.
+ */
+export async function findProductByNormalizedName(brandId: string, name: string): Promise<Product | null> {
+  const supabase = await createClient()
+  const target = normalizeEntityName(name).toLowerCase()
+  if (!target) return null
+
+  const { data, error } = await supabase
+    .from('products')
+    .select(PRODUCT_SELECT)
+    .eq('brand_id', brandId)
+    .limit(DUPLICATE_SCAN_LIMIT)
+
+  if (error) {
+    throw error
+  }
+
+  const match = (data ?? []).find(
+    (row) => normalizeEntityName(row.name).toLowerCase() === target
+  )
+  return (match as Product | undefined) ?? null
+}
+
 export async function createProduct(input: CreateProductInput): Promise<Product> {
   const supabase = await createClient()
 
-  const name = input.name?.trim()
+  const name = normalizeEntityName(input.name ?? '')
   if (!name) {
     throw new Error('Name is required')
   }

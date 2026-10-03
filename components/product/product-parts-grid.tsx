@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { ModelCard } from "@/components/model/model-card"
+import { PartCard } from "@/components/part/part-card"
+import { EvidenceLevelBadge } from "@/components/part/evidence-level-badge"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
+import type { PartCardData } from "@/types/parts"
 
 type SortKey = "downloads" | "newest"
 
@@ -19,20 +21,18 @@ function sortParts(parts: ProductPart[], sortKey: SortKey): ProductPart[] {
   })
 }
 
-// Map a product part onto the shared ModelCard shape. Stats are hidden (the
-// likes/views/date footer isn't relevant here); the part-meta row surfaces
-// material, print time, downloads and the license badge.
-function toModelCardModel(part: ProductPart) {
+// Map a product part onto the shared PartCard shape. Brand and compatibility
+// are omitted — this grid already sits on the page of the product these parts
+// fit — so the card carries material, print time and the license badge instead.
+function toPartCardData(part: ProductPart): PartCardData {
   return {
     id: part.id,
     slug: part.slug,
     title: part.name,
-    thumbnailUrl: part.thumbnail_url ?? undefined,
-    author: { username: part.author_username ?? "" },
-    stats: { downloads: part.download_count, likes: 0, views: 0 },
-    tags: [] as string[],
-    category: "",
-    createdAt: part.created_at ? new Date(part.created_at) : new Date(),
+    thumbnailUrl: part.thumbnail_url,
+    brands: [],
+    products: [],
+    productCount: 0,
     material: part.material,
     license: part.license_short_name,
     estimatedPrintTime: part.estimated_print_time,
@@ -62,11 +62,10 @@ export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
 
       <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((part) => (
-          <ModelCard
+          <PartCard
             key={part.id}
-            model={toModelCardModel(part)}
-            showStats={false}
-            showAuthor={Boolean(part.author_username)}
+            part={toPartCardData(part)}
+            badge={<EvidenceLevelBadge level={part.evidence_level} />}
             showPartMeta
           />
         ))}

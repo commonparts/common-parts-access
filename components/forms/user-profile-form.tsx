@@ -320,7 +320,7 @@ export function UserProfileForm({
           <div className="flex items-center justify-between">
             <div>
               <Label>Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive notifications about your models and activity</p>
+              <p className="text-sm text-muted-foreground">Receive notifications about your parts and activity</p>
             </div>
             <input
               type="checkbox"

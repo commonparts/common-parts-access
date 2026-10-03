@@ -8,7 +8,7 @@ Read this file entirely before taking any action.
 
 Agent Docs runs automatically after every merge to `main`. It has two responsibilities:
 
-1. **Release notes** — always, fully automatic. Creates a GitHub Release with a generated changelog entry and updates `CHANGELOG.md`.
+1. **Release notes** — always, fully automatic. Creates a GitHub Release with a generated changelog entry. The GitHub Release is the authoritative changelog; no changelog file is committed to the repository.
 2. **Technical documentation** — conditional. Reads the diff of the merge, decides whether any file in `docs/` or `.github/agents/` needs updating, and opens a PR toward `dev` with the proposed changes if so.
 
 Agent Docs never touches application code. It only writes to documentation files and creates GitHub Releases.
@@ -17,8 +17,8 @@ Agent Docs never touches application code. It only writes to documentation files
 
 ## Non-negotiables
 
-- **Never modify application code** — only `docs/`, `.github/agents/`, `.github/copilot-instructions.md`, and `CHANGELOG.md`
-- **Never push doc updates directly to `main` or `staging`** — all documentation changes go via PR toward `dev`; the sole exception is `CHANGELOG.md`, which is committed directly to `main` as part of the automated release process
+- **Never modify application code** — only `docs/`, `.github/agents/`, and `.github/copilot-instructions.md`
+- **Never push anything directly to `main` or `staging`** — all documentation changes go via PR toward `dev`, with no exceptions. Release notes are published as GitHub Releases, which requires no commit to a protected branch
 - **Never invent technical facts** — only document what the diff shows. If something is ambiguous, leave it out rather than guess
 - **Never remove existing documentation** unless the diff explicitly makes it obsolete
 - **Release notes are always published** — no human approval required
@@ -67,14 +67,9 @@ Rules for the "What changed" section:
 - State facts: what exists now that did not exist before, or what works now that did not work before
 - If the release contains only fixes, say so plainly
 
-### CHANGELOG.md update
+### Changelog
 
-After creating the GitHub Release, prepend a new entry to `CHANGELOG.md` using the same content as the release note. Maintain the existing format of the file. If `CHANGELOG.md` does not exist, create it.
-
-Commit `CHANGELOG.md` directly to `main` with:
-```
-docs(changelog): add release notes for [version]
-```
+The GitHub Release is the authoritative changelog. No changelog file is committed to the repository — this keeps the release process free of any direct push to a protected branch. The full release history is browsable at the repository's Releases page and via `gh release list`.
 
 ---
 
@@ -168,7 +163,6 @@ Before completing any run:
 
 - [ ] GitHub Release created with correct semver tag
 - [ ] Release note follows the format above
-- [ ] `CHANGELOG.md` updated and committed to `main`
 - [ ] Diff reviewed for documentation impact
 - [ ] If doc update needed: PR opened toward `dev` with correct labels and description
-- [ ] If no doc update needed: nothing opened, nothing committed beyond `CHANGELOG.md`
+- [ ] If no doc update needed: nothing opened, nothing committed

@@ -8,9 +8,12 @@ export interface SearchProductResult {
   image_url: string | null
   category: string | null
   parts_count: number
+  // The manufacturer reference or regional name the query matched (issue
+  // #319), as displayed; null when the product matched by name.
+  reference: string | null
 }
 
-export interface SearchModelResult {
+export interface SearchPartResult {
   id: string
   name: string
   slug: string
@@ -18,8 +21,17 @@ export interface SearchModelResult {
   part_number: string | null
   thumbnail_url: string | null
   product_name: string | null // a linked product; null => "Generic part"
-  author_username: string | null
   license: string | null // license short name, e.g. "CC BY-NC-ND 4.0"
+  // Part card fields, added by 20260802141500_search_all_part_card_fields.
+  // Optional so a deployment that runs ahead of the migration degrades to a
+  // card without a brand eyebrow or fit line instead of crashing.
+  //
+  // `brands` is the distinct set behind the part's linked products since
+  // 20260922213250 (issue #315) — a part fitting products of several brands
+  // is filed under all of them.
+  brands?: { name: string; slug: string }[]
+  products?: { name: string; slug: string }[]
+  product_count?: number
 }
 
 export interface SearchBrandResult {
@@ -32,7 +44,7 @@ export interface SearchBrandResult {
 
 export interface SearchResults {
   products: SearchProductResult[]
-  models: SearchModelResult[]
+  parts: SearchPartResult[]
   brands: SearchBrandResult[]
 }
 
@@ -57,5 +69,17 @@ export const SEARCH_MAX_QUERY_LENGTH = 100
 // Factory (not a shared constant) so each caller gets its own arrays — a shared
 // object could be mutated by one caller and leak across requests.
 export function emptySearchResults(): SearchResults {
-  return { products: [], models: [], brands: [] }
+  return { products: [], parts: [], brands: [] }
 }
+
+// A product offered by the zero-result "which product is it?" picker (issue
+// #320), from the search_product_candidates RPC. Any product, with or without
+// a published part.
+export interface ProductCandidate {
+  id: string
+  name: string
+  slug: string
+  brand_name: string | null
+}
+
+export const PRODUCT_CANDIDATES_LIMIT = 6

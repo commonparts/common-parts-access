@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { fetchProducts, createProduct } from '@/lib/supabase/queries/products'
-import { trimmedString } from '@/lib/utils/validation'
+import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
+import { isValidUuid, trimmedString } from '@/lib/utils/validation'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
@@ -13,7 +14,38 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search') || undefined
     const limit = Number.parseInt(searchParams.get('limit') || '100', 10) || 100
 
-    const products = await fetchProducts({ brandId, categoryId, includeDescendants, search, limit })
+    // `ids` resolves specific products by id — the publish tools use it to
+    // name the products a draft links to, which can span brands since #315.
+    //
+    // It is an exact lookup, so the list is taken whole or refused: dropping
+    // the malformed entries would report a corrupted link list as a success,
+    // and an empty `ids=` would fall through to the unfiltered catalog. The
+    // cap rejects rather than truncates for the same reason.
+    const idsParam = searchParams.get('ids')
+    let ids: string[] | undefined
+
+    if (idsParam !== null) {
+      const tokens = idsParam.split(',').map((id) => id.trim())
+      if (tokens.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
+        return NextResponse.json(
+          { error: `Too many product ids (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` },
+          { status: 400 },
+        )
+      }
+      if (!tokens.every(isValidUuid)) {
+        return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
+      }
+      ids = tokens
+    }
+
+    const products = await fetchProducts({
+      brandId,
+      categoryId,
+      includeDescendants,
+      search,
+      limit,
+      ids,
+    })
     return NextResponse.json({ products })
   } catch (error) {
     console.error('Failed to fetch products', error)
@@ -51,6 +83,17 @@ export async function POST(request: NextRequest) {
     if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     if (!brandId) return NextResponse.json({ error: 'Brand is required' }, { status: 400 })
     if (!categoryId) return NextResponse.json({ error: 'Category is required' }, { status: 400 })
+
+    // Duplicate guard: a case/spacing variant of an existing product must link
+    // to that product, not create a sibling. 409 carries the existing record
+    // so the client can select it instead.
+    const existing = await findProductByNormalizedName(brandId, name)
+    if (existing) {
+      return NextResponse.json(
+        { error: 'A product with this name already exists for this brand', product: existing },
+        { status: 409 }
+      )
+    }
 
     const product = await createProduct({
       name,

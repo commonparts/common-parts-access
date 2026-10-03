@@ -1,0 +1,55 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { deletePart } from '@/lib/supabase/queries/part'
+import { isValidSlug } from '@/lib/utils/slug'
+
+// GET /api/parts/[slug] - Get part by slug
+// Not yet implemented — tracked in GitHub issues
+export async function GET(
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
+) {
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
+}
+
+// PUT /api/parts/[slug] - Update part
+// Not yet implemented — tracked in GitHub issues
+export async function PUT(
+  _request: NextRequest,
+  _context: { params: Promise<{ slug: string }> }
+) {
+  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
+}
+
+// DELETE /api/parts/[slug] - Delete part (authenticated owner only)
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ slug: string }> }
+) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { slug } = await context.params
+    if (!isValidSlug(slug)) {
+      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    }
+
+    await deletePart(slug, user.id)
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'PART_NOT_FOUND') {
+        return NextResponse.json({ error: 'Not found' }, { status: 404 })
+      }
+      if (error.message === 'FORBIDDEN') {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+    console.error('Failed to delete part:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

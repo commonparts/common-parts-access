@@ -42,7 +42,7 @@ export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
     key: "publish-part",
     type: "link",
     label: "Publish a part",
-    href: "/upload",
+    href: "/publish",
     icon: UploadCloud,
   },
   {

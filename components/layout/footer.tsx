@@ -16,7 +16,7 @@ const footerColumns: FooterColumn[] = [
     title: "Platform",
     links: [
       { label: "Browse parts", href: "/browse" },
-      { label: "Publish a part", href: "/upload" },
+      { label: "Publish a part", href: "/publish" },
       { label: "Common Parts", href: "https://commonparts.org" },
       { label: "GitHub", href: "https://github.com/commonparts" },
     ],
@@ -45,8 +45,8 @@ export function Footer() {
               <Logo showInterface={false} />
             </div>
             <p className="max-w-[280px] text-caption leading-normal text-text-secondary">
-              Infrastructure for digital spare parts. Standards, protocols, and
-              the public registry.
+              Infrastructure for digital spare parts. An open, public registry of
+              replacement parts.
             </p>
           </div>
 

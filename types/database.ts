@@ -66,6 +66,8 @@ export interface Product {
   discontinued?: boolean;
   image_url?: string | null;
   parts_count?: number; // denormalized count of published parts (trigger-maintained)
+  open_requests_count?: number; // denormalized count of open part requests (trigger-maintained)
+  is_listed?: boolean; // generated: parts_count > 0 or open_requests_count > 0, the public listing rule
   created_at?: string;
   updated_at?: string;
 }
@@ -83,7 +85,7 @@ export interface PartRequest {
   user_id?: string | null;
   page_url?: string | null;
   status: PartRequestStatus;
-  fulfilled_by_model_id?: string | null;
+  fulfilled_by_part_id?: string | null;
   created_at?: string;
 }
 
@@ -95,10 +97,10 @@ export interface PartRequestCount {
 }
 
 // ============================================================================
-// Model JSONB column shapes
+// Part JSONB column shapes
 // ============================================================================
 
-export interface ModelDimensions {
+export interface PartDimensions {
   length?: number;
   width?: number;
   height?: number;
@@ -107,39 +109,53 @@ export interface ModelDimensions {
 
 export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
 
-export interface ModelPrintSettings {
+export interface PartPrintSettings {
   layer_height?: number; // mm, non-negative
   infill?: number;       // 0–100 %
   supports?: SupportType;
 }
 
 // ============================================================================
-// Model enum types — declared before Model so the interface can reference them
+// Part enum types — declared before Part so the interface can reference them
 // ============================================================================
 
-export type ModelStatus = 'draft' | 'published' | 'archived';
-export type ModelOriginType = 'original' | 'curated' | 'manufacturer';
-export type ModelVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
-export type ModelFileHostingType = 'hosted' | 'link_out';
+export type PartStatus = 'draft' | 'published' | 'archived';
 
-export interface Model {
+// The six blocking criteria of curation checklist v1 (Flow P3 §4.3.3).
+// Stored on parts.curation_checklist as a partial {criterion: boolean} map;
+// all six must be true for a curated part to be publishable.
+export type CurationCriterionKey =
+  | 'eligibility'
+  | 'product_target'
+  | 'license'
+  | 'file'
+  | 'attribution'
+  | 'duplicate';
+
+export type CurationChecklist = Partial<Record<CurationCriterionKey, boolean>>;
+export type PartOriginType = 'original' | 'curated' | 'manufacturer';
+export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+export type PartFileHostingType = 'hosted' | 'link_out';
+
+export interface Part {
   id: string;
   name: string;
   slug: string;
   description?: string | null;
   user_id: string;
-  brand_id?: string | null;
+  // No brand_id: a part's brands are the distinct brands of the products it
+  // fits, read through part_products (issue #315).
   category_id?: string | null;
-  
+
   // Part details
   part_name?: string | null;
   part_number?: string | null;
   material?: string | null;
   color?: string | null;
-  dimensions?: ModelDimensions | null;
+  dimensions?: PartDimensions | null;
   
   // 3D Print settings
-  print_settings?: ModelPrintSettings | null;
+  print_settings?: PartPrintSettings | null;
   estimated_print_time?: number | null; // minutes
   estimated_material_usage?: number | null; // grams (stored as DECIMAL)
   
@@ -148,17 +164,17 @@ export interface Model {
   images?: string[] | null; // Array of image URLs (text[])
   
   // Status and metrics
-  status?: ModelStatus;
+  status?: PartStatus;
   download_count?: number;
   view_count?: number;
   like_count?: number;
   
   // Origin tracking
-  origin_type: ModelOriginType;
+  origin_type: PartOriginType;
   source_url?: string | null;
   source_platform?: string | null;   // FK to source_platforms.slug
   source_published_at?: string | null;
-  file_hosting_type?: ModelFileHostingType;
+  file_hosting_type?: PartFileHostingType;
 
   // Attribution (required when origin_type = 'curated')
   original_author?: string | null;
@@ -169,27 +185,49 @@ export interface Model {
   source_license_id?: string | null;
 
   // Validation
-  verification_status: ModelVerificationStatus;
-  makes_count?: number;
+  verification_status: PartVerificationStatus;
+  makes_count?: number; // every print report on the part, trigger-maintained (#318)
 
   // Metadata
   tags?: string[] | null;
   instructions?: string | null;
   notes?: string | null;
-  
+
+  // Curation (Flow P3) — non-blocking flags, the blocking legal-review flag,
+  // and the blocking-checklist state. Maintained by the internal curation tool.
+  needs_verification?: boolean;
+  needs_print_settings?: boolean;
+  needs_photo?: boolean;
+  needs_instructions?: boolean;
+  needs_category?: boolean;
+  needs_legal_review?: boolean;
+  legal_review_justification?: string | null;
+  curation_checklist?: CurationChecklist;
+
+  // Public upload flow (origin_type = 'original') — the contributor's
+  // declaration that they created the part and may publish it. Blocking
+  // condition of the upload publish gate.
+  originality_attested?: boolean;
+  originality_attested_at?: string | null;
+
   created_at?: string;
   updated_at?: string;
 }
 
-// Junction table model_products: links a model (part) to a compatible product.
-export interface ModelProduct {
-  model_id: string;
-  product_id: string;
+// Rejection traceability (Flow P3 §4.3.3): a rejected source is recorded with
+// its reason and failed criteria, independently of any part row.
+export interface CurationRejection {
+  id: string;
+  source_url: string;
+  reason: string;
+  failed_criteria: CurationCriterionKey[];
+  created_by: string;
+  created_at?: string;
 }
 
-export interface ModelFile {
+export interface PartFile {
   id: string;
-  model_id: string;
+  part_id: string;
   filename: string; // max 255 chars
   original_filename: string; // max 255 chars
   file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
@@ -201,30 +239,26 @@ export interface ModelFile {
   created_at?: string;
 }
 
-export interface ModelLike {
+export interface PartLike {
   id: string;
   user_id: string;
-  model_id: string;
+  part_id: string;
   liked_at?: string;
 }
 
-export interface ModelDownload {
+export interface PartDownload {
   id: string;
-  user_id?: string | null;
-  model_id: string;
+  part_id: string;
   file_id: string | null; // Nullable for archive/ZIP downloads
-  ip_hash?: string | null; // SHA-256 of IP + UA
-  user_agent?: string | null;
   downloaded_at?: string;
 }
 
-export interface ModelComment {
+export interface PartComment {
   id: string;
-  model_id: string;
+  part_id: string;
   user_id: string;
   parent_id?: string | null; // For nested comments
   content: string;
-  rating?: number | null; // 1-5
   created_at?: string;
   updated_at?: string;
 }
@@ -240,9 +274,9 @@ export interface Collection {
   updated_at?: string;
 }
 
-export interface CollectionModel {
+export interface CollectionPart {
   collection_id: string;
-  model_id: string;
+  part_id: string;
   added_at?: string;
 }
 
@@ -250,7 +284,7 @@ export interface CollectionModel {
 // Enhanced Types with Relations - Used in queries and API responses
 // ============================================================================
 
-export interface ModelWithRelations extends Model {
+export interface PartWithRelations extends Part {
   user_profiles?: UserProfile | UserProfile[];
   brands?: Brand | Brand[];
   categories?: Category | Category[];
@@ -262,11 +296,11 @@ export interface ModelWithRelations extends Model {
 // Database Filter Types
 // ============================================================================
 
-export interface ModelFilters {
+export interface PartFilters {
   category_id?: string;
   brand_id?: string;
   product_id?: string;
-  status?: ModelStatus;
+  status?: PartStatus;
   user_id?: string;
   tags?: string[];
 }
