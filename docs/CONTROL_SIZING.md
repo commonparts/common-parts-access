@@ -30,8 +30,8 @@ Use this reference when adding or updating interactive controls so they stay vis
 - States: drag-over uses action tint; disabled should reduce opacity and block pointer events.
 
 ## Navbar & Hero
-- Navbar auth/upload/logout buttons: default button size.
-- Hero buttons (upload CTA, Reset/Find parts): default button size; keep contextual colors only.
+- Navbar auth / "Publish a part" / logout buttons: default button size.
+- Hero: holds only the global search bar (input + attached submit button), which follows the input recipe and the default button size.
 
 ## Quick Checklist for New Controls
 - [ ] Use `px-md py-sm` and `rounded-lg` for touch targets.

@@ -1,27 +1,26 @@
 # Hero Section (Home)
 
+The home page (`app/page.tsx`) is `Navbar` → `Hero` → `FeaturedParts` → `Footer`. Since issue #308 the hero is a single centred column built around the global search bar; the earlier two-lane layout (publish lane + product-picker search card) was removed.
+
 ## Layout
-- Two-column grid: left intro/upload lane, right product search card; stacks on small screens.
-- Background gradient and grid lines live on the section; rounding handled by the parent card around the hero.
-- Icons (UploadCloud, Search) are absolutely positioned at the top-right of their cards with matching offsets.
+- `Section` → `Container size="xl"` → `Grid columns={12}`, with one centred column capped at `max-w-xl`.
+- Headline: "Repair starts with access to the right part." (`text-heading-lg`).
+- Subheading: the canonical one-line definition of Common Parts Access (`text-body text-text-secondary`).
+- Below the copy: `SearchBar` with the placeholder "Search a brand, product or reference...".
 
-## Upload Lane
-- CTA: "Publish a part" links to `/publish` via the shared Button component.
-- Purely navigational; no form state. Uses the `use client` hero wrapper.
+## Search bar
+- `components/layout/search-bar.tsx`, in its default grouped-autocomplete mode.
+- From 2 characters (`SEARCH_MIN_QUERY_LENGTH` in `hooks/use-search-autocomplete.ts`), it queries `GET /api/search` and shows grouped suggestions (products, parts, brands) with a "see all results" footer.
+- Keyboard navigation follows the `aria-activedescendant` combobox pattern: DOM focus stays on the input, options are not tab stops.
+- Submitting goes to `/search?q=…`; choosing a suggestion goes straight to its page. Search behaviour is described in [SEARCH.md](./SEARCH.md).
 
-## Search Card
-- Uses `usePartUploadFormState` to share brand/category/product state with the upload flow.
-- Brand combobox filters products; selecting a product can backfill category path via `setCategoryPathFromCategoryId`.
-- Product selection is required to enable the "Find parts" submit button; submit pushes to `/browse?productId={id}`.
-- Reset clears brand/product/category selections and search terms, resetting dependent combobox state.
+## Featured parts
+- `components/part/featured-parts.tsx` fetches `GET /api/parts/featured`, which returns the 8 most downloaded published parts (`fetchFeaturedPartCards(8)`), rendered as part cards.
 
-## Styling Notes
-- Combobox inputs use dark-friendly classes via `inputClassName` for contrast on the gradient background.
-- Buttons use the orange primary styles and rounded-lg from the shared Button component.
-- Spacing and alignment are centered within each card to keep the upload and search lanes visually balanced.
+## Not in the hero
+- The "Publish a part" call to action lives in the navbar, mobile menu, footer and profile menu (all targeting `/publish`), not in the hero.
 
-## Key Files
+## Key files
 - Hero component: `components/layout/hero.tsx`
-- Shared form state: `hooks/use-part-upload-form-state.ts`
-- Combobox UI: `components/ui/combobox.tsx`
-- Button UI: `components/ui/button.tsx`
+- Search bar: `components/layout/search-bar.tsx`, `hooks/use-search-autocomplete.ts`
+- Featured parts: `components/part/featured-parts.tsx`, `app/api/parts/featured/route.ts`

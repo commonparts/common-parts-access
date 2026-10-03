@@ -14,8 +14,6 @@ Common Parts Access is a structured registry where spare part models can be publ
 
 The platform is currently in active development (Phase 0 — MVP). It is functional and live.
 
-Common Parts Access is an official interface of the [Common Parts](https://commonparts.org) project — an infrastructure initiative for standardizing and distributing digital spare parts.
-
 ---
 
 ## Tech stack
@@ -23,7 +21,7 @@ Common Parts Access is an official interface of the [Common Parts](https://commo
 - **Framework:** Next.js (App Router) · TypeScript
 - **Database:** Supabase (PostgreSQL + Auth + Edge Functions)
 - **Deployment:** Railway
-- **CI:** GitHub Actions (type check + lint on push to `dev`, and on every PR)
+- **CI:** GitHub Actions (type check, lint and Vitest with a coverage threshold, on push to `dev` and on every PR)
 
 ---
 

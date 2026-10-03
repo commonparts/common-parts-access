@@ -3,6 +3,8 @@
 ## Overview
 This document covers how Common Parts Access tracks part likes via a RESTful endpoint plus database constraints/triggers that keep `parts.like_count` in sync.
 
+> **Hidden by default (issue #322).** Likes, comments and collections sit behind the `NEXT_PUBLIC_ENABLE_SOCIAL_FEATURES` flag (`SOCIAL_FEATURES_ENABLED` in `lib/utils/feature-flags.ts`), which is off unless set to exactly `"true"`. While it is off, the part page hides the like count and Like button, and `/browse` drops the "Most liked" sort. The table, data, trigger and `/api/parts/[slug]/likes` route are unchanged. Being a `NEXT_PUBLIC_` variable, the flag is inlined at build time: changing it needs a rebuild.
+
 ## API Contract
 - **Endpoint:** `/api/parts/[slug]/likes`
 - **Methods:**
@@ -22,12 +24,12 @@ This document covers how Common Parts Access tracks part likes via a RESTful end
 5. Database trigger updates `parts.like_count` after insert/delete.
 6. API returns the optimistic like count (`baseLikes +/- 1`) along with the viewer state.
 
-## Data Part
+## Data Model
 - Table: `part_likes`
   - `id` (PK)
   - `part_id` (FK -> `parts.id`)
-  - `user_id` (FK -> `auth.users.id`)
-  - `created_at` timestamp
+  - `user_id` (FK -> `user_profiles.id`, `ON DELETE NO ACTION`)
+  - `liked_at` timestamp
 - Recommended constraints/indexes:
   - Unique index on (`part_id`, `user_id`) to enforce one like per user per part
   - Index on `user_id` for quick lookups

@@ -16,10 +16,12 @@ Container widths are defined in `tailwind.config.ts` via `max-w-container-sm/md/
 
 | Token           | Max width | Recommended use              |
 | --------------- | --------- | ---------------------------- |
-| `container-sm`  | 640px     | Auth, small forms            |
-| `container-md`  | 768px     | Content pages                |
-| `container-lg`  | 1024px    | Marketplace listings         |
-| `container-xl`  | 1280px    | Dashboards / wide surfaces   |
+| `container-sm`  | 480px     | Auth, small forms            |
+| `container-md`  | 680px     | Content pages                |
+| `container-lg`  | 1100px    | Listings (default size)      |
+| `container-xl`  | 1200px    | Dashboards / wide surfaces   |
+
+`Container` defaults to `lg` and adds `mx-auto w-full px-md`.
 
 Use the `Container` component instead of ad-hoc `max-w-*`:
 
@@ -45,7 +47,7 @@ import { Grid } from "@/components/layout/grid"
 
 Allowed column sets: `12`, `6`, `4`. Use responsive `col-span-*` only within grid contexts; avoid raw `grid-cols-*` elsewhere.
 
-Gutters use spacing tokens; default is `gap-md`. Adjust with `className` (e.g., `gap-lg`) when needed.
+Gutters use spacing tokens; default is `gap-lg`. Adjust with `className` (e.g., `gap-lg`) when needed.
 
 ## Section Wrapper
 Use `Section` to normalize vertical rhythm:
@@ -58,7 +60,7 @@ import { Section } from "@/components/layout/section"
 </Section>
 ```
 
-`Section` applies `py-xl` by default; override or extend via `className` sparingly.
+`Section` applies `py-2xl` by default; override or extend via `className` sparingly.
 
 ## Approved Page Patterns
 Use the shared scaffold: `<Navbar />` → `<main className="flex-1">` with `Section` + `Container` + `Grid` as needed → `<Footer />`.
