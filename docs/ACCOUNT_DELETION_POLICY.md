@@ -1,6 +1,6 @@
 # Account Deletion & Data Retention Policy
 
-> **Implementation status (October 2026): the anonymization described below is not implemented.** `DELETE /api/users` deletes the auth user, which cascades to `user_profiles`. But `parts.user_id`, `part_likes.user_id`, `part_comments.user_id`, `collections.user_id` and `curation_rejections.created_by` reference `user_profiles` with `ON DELETE NO ACTION`, so deleting an account that owns any of these rows fails, and the route answers 500. Only `feedback`, `part_requests` and `print_reports` set `user_id` to null. If the admin client is not configured, the route answers 503 and asks the user to email contact@commonparts.org. The privacy page (`app/(legal)/privacy/page.tsx`) states the policy below as current behaviour.
+> **Implementation status (October 2026): implemented (issue #178), effective once migration `20261003120000_account_deletion_anonymize.sql` is applied.** `DELETE /api/users` runs `deleteAccount()` (`lib/account/deletion.ts`), in this order: it deletes the user's unpublished parts (drafts and archived) with their files, deletes the avatar, releases ownership of the user's remaining Storage objects (`release_storage_ownership()`; Supabase Auth refuses to delete a user who owns Storage objects), then deletes the auth user. `user_profiles` cascades from `auth.users`. `parts.user_id`, `part_likes.user_id`, `part_comments.user_id` and `curation_rejections.created_by` are then set to null, collections are deleted, and `feedback`, `part_requests` and `print_reports` already set `user_id` to null. A part with no owner is still served; its page shows no "Created by" card and nobody can edit it except through the service role. Each step can be retried, so a failed deletion answers 500 and can be run again. If the admin client is not configured, the route answers 503 and asks the user to email contact@commonparts.org.
 
 ## Overview
 At Common Parts Access, we respect your right to control your data. When you delete your account, we follow a clear policy to protect your privacy while maintaining the integrity of the platform and its content.
@@ -13,12 +13,13 @@ At Common Parts Access, we respect your right to control your data. When you del
 
 ### 2. Parts and Uploaded Content
 - Your published parts and associated files remain available on the platform to benefit the community, unless you explicitly request their removal before deleting your account.
-- The ownership of your parts is anonymized: your user information is removed, and parts are marked as "orphaned" or attributed to a "deleted user."
+- The ownership of your parts is anonymized: the link to your account is removed, and the parts are no longer attributed to anyone. A curated part keeps crediting its original author at the source.
+- Parts you had not published (drafts and archived parts) are deleted, with their files.
 - No personal information is retained in connection with these parts.
 
 ### 3. Likes, Views, and History
-- Your likes and other activity history are retained for aggregate statistics and platform integrity.
-- All such records are anonymized: your user ID is removed or set to null, so they cannot be linked back to you.
+- Your likes, comments and other activity history are retained for aggregate statistics and platform integrity.
+- All such records are anonymized: your user ID is set to null, so they cannot be linked back to you.
 - Views and downloads are anonymous from the start: they never record who viewed or downloaded a part (issue #324).
 
 ### 4. Collections and Saved Items

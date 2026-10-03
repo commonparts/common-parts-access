@@ -154,7 +154,7 @@ export default function PrivacyPage() {
               resolve disputes.
             </p>
             <p className="text-text-secondary">
-              Content you have published to the platform (spare part models and associated metadata) will be anonymized and remain
+              Content you have published to the platform (spare parts and their files and metadata) will be anonymized and remain
               available after account deletion, unless you request full
               removal.
             </p>

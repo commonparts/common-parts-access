@@ -28,7 +28,7 @@ This document covers how Common Parts Access tracks part likes via a RESTful end
 - Table: `part_likes`
   - `id` (PK)
   - `part_id` (FK -> `parts.id`)
-  - `user_id` (FK -> `user_profiles.id`, `ON DELETE NO ACTION`)
+  - `user_id` (nullable FK -> `user_profiles.id`, `ON DELETE SET NULL`: a deleted account's likes stay, anonymized, so `like_count` is unchanged; #178)
   - `liked_at` timestamp
 - Recommended constraints/indexes:
   - Unique index on (`part_id`, `user_id`) to enforce one like per user per part

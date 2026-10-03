@@ -39,7 +39,7 @@ A spare part record (renamed from `models` in #314).
 | Group | Columns |
 |---|---|
 | Identity | `id`, `name`, `slug` (unique), `description`, `part_name`, `part_number`, `tags`, `category_id` |
-| Owner | `user_id` → `user_profiles` (the account that added it) |
+| Owner | `user_id` → `user_profiles` (the account that added it); null once that account is deleted (`ON DELETE SET NULL`, #178) |
 | Lifecycle | `status`: `draft` / `published` / `archived` |
 | Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` |
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
@@ -119,7 +119,7 @@ Demand for a part on a product ("Request this part"). `product_id`, `raw_query`,
 Zero-result searches submitted on `/search` (#320): `raw_query`, `normalized_query` (generated), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role.
 
 ### `curation_rejections`
-Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by`.
+Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by` (nullable, `ON DELETE SET NULL`).
 
 ---
 
@@ -129,9 +129,9 @@ Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`
 |---|---|---|
 | `part_views` | `part_id`, `viewed_at` | None (#324). See [PART_VIEWS.md](./PART_VIEWS.md). |
 | `part_downloads` | `part_id`, `file_id` (null for archive), `downloaded_at` | None (#324). See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md). |
-| `part_likes` | `user_id`, `part_id`, `liked_at` | User id. UI hidden (#322). See [PART_LIKES.md](./PART_LIKES.md). |
-| `part_comments` | `user_id`, `part_id`, `parent_id`, `content` | User id. No UI. |
-| `collections`, `collection_parts` | User collections of parts | User id. No UI. |
+| `part_likes` | `user_id`, `part_id`, `liked_at` | User id, null once the account is deleted. UI hidden (#322). See [PART_LIKES.md](./PART_LIKES.md). |
+| `part_comments` | `user_id`, `part_id`, `parent_id`, `content` | User id, null once the account is deleted. No UI. |
+| `collections`, `collection_parts` | User collections of parts | User id; deleted with the account. No UI. |
 
 ---
 
@@ -140,7 +140,15 @@ Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`
 - `user_profiles`: `id` (= `auth.users.id`, cascade delete), `username`, `display_name`, `bio`, `avatar_url`, `website_url`, `location`, `reputation_score`, `verified_maker`. Created by the `on_auth_user_created` trigger, see [USER_PROFILE_SETUP.md](./USER_PROFILE_SETUP.md).
 - `feedback`: entry point of the agent pipeline, see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase).
 
-Foreign keys to `user_profiles` from `parts`, `part_likes`, `part_comments`, `collections` and `curation_rejections` are `ON DELETE NO ACTION`; see the status note in [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
+On account deletion (#178), foreign keys to `user_profiles` behave as follows:
+
+| Column | On delete |
+|---|---|
+| `parts.user_id`, `part_likes.user_id`, `part_comments.user_id`, `curation_rejections.created_by` | `SET NULL` (published parts stay, anonymized) |
+| `feedback.user_id`, `part_requests.user_id`, `print_reports.user_id` | `SET NULL` |
+| `collections.user_id` | `CASCADE` (`collection_parts` cascades from `collections`) |
+
+`DELETE /api/users` first deletes the user's unpublished parts and their files, and the avatar, then calls `release_storage_ownership(p_user_id)` (security definer, service role only), which clears `owner` / `owner_id` on the user's remaining Storage objects: Supabase Auth refuses to delete a user who owns Storage objects. See [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
 
 ---
 
@@ -154,4 +162,5 @@ Foreign keys to `user_profiles` from `parts`, `part_likes`, `part_comments`, `co
 | `fetch_browse_nav`, `fetch_category_page`, `fetch_brand_nav` | Navigation aggregates | [BROWSE_NAVIGATION.md](./BROWSE_NAVIGATION.md) |
 | `fetch_part_request_counts` | Open demand per product | [CURATION_TOOL.md](./CURATION_TOOL.md) |
 | `submit_print_report` | The only write path for print reports | [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) |
+| `release_storage_ownership` | Clears Storage ownership before an account is deleted (service role only) | [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md) |
 | `normalize_product_reference`, `fold_search_text` | Shared normalization rules | [SEARCH.md](./SEARCH.md) |
