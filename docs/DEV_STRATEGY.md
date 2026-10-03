@@ -72,7 +72,7 @@ CI/CD Pipeline (GitHub Actions → Railway)
 ```
 main        → production (Railway production environment)
 staging     → pre-production (Railway staging environment)
-dev         → integration branch (push directly OK)
+dev         → integration branch (changes land through PRs only)
 feature/xxx → short-lived feature branches → PR to dev
 ```
 
@@ -147,13 +147,13 @@ This is the full lifecycle of a change, from issue to production.
 11. Railway deploys the PR environment automatically
 12. When ready: open PR dev → staging
 13. CI + Copilot review run on the PR
-14. Human merges dev → staging  (squash)
+14. Human merges dev → staging  (merge commit)
          ↓
 15. Railway deploys staging automatically
 16. Human runs staging validation checklist (see below)
 17. When validated: open PR staging → main
 18. CI + Copilot review run on the PR
-19. Human merges staging → main  (squash)
+19. Human merges staging → main  (merge commit)
          ↓
 20. Railway deploys production automatically
 ```
@@ -176,8 +176,8 @@ This is the only gate between staging and production.
 
 **Core flows**
 - [ ] Sign up and login work correctly
-- [ ] Model browse page loads without errors
-- [ ] Model detail page loads for a published model
+- [ ] Browse page loads without errors
+- [ ] Part detail page loads for a published part
 - [ ] Upload flow works end to end (if applicable to this PR)
 
 **CI & QA**
@@ -340,6 +340,10 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ## Database Schema (Supabase)
 
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
+
+The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
+
 **`feedback`** — user-submitted feedback, entry point of the pipeline
 
 | Column | Type | Notes |
@@ -370,6 +374,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
 - GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
+- Schema changes version-controlled in `supabase/migrations/`, applied by the human to the single production database
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 
@@ -431,13 +436,6 @@ RLS: anyone can insert, users can read their own rows only.
 
 A public-facing roadmap page at `access.commonparts.org/roadmap`. To be built and maintained by the agents after the PM session produces a structured backlog.
 
-### 🔲 Supabase Migrations Workflow
-
-Currently all schema changes are made via the Supabase SQL Editor UI. To formalise:
-- Add `supabase/migrations/` folder to repo
-- Version-control all schema changes as `.sql` files
-- Document the process for applying migrations
-
 ### 🔲 Error Monitoring
 
 - Connect Railway runtime logs to a structured alerting system
@@ -470,8 +468,8 @@ Native to the human's existing VS Code + Copilot workflow. MCP connections to Gi
 **Why Copilot code review for Agent QA?**
 Native to GitHub, agentic architecture since March 2026, configurable via a single instructions file, automatic on every PR. Zero infrastructure to maintain.
 
-**Why squash merge only on `main` and `staging`?**
-One commit per feature on the main branches. History stays readable. Changelogs can be generated cleanly.
+**Why squash merges into `dev` and merge commits for promotions?**
+Each feature lands on `dev` as one squashed commit, so history stays readable and release notes list one line per change. Promotions (`dev` → `staging` → `main`) use merge commits: a squash would leave `staging` and `main` without `dev`'s history, and every later promotion would conflict.
 
 **Why 0 required approvals on PRs?**
 Solo project. The goal of PR protection is forcing CI + Copilot review to run. The human reviews and merges manually anyway.
@@ -489,25 +487,33 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
 │       ├── ci.yml                  # Lint + type check + tests
-│       └── docs.yml                # Agent Docs workflow (disabled)
+│       ├── docs.yml                # Agent Docs workflow (disabled)
+│       └── label-merged-issues.yml # Labels issues referenced by merged PRs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
+│   ├── pre-commit
 │   └── pre-push                    # Block direct push to main/staging
-├── supabase/
-│   └── functions/
-│       └── triage-feedback/
-│           └── index.ts            # Agent Triage edge function
-├── docs/
-│   └── DEV_STRATEGY.md             # This document
-├── lib/
-│   └── supabase/
-│       └── queries/
-│           └── feedback.ts         # Feedback query layer
 ├── app/
-│   └── layout.tsx                  # FeedbackButton mounted here
-├── components/
-│   └── feedback/
-│       ├── feedback-form.tsx       # Feedback form component
-│       └── feedback-button.tsx     # Floating button
+│   ├── (auth)/                     # Sign-up, login, password, account deletion
+│   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
+│   ├── (legal)/                    # Privacy, terms, legal notice
+│   ├── (public)/                   # Browse, brands, categories, product, parts, search
+│   ├── api/                        # API routes (no Server Actions)
+│   ├── layout.tsx                  # FeedbackButton mounted here
+│   ├── robots.ts / sitemap.ts      # Crawler entry points
+├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
+├── constants/
+├── design-tokens/                  # Token sources (edit only with approval)
+├── hooks/
+├── lib/
+│   ├── curation/ publish/ upload/  # Publish-flow logic per track
+│   ├── storage/                    # Upload and download helpers
+│   ├── supabase/queries/           # All Supabase queries, one file per domain
+│   └── utils/                      # Validators, formatters, SEO, feature flags, …
+├── supabase/
+│   ├── functions/triage-feedback/  # Agent Triage edge function
+│   └── migrations/                 # Version-controlled schema changes
+├── types/
+├── docs/                           # Technical documentation (index: docs/README.md)
 └── commitlint.config.mjs           # Commit convention config
 ```

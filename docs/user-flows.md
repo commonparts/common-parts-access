@@ -7,6 +7,23 @@
 
 ---
 
+## Implementation status (October 2026, v1.2.0)
+
+This document is the July 2026 plan and is kept as written below. What shipped, and where it differs from the plan:
+
+- **P1 — Part page and download: built.** `/parts/[slug]` (#258), anonymous downloads with a license notice (#272, [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md)), SEO metadata with `3DModel` + `BreadcrumbList` JSON-LD (#273, [SEO.md](./SEO.md)).
+  - *Differs:* `compatibility_status` (`declared` / `verified`) was removed when products were flattened (#264). Fit evidence is now `part_products.evidence_level` (`declared` / `confirmed` / `disputed`), derived from print reports (#317, #318). See [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md).
+  - *Not built:* the "Report a problem" micro-flow (§2.5); `feedback.type` has no `report` value. An unpublished part returns 404, not 410 (§2.4).
+- **P2 — Device-based navigation: built.** `/browse` hub (#274), hierarchical category drill-down on `/categories/[slug]` (#276, not in the original plan), `/brands/[brand]` and `/brands/[brand]/[category]`, sitemap and robots (#257). See [BROWSE_NAVIGATION.md](./BROWSE_NAVIGATION.md).
+  - *Differs:* the product route is `/product/[slug]` (singular). Navigation only lists entities holding a listed product: one with a published part (#312) or an open part request (#321). Direct URLs of other brands and categories still render with an availability notice.
+- **P3 — Curation tool: built** (#280, #283–#287), then merged with the contributor upload into the single `/publish` flow (#301–#303). See [CURATION_TOOL.md](./CURATION_TOOL.md) and [PUBLISH_FLOW.md](./PUBLISH_FLOW.md).
+  - *Differs:* brands are read-only in the app (curated in the Supabase dashboard); the flow does not create brands. Products can be created inline, guarded against normalized duplicates (#279).
+- **Search:** search by brand, commercial name and manufacturer reference (#319); zero-result searches are logged and visitors can attach an unknown reference to a product (#320). See [SEARCH.md](./SEARCH.md).
+- **Open decisions (§5):** 1 settled (#258, #314). 3 partly settled: Printables metadata is extracted server-side through its public API; other platforms have no extractor pending the ToS decision. 4 settled: the archive is generated on the fly.
+- **Deferred flows (§6):** public publishing shipped as the original track of `/publish` (#294, #301–#303). Likes, comments and collections are hidden behind a feature flag (#322).
+
+---
+
 ## 0. Related work: the search-flow batch
 
 The universal search flow has its own issue batch, which this document builds on and does not respecify. That batch owns:

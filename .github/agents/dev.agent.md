@@ -475,7 +475,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `feedback` | User feedback — entry point of the agent pipeline |
 
 All tables have RLS enabled. Always check policies before inserting or selecting.
-Never add a new table without asking first — describe the schema and let the human create it via the Supabase SQL editor.
+Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`; the human applies them. There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
 
 ---
 
@@ -502,7 +502,7 @@ If you are unsure about:
 - **Architecture** — ask before implementing
 - **Design** — check `docs/DESIGN_SYSTEM.md` and existing components first, then ask
 - **Scope** — confirm whether related issues should be fixed in the same PR or separately
-- **Database** — never run migrations without explicit instruction; describe the SQL and let the human run it via the Supabase SQL editor
+- **Database** — never run migrations without explicit instruction; write the migration file and let the human apply it
 
 When in doubt, propose and wait for confirmation. A wrong implementation costs more than a short question.
 

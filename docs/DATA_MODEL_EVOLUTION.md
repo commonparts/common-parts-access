@@ -1,5 +1,7 @@
  # Common Parts Access — Data Model Evolution
 
+> **Historical document.** It records how the schema evolved to support curation. The current schema is described in [DATA_MODEL.md](./DATA_MODEL.md).
+>
 > **Naming note (issue #314, September 2026):** the `models` table and its `model_*` satellites described below were renamed to `parts` / `part_*` (with `model_id` → `part_id`) by migration `20260922130000_rename_models_to_parts.sql`. The SQL in this document is kept as written at the time; read `models` as `parts`.
 
 ## Context
