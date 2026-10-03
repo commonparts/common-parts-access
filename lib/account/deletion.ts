@@ -1,4 +1,5 @@
 import { STORAGE_BUCKETS } from '@/constants/app'
+import { chunk } from '@/lib/utils/arrays'
 
 /**
  * Account deletion (issue #178), as described in
@@ -14,7 +15,8 @@ export const UNPUBLISHED_PART_BATCH_SIZE = 100
 /**
  * Upper bound on rounds of unpublished-part deletion. Each round deletes the
  * rows it fetched, so the loop ends on its own; the cap only stops a delete
- * that silently removes nothing from looping forever.
+ * that silently removes nothing from looping forever. Reaching the cap is
+ * not a failure by itself: only parts still listed after it are.
  */
 export const MAX_UNPUBLISHED_PART_BATCHES = 50
 
@@ -40,7 +42,11 @@ export interface AccountDeletionSteps {
   /** Full paths of the objects directly under a folder (sub-folders excluded). */
   listStorageObjects(folder: StorageFolder): Promise<string[]>
   removeStorageObjects(bucket: StorageBucket, paths: string[]): Promise<void>
-  /** Deletes the given unpublished parts of the user; their child rows cascade. */
+  /**
+   * Deletes the given parts of the user; their child rows cascade. Deletes
+   * the listed ids whatever their status now: a draft published after it was
+   * listed has already lost its files, so it must not survive.
+   */
   deleteParts(userId: string, partIds: string[]): Promise<void>
   /** Clears the owner of the user's remaining Storage objects; returns the count. */
   releaseStorageOwnership(userId: string): Promise<number>
@@ -83,14 +89,6 @@ export function avatarStorageFolder(userId: string): StorageFolder {
   return { bucket: STORAGE_BUCKETS.USER_AVATARS, prefix: userId }
 }
 
-/** Splits a list into consecutive chunks of at most `size` items. */
-export function chunk<T>(items: T[], size: number): T[][] {
-  if (size < 1) throw new Error('chunk size must be at least 1')
-  const chunks: T[][] = []
-  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size))
-  return chunks
-}
-
 /** Removes every object directly under each folder, bucket by bucket. */
 async function removeFolders(steps: AccountDeletionSteps, folders: StorageFolder[]): Promise<void> {
   for (const folder of folders) {
@@ -117,6 +115,9 @@ async function runStage<T>(stage: AccountDeletionStage, run: () => Promise<T>): 
  *    the owner is gone nobody could see, finish or remove them. Files go
  *    first, rows second, so a failure in between leaves rows that a retry
  *    picks up again rather than rows whose files are already gone unnoticed.
+ *    A draft the user creates while this runs is still caught: the
+ *    `user_profiles` delete trigger removes unpublished parts in the same
+ *    transaction as step 4.
  * 2. The avatar is deleted: it is profile data.
  * 3. Ownership of the remaining Storage objects (published part files) is
  *    released, because Supabase Auth refuses to delete a user who owns
@@ -130,11 +131,11 @@ async function runStage<T>(stage: AccountDeletionStage, run: () => Promise<T>): 
 export async function deleteAccount(userId: string, steps: AccountDeletionSteps): Promise<void> {
   await runStage('unpublished_parts', async () => {
     for (let round = 0; ; round += 1) {
+      const partIds = await steps.listUnpublishedPartIds(userId, UNPUBLISHED_PART_BATCH_SIZE)
+      if (partIds.length === 0) return
       if (round >= MAX_UNPUBLISHED_PART_BATCHES) {
         throw new Error(`Unpublished parts remain after ${MAX_UNPUBLISHED_PART_BATCHES} rounds`)
       }
-      const partIds = await steps.listUnpublishedPartIds(userId, UNPUBLISHED_PART_BATCH_SIZE)
-      if (partIds.length === 0) return
       await removeFolders(steps, partIds.flatMap((partId) => partStorageFolders(userId, partId)))
       await steps.deleteParts(userId, partIds)
       if (partIds.length < UNPUBLISHED_PART_BATCH_SIZE) return

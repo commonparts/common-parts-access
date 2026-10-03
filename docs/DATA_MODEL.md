@@ -148,7 +148,7 @@ On account deletion (#178), foreign keys to `user_profiles` behave as follows:
 | `feedback.user_id`, `part_requests.user_id`, `print_reports.user_id` | `SET NULL` |
 | `collections.user_id` | `CASCADE` (`collection_parts` cascades from `collections`) |
 
-`DELETE /api/users` first deletes the user's unpublished parts and their files, and the avatar, then calls `release_storage_ownership(p_user_id)` (security definer, service role only), which clears `owner` / `owner_id` on the user's remaining Storage objects: Supabase Auth refuses to delete a user who owns Storage objects. See [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
+`DELETE /api/users` first deletes the user's unpublished parts and their files, and the avatar, then calls `release_storage_ownership(p_user_id)` (security definer, service role only), which clears `owner` / `owner_id` on the user's remaining Storage objects: Supabase Auth refuses to delete a user who owns Storage objects. The `user_profiles_delete_unpublished_parts` trigger (`BEFORE DELETE` on `user_profiles`) deletes any unpublished part still owned by the user, so only published parts outlive their owner. See [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
 
 ---
 

@@ -26,6 +26,13 @@
 -- maintained by insert/delete triggers, so SET NULL leaves `like_count`
 -- unchanged.
 --
+-- Only published parts may outlive their owner. A `BEFORE DELETE` trigger on
+-- `user_profiles` deletes the user's unpublished parts (draft, archived) in
+-- the same transaction as the account deletion, so a draft created while the
+-- API route was cleaning up cannot survive with a null owner. The route
+-- still deletes unpublished parts itself first, because their Storage files
+-- can only be removed through the Storage API.
+--
 -- Supabase Auth also refuses to delete a user who owns Storage objects.
 -- `release_storage_ownership()` clears `owner` / `owner_id` on that user's
 -- objects so the files of their published parts stay served after the
@@ -97,3 +104,29 @@ $$;
 
 revoke all on function public.release_storage_ownership(uuid) from public, anon, authenticated;
 grant execute on function public.release_storage_ownership(uuid) to service_role;
+
+-- 4. Unpublished parts never outlive their owner -----------------------------
+
+-- Runs inside the `auth.users` -> `user_profiles` cascade, as the auth admin
+-- role, hence security definer. It fires before the foreign keys set
+-- `parts.user_id` to null, while the rows can still be found by owner. Part
+-- children (files, products, likes, ...) cascade from `parts`.
+create or replace function public.delete_unpublished_parts_of_profile()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  delete from public.parts
+   where user_id = old.id
+     and status <> 'published';
+  return old;
+end;
+$$;
+
+revoke all on function public.delete_unpublished_parts_of_profile() from public, anon, authenticated;
+
+create trigger user_profiles_delete_unpublished_parts
+  before delete on public.user_profiles
+  for each row execute function public.delete_unpublished_parts_of_profile();

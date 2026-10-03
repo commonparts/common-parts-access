@@ -6,7 +6,6 @@ import {
   STORAGE_REMOVE_LIMIT,
   UNPUBLISHED_PART_BATCH_SIZE,
   avatarStorageFolder,
-  chunk,
   deleteAccount,
   partStorageFolders,
   type AccountDeletionSteps,
@@ -82,20 +81,6 @@ describe('partStorageFolders', () => {
 describe('avatarStorageFolder', () => {
   it('points at the user folder of the avatar bucket', () => {
     expect(avatarStorageFolder(USER)).toEqual({ bucket: 'user-avatars', prefix: 'user-1' })
-  })
-})
-
-describe('chunk', () => {
-  it('splits into chunks of at most the given size', () => {
-    expect(chunk([1, 2, 3, 4, 5], 2)).toEqual([[1, 2], [3, 4], [5]])
-  })
-
-  it('returns no chunks for an empty list', () => {
-    expect(chunk([], 3)).toEqual([])
-  })
-
-  it('rejects a size below 1', () => {
-    expect(() => chunk([1], 0)).toThrow()
   })
 })
 
@@ -193,9 +178,20 @@ describe('deleteAccount', () => {
     await expect(failure).rejects.toBeInstanceOf(AccountDeletionError)
     await expect(failure).rejects.toMatchObject({ stage: 'unpublished_parts' })
     expect(state.calls.filter((call) => call === 'list-parts:user-1')).toHaveLength(
-      MAX_UNPUBLISHED_PART_BATCHES,
+      MAX_UNPUBLISHED_PART_BATCHES + 1,
     )
     expect(state.calls).not.toContain('delete-user:user-1')
+  })
+
+  it('succeeds when exactly the cap of full batches empties the drafts', async () => {
+    const state = emptyState()
+    const total = UNPUBLISHED_PART_BATCH_SIZE * MAX_UNPUBLISHED_PART_BATCHES
+    state.unpublished = Array.from({ length: total }, (_, i) => `d${i}`)
+
+    await deleteAccount(USER, fakeSteps(state))
+
+    expect(state.unpublished).toEqual([])
+    expect(state.calls).toContain('delete-user:user-1')
   })
 
   it('keeps the draft rows when removing their files fails', async () => {

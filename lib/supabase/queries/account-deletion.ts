@@ -50,11 +50,12 @@ export function createAccountDeletionSteps(admin: SupabaseClient): AccountDeleti
     async deleteParts(userId, partIds) {
       // part_files, part_products and the other part children cascade. The
       // owner filter repeats what the ids imply: service role bypasses RLS.
+      // No status filter: the ids were unpublished when listed and their
+      // files are already removed (see AccountDeletionSteps.deleteParts).
       const { error } = await admin
         .from('parts')
         .delete()
         .eq('user_id', userId)
-        .neq('status', 'published')
         .in('id', partIds)
       if (error) throw error
     },

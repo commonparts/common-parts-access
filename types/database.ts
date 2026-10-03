@@ -223,7 +223,7 @@ export interface CurationRejection {
   source_url: string;
   reason: string;
   failed_criteria: CurationCriterionKey[];
-  created_by: string;
+  created_by: string | null; // Null once the curator's account is deleted (issue #178)
   created_at?: string;
 }
 
