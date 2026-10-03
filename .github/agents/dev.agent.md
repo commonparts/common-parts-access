@@ -158,6 +158,7 @@ Run through this before every commit:
 
 - [ ] `npx tsc --noEmit` passes with zero errors
 - [ ] `npm run lint` passes with zero warnings
+- [ ] `npm run test` passes (CI also enforces the coverage threshold with `npm run test:coverage`)
 - [ ] No hardcoded colors, spacing values, or hex codes
 - [ ] No unbounded database queries
 - [ ] All API routes verify authentication where required
@@ -165,6 +166,7 @@ Run through this before every commit:
 - [ ] No `any` types introduced
 - [ ] No new dependency installed without asking
 - [ ] Commit message follows Conventional Commits and references the issue number
+- [ ] The `docs/` files affected by the change are updated in the same PR, or none are affected (see Documentation below)
 
 ---
 
@@ -220,6 +222,35 @@ Closes #12
 
 ---
 
+## Documentation — maintained with the code
+
+`docs/` is the technical documentation of the project and the source material for its future public documentation. It stays accurate only if it changes with the code, so every PR that changes something documented updates the documentation **in the same PR**. The index of every document is `docs/README.md`.
+
+### When to update
+
+Update the affected document when the change:
+- Changes the behaviour of a documented feature, route, API endpoint or flow
+- Adds, renames or removes a table, column, enum value, RLS policy or database function → `docs/DATA_MODEL.md`, plus the feature document
+- Changes a convention, the CI, the branch workflow or the deployment → `docs/DEV_STRATEGY.md`, and this file if agents must follow it
+- Adds a feature that no document covers → write a new document in `docs/` and add it to the index in `docs/README.md`
+- Makes a statement in a document false, wherever it is
+
+No update is needed for styling-only changes, refactors that keep behaviour and interfaces unchanged, or test-only changes.
+
+### How to update
+
+- Read the current document first and change only the sections the diff affects. Keep its structure and headings.
+- State facts verified in the code or the schema; never document intent as if it were implemented. When behaviour is planned but not built, say so explicitly.
+- Describe the current state in present tense. Reference the issue number where a rule comes from (`(#312)`) instead of narrating the history.
+- Planning and historical documents (`user-flows.md`, `DATA_MODEL_EVOLUTION.md`, `NEW_IDENTITY_COMMON_PARTS_ACCESS.md`) are not rewritten: update their status note at the top instead.
+- Never write a changelog or release notes, and never commit a `CHANGELOG.md`. The GitHub Release created when `staging` is merged into `main` is the changelog (see `.github/agents/docs.agent.md`).
+
+### In the PR description
+
+List the documents updated, one line each, or state `Docs: no change needed` with the reason.
+
+---
+
 ## Project structure
 
 ```
@@ -250,7 +281,7 @@ lib/
   utils/          # Shared utilities (cn, slug, constants)
 
 design-tokens/    # Token definitions — DO NOT MODIFY
-docs/             # Design system documentation — read before building UI
+docs/             # Technical documentation — index in docs/README.md; read DESIGN_SYSTEM.md before building UI
 supabase/
   functions/      # Edge Functions (Deno)
 ```
@@ -488,9 +519,10 @@ Before writing any code for an issue:
 3. Confirm the approach with the human before starting if the change touches more than 3 files
 4. Create the feature branch from `dev`
 5. Write the code following every convention in this file
-6. Run the self-review checklist before committing
-7. Commit with a conventional commit message referencing the issue number
-8. Open a PR toward `dev` with a clear description of what changed and why
+6. Update the affected `docs/` files (see Documentation)
+7. Run the self-review checklist before committing
+8. Commit with a conventional commit message referencing the issue number
+9. Open a PR toward `dev` with a clear description of what changed and why, including the documents updated
 
 ---
 

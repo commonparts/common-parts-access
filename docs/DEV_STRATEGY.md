@@ -279,7 +279,8 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Reads the issue directly via GitHub MCP — no copy-pasting
 - Proposes a technical approach before writing any code
 - Implements following all conventions in `dev.agent.md`
-- Runs self-review checklist (tsc + lint) before committing
+- Updates the affected `docs/` files in the same PR as the code change
+- Runs self-review checklist (tsc + lint + tests) before committing
 - Opens a PR toward `dev` via GitHub MCP
 
 **What it never does:**
@@ -325,7 +326,8 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Creates a GitHub Release with the generated note (the GitHub Release is the authoritative changelog; no changelog file is committed to the repository)
 
 **What it does — conditionally:**
-- Reads the diff of the merge, scoped to `docs/`, `.github/agents/`, `.github/workflows/`, `.github/copilot-instructions.md`, and `supabase/`
+- Agent Dev updates `docs/` in the PRs that affect documented behaviour, schema or conventions; this step catches what was missed
+- Reads the full diff of the merge, application code included, so behaviour changes in routes, components and queries that no document reflects are caught
 - Decides whether any documentation file needs updating (new agent, schema change, new convention, file structure change, etc.)
 - If yes: opens a PR toward `dev` with the proposed documentation changes
 - If no: does nothing beyond the release note
