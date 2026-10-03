@@ -461,7 +461,14 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `part_views` | View tracking |
 | `part_downloads` | Download tracking |
 | `part_comments` | Comments (hidden in MVP) |
+| `part_products` | Part–product compatibility, with evidence level |
 | `products` | Physical products that parts fit |
+| `product_references` | Product references and regional names, normalized |
+| `part_requests` | Open requests for a part on a product |
+| `print_reports` | Whether a printed part worked on a compatible product |
+| `search_misses` | Searches on `/search` that returned nothing, no personal data |
+| `source_platforms` | External platforms that referenced parts come from |
+| `curation_rejections` | Sources rejected in the curation tool, with reason and failed criteria |
 | `brands` | Brand records |
 | `categories` | Hierarchical categories with `path` and `parent_id` |
 | `collections` | User-curated part collections |
