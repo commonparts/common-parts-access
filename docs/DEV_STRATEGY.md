@@ -35,7 +35,7 @@ GitHub Issues (structured, labelled)
         ↓ generates gh CLI commands after human validation
 [ You ] — validate priorities and roadmap
         ↓
-[ Agent Dev ] — GitHub Copilot agent in VS Code
+[ Agent Dev ] — Claude Code
         ↓ reads issues via MCP, proposes approach, implements, opens PRs
         ↓ never merges
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
@@ -58,7 +58,7 @@ CI/CD Pipeline (GitHub Actions → Railway)
 | Feedback triage | Fully automatic | Supabase Edge Function + Mistral Small |
 | GitHub issue creation | Fully automatic | GitHub API via Edge Function |
 | PM prioritisation | Semi-automatic (human validates) | Claude Project in Claude.ai |
-| Dev (bugs & features) | Dialogue — agent proposes, human validates | GitHub Copilot agent in VS Code |
+| Dev (bugs & features) | Dialogue — agent proposes, human validates | Claude Code |
 | QA review | Fully automatic on every PR | GitHub Copilot code review |
 | Merge to staging/main | Always manual | Human |
 | Docs & changelog | Manual trigger (release notes published directly, doc updates via PR) | Claude Code following `docs.agent.md` |
@@ -265,16 +265,16 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ### Agent Dev
 
-**Tool:** GitHub Copilot agent mode in VS Code
-**Trigger:** On-demand — human opens a session in VS Code and assigns an issue
-**Interface:** Chat panel in VS Code, directly in the codebase
+**Tool:** Claude Code
+**Trigger:** On-demand — human opens a Claude Code session on the repository and assigns an issue
+**Interface:** Claude Code session, directly in the codebase
 
-**MCP servers connected:**
+**Tools connected:**
 - **GitHub MCP** — reads issues, checks existing PRs, opens PRs
 - **Supabase MCP** — checks table schema, RLS policies, edge function logs
 - **Railway CLI** (no MCP) — reads runtime logs with `railway logs --environment <name>`
 
-**Instructions file:** `.github/agents/dev.agent.md` (read automatically by the agent)
+**Instructions file:** `.github/agents/dev.agent.md` (read at the start of every session)
 **What it does:**
 - Reads the issue directly via GitHub MCP — no copy-pasting
 - Proposes a technical approach before writing any code
@@ -406,7 +406,7 @@ RLS: anyone can insert, users can read their own rows only.
 
 ### ✅ Agent Dev
 
-- GitHub Copilot agent mode in VS Code
+- Claude Code
 - Instructions in `.github/agents/dev.agent.md`
 - Connected to GitHub and Supabase via MCP; Railway logs via CLI
 - Dialogue mode: proposes approach → human validates → implements → opens PR
@@ -462,8 +462,8 @@ Structural guarantee: the PM agent and human always have access to what the user
 **Why Claude Project for Agent PM?**
 The PM session requires genuine back-and-forth reasoning. A conversation interface is the right medium. No infrastructure, no deployment.
 
-**Why GitHub Copilot agent for Agent Dev?**
-Native to the human's existing VS Code + Copilot workflow. MCP connections to GitHub and Supabase, plus the Railway CLI, provide the context an agent needs without additional tooling.
+**Why Claude Code for Agent Dev?**
+It works directly in the repository and the terminal, so it can run the project's checks, read Railway logs through the CLI, and use the GitHub and Supabase MCP connections. That gives the agent the context it needs without additional tooling. The same tool also performs the Agent Docs role.
 
 **Why Copilot code review for Agent QA?**
 Native to GitHub, agentic architecture since March 2026, configurable via a single instructions file, automatic on every PR. Zero infrastructure to maintain.
