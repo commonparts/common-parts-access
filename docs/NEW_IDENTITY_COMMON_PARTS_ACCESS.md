@@ -1,5 +1,7 @@
 # Common Parts Access — Homepage, Tone, and Product Positioning
 
+> **Status (October 2026):** the tone, language and brand rules in this brief still apply. The homepage layout in §4 is superseded: the home page is now a search-centred hero followed by featured parts (see [HERO_SECTION.md](./HERO_SECTION.md)), and the publish call to action lives in the navbar, footer and menus. CPSP, certification and manufacturer integration are internal roadmap terms only: they were removed from public pages in #326. The colour values in the brand kit below are the original brief; the implemented palette lives in `design-tokens/` (see [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)).
+
 Phase 1: Open Platform & Database Formation
 0. Purpose of This Document
 

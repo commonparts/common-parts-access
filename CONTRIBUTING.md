@@ -30,7 +30,7 @@ One question decides how a part is published: **where does it come from?** Not w
 
 - **Referenced** — the part is already published elsewhere under a license that does not permit redistribution (NC, ND, or proprietary). The files stay at the source and Common Parts links to them. Attribution is still required, and no file upload is needed.
 
-Hosted and Referenced are not a choice you make: the license declared at the source decides which one applies.
+The license declared at the source decides whether a part can be hosted: an NC, ND or proprietary license always makes it Referenced. A part under an open license is hosted by default, and you can still choose to reference it at the source instead.
 
 **Quality expectations**
 
