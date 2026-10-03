@@ -1,13 +1,19 @@
 import type { Metadata } from "next"
+import { headers } from "next/headers"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
 import { SearchBar } from "@/components/layout/search-bar"
 import { SearchResultsView } from "@/components/search/search-results-view"
-import { findExactBrandMatch, searchAll } from "@/lib/supabase/queries/search"
-import { isSearchType, SEARCH_MAX_LIMIT } from "@/types/search"
+import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supabase/queries/search"
+import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
+import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
+import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
+// Result pages are query variants, not entry points (issue #257): kept out of
+// the index and the sitemap, while their links stay followable.
 export const metadata: Metadata = {
   title: "Search",
+  robots: { index: false, follow: true },
 }
 
 // Read q as the first value whether the param arrives as a string or string[].
@@ -22,7 +28,9 @@ export default async function SearchPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
   const params = await searchParams
-  const query = firstParam(params.q).trim()
+  // Bounded once here, so the search, the logged miss and an attached
+  // reference all use the same value; the URL itself has no length limit.
+  const query = firstParam(params.q).trim().slice(0, SEARCH_MAX_QUERY_LENGTH).trim()
   const typeParam = firstParam(params.type)
   const initialType = isSearchType(typeParam) ? typeParam : "all"
 
@@ -30,10 +38,26 @@ export default async function SearchPage({
   // handles type filtering without another round-trip.
   const results = query
     ? await searchAll(query, SEARCH_MAX_LIMIT)
-    : { products: [], models: [], brands: [] }
+    : { products: [], parts: [], brands: [] }
 
-  const total = results.products.length + results.models.length + results.brands.length
-  const brandSuggestion = query && total === 0 ? await findExactBrandMatch(query) : null
+  const total = results.products.length + results.parts.length + results.brands.length
+  const isMiss = Boolean(query) && total === 0
+
+  // A zero-result search is logged (issue #320) and offers the products the
+  // query may name, so the visitor can attach an unknown reference to one.
+  // Only this page logs: /api/search serves autocomplete keystrokes.
+  let brandSuggestion: BrandSuggestion | null = null
+  let candidates: ProductCandidate[] = []
+  if (isMiss) {
+    const locale = parseAcceptLanguage((await headers()).get("accept-language"))
+    ;[brandSuggestion, candidates] = await Promise.all([
+      findExactBrandMatch(query),
+      // The picker is optional: without candidates the visitor can still
+      // search for the product or request the part.
+      searchProductCandidates(query).catch((): ProductCandidate[] => []),
+      logSearchMiss(query, formatLocaleTag(locale)),
+    ])
+  }
 
   return (
     <Section>
@@ -46,6 +70,7 @@ export default async function SearchPage({
             query={query}
             initialType={initialType}
             brandSuggestion={brandSuggestion}
+            candidates={candidates}
           />
         ) : (
           <p className="text-body text-text-secondary">

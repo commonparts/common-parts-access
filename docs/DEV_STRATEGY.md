@@ -42,7 +42,7 @@ GitHub Issues (structured, labelled)
         ↓ inline comments + summary, never approves
         ↓
 [ Agent Docs ] — GitHub Action + Mistral Medium
-        ↓ generates release notes, creates GitHub Release, updates CHANGELOG.md
+        ↓ generates release notes, creates GitHub Release
         ↓ analyses diff → opens PR toward dev with doc updates if needed
         ↓ PR requires human validation before merge
         ↓
@@ -322,8 +322,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 **What it does — always:**
 - Determines the next semver tag from commits since the last tag (`feat(` → minor bump, anything else → patch bump)
 - Generates a release note in plain English describing what changed and why
-- Creates a GitHub Release with the generated note
-- Prepends a new entry to `CHANGELOG.md` and commits it directly to `main`
+- Creates a GitHub Release with the generated note (the GitHub Release is the authoritative changelog; no changelog file is committed to the repository)
 
 **What it does — conditionally:**
 - Reads the diff of the merge, scoped to `docs/`, `.github/agents/`, `.github/workflows/`, `.github/copilot-instructions.md`, and `supabase/`
@@ -420,8 +419,7 @@ RLS: anyone can insert, users can read their own rows only.
 
 - GitHub Action: `docs.yml` — triggered on every push to `main`
 - Automatic semver tagging: `feat(` → minor bump, anything else → patch bump
-- Mistral-generated release notes committed as GitHub Releases
-- `CHANGELOG.md` auto-updated on every release
+- Mistral-generated release notes published as GitHub Releases (the authoritative changelog; no changelog file is committed to the repository)
 - Diff analysis on `docs/` + `.github/agents/` — opens PR toward `dev` when documentation is impacted
 - Doc PRs labelled `type:docs`, `priority:low`, `agent:pm` — always require human approval
 
@@ -499,7 +497,6 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   └── workflows/
 │       ├── ci.yml                  # Lint + type check
 │       └── docs.yml                # Agent Docs — releases + doc updates
-├── CHANGELOG.md                    # Generated and maintained by Agent Docs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
 │   └── pre-push                    # Block direct push to main/staging

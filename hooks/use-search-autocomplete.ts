@@ -58,7 +58,7 @@ export function useSearchAutocomplete(query: string, enabled: boolean): UseSearc
           if (!active) return
           setResults({
             products: data.products ?? [],
-            models: data.models ?? [],
+            parts: data.parts ?? [],
             brands: data.brands ?? [],
           })
           setIsLoading(false)

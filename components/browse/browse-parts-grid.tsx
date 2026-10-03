@@ -1,0 +1,172 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+
+import { Pagination } from '@/components/browse/pagination'
+import { resolveSortKey, SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
+import { Grid } from '@/components/layout/grid'
+import { SearchBar } from '@/components/layout/search-bar'
+import { PartGrid } from '@/components/part/part-grid'
+import { Button } from '@/components/ui/button'
+import type { PartCardData } from '@/types/parts'
+
+interface PaginationInfo {
+  page: number
+  limit: number
+  total: number
+  totalPages: number
+  hasNext: boolean
+  hasPrev: boolean
+}
+
+interface PartsResponse {
+  parts: PartCardData[]
+  pagination: PaginationInfo
+}
+
+/**
+ * The filterable parts grid of the /browse hub: sort, in-grid filtering and
+ * pagination over /api/parts. Client-side by necessity (interactive state);
+ * the navigation sections around it are server-rendered by the page. Its
+ * filters are exploration tools — never query-result semantics, which belong
+ * to /search (Flow P2 strict separation).
+ */
+export function BrowsePartsGrid() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  const [parts, setParts] = useState<PartCardData[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 0,
+    hasNext: false,
+    hasPrev: false,
+  })
+
+  const currentPage = parseInt(searchParams.get('page') || '1')
+  const currentSort = resolveSortKey(searchParams.get('sortBy'))
+  const currentSearch = searchParams.get('search') || ''
+  const currentProduct = searchParams.get('productId') || ''
+
+  const updateURL = useCallback(
+    (params: Record<string, string>) => {
+      const newSearchParams = new URLSearchParams(searchParams.toString())
+
+      Object.entries(params).forEach(([key, value]) => {
+        if (value) {
+          newSearchParams.set(key, value)
+        } else {
+          newSearchParams.delete(key)
+        }
+      })
+
+      if (params.sortBy || params.search !== undefined) {
+        newSearchParams.set('page', '1')
+      }
+
+      router.push(`/browse?${newSearchParams.toString()}`)
+    },
+    [router, searchParams],
+  )
+
+  const fetchParts = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      const params = new URLSearchParams({
+        page: currentPage.toString(),
+        limit: '20',
+        sortBy: currentSort,
+        sortOrder: 'desc',
+      })
+
+      if (currentSearch) {
+        params.set('search', currentSearch)
+      }
+
+      if (currentProduct) params.set('productId', currentProduct)
+
+      const response = await fetch(`/api/parts?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch parts: ${response.statusText}`)
+      }
+
+      const data: PartsResponse = await response.json()
+
+      setParts(data.parts)
+      setPagination(data.pagination)
+    } catch (err) {
+      console.error('Error fetching parts:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load parts')
+    } finally {
+      setLoading(false)
+    }
+  }, [currentPage, currentSort, currentSearch, currentProduct])
+
+  useEffect(() => {
+    fetchParts()
+  }, [fetchParts])
+
+  const handleSortChange = (sortBy: string) => updateURL({ sortBy })
+  const handleSearchChange = (search: string) => updateURL({ search: search || '' })
+  const handlePageChange = (page: number) => updateURL({ page: page.toString() })
+  const clearSearch = () => updateURL({ search: '' })
+
+  if (error) {
+    return (
+      <div className="space-y-md text-center">
+        <div className="mx-auto mb-sm flex size-16 items-center justify-center rounded-full bg-border-subtle">
+          <svg className="size-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <div className="space-y-xs">
+          <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
+          <p className="text-body text-text-secondary">{error}</p>
+        </div>
+        <Button onClick={() => fetchParts()}>Try again</Button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-lg">
+      <Grid columns={12} className="items-start gap-md">
+        <div className="col-span-12 space-y-sm md:col-span-6">
+          <div className="hidden md:block">
+            <SortOptions value={currentSort} onChange={handleSortChange} />
+          </div>
+          <div className="md:hidden">
+            <SortOptionsDropdown value={currentSort} onChange={handleSortChange} />
+          </div>
+        </div>
+
+        <div className="col-span-12 md:col-span-6">
+          <SearchBar
+            autocomplete={false}
+            value={currentSearch}
+            onChange={handleSearchChange}
+            onClear={clearSearch}
+          />
+        </div>
+      </Grid>
+
+      <PartGrid parts={parts} loading={loading} variant="default" className="mb-lg" />
+
+      <Pagination
+        currentPage={pagination.page}
+        totalPages={pagination.totalPages}
+        onPageChange={handlePageChange}
+        hasNext={pagination.hasNext}
+        hasPrev={pagination.hasPrev}
+      />
+    </div>
+  )
+}

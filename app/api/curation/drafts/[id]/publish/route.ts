@@ -1,0 +1,109 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { getCurationDraft, updateCurationDraft } from '@/lib/supabase/queries/curation'
+import { getLicenseById } from '@/lib/supabase/queries/licenses'
+import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
+import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
+import { isHostableLicenseRow } from '@/lib/utils/licenses'
+import { isValidUuid } from '@/lib/utils/validation'
+
+type RouteContext = { params: Promise<{ id: string }> }
+
+// POST /api/curation/drafts/[id]/publish — the single publication gate of the
+// curation flow. Re-validates every blocking condition server-side so a part
+// failing any criterion cannot be published regardless of client state:
+//   - all six checklist v1 criteria explicitly checked
+//   - not flagged for legal review (saved but not publishable, Flow P3 §4.4)
+//   - a license set; the no-NC/ND whitelist applies to HOSTED parts only —
+//     link-out parts keep their files at the source, so NC/ND is acceptable
+//   - hosted: at least one registered model file
+//   - link-out: a source platform, and NO registered model files
+//   - at least one linked product (the product_target criterion made concrete),
+//     each belonging to a brand — same invariant as the upload gate. Since
+//     #315 a part's brands are its products', so a brandless product leaves
+//     the part unreachable through brand -> product -> part navigation.
+export async function POST(request: NextRequest, context: RouteContext) {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { id } = await context.params
+    if (!isValidUuid(id)) {
+      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    }
+
+    const draft = await getCurationDraft(id)
+    if (!draft || draft.user_id !== user.id) {
+      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    }
+    if (draft.status !== 'draft') {
+      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+    }
+
+    const blockers: string[] = []
+
+    if (!isChecklistComplete(draft.curation_checklist)) {
+      const missing = missingCriteria(draft.curation_checklist)
+      blockers.push(`Unchecked blocking criteria: ${missing.join(', ')}`)
+    }
+
+    if (draft.needs_legal_review) {
+      blockers.push('The part is flagged for legal review and cannot be published')
+    }
+
+    const isLinkOut = draft.file_hosting_type === 'link_out'
+
+    if (!draft.license_id) {
+      blockers.push('A publication license is required')
+    } else {
+      const license = await getLicenseById(draft.license_id)
+      if (!license) {
+        blockers.push('The selected license could not be verified')
+      } else if (!isLinkOut && !isHostableLicenseRow(license)) {
+        blockers.push('Hosted parts require an open license (no NC/ND restrictions) — link out instead')
+      }
+    }
+
+    // The declared source license binds hosting too: NC/ND at the source
+    // means the files may only be linked out, never hosted here.
+    if (!isLinkOut && draft.source_license_id) {
+      const sourceLicense = await getLicenseById(draft.source_license_id)
+      if (!sourceLicense) {
+        blockers.push('The declared source license could not be verified')
+      } else if (!isHostableLicenseRow(sourceLicense)) {
+        blockers.push('The declared source license is NC/ND — hosting is not allowed, link out instead')
+      }
+    }
+
+    if (isLinkOut) {
+      if (!draft.source_platform) {
+        blockers.push('A source platform is required for link-out parts')
+      }
+      if (draft.model_file_count > 0) {
+        blockers.push('A link-out part must not host model files — remove them or switch to hosted')
+      }
+    } else if (draft.model_file_count < 1) {
+      blockers.push('At least one model file must be uploaded and registered')
+    }
+
+    if (draft.product_ids.length < 1) {
+      blockers.push('At least one product must be linked')
+    } else {
+      const linkBlocker = await findProductLinkBlocker(draft.product_ids)
+      if (linkBlocker) blockers.push(linkBlocker)
+    }
+
+    if (blockers.length > 0) {
+      return NextResponse.json({ error: 'Publication blocked', blockers }, { status: 422 })
+    }
+
+    await updateCurationDraft(id, user.id, { status: 'published' })
+    return NextResponse.json({ ok: true, slug: draft.slug })
+  } catch (error) {
+    console.error('Failed to publish curated part', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+  }
+}

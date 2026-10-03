@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { notFound } from "next/navigation"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
@@ -7,13 +8,29 @@ import { Breadcrumbs } from "@/components/layout/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { ProductPartsGrid } from "@/components/product/product-parts-grid"
 import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
+import { ProductReferences } from "@/components/product/product-references"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
-import {
-  fetchProductNameBySlug,
-  fetchProductPageBySlug,
-  fetchProductPageParts,
-} from "@/lib/supabase/queries/product-page"
+import { fetchProductPageBySlug, fetchProductPageParts } from "@/lib/supabase/queries/product-page"
 import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
+import { APP_NAME } from "@/lib/utils/constants"
+import { parseAcceptLanguage } from "@/lib/utils/locale"
+import { pickRegionalName, type ProductReference } from "@/lib/utils/product-references"
+import {
+  buildBreadcrumbJsonLd,
+  buildProductBreadcrumbTrail,
+  buildProductSeoDescription,
+  buildProductSeoTitle,
+  productCanonicalPath,
+  serializeJsonLd,
+  toBreadcrumbLinks,
+} from "@/lib/utils/seo"
+
+// The name a visitor knows the product by: the commercial name of their region
+// (read from Accept-Language) when one is recorded, else products.name.
+async function resolveDisplayName(name: string, references: ProductReference[]): Promise<string> {
+  const locale = parseAcceptLanguage((await headers()).get("accept-language"))
+  return pickRegionalName(references, locale) ?? name
+}
 
 export async function generateMetadata({
   params,
@@ -21,8 +38,34 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const name = await fetchProductNameBySlug(slug)
-  return { title: name ?? "Product" }
+  const data = await fetchProductPageBySlug(slug)
+  if (!data) return { title: "Product not found" }
+
+  const { product } = data
+  const displayName = await resolveDisplayName(product.name, data.references)
+  const brandName = product.brand?.name ?? null
+  const title = buildProductSeoTitle(brandName, displayName)
+  const description = buildProductSeoDescription({
+    brandName,
+    productName: displayName,
+    categoryName: product.category?.name ?? null,
+  })
+  const canonicalPath = productCanonicalPath(product.slug)
+
+  // Relative URLs resolve against metadataBase (set in the root layout).
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      siteName: APP_NAME,
+      type: "website",
+      images: product.image_url ? [{ url: product.image_url, alt: displayName }] : undefined,
+    },
+  }
 }
 
 // "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
@@ -40,7 +83,8 @@ export default async function ProductPage({
   const data = await fetchProductPageBySlug(slug)
   if (!data) notFound()
 
-  const { product } = data
+  const { product, references } = data
+  const displayName = await resolveDisplayName(product.name, references)
 
   const parts = await fetchProductPageParts({ productId: product.id })
 
@@ -50,25 +94,25 @@ export default async function ProductPage({
 
   const productionYears = formatProductionYears(product.release_year, product.discontinued)
 
-  // Category is shown as plain text: there is no category-listing route yet
-  // (/browse doesn't read a category param), so a link would go nowhere useful.
-  const breadcrumbItems = [
-    product.brand && { label: product.brand.name, href: `/brand/${product.brand.slug}` },
-    product.category && { label: product.category.name },
-    { label: product.name },
-  ].filter((item): item is { label: string; href?: string } => Boolean(item))
+  // Brand › Category › Product (Flow P2), shared with part pages.
+  const breadcrumbTrail = buildProductBreadcrumbTrail({ ...product, name: displayName })
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(productCanonicalPath(product.slug), breadcrumbTrail)
 
   return (
     <Section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
       <Container size="lg" className="space-y-xl">
-        <Breadcrumbs items={breadcrumbItems} />
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         {/* Identification header */}
         <div className="grid gap-lg md:grid-cols-[minmax(0,16rem)_1fr]">
           <div className="relative aspect-square overflow-hidden rounded-lg border border-border-subtle bg-bg-subtle">
             {product.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
+              <img src={product.image_url} alt={displayName} className="h-full w-full object-cover" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-text-disabled">
                 <svg aria-hidden="true" className="size-2xl" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -86,7 +130,7 @@ export default async function ProductPage({
                 </p>
               )}
               <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
-                {product.name}
+                {displayName}
               </h1>
               {productionYears && (
                 <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
@@ -94,6 +138,7 @@ export default async function ProductPage({
                 </div>
               )}
             </div>
+            <ProductReferences references={references} displayedName={displayName} />
           </div>
         </div>
 
@@ -138,7 +183,7 @@ function EmptyState({
         </div>
         <p className="max-w-container-md text-body text-text-secondary">
           This product is indexed and ready — the catalog grows with demand. Request the part you
-          need, or contribute a model if you have one.
+          need, or contribute a part if you have one.
         </p>
       </div>
 
@@ -148,7 +193,9 @@ function EmptyState({
 
       <div className="flex flex-wrap items-center gap-sm">
         <Button asChild variant="outline">
-          <Link href={`/upload?product=${productId}`}>Contribute a model</Link>
+          {/* The product is picked on the Compatibility step, not carried in
+              the URL — the old ?product= param was never read (#260). */}
+          <Link href="/publish">Publish a part</Link>
         </Button>
       </div>
 

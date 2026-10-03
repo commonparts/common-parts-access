@@ -1,5 +1,7 @@
  # Common Parts Access — Data Model Evolution
 
+> **Naming note (issue #314, September 2026):** the `models` table and its `model_*` satellites described below were renamed to `parts` / `part_*` (with `model_id` → `part_id`) by migration `20260922130000_rename_models_to_parts.sql`. The SQL in this document is kept as written at the time; read `models` as `parts`.
+
 ## Context
 
 The original data model was designed for a scenario where users upload their own 3D models. The project now includes a **curation workflow**: importing existing spare part models from external sources (Printables, Thingiverse, GitHub, etc.) under open licenses, with structured metadata and clear attribution.
