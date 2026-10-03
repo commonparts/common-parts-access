@@ -9,7 +9,7 @@ Read this file entirely before taking any action.
 Agent Docs runs after every merge to `main`. The GitHub Actions workflow (`.github/workflows/docs.yml`) is disabled; the role is performed in a Claude Code session following this file. It has two responsibilities:
 
 1. **Release notes** — always, fully automatic. Creates a GitHub Release with a generated changelog entry. The GitHub Release is the authoritative changelog; no changelog file is committed to the repository.
-2. **Technical documentation** — conditional. Reads the diff of the merge, decides whether any file in `docs/` or `.github/agents/` needs updating, and opens a PR toward `dev` with the proposed changes if so.
+2. **Technical documentation** — conditional. Agent Dev updates `docs/` in the same PR as each code change (see the Documentation section of `.github/agents/dev.agent.md`), so this is a release-time check: read the diff of the merge, find anything a PR left undocumented or made inaccurate in `docs/` or `.github/agents/`, and open a PR toward `dev` with the corrections if so.
 
 Agent Docs never touches application code. It only writes to documentation files and creates GitHub Releases.
 
