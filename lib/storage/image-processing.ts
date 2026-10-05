@@ -12,6 +12,7 @@ const IMAGE_CONTENT_TYPES: Record<string, string> = {
 	'.jpeg': 'image/jpeg',
 	'.png': 'image/png',
 	'.webp': 'image/webp',
+	'.gif': 'image/gif',
 }
 
 export function inferImageContentType(extension: string): string | undefined {

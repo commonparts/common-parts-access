@@ -40,6 +40,8 @@ It is recorded on the row at **creation**, not at publish: a draft in this flow 
 
 Model files and photos go through the existing three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/parts/[slug]/files`), which keeps file bytes out of the serverless body-size limit. Files are registered as soon as they upload, so leaving the session does not lose them.
 
+Photos are accepted as JPG, PNG, WebP or GIF, up to 8 MB each and 10 per part. The accepted formats have a single source, `FILE_TYPES.IMAGE_FILES` in `constants/app.ts`, read by both the photo picker and the registration check in `POST /api/parts/[slug]/files`; each object is stored with the content type `inferImageContentType` (`lib/storage/image-processing.ts`) maps from its extension (#217).
+
 The upload button stays disabled until the session is ready — the storage path needs the owner id, which arrives from an async auth call, and without the guard there is a window where a click silently does nothing.
 
 Registered images are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — the same treatment as curation, so it is obvious the gallery is in place rather than an opaque count.

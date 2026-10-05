@@ -38,7 +38,9 @@ export const VALIDATION_LIMITS = {
     TAGS_MAX_COUNT: 10,
     TAG_MIN_LENGTH: 2,
     TAG_MAX_LENGTH: 20,
-    PRODUCTS_MAX_COUNT: 10
+    // Products one part can be linked to. Also bounds every read of a part's
+    // links (draft resume and save, part page), so all of them stay complete.
+    PRODUCTS_MAX_COUNT: 50
   },
   USER: {
     USERNAME_MIN_LENGTH: 3,

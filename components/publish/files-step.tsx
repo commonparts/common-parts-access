@@ -32,7 +32,12 @@ interface FilesStepProps {
    */
   uploadReady?: boolean
   onUpload: () => void
-  /** Source-gallery import running in the background. */
+  /**
+   * Source-gallery import running in the background. The photo field and the
+   * upload button are disabled meanwhile: the import overwrites the part's
+   * image list from a snapshot taken before it ran, so a photo uploaded
+   * concurrently would drop out of it (#357).
+   */
   importingImages?: boolean
   /** Inline judgements owned by this step. */
   judgements?: React.ReactNode
@@ -129,6 +134,7 @@ export function FilesStep({
             <FileUploader
               accept={FILE_TYPES.IMAGE_FILES.join(',')}
               multiple
+              disabled={importingImages}
               onFilesSelect={form.handleThumbnailsSelect}
             />
             {formData.thumbnails.length > 0 && (
@@ -145,14 +151,16 @@ export function FilesStep({
           <Button
             id={`${idPrefix}-upload`}
             onClick={onUpload}
-            disabled={uploading || !uploadReady || nothingSelected}
+            disabled={uploading || !uploadReady || importingImages || nothingSelected}
           >
             {uploading ? 'Uploading…' : 'Upload selected files'}
           </Button>
           <p className="text-sm text-text-secondary">
             {!uploadReady
               ? 'Preparing the upload session…'
-              : (helpText ??
+              : importingImages
+                ? 'Upload is available once the image import ends.'
+                : (helpText ??
                 'Files are stored as soon as you upload them — you can leave and come back.')}
           </p>
         </div>
