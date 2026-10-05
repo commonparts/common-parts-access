@@ -92,6 +92,8 @@ ci(scope): short description
 
 Commit messages must reference the related issue number: `fix(ui): correct button variant (#42)`
 
+The repository is public: commit messages, PR descriptions and release notes describe the change itself, carry no internal context and no links to claude.ai sessions (see `CLAUDE.md`).
+
 Husky hooks:
 - `commit-msg` — rejects commits that don't match the convention
 - `pre-push` — blocks direct pushes to `main` and `staging`
