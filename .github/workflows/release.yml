@@ -55,10 +55,11 @@ jobs:
             # Manual run for a merged release PR: release its merge commit,
             # whatever ref the run was started from.
             gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
-              --json state,baseRefName,headRefName,mergeCommit > pr.json
+              --json state,baseRefName,headRefName,isCrossRepository,mergeCommit > pr.json
             if [ "$(jq -r '.state' pr.json)" != "MERGED" ] ||
                [ "$(jq -r '.baseRefName' pr.json)" != "main" ] ||
-               [ "$(jq -r '.headRefName' pr.json)" != "staging" ]; then
+               [ "$(jq -r '.headRefName' pr.json)" != "staging" ] ||
+               [ "$(jq -r '.isCrossRepository' pr.json)" != "false" ]; then
               echo "PR #${PR_NUMBER} is not a merged staging → main PR." >&2
               exit 1
             fi

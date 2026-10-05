@@ -54,7 +54,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 4. Wait for CI and the Copilot review. A finding that needs a code change goes through a PR toward `dev` and a new promotion to `staging`; the release PR picks it up. Update the release notes when the content changes.
 5. When the human asks for the merge: merge with a merge commit. `.github/workflows/release.yml` then creates the tag and the GitHub Release on the merge commit. Check that the release exists and that the Railway `production` deployment succeeds.
 
-Claude Code sessions cannot create GitHub Releases themselves. If the workflow fails, or does not run after the merge, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR.
+Claude Code sessions cannot create GitHub Releases themselves. If the workflow fails, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR. If no `Release` run appears after the merge, go straight to that manual run.
 
 ## Release workflow behaviour
 
