@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import type { Part, PartDimensions, PartPrintSettings } from '@/types/database'
 
 /**
@@ -30,7 +31,7 @@ const DRAFTS_LIST_LIMIT = 50
 
 // Linked-product and file reads are bounded by the same limits the rest of
 // the flow enforces, so neither can grow into an unbounded fetch.
-const PRODUCT_LINKS_LIMIT = 50
+const PRODUCT_LINKS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 const PART_FILES_LIMIT = 100
 
 export interface UploadDraftListItem {
