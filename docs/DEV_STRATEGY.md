@@ -41,12 +41,12 @@ GitHub Issues (structured, labelled)
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
         ↓ inline comments + summary, never approves
         ↓
-[ Agent Docs ] — Claude Code, run manually on merge to main
-        ↓ generates release notes, creates GitHub Release
-        ↓ analyses diff → opens PR toward dev with doc updates if needed
-        ↓ PR requires human validation before merge
+[ Release ] — Claude Code following the `release` skill
+        ↓ dev → staging: documentation check, then promotion PR
+        ↓ staging → main: release PR with the release notes in its description
         ↓
 CI/CD Pipeline (GitHub Actions → Railway)
+        ↓ release.yml publishes the GitHub Release when staging is merged into main
         ↓
 [ You ] — review, merge to staging, validate, merge to main
 ```
@@ -61,7 +61,8 @@ CI/CD Pipeline (GitHub Actions → Railway)
 | Dev (bugs & features) | Dialogue — agent proposes, human validates | Claude Code |
 | QA review | Fully automatic on every PR | GitHub Copilot code review |
 | Merge to staging/main | Always manual | Human |
-| Docs & changelog | Manual trigger (release notes published directly, doc updates via PR) | Claude Code following `docs.agent.md` |
+| Promotion & release notes | Agent prepares the PRs and the notes, human validates and merges | Claude Code following the `release` skill |
+| GitHub Release | Fully automatic on merge to `main` | `.github/workflows/release.yml` |
 
 ---
 
@@ -145,17 +146,20 @@ This is the full lifecycle of a change, from issue to production.
 10. Human merges feature/issue-xxx → dev  (squash)
          ↓
 11. Railway deploys the PR environment automatically
-12. When ready: open PR dev → staging
+12. When ready: documentation check, then open PR dev → staging
+    (`release` skill)
 13. CI + Copilot review run on the PR
 14. Human merges dev → staging  (merge commit)
          ↓
 15. Railway deploys staging automatically
 16. Human runs staging validation checklist (see below)
-17. When validated: open PR staging → main
+17. When validated: open PR staging → main, with the release notes
+    in its description (`release` skill)
 18. CI + Copilot review run on the PR
 19. Human merges staging → main  (merge commit)
          ↓
 20. Railway deploys production automatically
+21. release.yml tags the merge commit and publishes the GitHub Release
 ```
 
 ### Staging Validation Checklist
@@ -274,17 +278,17 @@ Labels are the shared language between humans and agents. All issues must carry 
 - **Supabase MCP** — checks table schema, RLS policies, edge function logs
 - **Railway CLI** (no MCP) — reads runtime logs with `railway logs --environment <name>`
 
-**Instructions file:** `.github/agents/dev.agent.md` (read at the start of every session)
+**Instructions file:** `CLAUDE.md` at the repository root, loaded automatically by every Claude Code session
 **What it does:**
 - Reads the issue directly via GitHub MCP — no copy-pasting
 - Proposes a technical approach before writing any code
-- Implements following all conventions in `dev.agent.md`
+- Implements following all conventions in `CLAUDE.md`
 - Updates the affected `docs/` files in the same PR as the code change
 - Runs self-review checklist (tsc + lint + tests) before committing
 - Opens a PR toward `dev` via GitHub MCP
 
 **What it never does:**
-- Merges a PR
+- Merges a PR unless the human asks for that merge
 - Pushes to `main` or `staging`
 - Installs dependencies without asking
 - Modifies `design-tokens/`, `middleware.ts`, or core Supabase client files
@@ -314,29 +318,25 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ---
 
-### Agent Docs
+### Release
 
-**Tool:** Claude Code session. The GitHub Actions workflow (`.github/workflows/docs.yml`, Mistral Medium) is disabled.
-**Trigger:** Manual — run after every human-approved merge to `main`
-**Instructions file:** `.github/agents/docs.agent.md`
+**Tool:** Claude Code session following the `release` skill (`.claude/skills/release/SKILL.md`), plus the `.github/workflows/release.yml` GitHub Action
+**Trigger:** The skill is used whenever a session is asked to promote `dev` to `staging` or to prepare a release; the workflow runs when a PR from `staging` is merged into `main`
 
-**What it does — always:**
-- Determines the next semver tag from commits since the last tag (`feat(` → minor bump, anything else → patch bump)
-- Generates a release note in plain English describing what changed and why
-- Creates a GitHub Release with the generated note (the GitHub Release is the authoritative changelog; no changelog file is committed to the repository)
+**`dev` → `staging`:**
+- Documentation check on the full diff, application code included: Agent Dev updates `docs/` in each PR, and this step catches what was missed. Corrections go through a PR toward `dev` before the promotion
+- Opens the promotion PR, merged with a merge commit when the human asks
 
-**What it does — conditionally:**
-- Agent Dev updates `docs/` in the PRs that affect documented behaviour, schema or conventions; this step catches what was missed
-- Reads the full diff of the merge, application code included, so behaviour changes in routes, components and queries that no document reflects are caught
-- Decides whether any documentation file needs updating (new agent, schema change, new convention, file structure change, etc.)
-- If yes: opens a PR toward `dev` with the proposed documentation changes
-- If no: does nothing beyond the release note
+**`staging` → `main`:**
+- Determines the next version from commit subjects since the last tag (`feat(` → minor bump, anything else → patch bump; never major)
+- Writes the release notes in the release PR description, between `<!-- release-notes:start -->` and `<!-- release-notes:end -->`, so the human reviews them before production
+- Promotion PR descriptions and release notes are written from commit subjects, PR titles and the diff, never from commit bodies or issue texts, because the repository and its releases are public
 
-**What it never does:**
-- Modifies application code
-- Pushes doc changes directly to `main` or `staging` — always via PR toward `dev`
-- Invents facts not visible in the diff
-- Merges its own PRs
+**`release.yml`, on merge to `main`:**
+- Computes the same version, fails if the tag already exists
+- Publishes the notes found between the markers as the GitHub Release; without markers, publishes a minimal note listing the commit subjects
+- Can be run manually (`workflow_dispatch`) with the number of a merged release PR
+- The GitHub Release is the authoritative changelog; no changelog file is committed to the repository
 
 ---
 
@@ -409,7 +409,7 @@ RLS: anyone can insert, users can read their own rows only.
 ### ✅ Agent Dev
 
 - Claude Code
-- Instructions in `.github/agents/dev.agent.md`
+- Instructions in `CLAUDE.md`, loaded automatically by Claude Code
 - Connected to GitHub and Supabase via MCP; Railway logs via CLI
 - Dialogue mode: proposes approach → human validates → implements → opens PR
 - Reads issues directly via GitHub MCP
@@ -422,13 +422,12 @@ RLS: anyone can insert, users can read their own rows only.
 - Checks: security, logic, conventions, performance, maintainability
 - Reports inline comments + summary on every PR
 
-### ✅ Agent Docs
+### ✅ Release
 
-- Run manually in a Claude Code session after every merge to `main`; the `docs.yml` GitHub Action is disabled
+- `release` skill in `.claude/skills/release/SKILL.md`: documentation check before promotion to `staging`, release notes written in the release PR
+- `.github/workflows/release.yml`: tag and GitHub Release published on merge to `main`
 - Semver tagging: `feat(` → minor bump, anything else → patch bump
 - Release notes published as GitHub Releases (the authoritative changelog; no changelog file is committed to the repository)
-- Diff analysis on `docs/` + `.github/agents/` — opens PR toward `dev` when documentation is impacted
-- Doc PRs labelled `type:docs`, `priority:low`, `agent:pm` — always require human approval
 
 ---
 
@@ -465,7 +464,7 @@ Structural guarantee: the PM agent and human always have access to what the user
 The PM session requires genuine back-and-forth reasoning. A conversation interface is the right medium. No infrastructure, no deployment.
 
 **Why Claude Code for Agent Dev?**
-It works directly in the repository and the terminal, so it can run the project's checks, read Railway logs through the CLI, and use the GitHub and Supabase MCP connections. That gives the agent the context it needs without additional tooling. The same tool also performs the Agent Docs role.
+It works directly in the repository and the terminal, so it can run the project's checks, read Railway logs through the CLI, and use the GitHub and Supabase MCP connections. That gives the agent the context it needs without additional tooling. The same tool also prepares promotions and releases, following the `release` skill.
 
 **Why Copilot code review for Agent QA?**
 Native to GitHub, agentic architecture since March 2026, configurable via a single instructions file, automatic on every PR. Zero infrastructure to maintain.
@@ -482,14 +481,14 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 
 ```
 /
+├── CLAUDE.md                       # Development conventions, loaded by Claude Code
+├── .claude/
+│   └── skills/release/SKILL.md     # Promotion and release procedure
 ├── .github/
-│   ├── agents/
-│   │   ├── dev.agent.md            # Agent Dev instructions
-│   │   └── docs.agent.md           # Agent Docs instructions
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
 │       ├── ci.yml                  # Lint + type check + tests
-│       ├── docs.yml                # Agent Docs workflow (disabled)
+│       ├── release.yml             # Tag + GitHub Release on merge to main
 │       └── label-merged-issues.yml # Labels issues referenced by merged PRs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
