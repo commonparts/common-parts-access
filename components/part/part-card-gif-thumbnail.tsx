@@ -133,11 +133,18 @@ export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGif
   }, [])
 
   return (
-    <div ref={rootRef} className={cn("absolute inset-0", stillFrame === "failed" && "bg-muted", className)}>
+    // The wrapper carries the accessible name: the animated image is mounted
+    // only part of the time, so it is decorative, and the canvas is hidden.
+    <div
+      ref={rootRef}
+      role="img"
+      aria-label={alt}
+      className={cn("absolute inset-0", stillFrame === "failed" && "bg-muted", className)}
+    >
       {animationMounted && (
         <Image
           src={src}
-          alt={alt}
+          alt=""
           fill
           sizes={sizes}
           onLoad={(event) => {
