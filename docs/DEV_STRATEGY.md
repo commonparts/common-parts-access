@@ -37,7 +37,7 @@ GitHub Issues (structured, labelled)
         ↓
 [ Agent Dev ] — Claude Code
         ↓ reads issues via MCP, proposes approach, implements, opens PRs
-        ↓ never merges
+        ↓ merges only when the human asks
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
         ↓ inline comments + summary, never approves
         ↓
@@ -335,7 +335,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 **`release.yml`, on merge to `main`:**
 - Computes the same version, fails if the tag already exists
 - Publishes the notes found between the markers as the GitHub Release; without markers, publishes a minimal note listing the commit subjects
-- Can be run manually (`workflow_dispatch`) with the number of a merged release PR
+- Can be run manually (`workflow_dispatch`), only with the number of a merged release PR
 - The GitHub Release is the authoritative changelog; no changelog file is committed to the repository
 
 ---
