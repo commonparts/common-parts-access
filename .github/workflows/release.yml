@@ -37,11 +37,37 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout the released commit
+      - name: Checkout the repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.merge_commit_sha || github.sha }}
           fetch-depth: 0
+
+      - name: Resolve the released commit
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MERGE_SHA:-}" ]; then
+            TARGET="$MERGE_SHA"
+          elif [ -n "${PR_NUMBER:-}" ]; then
+            # Manual run for a merged release PR: release its merge commit,
+            # whatever ref the run was started from.
+            gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+              --json state,baseRefName,headRefName,mergeCommit > pr.json
+            if [ "$(jq -r '.state' pr.json)" != "MERGED" ] ||
+               [ "$(jq -r '.baseRefName' pr.json)" != "main" ] ||
+               [ "$(jq -r '.headRefName' pr.json)" != "staging" ]; then
+              echo "PR #${PR_NUMBER} is not a merged staging → main PR." >&2
+              exit 1
+            fi
+            TARGET=$(jq -r '.mergeCommit.oid' pr.json)
+          else
+            TARGET="$GITHUB_SHA"
+          fi
+          git checkout --quiet --detach "$TARGET"
+          echo "Releasing $(git rev-parse HEAD)"
 
       - name: Determine the next version
         id: semver
@@ -98,11 +124,14 @@ jobs:
             printf '%s\n' "${PR_BODY:-}" > pr_body.md
           fi
 
-          # Everything strictly between the two markers.
-          awk '/<!-- release-notes:end -->/ { inside = 0 }
-               inside { print }
-               /<!-- release-notes:start -->/ { inside = 1 }' pr_body.md \
-            | tr -d '\r' > release_notes.md
+          # Everything strictly between the first start marker and the end
+          # marker that follows it. Without a complete, ordered pair, nothing
+          # is extracted and the commit-subject fallback below applies.
+          tr -d '\r' < pr_body.md | awk '
+            /<!-- release-notes:start -->/ && state == 0 { state = 1; next }
+            /<!-- release-notes:end -->/ && state == 1 { state = 2; next }
+            state == 1 { notes = notes $0 "\n" }
+            END { if (state == 2) printf "%s", notes }' > release_notes.md
 
           if [ -z "$(tr -d '[:space:]' < release_notes.md)" ]; then
             echo "No release notes in the PR description: publishing commit subjects only."

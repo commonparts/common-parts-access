@@ -28,7 +28,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 ## Release `staging` to `main`
 
 1. `git fetch origin staging main --tags`, then list the release content: `git log --oneline --no-merges origin/main..origin/staging`.
-2. **Version.** Take the latest `v*` tag reachable from `origin/main`. Any commit subject starting with `feat(` since that tag bumps the minor version (`v1.2.1` → `v1.3.0`); otherwise bump the patch version. Never bump the major version: that is a human decision. The release workflow computes the version the same way and does not read it from the PR.
+2. **Version.** The number starts from the highest `v*` tag in the repository; the commits considered are those since the latest `v*` tag reachable from `origin/main` (older tags are not all reachable since a history rewrite). Any of those commit subjects starting with `feat(` bumps the minor version (`v1.2.1` → `v1.3.0`); otherwise bump the patch version. Never bump the major version: that is a human decision. The release workflow computes the version the same way and does not read it from the PR.
 3. Open the PR `staging` → `main`.
    - Title: `Release: promote staging to main (#first–#last)`.
    - Description: a summary of the promoted changes grouped by area, `No migration.`, a "Before merging" checklist (Railway staging deploy green, staging validation checklist from `docs/DEV_STRATEGY.md` passed, plus one line per behaviour worth checking by hand), and the release notes between the two markers below. The workflow publishes exactly what is between them.
@@ -60,4 +60,5 @@ Claude Code sessions cannot create GitHub Releases themselves. If the workflow f
 
 - Runs when a PR from `staging` into `main` is merged, or manually.
 - Computes the version from commit subjects, as in step 2 above, and fails if that tag already exists.
-- Publishes the release notes found between the markers in the PR description. Without markers, it publishes a minimal note listing the commit subjects only, never their bodies.
+- Publishes the release notes found between the markers in the PR description. Without a complete start/end pair, it publishes a minimal note listing the commit subjects only, never their bodies.
+- A manual run with a PR number releases that PR's merge commit, after checking that it is a merged `staging` → `main` PR.
