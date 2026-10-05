@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import type {
   CurationChecklist,
   CurationCriterionKey,
@@ -26,6 +27,10 @@ const CURATION_DRAFT_SELECT = `
 
 // Drafts list is a picker, not a browse surface — a hard cap is enough.
 const DRAFTS_LIST_LIMIT = 50
+
+// Linked-product reads take the whole list a draft can hold: a shorter read
+// would drop links on resume and re-insert existing ones on save.
+const PRODUCT_LINKS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
 export interface SourceUrlMatch {
   id: string
@@ -111,7 +116,7 @@ export async function getCurationDraft(id: string): Promise<CurationDraft | null
   if (!part) return null
 
   const [{ data: links, error: linksError }, { data: files, error: filesError }] = await Promise.all([
-    supabase.from('part_products').select('product_id').eq('part_id', id).limit(50),
+    supabase.from('part_products').select('product_id').eq('part_id', id).limit(PRODUCT_LINKS_LIMIT),
     supabase.from('part_files').select('id, file_category').eq('part_id', id).limit(100),
   ])
 
@@ -244,7 +249,7 @@ export async function updateCurationDraft(
       .from('part_products')
       .select('product_id')
       .eq('part_id', id)
-      .limit(50)
+      .limit(PRODUCT_LINKS_LIMIT)
 
     if (readError) throw readError
 

@@ -6,12 +6,14 @@ import { distinctBrands } from '@/lib/utils/catalog'
 import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 /**
  * Compatible products listed on a part page, each rendering print report
- * controls (issue #318). Far above any real part today; bounds the payload.
+ * controls (issue #318). Equal to the link limit, so the page lists every
+ * linked product (issue #222).
  */
-const MAX_COMPATIBLE_PRODUCTS = 50
+const MAX_COMPATIBLE_PRODUCTS = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
 /** References offered per compatible product when adding details to a print report (issue #318). */
 const MAX_REPORT_REFERENCES_PER_PRODUCT = 20

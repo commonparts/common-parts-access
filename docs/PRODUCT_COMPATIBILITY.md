@@ -42,6 +42,10 @@ A one-click report on the part page says whether the printed part worked on one 
 - **Effects:** a trigger recounts the pair after every change, updating `works_count`, `works_with_adjustments_count`, `does_not_work_count`, `evidence_level`, and `parts.makes_count`, which counts every report.
 - Comments are stored but not shown publicly; the part page reads the counters on `part_products`.
 
+## Linking products to a part (#222)
+
+A part is linked to up to 50 products, across brands (`VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT` in `lib/utils/constants.ts`). The Compatibility step disables the product picker at the limit, and the draft `PATCH` endpoints of both tracks answer 400 above it. Every read of a part's links uses the same bound: draft resume and save, product-name resolution on resume (`GET /api/products?ids=`), and the part page, which lists every linked product.
+
 ## Product creation
 
 Products are created inline in the publish flow's Compatibility step. `POST /api/products` refuses a case or spacing variant of an existing product name for the same brand and answers 409 with the existing record (`findProductByNormalizedName`, #279). The check runs at the API layer only: two simultaneous case-variant creations can both pass, a known and accepted gap.
