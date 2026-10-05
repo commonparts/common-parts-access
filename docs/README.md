@@ -44,6 +44,8 @@ Last reviewed: v1.2.0 (October 2026).
 ## Elsewhere in the repository
 
 - `README.md`, `CONTRIBUTING.md`: public-facing project and contribution rules
-- `.github/agents/dev.agent.md`, `.github/agents/docs.agent.md`: agent instructions
+- `CLAUDE.md`: development conventions, loaded by every Claude Code session
+- `.claude/skills/release/SKILL.md`: promotion and release procedure
+- `.github/workflows/release.yml`: publishes the GitHub Release when `staging` is merged into `main`
 - `.github/copilot-instructions.md`: code review rules
 - `supabase/migrations/`: each migration opens with a comment explaining what it does and why

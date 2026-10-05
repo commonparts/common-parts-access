@@ -1,0 +1,180 @@
+name: Release
+
+# Publishes the GitHub Release when a PR from `staging` is merged into `main`.
+# The release notes are written in the release PR description, between the
+# `<!-- release-notes:start -->` and `<!-- release-notes:end -->` markers (see
+# `.claude/skills/release/SKILL.md`). Without markers, a minimal note listing
+# commit subjects only is published.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Number of the merged staging → main PR to release
+        required: true
+        type: string
+
+# Two releases never run in parallel, so they never compute the same tag.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  release:
+    name: Tag and publish the release
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.pull_request.merged == true &&
+       github.event.pull_request.head.ref == 'staging' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the released commit
+        env:
+          MERGE_SHA: ${{ github.event.pull_request.merge_commit_sha }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "${MERGE_SHA:-}" ]; then
+            TARGET="$MERGE_SHA"
+          elif [ -n "${PR_NUMBER:-}" ]; then
+            # Manual run for a merged release PR: release its merge commit,
+            # whatever ref the run was started from.
+            gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+              --json state,baseRefName,headRefName,isCrossRepository,mergeCommit > pr.json
+            if [ "$(jq -r '.state' pr.json)" != "MERGED" ] ||
+               [ "$(jq -r '.baseRefName' pr.json)" != "main" ] ||
+               [ "$(jq -r '.headRefName' pr.json)" != "staging" ] ||
+               [ "$(jq -r '.isCrossRepository' pr.json)" != "false" ]; then
+              echo "PR #${PR_NUMBER} is not a merged staging → main PR." >&2
+              exit 1
+            fi
+            TARGET=$(jq -r '.mergeCommit.oid' pr.json)
+          else
+            echo "A manual run needs the number of a merged staging → main PR." >&2
+            exit 1
+          fi
+          git checkout --quiet --detach "$TARGET"
+          echo "Releasing $(git rev-parse HEAD)"
+
+      - name: Determine the next version
+        id: semver
+        run: |
+          set -euo pipefail
+          # Highest version tag anywhere: the numbering baseline.
+          VERSION_TAG=$(git tag --list 'v*' --sort=-version:refname | head -n 1)
+          # Latest version tag reachable from the released commit: the range baseline.
+          RANGE_TAG=$(git tag --merged HEAD --list 'v*' --sort=-version:refname | head -n 1)
+
+          # Only a commit newer than the latest release on main can be released:
+          # a manual run for an older release PR would otherwise put a higher
+          # version on older code.
+          if [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
+            echo "$(git rev-parse --short HEAD) is already released." >&2
+            exit 1
+          fi
+          git fetch --quiet origin main
+          MAIN_TAG=$(git tag --merged FETCH_HEAD --list 'v*' --sort=-version:refname | head -n 1)
+          if [ -n "$MAIN_TAG" ] && ! git merge-base --is-ancestor "$MAIN_TAG" HEAD; then
+            echo "$(git rev-parse --short HEAD) is older than ${MAIN_TAG}, the latest release on main." >&2
+            exit 1
+          fi
+
+          if [ -z "$VERSION_TAG" ]; then
+            NEXT="v0.1.0"
+          else
+            IFS=. read -r MAJOR MINOR PATCH <<< "${VERSION_TAG#v}"
+            if [ -n "$RANGE_TAG" ]; then
+              SUBJECTS=$(git log "${RANGE_TAG}..HEAD" --no-merges --pretty=format:'%s')
+            else
+              SUBJECTS=$(git log -n 200 --no-merges --pretty=format:'%s')
+            fi
+            if [ -z "$SUBJECTS" ]; then
+              echo "No commit since ${RANGE_TAG}: nothing to release." >&2
+              exit 1
+            fi
+            # feat( → minor bump, anything else → patch bump. Never major.
+            if grep -qE '^feat\(' <<< "$SUBJECTS"; then
+              NEXT="v${MAJOR}.$((MINOR + 1)).0"
+            else
+              NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+            fi
+          fi
+
+          if git rev-parse -q --verify "refs/tags/${NEXT}" > /dev/null; then
+            echo "Tag ${NEXT} already exists." >&2
+            exit 1
+          fi
+
+          echo "Next version: ${NEXT} (range from ${RANGE_TAG:-start})"
+          echo "version=${NEXT}" >> "$GITHUB_OUTPUT"
+          echo "range_tag=${RANGE_TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare the release notes
+        env:
+          # The PR description is untrusted input: it only ever goes through
+          # environment variables and files, never into the script itself.
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          RANGE_TAG: ${{ steps.semver.outputs.range_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if [ -n "${PR_NUMBER:-}" ]; then
+            gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json body --jq .body > pr_body.md
+          else
+            printf '%s\n' "${PR_BODY:-}" > pr_body.md
+          fi
+
+          # Everything strictly between the first start marker and the end
+          # marker that follows it. Without a complete, ordered pair, nothing
+          # is extracted and the commit-subject fallback below applies.
+          tr -d '\r' < pr_body.md | awk '
+            /<!-- release-notes:start -->/ && state == 0 { state = 1; next }
+            /<!-- release-notes:end -->/ && state == 1 { state = 2; next }
+            state == 1 { notes = notes $0 "\n" }
+            END { if (state == 2) printf "%s", notes }' > release_notes.md
+
+          if [ -z "$(tr -d '[:space:]' < release_notes.md)" ]; then
+            echo "No release notes in the PR description: publishing commit subjects only."
+            if [ -n "$RANGE_TAG" ]; then RANGE="${RANGE_TAG}..HEAD"; else RANGE="-n 200"; fi
+            {
+              echo "## What changed"
+              echo
+              echo "No release notes were written for this release. The changes are listed by commit subject."
+              echo
+              echo "## Changes"
+              echo
+              # shellcheck disable=SC2086
+              git log $RANGE --no-merges --reverse --pretty=format:'- %s'
+              echo
+            } > release_notes.md
+          fi
+
+          cat release_notes.md
+
+      - name: Create the tag and the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.semver.outputs.version }}
+        run: |
+          set -euo pipefail
+          gh release create "$VERSION" \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$(git rev-parse HEAD)" \
+            --title "$VERSION" \
+            --notes-file release_notes.md
