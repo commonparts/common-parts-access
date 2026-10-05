@@ -234,8 +234,8 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           : []
         setImageUrls(hydratedImages)
 
-        // A draft that reaches the tool without its gallery (inserted by the
-        // curation agent, or whose import failed at creation) gets the same
+        // A draft that reaches the tool without its gallery (created outside
+        // the Origin step, or whose import failed at creation) gets the same
         // background import as a freshly created one.
         if (
           resumeImportFiredFor.current !== resumedDraftId &&
