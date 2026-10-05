@@ -130,15 +130,17 @@ export function PartCard({
 
   return (
     <Card
+      data-part-card=""
       className={cn(
-        "group group/card transition-colors duration-200 hover:border-border-default",
+        "group transition-colors duration-200 hover:border-border-default",
         className,
       )}
     >
       <Link href={partHref} className={cn("block", FOCUS_RING)}>
         <div
+          data-part-card-thumbnail=""
           className={cn(
-            "group/thumb relative overflow-hidden rounded-t-lg",
+            "relative overflow-hidden rounded-t-lg",
             isCompact ? "aspect-square" : "aspect-video",
           )}
         >

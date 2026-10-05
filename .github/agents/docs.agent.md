@@ -77,21 +77,23 @@ The GitHub Release is the authoritative changelog. No changelog file is committe
 
 ### When to update
 
-After reading the full diff of the merge commit, decide whether any documentation file needs updating. Update only if the diff contains at least one of the following:
+After reading the full diff of the merge commit, application code included, decide whether any documentation file needs updating. Agent Dev updates `docs/` in the same PR as the code change, so this step catches what a PR missed. Update when the diff contains at least one of the following:
 
+- A behaviour change in a feature, route, API endpoint, component or flow that a document describes, or that makes a statement in `docs/` inaccurate
+- A feature that no document covers
 - A new file added to `docs/` or `.github/agents/`
 - A change to the agent pipeline (new agent, modified trigger, new MCP connection)
 - A change to the branch structure, CI workflow, or deployment configuration
-- A new Supabase table, column, or RLS policy described in the code
+- A new or changed Supabase table, column, enum value, RLS policy or database function
 - A new convention enforced in `dev.agent.md` or `copilot-instructions.md`
 - A change to the file structure of the project (new top-level directory, new significant file)
 - A deprecation or removal of a documented pattern
 
 Do not update documentation for:
-- UI component changes or styling fixes
-- Bug fixes that do not change architecture or conventions
+- Styling-only changes
+- Refactors that keep behaviour and public interfaces unchanged
+- Test-only changes
 - Dependency updates with no behavioral change
-- Refactors that do not change public interfaces or patterns
 
 ### Files in scope
 

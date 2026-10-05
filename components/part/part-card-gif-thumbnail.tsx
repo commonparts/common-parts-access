@@ -19,37 +19,109 @@ interface PartCardGifThumbnailProps {
  */
 const STILL_FRAME_MAX_EDGE_PX = 1280
 
+/** Set by PartCard on the card: the scope of keyboard focus. */
+const CARD_SELECTOR = "[data-part-card]"
+
+/** Set by PartCard on the thumbnail: the scope of pointer hover. */
+const THUMBNAIL_SELECTOR = "[data-part-card-thumbnail]"
+
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY)
+  query.addEventListener("change", onChange)
+  return () => query.removeEventListener("change", onChange)
+}
+
+function getReducedMotion() {
+  return window.matchMedia(REDUCED_MOTION_QUERY).matches
+}
+
+/** Before hydration nothing animates, so the server snapshot is "reduced". */
+function getServerReducedMotion() {
+  return true
+}
+
+type StillFrameState = "pending" | "drawn" | "failed"
+
 /**
  * Grid thumbnail for a GIF (#217): a still frame by default, the animation
  * only while the pointer is over the thumbnail or the card holds keyboard
- * focus.
+ * focus, and never with prefers-reduced-motion.
  *
  * next/image serves animated images as-is, so the still frame is drawn
  * client-side: once the GIF loads, it is painted onto a canvas, which the
- * HTML spec has draw the first frame of an animation. The animated image
- * stays mounted underneath and is revealed by CSS, so no extra file is
- * stored and no request is repeated on hover.
+ * HTML spec has draw the first frame of an animation.
  *
- * The animated image is hidden from the first server-rendered frame and only
- * ever revealed by the hover and focus variants, so it never shows on load,
- * before hydration or while the still frame is being drawn. If the frame
- * cannot be drawn, a neutral placeholder stands in for it.
- *
- * Relies on two groups set by PartCard: `group/card` on the card (keyboard
- * focus anywhere in it, via :focus-visible) and `group/thumb` on the thumbnail
- * (pointer hover). The reveal is gated by `motion-safe`, so with
- * prefers-reduced-motion the still frame is all that is ever shown.
+ * The animated image is mounted only while it is needed: until the still
+ * frame is drawn (it is that frame's source), then while the card is hovered
+ * or focused. An image hidden by CSS keeps decoding and advancing frames, so
+ * a grid of idle GIFs would otherwise keep every animation running. Remounting
+ * on hover reuses the browser cache. The animated image stays transparent
+ * until it has loaded, so the still frame is never replaced by an empty box.
+ * If the frame cannot be drawn, a neutral placeholder stands in for it.
  */
 export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGifThumbnailProps) {
+  const rootRef = React.useRef<HTMLDivElement>(null)
   const canvasRef = React.useRef<HTMLCanvasElement>(null)
-  const [stillFailed, setStillFailed] = React.useState(false)
+  const [stillFrame, setStillFrame] = React.useState<StillFrameState>("pending")
+  const [hovered, setHovered] = React.useState(false)
+  const [focused, setFocused] = React.useState(false)
+  const [animationLoaded, setAnimationLoaded] = React.useState(false)
+  const reducedMotion = React.useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotion,
+    getServerReducedMotion,
+  )
+
+  const active = (hovered || focused) && !reducedMotion
+  const animationMounted = stillFrame === "pending" || active
+
+  // A remount loads the image again: it stays transparent until then.
+  const [wasMounted, setWasMounted] = React.useState(animationMounted)
+  if (wasMounted !== animationMounted) {
+    setWasMounted(animationMounted)
+    if (!animationMounted) setAnimationLoaded(false)
+  }
+
+  const showAnimation = active && animationLoaded
+
+  React.useEffect(() => {
+    const root = rootRef.current
+    const thumbnail = root?.closest<HTMLElement>(THUMBNAIL_SELECTOR) ?? root
+    const card = root?.closest<HTMLElement>(CARD_SELECTOR) ?? thumbnail
+    if (!thumbnail || !card) return
+
+    const onPointerEnter = () => setHovered(true)
+    const onPointerLeave = () => setHovered(false)
+    const onFocusIn = (event: FocusEvent) => {
+      setFocused(event.target instanceof Element && event.target.matches(":focus-visible"))
+    }
+    const onFocusOut = (event: FocusEvent) => {
+      // Focus moving within the card is re-evaluated by the next focusin.
+      if (!(event.relatedTarget instanceof Node && card.contains(event.relatedTarget))) {
+        setFocused(false)
+      }
+    }
+
+    thumbnail.addEventListener("pointerenter", onPointerEnter)
+    thumbnail.addEventListener("pointerleave", onPointerLeave)
+    card.addEventListener("focusin", onFocusIn)
+    card.addEventListener("focusout", onFocusOut)
+    return () => {
+      thumbnail.removeEventListener("pointerenter", onPointerEnter)
+      thumbnail.removeEventListener("pointerleave", onPointerLeave)
+      card.removeEventListener("focusin", onFocusIn)
+      card.removeEventListener("focusout", onFocusOut)
+    }
+  }, [])
 
   const drawStillFrame = React.useCallback((image: HTMLImageElement) => {
     const canvas = canvasRef.current
     const context = canvas?.getContext("2d")
     const { naturalWidth, naturalHeight } = image
     if (!canvas || !context || naturalWidth === 0 || naturalHeight === 0) {
-      setStillFailed(true)
+      setStillFrame("failed")
       return
     }
     // Downscaled to the pixel budget, aspect ratio preserved; never upscaled.
@@ -57,24 +129,32 @@ export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGif
     canvas.width = Math.max(1, Math.round(naturalWidth * scale))
     canvas.height = Math.max(1, Math.round(naturalHeight * scale))
     context.drawImage(image, 0, 0, canvas.width, canvas.height)
-    setStillFailed(false)
+    setStillFrame("drawn")
   }, [])
 
   return (
-    <div className={cn("absolute inset-0", stillFailed && "bg-muted", className)}>
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes={sizes}
-        onLoad={(event) => drawStillFrame(event.currentTarget)}
-        className="object-cover opacity-0 motion-safe:group-hover/thumb:opacity-100 motion-safe:group-has-[:focus-visible]/card:opacity-100"
-      />
+    <div ref={rootRef} className={cn("absolute inset-0", stillFrame === "failed" && "bg-muted", className)}>
+      {animationMounted && (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          onLoad={(event) => {
+            if (stillFrame !== "drawn") drawStillFrame(event.currentTarget)
+            setAnimationLoaded(true)
+          }}
+          className={cn("object-cover", showAnimation ? "opacity-100" : "opacity-0")}
+        />
+      )}
       {/* Transparent until the frame is drawn, so it can always sit on top. */}
       <canvas
         ref={canvasRef}
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 h-full w-full object-cover motion-safe:group-hover/thumb:opacity-0 motion-safe:group-has-[:focus-visible]/card:opacity-0"
+        className={cn(
+          "pointer-events-none absolute inset-0 h-full w-full object-cover",
+          showAnimation && "opacity-0",
+        )}
       />
     </div>
   )
