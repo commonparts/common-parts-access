@@ -8,6 +8,8 @@ interface FileUploaderProps {
   maxSize?: number // in bytes
   className?: string
   children?: React.ReactNode
+  /** Blocks both click-to-browse and drag-and-drop, and greys out the zone. */
+  disabled?: boolean
 }
 
 export function FileUploader({
@@ -16,13 +18,22 @@ export function FileUploader({
   multiple = true,
   maxSize = 10 * 1024 * 1024, // 10MB default
   className,
-  children
+  children,
+  disabled = false
 }: FileUploaderProps) {
   const [isDragOver, setIsDragOver] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
+  // A disabled zone must not keep a stale drag highlight from before it was disabled.
+  React.useEffect(() => {
+    if (disabled) setIsDragOver(false)
+  }, [disabled])
+
+  // preventDefault stays on every drag event even when disabled, so a file
+  // dropped on a disabled zone is swallowed instead of opened by the browser.
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
+    if (disabled) return
     setIsDragOver(true)
   }
 
@@ -34,7 +45,8 @@ export function FileUploader({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    
+    if (disabled) return
+
     const files = Array.from(e.dataTransfer.files).filter(file => {
       return file.size <= maxSize
     })
@@ -55,16 +67,21 @@ export function FileUploader({
   }
 
   const handleClick = () => {
+    if (disabled) return
     fileInputRef.current?.click()
   }
 
   return (
     <div
+      aria-disabled={disabled || undefined}
       className={cn(
-          "cursor-pointer rounded-lg border border-dashed border-border-subtle bg-bg-surface p-lg text-center shadow-none transition-colors",
-        isDragOver
-          ? "border-action-primary bg-action-primary/5"
-          : "hover:border-action-primary/60 hover:bg-bg-hover",
+        "rounded-lg border border-dashed border-border-subtle p-lg text-center shadow-none transition-colors",
+        // A div has no :disabled state, so the design-system disabled tokens are applied directly.
+        disabled
+          ? "cursor-not-allowed bg-bg-disabled text-text-disabled [&_*]:text-text-disabled"
+          : isDragOver
+            ? "cursor-pointer border-action-primary bg-action-primary/5"
+            : "cursor-pointer bg-bg-surface hover:border-action-primary/60 hover:bg-bg-hover",
         className
       )}
       onDragOver={handleDragOver}
@@ -77,6 +94,7 @@ export function FileUploader({
         type="file"
         accept={accept}
         multiple={multiple}
+        disabled={disabled}
         onChange={handleFileChange}
         className="hidden"
       />
