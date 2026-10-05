@@ -36,6 +36,7 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 
 ## Layout & Components
 - **Cards**: Use the shared `Card` primitives; default padding and `rounded-lg` with `shadow-surface`. Respect existing spacing patterns (`space-y-*` inside content).
+- **Part card GIF thumbnails** (#217): in every `PartCard` grid, a GIF thumbnail shows a still frame, drawn client-side onto a canvas by `components/part/part-card-gif-thumbnail.tsx`. It animates only while the pointer is over the thumbnail or the card holds keyboard focus, and never with `prefers-reduced-motion: reduce`. The part page shows GIFs animated, as uploaded.
 - **Navbar**: Buttons (auth / "Publish a part" / logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.
 - **Hero**: Holds only the global search bar (see below); see [HERO_SECTION.md](./HERO_SECTION.md).
 - **Search bar**: Input + button share control height; button is default size with `rounded-l-none` when attached to the input.
