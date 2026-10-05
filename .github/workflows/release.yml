@@ -13,8 +13,8 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: Merged staging → main PR whose release notes to publish (empty = commit subjects only)
-        required: false
+        description: Number of the merged staging → main PR to release
+        required: true
         type: string
 
 # Two releases never run in parallel, so they never compute the same tag.
@@ -64,7 +64,8 @@ jobs:
             fi
             TARGET=$(jq -r '.mergeCommit.oid' pr.json)
           else
-            TARGET="$GITHUB_SHA"
+            echo "A manual run needs the number of a merged staging → main PR." >&2
+            exit 1
           fi
           git checkout --quiet --detach "$TARGET"
           echo "Releasing $(git rev-parse HEAD)"
