@@ -10,6 +10,7 @@ describe('numberedImageFilename', () => {
       numberedImageFilename(1, 'https://media.printables.com/media/prints/611501/images/a-b/clip-off.jpg'),
     ).toBe('01-clip-off.jpg')
     expect(numberedImageFilename(10, 'https://e.com/photo.webp')).toBe('10-photo.webp')
+    expect(numberedImageFilename(3, 'https://e.com/clip-anim.GIF')).toBe('03-clip-anim.gif')
   })
 
   it('sanitizes unsafe characters in the source name', () => {
