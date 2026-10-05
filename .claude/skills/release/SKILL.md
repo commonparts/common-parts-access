@@ -62,3 +62,4 @@ Claude Code sessions cannot create GitHub Releases themselves. If the workflow f
 - Computes the version from commit subjects, as in step 2 above, and fails if that tag already exists.
 - Publishes the release notes found between the markers in the PR description. Without a complete start/end pair, it publishes a minimal note listing the commit subjects only, never their bodies.
 - A manual run requires the number of a merged `staging` → `main` PR and releases that PR's merge commit.
+- It refuses a commit that is already tagged, or that is older than the latest release on `main`.
