@@ -59,7 +59,8 @@ type StillFrameState = "pending" | "drawn" | "failed"
  * a grid of idle GIFs would otherwise keep every animation running. Remounting
  * on hover reuses the browser cache. The animated image stays transparent
  * until it has loaded, so the still frame is never replaced by an empty box.
- * If the frame cannot be drawn, a neutral placeholder stands in for it.
+ * If the image fails to load or the frame cannot be drawn, a neutral
+ * placeholder stands in for it.
  */
 export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGifThumbnailProps) {
   const rootRef = React.useRef<HTMLDivElement>(null)
@@ -150,6 +151,10 @@ export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGif
           onLoad={(event) => {
             if (stillFrame !== "drawn") drawStillFrame(event.currentTarget)
             setAnimationLoaded(true)
+          }}
+          onError={() => {
+            // An image that never loads never draws a frame: show the placeholder.
+            if (stillFrame !== "drawn") setStillFrame("failed")
           }}
           className={cn("object-cover", showAnimation ? "opacity-100" : "opacity-0")}
         />
