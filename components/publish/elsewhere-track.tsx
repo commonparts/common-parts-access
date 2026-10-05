@@ -30,6 +30,7 @@ import {
   missingCriteria,
   type CurationFlagColumn,
 } from '@/lib/curation/checklist'
+import { shouldImportOnResume, supportsImageImport } from '@/lib/curation/image-import'
 import { elsewhereTrackBlockers } from '@/lib/publish/blockers'
 import { FLAG_STEP } from '@/lib/publish/placement'
 import {
@@ -126,6 +127,9 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
   const [imageUrls, setImageUrls] = React.useState<string[]>([])
   const [uploadingFiles, setUploadingFiles] = React.useState(false)
   const [importingImages, setImportingImages] = React.useState(false)
+  // Draft id the resume import was fired for — guards against a second fire
+  // for the same resume (effect re-run, React strict mode).
+  const resumeImportFiredFor = React.useRef<string | null>(null)
 
   const [saving, setSaving] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
@@ -143,10 +147,31 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null))
   }, [])
 
+  /**
+   * Imports the source's gallery into a draft that has no image yet (numbered
+   * 00-…, 01-… so the source's first image becomes the thumbnail and the
+   * slideshow keeps the source order). Fired at draft creation and when a
+   * draft is resumed without any image. Fire-and-forget: a failed import is
+   * silent — photos can be uploaded manually on the Files step.
+   */
+  const importImagesFromSource = React.useCallback(async (id: string) => {
+    setImportingImages(true)
+    try {
+      const res = await fetch(`/api/curation/drafts/${id}/import-images`, { method: 'POST' })
+      const json = await res.json().catch(() => ({}))
+      if (res.ok && Array.isArray(json.images)) setImageUrls(json.images)
+    } catch {
+      // Silent by design — pre-fill never blocks the flow.
+    } finally {
+      setImportingImages(false)
+    }
+  }, [])
+
   // Resume: hydrate everything, then open on the first step that still has an
   // unmet publish condition.
   React.useEffect(() => {
     if (!initialDraftId) return
+    const resumedDraftId = initialDraftId
     let cancelled = false
 
     async function hydrate() {
@@ -204,11 +229,25 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         setNeedsLegalReview(draft.needs_legal_review === true)
         setLegalJustification(draft.legal_review_justification ?? '')
         setModelFileCount(draft.model_file_count ?? 0)
-        setImageUrls(
-          Array.isArray(draft.images)
-            ? draft.images.filter((url: unknown): url is string => typeof url === 'string')
-            : [],
-        )
+        const hydratedImages: string[] = Array.isArray(draft.images)
+          ? draft.images.filter((url: unknown): url is string => typeof url === 'string')
+          : []
+        setImageUrls(hydratedImages)
+
+        // A draft that reaches the tool without its gallery (inserted by the
+        // curation agent, or whose import failed at creation) gets the same
+        // background import as a freshly created one.
+        if (
+          resumeImportFiredFor.current !== resumedDraftId &&
+          shouldImportOnResume({
+            sourcePlatform: draft.source_platform,
+            imageFileCount: draft.image_file_count ?? 0,
+            imageCount: hydratedImages.length,
+          })
+        ) {
+          resumeImportFiredFor.current = resumedDraftId
+          void importImagesFromSource(resumedDraftId)
+        }
 
         // Derived from the draft rather than from state, which has not
         // committed yet at this point in the effect. The publication license's
@@ -322,25 +361,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     }
   }, [formData.sourceUrl, draftId, applyPrefill])
 
-  /**
-   * Imports the source's gallery into the fresh draft (numbered 00-…, 01-… so
-   * the source's first image becomes the thumbnail and the slideshow keeps the
-   * source order). Fire-and-forget: a failed import is silent — photos can be
-   * uploaded manually on the Files step.
-   */
-  const importImagesFromSource = React.useCallback(async (id: string) => {
-    setImportingImages(true)
-    try {
-      const res = await fetch(`/api/curation/drafts/${id}/import-images`, { method: 'POST' })
-      const json = await res.json().catch(() => ({}))
-      if (res.ok && Array.isArray(json.images)) setImageUrls(json.images)
-    } catch {
-      // Silent by design — pre-fill never blocks the flow.
-    } finally {
-      setImportingImages(false)
-    }
-  }, [])
-
   const patchDraftById = React.useCallback(
     async (id: string, body: Record<string, unknown>): Promise<boolean> => {
       const res = await fetch(`/api/curation/drafts/${id}`, {
@@ -428,7 +448,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           setDraftSlug(json.draft.slug)
           // Kick off the source image import in the background — the Files
           // step shows the running state and the resulting count.
-          if (formData.sourcePlatform === 'printables') {
+          if (supportsImageImport(formData.sourcePlatform)) {
             void importImagesFromSource(newId)
           }
           // Creation cannot carry the category or the judgements made on this
