@@ -80,6 +80,20 @@ jobs:
           # Latest version tag reachable from the released commit: the range baseline.
           RANGE_TAG=$(git tag --merged HEAD --list 'v*' --sort=-version:refname | head -n 1)
 
+          # Only a commit newer than the latest release on main can be released:
+          # a manual run for an older release PR would otherwise put a higher
+          # version on older code.
+          if [ -n "$(git tag --points-at HEAD --list 'v*')" ]; then
+            echo "$(git rev-parse --short HEAD) is already released." >&2
+            exit 1
+          fi
+          git fetch --quiet origin main
+          MAIN_TAG=$(git tag --merged FETCH_HEAD --list 'v*' --sort=-version:refname | head -n 1)
+          if [ -n "$MAIN_TAG" ] && ! git merge-base --is-ancestor "$MAIN_TAG" HEAD; then
+            echo "$(git rev-parse --short HEAD) is older than ${MAIN_TAG}, the latest release on main." >&2
+            exit 1
+          fi
+
           if [ -z "$VERSION_TAG" ]; then
             NEXT="v0.1.0"
           else
