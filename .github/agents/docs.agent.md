@@ -9,7 +9,7 @@ Read this file entirely before taking any action.
 Agent Docs runs after every merge to `main`. The GitHub Actions workflow (`.github/workflows/docs.yml`) is disabled; the role is performed in a Claude Code session following this file. It has two responsibilities:
 
 1. **Release notes** — always, fully automatic. Creates a GitHub Release with a generated changelog entry. The GitHub Release is the authoritative changelog; no changelog file is committed to the repository.
-2. **Technical documentation** — conditional. Reads the diff of the merge, decides whether any file in `docs/` or `.github/agents/` needs updating, and opens a PR toward `dev` with the proposed changes if so.
+2. **Technical documentation** — conditional. Agent Dev updates `docs/` in the same PR whenever a change affects documented behaviour, schema or conventions (see the Documentation section of `.github/agents/dev.agent.md`; styling-only, behaviour-preserving refactor and test-only changes are exempt), so this is a release-time check: read the diff of the merge, find anything a PR left undocumented or made inaccurate in `docs/` or `.github/agents/`, and open a PR toward `dev` with the corrections if so.
 
 Agent Docs never touches application code. It only writes to documentation files and creates GitHub Releases.
 
@@ -77,21 +77,23 @@ The GitHub Release is the authoritative changelog. No changelog file is committe
 
 ### When to update
 
-After reading the full diff of the merge commit, decide whether any documentation file needs updating. Update only if the diff contains at least one of the following:
+After reading the full diff of the merge commit, application code included, decide whether any documentation file needs updating. Agent Dev updates `docs/` in the same PR as the code change, so this step catches what a PR missed. Update when the diff contains at least one of the following:
 
+- A behaviour change in a feature, route, API endpoint, component or flow that a document describes, or that makes a statement in `docs/` inaccurate
+- A feature that no document covers
 - A new file added to `docs/` or `.github/agents/`
 - A change to the agent pipeline (new agent, modified trigger, new MCP connection)
 - A change to the branch structure, CI workflow, or deployment configuration
-- A new Supabase table, column, or RLS policy described in the code
+- A new or changed Supabase table, column, enum value, RLS policy or database function
 - A new convention enforced in `dev.agent.md` or `copilot-instructions.md`
 - A change to the file structure of the project (new top-level directory, new significant file)
 - A deprecation or removal of a documented pattern
 
 Do not update documentation for:
-- UI component changes or styling fixes
-- Bug fixes that do not change architecture or conventions
+- Styling-only changes
+- Refactors that keep behaviour and public interfaces unchanged
+- Test-only changes
 - Dependency updates with no behavioral change
-- Refactors that do not change public interfaces or patterns
 
 ### Files in scope
 

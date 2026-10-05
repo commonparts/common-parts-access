@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { formatPrintTime } from "@/lib/utils/formatters"
+import { isGifUrl } from "@/lib/utils/images"
+import { PartCardGifThumbnail } from "./part-card-gif-thumbnail"
 import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
 
 interface PartCardProps {
@@ -18,6 +20,8 @@ interface PartCardProps {
   // where the compatibility line is redundant, such as a product page.
   showPartMeta?: boolean
 }
+
+const THUMBNAIL_HOVER_CLASS = "transition-transform duration-200 group-hover:scale-105"
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
@@ -120,9 +124,13 @@ export function PartCard({
   const partHref = `/parts/${part.slug}`
   const printTime = formatPrintTime(part.estimatedPrintTime)
   const isCompact = variant === "compact"
+  const thumbnailSizes = isCompact
+    ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+    : "(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
 
   return (
     <Card
+      data-part-card=""
       className={cn(
         "group transition-colors duration-200 hover:border-border-default",
         className,
@@ -130,22 +138,27 @@ export function PartCard({
     >
       <Link href={partHref} className={cn("block", FOCUS_RING)}>
         <div
+          data-part-card-thumbnail=""
           className={cn(
             "relative overflow-hidden rounded-t-lg",
             isCompact ? "aspect-square" : "aspect-video",
           )}
         >
-          {part.thumbnailUrl ? (
+          {part.thumbnailUrl && isGifUrl(part.thumbnailUrl) ? (
+            <PartCardGifThumbnail
+              key={part.thumbnailUrl}
+              src={part.thumbnailUrl}
+              alt={part.title}
+              sizes={thumbnailSizes}
+              className={THUMBNAIL_HOVER_CLASS}
+            />
+          ) : part.thumbnailUrl ? (
             <Image
               src={part.thumbnailUrl}
               alt={part.title}
               fill
-              sizes={
-                isCompact
-                  ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                  : "(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
-              }
-              className="object-cover transition-transform duration-200 group-hover:scale-105"
+              sizes={thumbnailSizes}
+              className={cn("object-cover", THUMBNAIL_HOVER_CLASS)}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
