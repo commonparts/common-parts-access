@@ -1,6 +1,6 @@
-# Dev Agent Instructions — Common Parts Access
+# Common Parts Access — instructions for Claude Code
 
-Read this file entirely before writing any code or proposing any changes.
+Claude Code loads this file at the start of every session. It holds the conventions for all development work in this repository. Promotions between branches and releases follow the `release` skill in `.claude/skills/release/SKILL.md`.
 
 ---
 
@@ -15,7 +15,7 @@ The project is solo-operated and in MVP stage. The human is the final decision-m
 ## Non-negotiables — read before touching anything
 
 - **Never push directly to `main` or `staging`** — always work on a feature branch (`feature/issue-xxx`) and open a PR toward `dev`
-- **Never merge a PR** — the human merges manually
+- **Never merge a PR** unless the human asks for that merge
 - **Never modify** `design-tokens/`, `lib/supabase/server.ts`, `lib/supabase/client.ts`, `middleware.ts`, or `app/layout.tsx` without explicit instruction
 - **Never hardcode hex colors or arbitrary spacing values** — always use design tokens
 - **Never mix server and client Supabase imports** in the same file
@@ -209,6 +209,8 @@ Use `Closes` for fixes and features that fully resolve the issue.
 Use `Fixes` for bugs specifically.
 Never open a PR without this reference — the issue must be traceable to the code that resolved it.
 
+The repository is public: commit messages, PR titles and descriptions, and code comments are readable by anyone. Describe what the change does and why it is needed for the product; keep internal context (operations, tooling, private documents) out of them.
+
 Example PR description:
 ```
 Implement user dashboard for published parts
@@ -231,7 +233,7 @@ Closes #12
 Update the affected document when the change:
 - Changes the behaviour of a documented feature, route, API endpoint or flow
 - Adds, renames or removes a table, column, enum value, RLS policy or database function → `docs/DATA_MODEL.md`, plus the feature document
-- Changes a convention, the CI, the branch workflow or the deployment → `docs/DEV_STRATEGY.md`, and this file if agents must follow it
+- Changes a convention, the CI, the branch workflow or the deployment → `docs/DEV_STRATEGY.md`, and this file (or the `release` skill) if agents must follow it
 - Adds a feature that no document covers → write a new document in `docs/` and add it to the index in `docs/README.md`
 - Makes a statement in a document false, wherever it is
 
@@ -243,7 +245,7 @@ No update is needed for styling-only changes, refactors that keep behaviour and 
 - State facts verified in the code or the schema; never document intent as if it were implemented. When behaviour is planned but not built, say so explicitly.
 - Describe the current state in present tense. Reference the issue number where a rule comes from (`(#312)`) instead of narrating the history.
 - Planning and historical documents (`user-flows.md`, `DATA_MODEL_EVOLUTION.md`, `NEW_IDENTITY_COMMON_PARTS_ACCESS.md`) are not rewritten: update their status note at the top instead.
-- Never write a changelog or release notes, and never commit a `CHANGELOG.md`. The GitHub Release created when `staging` is merged into `main` is the changelog (see `.github/agents/docs.agent.md`).
+- Never commit a `CHANGELOG.md`, and never write release notes in a feature PR. The GitHub Release published when `staging` is merged into `main` is the changelog; its notes are written in the release PR (see the `release` skill).
 
 ### In the PR description
 
