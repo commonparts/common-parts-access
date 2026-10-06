@@ -15,6 +15,8 @@ export const COLLAPSED_COMPATIBLE_PRODUCTS_COUNT = 12
 /** The minimum a product needs to be grouped, sorted and filtered. */
 export interface CompatibleProductRef {
   name: string
+  /** Unique across products; breaks ties between names the collator treats as equal. */
+  slug: string
   brand?: { name: string; slug: string } | null
   references?: readonly { value: string }[]
 }
@@ -28,6 +30,11 @@ export interface CompatibleProductGroup<T extends CompatibleProductRef> {
 // Numeric collation so "Series 9" sorts before "Series 10"; base sensitivity
 // so case and accents do not split otherwise identical names.
 const nameCollator = new Intl.Collator('en', { numeric: true, sensitivity: 'base' })
+
+/** Plain code-unit order: slugs are ASCII and unique, so this is total and stable. */
+function compareSlugs(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
 
 /**
  * Reduces text to lowercase letters and digits, without accents. Applied to
@@ -43,10 +50,21 @@ function foldSearchText(value: string): string {
 }
 
 /**
+ * Whether a filter query searches for anything. A query made only of
+ * characters the filter ignores (spaces, punctuation) behaves as empty, so
+ * the section never presents an unfiltered list as a set of matches.
+ */
+export function isActiveFilterQuery(query: string): boolean {
+  return foldSearchText(query) !== ''
+}
+
+/**
  * Groups products by brand. Groups are ordered by brand name, with the
  * products that have no brand last; products are ordered by name within
  * their group. The brand is keyed on its slug, the identity used in the
- * brand page URL the group heading links to.
+ * brand page URL the group heading links to. Slugs break ties between names
+ * the collator treats as equal ("Series 9" and "Series 09", "Cafe" and
+ * "Café"), so the order never depends on the order the links were fetched in.
  */
 export function groupProductsByBrand<T extends CompatibleProductRef>(
   products: readonly T[],
@@ -65,9 +83,14 @@ export function groupProductsByBrand<T extends CompatibleProductRef>(
     else bySlug.set(brand.slug, { brand, products: [product] })
   }
 
-  const byName = (a: T, b: T) => nameCollator.compare(a.name, b.name)
+  const byName = (a: T, b: T) =>
+    nameCollator.compare(a.name, b.name) || compareSlugs(a.slug, b.slug)
   const groups = [...bySlug.values()]
-    .sort((a, b) => nameCollator.compare(a.brand?.name ?? '', b.brand?.name ?? ''))
+    .sort(
+      (a, b) =>
+        nameCollator.compare(a.brand?.name ?? '', b.brand?.name ?? '') ||
+        compareSlugs(a.brand?.slug ?? '', b.brand?.slug ?? ''),
+    )
     .map((group) => ({ ...group, products: [...group.products].sort(byName) }))
 
   if (unbranded.length > 0) {
