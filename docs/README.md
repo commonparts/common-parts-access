@@ -23,7 +23,7 @@ Last reviewed: v1.2.0 (October 2026).
 | [CURATION_TOOL.md](./CURATION_TOOL.md) | Reference | Elsewhere track engine (`/api/curation/**`), checklist, prefill |
 | [SEARCH.md](./SEARCH.md) | Reference | Autocomplete, `/search`, reference matching, zero-result logging |
 | [BROWSE_NAVIGATION.md](./BROWSE_NAVIGATION.md) | Reference | `/browse`, category and brand pages, availability semantics |
-| [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) | Reference | Product references, regional names, evidence levels, print reports |
+| [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) | Reference | Product references, regional names, evidence levels, print reports, compatible products on the part page |
 | [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md) | Reference | Anonymous downloads, archive, storage |
 | [PART_VIEWS.md](./PART_VIEWS.md) | Reference | Anonymous view counting |
 | [PART_LIKES.md](./PART_LIKES.md) | Reference | Likes (hidden behind the social features flag) |
@@ -44,6 +44,8 @@ Last reviewed: v1.2.0 (October 2026).
 ## Elsewhere in the repository
 
 - `README.md`, `CONTRIBUTING.md`: public-facing project and contribution rules
-- `.github/agents/dev.agent.md`, `.github/agents/docs.agent.md`: agent instructions
+- `CLAUDE.md`: development conventions, loaded by every Claude Code session
+- `.claude/skills/release/SKILL.md`: promotion and release procedure
+- `.github/workflows/release.yml`: publishes the GitHub Release when `staging` is merged into `main`
 - `.github/copilot-instructions.md`: code review rules
 - `supabase/migrations/`: each migration opens with a comment explaining what it does and why

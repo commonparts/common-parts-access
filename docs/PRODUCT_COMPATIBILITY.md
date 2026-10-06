@@ -32,7 +32,7 @@ The rule is one function, `part_product_evidence_level(positive, negative)`. The
 
 ## Print reports (#318)
 
-A one-click report on the part page says whether the printed part worked on one compatible product.
+A one-click report on the part page says whether the printed part worked on one compatible product. It is offered on published parts only, behind a "Report a print" toggle on each compatible product (#355).
 
 - **Results:** `works` and `works_with_adjustments` count as positive; `does_not_work` counts as negative.
 - **One report per reporter per pair.** Reporting again replaces the earlier report; this is also how an optional comment or product reference is added after the one-click result.
@@ -42,6 +42,20 @@ A one-click report on the part page says whether the printed part worked on one 
 - **Effects:** a trigger recounts the pair after every change, updating `works_count`, `works_with_adjustments_count`, `does_not_work_count`, `evidence_level`, and `parts.makes_count`, which counts every report.
 - Comments are stored but not shown publicly; the part page reads the counters on `part_products`.
 
+## Linking products to a part (#222)
+
+A part is linked to up to 50 products, across brands (`VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT` in `lib/utils/constants.ts`). The Compatibility step disables the product picker at the limit, and the draft `PATCH` endpoints of both tracks answer 400 above it. Every read of a part's links uses the same bound: draft resume and save, product-name resolution on resume (`GET /api/products?ids=`), and the part page, which lists every linked product.
+
+## Compatible products on the part page (#355)
+
+The part page lists every linked product in a full-width "Compatible with" section below the part header, so its length never changes the height of the other cards (`components/part/compatible-products.tsx`).
+
+- Products are grouped by brand, groups ordered by brand name and products by name within a group; products with no brand come last under "Other products". Each group heading links to the brand page and carries the brand's verified badge.
+- Each product is a compact row in a grid of one to three columns, depending on the width: the product name, linked to its product page, its evidence-level badge and its category, linked to the category page. A category describes the product, not the part, so the "Part details" card has no category row (#372). There is no product image.
+- On a published part, each row has a "Report a print" toggle that opens the print report controls for that product.
+- Above 12 products (`COLLAPSED_COMPATIBLE_PRODUCTS_COUNT`), the section shows the first 12 and a "Show all N products" control, plus a filter field. The filter matches the product name, the brand name and the product's references, ignoring case, accents, spaces and punctuation. While a filter is entered, every match is shown.
+- The grouping, ordering, filtering and collapsing rules are pure functions in `lib/utils/compatible-products.ts`.
+
 ## Product creation
 
 Products are created inline in the publish flow's Compatibility step. `POST /api/products` refuses a case or spacing variant of an existing product name for the same brand and answers 409 with the existing record (`findProductByNormalizedName`, #279). The check runs at the API layer only: two simultaneous case-variant creations can both pass, a known and accepted gap.
@@ -49,6 +63,7 @@ Products are created inline in the publish flow's Compatibility step. `POST /api
 ## Key files
 
 - `app/(public)/product/[slug]/page.tsx`, `lib/supabase/queries/product-page.ts`
+- `components/part/compatible-products.tsx`, `lib/utils/compatible-products.ts`
 - `app/api/print-reports/route.ts`, `lib/supabase/queries/print-reports.ts`, `lib/utils/print-reports.ts`, `lib/utils/reporter-session.ts`, `lib/utils/evidence-level.ts`
 - `app/api/products/route.ts`, `lib/utils/product-references.ts`, `lib/utils/locale.ts`
 - Migrations: `20260923120000_product_references.sql`, `20260925120000_part_product_evidence_level.sql`, `20260925180000_print_reports.sql`

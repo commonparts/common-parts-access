@@ -29,3 +29,19 @@ export function mergeImageUrls(
     typeof currentThumbnail === 'string' && currentThumbnail ? [currentThumbnail] : []
   return sortImageUrls([...new Set([...existingThumbnail, ...existingImages, ...newUrls])])
 }
+
+/**
+ * True when an image URL points to a GIF, judged by the extension of its
+ * path (query string and fragment ignored, so signed URLs work). Stored
+ * images always keep their extension: uploads and curation imports both name
+ * the object after the source file.
+ */
+export function isGifUrl(url: string): boolean {
+  let pathname: string
+  try {
+    pathname = new URL(url, 'https://placeholder.invalid').pathname
+  } catch {
+    return false
+  }
+  return pathname.toLowerCase().endsWith('.gif')
+}

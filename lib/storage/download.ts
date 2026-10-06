@@ -1,17 +1,7 @@
 'use client'
 
 import { toZipSafeName } from '@/lib/storage/path-utils'
-
-interface PartFile {
-  id: string
-  filename: string
-  original_filename: string
-  file_type: string
-  file_size: number
-  file_url: string
-  file_category: string
-  created_at: string
-}
+import type { PartPageFile } from '@/types/parts'
 
 interface DownloadResult {
   success: boolean
@@ -24,7 +14,7 @@ interface DownloadResult {
  * Anonymous — no account or cookie-based identification is required (issue #250).
  * Fires a non-blocking POST that increments the anonymous download counter.
  */
-export async function downloadFile(file: PartFile, partSlug: string): Promise<DownloadResult> {
+export async function downloadFile(file: PartPageFile, partSlug: string): Promise<DownloadResult> {
   try {
     // Get a download URL from the API
     const urlResponse = await fetch(`/api/parts/${partSlug}/files/${file.id}/download-url`)
@@ -83,7 +73,7 @@ export async function downloadFile(file: PartFile, partSlug: string): Promise<Do
  * Anonymous — the archive endpoint requires no authentication and
  * increments the anonymous download counter server-side (issue #250).
  */
-export async function downloadAllPartFiles(files: PartFile[], partSlug: string, partName?: string): Promise<DownloadResult> {
+export async function downloadAllPartFiles(files: PartPageFile[], partSlug: string, partName?: string): Promise<DownloadResult> {
   if (!files || files.length === 0) {
     return {
       success: false,

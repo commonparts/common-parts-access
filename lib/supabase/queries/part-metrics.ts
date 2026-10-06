@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import type { Part } from '@/types/database';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-type PublishedPartSlice = Pick<Part, 'id' | 'view_count' | 'name' | 'like_count'>;
+type PublishedPartSlice = Pick<Part, 'id' | 'name' | 'like_count'>;
 
 async function getPublishedPart(slug: string, columns: string, supabase: SupabaseServerClient): Promise<PublishedPartSlice> {
 	const { data, error } = await supabase
@@ -30,12 +30,12 @@ async function getPublishedPart(slug: string, columns: string, supabase: Supabas
  * view_count trigger (issue #324). Covered by the RLS policy
  * "Anyone can log anonymous views on published parts".
  */
-export async function recordPartView(slug: string) {
+export async function recordPartView(slug: string): Promise<void> {
 	const supabase = await createClient();
 
 	const part = await getPublishedPart(
 		slug,
-		'id, view_count',
+		'id',
 		supabase,
 	);
 
@@ -46,11 +46,6 @@ export async function recordPartView(slug: string) {
 	if (insertError) {
 		throw insertError;
 	}
-
-	return {
-		partId: part.id as string,
-		estimatedViews: (part.view_count ?? 0) + 1,
-	};
 }
 
 export interface RecordDownloadInput {

@@ -175,3 +175,13 @@ export interface MyPartListResult {
 		hasPrev: boolean;
 	};
 }
+
+/** A file listed on the part page, as `GET /api/parts/[slug]/details` returns it. */
+export interface PartPageFile {
+	id: string;
+	original_filename: string;
+	file_type: string;
+	file_size: number;
+	file_url: string;
+	file_category: string;
+}

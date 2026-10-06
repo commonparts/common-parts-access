@@ -18,7 +18,7 @@ A session is the shared 5-step stepper rendered by `components/publish/elsewhere
 
 | # | Step | Purpose |
 |---|------|---------|
-| 1 | **Origin** | Source URL + duplicate check + best-effort pre-fill, title, category, platform, author, declared source license, and the resulting hosting outcome. Creates the draft (and kicks off the source-image import). Carries the `duplicate`, `attribution`, `license` and `eligibility` criteria and the rejection recorder. |
+| 1 | **Origin** | Source URL + duplicate check + best-effort pre-fill, title, category, platform, author, declared source license, and the resulting hosting outcome. Creates the draft (and kicks off the source-image import, which also runs when a draft without images is resumed). Carries the `duplicate`, `attribution`, `license` and `eligibility` criteria and the rejection recorder. |
 | 2 | **Files** | File upload for hosted parts, photos for referenced ones. Carries the `file` criterion. |
 | 3 | **Details** | Short description, instructions, tags, publication license, and print metadata. |
 | 4 | **Compatibility** | Brand and product assignment with demand context. Carries the `product_target` criterion. |
@@ -79,7 +79,14 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 #### Source-image import
 
-Right after the draft is created (Printables sources only), the tool fires `POST /api/curation/drafts/[id]/import-images` in the background. It downloads the source gallery server-side and registers each image under a numbered filename (`00-…`, `01-…`, in page order). The canonical filename sort (`sortImageUrls`) then makes `00` the thumbnail and keeps the slideshow in source order — no display-side change needed. It is **best-effort and idempotent**: unreachable, oversized (> 8 MB) or non-image entries are skipped with gapless numbering, the batch is capped at the existing 10-image limit, and a draft that already has images is left untouched. A failed import is silent; the curator uploads photos manually. Implemented via `lib/curation/source-images.ts`; thumbnail selection is the shared `mergeImageUrls` in `lib/utils/images.ts`.
+The tool fires `POST /api/curation/drafts/[id]/import-images` in the background (Printables sources only) at two points:
+
+- **Draft creation** — right after the Origin step creates the draft.
+- **Draft resume** — when a resumed draft has no registered image (`image_file_count = 0` and an empty `images` array). This covers drafts created outside the Origin step, which never went through the creation trigger, and drafts whose import failed at creation. A resumed draft that already has at least one image, or whose source platform is not supported, triggers nothing. The resume import fires once per resume (guarded against effect re-runs and React strict mode) and never blocks hydration.
+
+In both cases the Files step shows the import in progress, then the resulting grid and thumbnail, without a page reload. While the import runs, the photo field accepts neither a click nor a drop and the upload button is disabled; both are re-enabled when the import ends, whether it succeeded or failed. The import rewrites the part's image list from the state it read before importing, so a photo uploaded concurrently would drop out of the list (#357). The platform condition is shared by both triggers in `lib/curation/image-import.ts`.
+
+The endpoint downloads the source gallery server-side and registers each image under a numbered filename (`00-…`, `01-…`, in page order). The canonical filename sort (`sortImageUrls`) then makes `00` the thumbnail and keeps the slideshow in source order — no display-side change needed. It is **best-effort and idempotent**: unreachable, oversized (> 8 MB) or non-image entries are skipped (an image is any extension in `FILE_TYPES.IMAGE_FILES`, GIF included — #217) with gapless numbering, the batch is capped at the existing 10-image limit, and a draft that already has images is left untouched. A failed import is silent; the curator uploads photos manually. Implemented via `lib/curation/source-images.ts`; thumbnail selection is the shared `mergeImageUrls` in `lib/utils/images.ts`.
 
 ### 5. Review & publish
 
