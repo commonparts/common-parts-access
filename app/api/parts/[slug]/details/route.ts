@@ -7,6 +7,7 @@ import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 /**
  * Compatible products listed on a part page, each rendering print report
@@ -14,6 +15,12 @@ import { VALIDATION_LIMITS } from '@/lib/utils/constants'
  * linked product (issue #222).
  */
 const MAX_COMPATIBLE_PRODUCTS = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
+
+/**
+ * Files listed on a part page. A part holds at most this many: model files and
+ * images are the only categories, each capped at upload.
+ */
+const MAX_PART_FILES = PART_UPLOAD_LIMITS.maxModelFiles + PART_UPLOAD_LIMITS.maxThumbnailFiles
 
 /** References offered per compatible product when adding details to a print report (issue #318). */
 const MAX_REPORT_REFERENCES_PER_PRODUCT = 20
@@ -140,7 +147,8 @@ export async function GET(
         .from('part_files')
         .select('id, original_filename, file_type, file_size, file_url, file_category')
         .eq('part_id', part.id)
-        .order('created_at', { ascending: true }),
+        .order('created_at', { ascending: true })
+        .limit(MAX_PART_FILES),
       user
         ? supabase
             .from('part_likes')
