@@ -12,6 +12,7 @@ import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
 import { categoryCanonicalPath } from "@/lib/utils/seo"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
+import type { PartPageFile } from "@/types/parts"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -36,17 +37,6 @@ interface PartDetailsProps {
   className?: string
 }
 
-interface PartFile {
-  id: string
-  filename: string
-  original_filename: string
-  file_type: string
-  file_size: number
-  file_url: string
-  file_category: string
-  created_at: string
-}
-
 interface PartDimensions {
   length?: number
   width?: number
@@ -58,19 +48,14 @@ interface PartDimensions {
 
 type PrintSettings = Record<string, string | number | boolean | null>
 
-// PartComment interface hidden for MVP
-// interface PartComment {
-//   id: string
-//   content: string
-//   createdAt: string
-//   updatedAt: string
-//   author: {
-//     username: string
-//     displayName?: string
-//     avatar?: string
-//     verifiedMaker: boolean
-//   } | null
-// }
+/** A license as the part page shows it: a linked badge and the download notice. */
+interface PartLicense {
+  name: string
+  shortName: string
+  url: string
+  requiresAttribution: boolean
+  isCopyleft: boolean
+}
 
 interface PartData {
   id: string
@@ -95,71 +80,37 @@ interface PartData {
   }
   viewerHasLiked?: boolean
   tags: string[]
-  license: {
-    id: string
-    spdxId: string
-    name: string
-    shortName: string
-    url: string
-    allowsRedistribution: boolean
-    requiresAttribution: boolean
-    allowsCommercial: boolean
-    isCopyleft: boolean
-  } | null
+  license: PartLicense | null
   originType: 'original' | 'curated' | 'manufacturer'
   verificationStatus: 'unverified' | 'author_tested' | 'community_validated' | 'certified'
   fileHostingType: 'hosted' | 'link_out'
   sourcePlatform?: string | null
   sourcePlatformName?: string | null
-  sourcePlatformBaseUrl?: string | null
   sourceUrl?: string | null
   originalAuthor?: string | null
   originalAuthorUrl?: string | null
-  sourceLicense?: {
-    id: string
-    spdxId: string
-    name: string
-    shortName: string
-    url: string
-    allowsRedistribution: boolean
-    requiresAttribution: boolean
-    allowsCommercial: boolean
-    isCopyleft: boolean
-  } | null
+  sourceLicense?: PartLicense | null
   instructions?: string
   notes?: string
   createdAt: string
-  updatedAt: string
   /** The account that uploaded an original part. Null on a curated part (#372). */
   author: {
-    id: string
     username: string
     displayName?: string
-    bio?: string
     avatar?: string
-    website?: string
     location?: string
-    reputationScore: number
     verifiedMaker: boolean
-    memberSince: string
   } | null
   products?: {
     id: string
     name: string
     slug: string
-    description?: string
-    releaseYear?: number
-    discontinued: boolean
     image?: string
     brand?: {
-      id: string
       name: string
       slug: string
-      description?: string
-      logo?: string
-      website?: string
       verified: boolean
-    }
+    } | null
     /** The product's category, shown beside it rather than as a property of the part (#372). */
     category?: {
       name: string
@@ -178,13 +129,8 @@ interface PartData {
     id: string
     name: string
     slug: string
-    description?: string
-    logo?: string
-    website?: string
-    verified: boolean
   }[]
-  files: PartFile[]
-  // comments: PartComment[] // Hidden for MVP
+  files: PartPageFile[]
 }
 
 export function PartDetails({ slug, className }: PartDetailsProps) {
@@ -1015,7 +961,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <PartFileList
             files={part.files}
             showCard={true}
-            onFileDownload={async (file: PartFile) => {
+            onFileDownload={async (file: PartPageFile) => {
               setLicenseNoticeVisible(true)
               const { downloadFile } = await import('@/lib/storage/download')
 

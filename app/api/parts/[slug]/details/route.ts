@@ -7,6 +7,7 @@ import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 /**
  * Compatible products listed on a part page, each rendering print report
@@ -15,35 +16,39 @@ import { VALIDATION_LIMITS } from '@/lib/utils/constants'
  */
 const MAX_COMPATIBLE_PRODUCTS = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
+/**
+ * Files listed on a part page. A part holds at most this many: model files and
+ * images are the only categories, each capped at upload.
+ */
+const MAX_PART_FILES = PART_UPLOAD_LIMITS.maxModelFiles + PART_UPLOAD_LIMITS.maxThumbnailFiles
+
 /** References offered per compatible product when adding details to a print report (issue #318). */
 const MAX_REPORT_REFERENCES_PER_PRODUCT = 20
 
-/** A brand as this route exposes it — camelCased, storage columns renamed. */
-interface BrandPayload {
+/** A brand in the part's derived brand list (issue #315): the links above the title. */
+interface BrandLinkPayload {
   id: string
   name: string
   slug: string
-  description: string | null
-  logo: string | null
-  website: string | null
+}
+
+/** The brand of a compatible product, with the verified mark shown beside it. */
+interface ProductBrandPayload {
+  name: string
+  slug: string
   verified: boolean
 }
 
-/**
- * Maps a brands row to the response shape. Shared by the part's derived brand
- * list and by the brand carried on each compatible product, which are the same
- * rows read through the same join (issue #315).
- */
-function toBrandPayload(brand: Brand): BrandPayload {
-  return {
-    id: brand.id,
-    name: brand.name,
-    slug: brand.slug,
-    description: brand.description ?? null,
-    logo: brand.logo_url ?? null,
-    website: brand.website_url ?? null,
-    verified: brand.verified ?? false,
-  }
+type BrandRow = Pick<Brand, 'id' | 'name' | 'slug' | 'verified'>
+
+/** Maps a brands row to an entry of the part's derived brand list. */
+function toBrandLinkPayload(brand: BrandRow): BrandLinkPayload {
+  return { id: brand.id, name: brand.name, slug: brand.slug }
+}
+
+/** Maps a brands row to the brand carried on a compatible product. */
+function toProductBrandPayload(brand: BrandRow): ProductBrandPayload {
+  return { name: brand.name, slug: brand.slug, verified: brand.verified ?? false }
 }
 
 // GET /api/parts/[slug]/details - Get detailed part information by slug
@@ -82,7 +87,6 @@ export async function GET(
           instructions,
           notes,
           created_at,
-          updated_at,
           origin_type,
           status,
           user_id,
@@ -93,38 +97,25 @@ export async function GET(
           original_author,
           original_author_url,
           licenses!parts_license_id_fkey(
-            id,
-            spdx_id,
             name,
             short_name,
             url,
-            allows_redistribution,
             requires_attribution,
-            allows_commercial,
             is_copyleft
           ),
           source_licenses:licenses!parts_source_license_id_fkey(
-            id,
-            spdx_id,
             name,
             short_name,
             url,
-            allows_redistribution,
             requires_attribution,
-            allows_commercial,
             is_copyleft
           ),
           user_profiles!inner(
-            id,
             username,
             display_name,
-            bio,
             avatar_url,
-            website_url,
             location,
-            reputation_score,
-            verified_maker,
-            created_at
+            verified_maker
           )
         `)
         .eq('slug', slug)
@@ -148,34 +139,16 @@ export async function GET(
 
     const [
       { data: files, error: filesError },
-      { data: comments, error: commentsError },
       { data: likeRow, error: likeError },
       { data: partProducts, error: partProductsError },
       platformData,
     ] = await Promise.all([
       supabase
         .from('part_files')
-        .select('id, filename, original_filename, file_type, file_size, file_url, file_category, created_at')
+        .select('id, original_filename, file_type, file_size, file_url, file_category')
         .eq('part_id', part.id)
-        .order('created_at', { ascending: true }),
-      supabase
-        .from('part_comments')
-        .select(`
-          id,
-          content,
-          created_at,
-          updated_at,
-          user_profiles(
-            username,
-            display_name,
-            avatar_url,
-            verified_maker
-          )
-        `)
-        .eq('part_id', part.id)
-        .is('parent_id', null)
-        .order('created_at', { ascending: false })
-        .limit(10),
+        .order('created_at', { ascending: true })
+        .limit(MAX_PART_FILES),
       user
         ? supabase
             .from('part_likes')
@@ -195,24 +168,19 @@ export async function GET(
             id,
             name,
             slug,
-            description,
-            release_year,
-            discontinued,
             image_url,
             brands(
               id,
               name,
               slug,
-              description,
-              logo_url,
-              website_url,
               verified
             ),
             categories(name, slug),
-            product_references(id, value, type, region, language)
+            product_references(id, value, type)
           )
         `)
         .eq('part_id', part.id)
+        // `type` is selected only to order the references; it is not returned.
         .order('type', { referencedTable: 'products.product_references' })
         .order('value', { referencedTable: 'products.product_references' })
         .limit(MAX_REPORT_REFERENCES_PER_PRODUCT, { referencedTable: 'products.product_references' })
@@ -223,7 +191,6 @@ export async function GET(
     ])
 
     if (filesError) console.error('Error fetching model files:', filesError)
-    if (commentsError) console.error('Error fetching comments:', commentsError)
     if (likeError) console.error('Error checking like status:', likeError)
     if (partProductsError) console.error('Error fetching part products:', partProductsError)
 
@@ -247,7 +214,7 @@ export async function GET(
     const derivedBrands = distinctBrands(
       compatibleProducts.map((product) => {
         const brand = firstEmbedded(product.brands)
-        return brand ? toBrandPayload(brand) : null
+        return brand ? toBrandLinkPayload(brand) : null
       }),
     )
 
@@ -278,14 +245,10 @@ export async function GET(
         viewerHasLiked: Boolean(likeRow),
         tags: part.tags || [],
         license: license ? {
-          id: license.id,
-          spdxId: license.spdx_id,
           name: license.name,
           shortName: license.short_name,
           url: license.url,
-          allowsRedistribution: license.allows_redistribution,
           requiresAttribution: license.requires_attribution,
-          allowsCommercial: license.allows_commercial,
           isCopyleft: license.is_copyleft,
         } : null,
         originType: part.origin_type,
@@ -293,36 +256,25 @@ export async function GET(
         fileHostingType: part.file_hosting_type ?? 'hosted',
         sourcePlatform: part.source_platform,
         sourcePlatformName: platformData?.name ?? null,
-        sourcePlatformBaseUrl: platformData?.base_url ?? null,
         sourceUrl: part.source_url,
         originalAuthor: part.original_author,
         originalAuthorUrl: part.original_author_url,
         sourceLicense: sourceLicense ? {
-          id: sourceLicense.id,
-          spdxId: sourceLicense.spdx_id,
           name: sourceLicense.name,
           shortName: sourceLicense.short_name,
           url: sourceLicense.url,
-          allowsRedistribution: sourceLicense.allows_redistribution,
           requiresAttribution: sourceLicense.requires_attribution,
-          allowsCommercial: sourceLicense.allows_commercial,
           isCopyleft: sourceLicense.is_copyleft,
         } : null,
         instructions: part.instructions,
         notes: part.notes,
         createdAt: part.created_at,
-        updatedAt: part.updated_at,
         author: author ? {
-          id: author.id,
           username: author.username,
           displayName: author.display_name,
-          bio: author.bio,
           avatar: author.avatar_url,
-          website: author.website_url,
           location: author.location,
-          reputationScore: author.reputation_score,
           verifiedMaker: author.verified_maker,
-          memberSince: author.created_at,
         } : null,
         products: compatibleProducts.map((p) => {
           const pBrand = firstEmbedded(p.brands)
@@ -331,34 +283,16 @@ export async function GET(
             id: p.id,
             name: p.name,
             slug: p.slug,
-            description: p.description,
-            releaseYear: p.release_year,
-            discontinued: p.discontinued,
             image: resolveStorageUrl(p.image_url),
-            brand: pBrand ? toBrandPayload(pBrand) : null,
+            brand: pBrand ? toProductBrandPayload(pBrand) : null,
             // The category belongs to the product, not to the part (#372).
             category: pCategory ? { name: pCategory.name, slug: pCategory.slug } : null,
             reportStats: p.reportStats,
-            references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value, type: r.type })),
+            references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value })),
           }
         }),
         brands: derivedBrands,
         files: files || [],
-        comments: (comments || []).map(comment => {
-          const commentAuthor = firstEmbedded(comment.user_profiles)
-          return {
-            id: comment.id,
-            content: comment.content,
-            createdAt: comment.created_at,
-            updatedAt: comment.updated_at,
-            author: commentAuthor ? {
-              username: commentAuthor.username,
-              displayName: commentAuthor.display_name,
-              avatar: commentAuthor.avatar_url,
-              verifiedMaker: commentAuthor.verified_maker,
-            } : null,
-          }
-        }),
       },
     })
   } catch (error) {
