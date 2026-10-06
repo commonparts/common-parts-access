@@ -9,14 +9,14 @@ Views are anonymous, like downloads (issues #250 and #324): a `part_views` row r
 1. Part detail page mounts and issues `POST /api/parts/[slug]/view` once (guarded on the client).
 2. API resolves the part by slug (published only).
 3. API inserts one anonymous row into `part_views`; a DB trigger increments `parts.view_count`.
-4. Response returns `{ success: true, views }`, where `views` is the optimistic count.
+4. Response returns `{ success: true }`. The part page does not display a view count (#372); `parts.view_count` feeds the "Most viewed" sort of the browse page.
 
 ## API Contract
 - **Endpoint:** `POST /api/parts/[slug]/view`
 - **Request body:** none
 - **Headers used:** none
 - **Responses:**
-  - `200` with `{ success: true, views: number }`
+  - `200` with `{ success: true }`
   - `404` if the part is missing or unpublished
   - `500` for unexpected errors (view not recorded)
 

@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { categoryCanonicalPath } from "@/lib/utils/seo"
 import {
   COLLAPSED_COMPATIBLE_PRODUCTS_COUNT,
   filterCompatibleProducts,
@@ -29,7 +30,12 @@ export interface CompatibleProduct {
     name: string
     slug: string
     verified: boolean
-  }
+  } | null
+  /** The product's category, shown beside it rather than as a property of the part (#372). */
+  category?: {
+    name: string
+    slug: string
+  } | null
   /** Print report counters and the evidence level they derive (issues #317, #318). */
   reportStats: PrintReportStats
   /** The product's references, offered as optional detail on a print report and searched by the filter. */
@@ -172,7 +178,7 @@ interface CompatibleProductRowProps {
 
 /**
  * One compatible product: its name, linked to its product page, its evidence
- * level and, on a published part, a "Report a print" toggle. The print report
+ * level, its category and, on a published part, a "Report a print" toggle. The print report
  * controls mount on first open and stay mounted while hidden, so closing the
  * row does not lose the result the visitor just filed.
  */
@@ -208,33 +214,44 @@ const CompatibleProductRow = React.memo(function CompatibleProductRow({
         <EvidenceLevelBadge level={product.reportStats.evidenceLevel} className="shrink-0" />
       </div>
 
-      {canReport && (
-        <>
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            className="px-0 py-0"
-            aria-expanded={reportOpen}
-            aria-controls={reportMounted ? controlsId : undefined}
-            onClick={toggleReport}
-          >
-            {reportOpen ? "Hide print report" : "Report a print"}
-            <span className="sr-only"> on {product.name}</span>
-          </Button>
-          {reportMounted && (
-            <div id={controlsId} hidden={!reportOpen}>
-              <PrintReportControls
-                partId={partId}
-                productId={product.id}
-                productName={product.name}
-                stats={product.reportStats}
-                references={product.references}
-                onStatsChange={handleStatsChange}
-              />
-            </div>
+      {(product.category || canReport) && (
+        <div className="flex flex-wrap items-center gap-x-xs gap-y-3xs">
+          {product.category && (
+            <Link
+              href={categoryCanonicalPath(product.category.slug)}
+              className={cn("min-w-0 text-caption text-text-secondary hover:underline", FOCUS_RING)}
+            >
+              {product.category.name}
+            </Link>
           )}
-        </>
+          {canReport && (
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              className={cn("px-0 py-0", product.category && "ml-auto")}
+              aria-expanded={reportOpen}
+              aria-controls={reportMounted ? controlsId : undefined}
+              onClick={toggleReport}
+            >
+              {reportOpen ? "Hide print report" : "Report a print"}
+              <span className="sr-only"> on {product.name}</span>
+            </Button>
+          )}
+        </div>
+      )}
+
+      {canReport && reportMounted && (
+        <div id={controlsId} hidden={!reportOpen}>
+          <PrintReportControls
+            partId={partId}
+            productId={product.id}
+            productName={product.name}
+            stats={product.reportStats}
+            references={product.references}
+            onStatsChange={handleStatsChange}
+          />
+        </div>
       )}
     </li>
   )
