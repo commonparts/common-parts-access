@@ -16,8 +16,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartFileList } from "./part-file-list"
-import { EvidenceLevelBadge } from "./evidence-level-badge"
-import { PrintReportControls, type PrintReportReference } from "./print-report-controls"
+import type { PrintReportReference } from "./print-report-controls"
+import { CompatibleProducts } from "./compatible-products"
 
 
 /**
@@ -701,6 +701,16 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         </div>
       </Grid>
 
+      {/* Full width so a long list never stretches the cards below (issue #355) */}
+      {part.products && part.products.length > 0 && (
+        <CompatibleProducts
+          partId={part.id}
+          products={part.products}
+          canReport={part.isPublished}
+          onReportStatsChange={updateReportStats}
+        />
+      )}
+
       <Grid columns={12} className="items-start gap-lg">
         {part.instructions && (
           <Card className="col-span-12 lg:col-span-8 border-border-subtle">
@@ -955,76 +965,6 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             </div>
           </CardContent>
         </Card>
-
-        {/* Compatible products */}
-        {part.products && part.products.length > 0 && (
-          <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                Compatible with
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-md">
-                {part.products.map((p) => (
-                  <div key={p.id} className="flex items-start gap-3">
-                    {p.image && (
-                      <div className="w-16 h-16 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
-                        <Image
-                          src={p.image}
-                          alt={p.name}
-                          width={64}
-                          height={64}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-xs">
-                        <Link
-                          href={`/product/${p.slug}`}
-                          className="block min-w-0 font-medium line-clamp-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                        >
-                          {p.name}
-                        </Link>
-                        <EvidenceLevelBadge level={p.reportStats.evidenceLevel} className="shrink-0" />
-                      </div>
-                      {p.brand && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Link
-                            href={`/brands/${p.brand.slug}`}
-                            className="text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                          >
-                            {p.brand.name}
-                          </Link>
-                          {p.brand.verified && (
-                            <Badge variant="soft">
-                              ✓ Verified
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      {part.isPublished && (
-                        <PrintReportControls
-                          partId={part.id}
-                          productId={p.id}
-                          productName={p.name}
-                          stats={p.reportStats}
-                          references={p.references}
-                          onStatsChange={(stats) => updateReportStats(p.id, stats)}
-                          className="mt-xs"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Files */}
         {/* Files — only shown for hosted parts */}
