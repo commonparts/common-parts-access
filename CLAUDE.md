@@ -211,6 +211,8 @@ Never open a PR without this reference — the issue must be traceable to the co
 
 The repository is public: commit messages, PR titles and descriptions, and code comments are readable by anyone. Describe what the change does and why it is needed for the product; keep internal context (operations, tooling, private documents) out of them.
 
+Never include links to claude.ai sessions (`claude.ai/code/session_…`) in commit messages, PR descriptions, PR or issue comments, or release notes. Attribution lines such as `Co-Authored-By` are fine. Some tools append a footer with a session link when they create a PR: read the description once the PR is open and remove such a link.
+
 Example PR description:
 ```
 Implement user dashboard for published parts
