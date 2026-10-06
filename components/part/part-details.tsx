@@ -10,6 +10,7 @@ import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatLicenseNotice } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
+import { categoryCanonicalPath } from "@/lib/utils/seo"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
 import { Grid } from "@/components/layout/grid"
 import { Button } from "@/components/ui/button"
@@ -90,9 +91,7 @@ interface PartData {
   thumbnailUrl?: string
   images: string[]
   stats: {
-    downloads: number
     likes: number
-    views: number
   }
   viewerHasLiked?: boolean
   tags: string[]
@@ -131,6 +130,7 @@ interface PartData {
   notes?: string
   createdAt: string
   updatedAt: string
+  /** The account that uploaded an original part. Null on a curated part (#372). */
   author: {
     id: string
     username: string
@@ -160,19 +160,16 @@ interface PartData {
       website?: string
       verified: boolean
     }
+    /** The product's category, shown beside it rather than as a property of the part (#372). */
+    category?: {
+      name: string
+      slug: string
+    } | null
     /** Print report counters and the evidence level they derive (issues #317, #318). */
     reportStats: PrintReportStats
     /** The product's references, offered as optional detail on a print report. */
     references: PrintReportReference[]
   }[]
-  category?: {
-    id: string
-    name: string
-    slug: string
-    description?: string
-    icon?: string
-    path?: string
-  }
   /**
    * Every brand the part is filed under, derived from its compatible products
    * (issue #315). Empty when the part links to no product.
@@ -200,12 +197,14 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
   const [licenseNoticeVisible, setLicenseNoticeVisible] = useState(false)
   const viewTrackedRef = useRef(false)
 
+  // One license per part: the source license when the part has one, otherwise
+  // the license chosen on Common Parts Access (#372).
+  const effectiveLicense = part ? (part.sourceLicense ?? part.license) : null
+
   // Non-blocking license notice shown once a download is triggered (issue #250).
   // Curated parts are governed by the source license and credit the original author.
   const licenseNotice = useMemo(() => {
-    if (!part) return null
-    const effectiveLicense = part.sourceLicense ?? part.license
-    if (!effectiveLicense) return null
+    if (!part || !effectiveLicense) return null
     const author =
       part.originalAuthor || part.author?.displayName || part.author?.username || null
     return formatLicenseNotice({
@@ -214,7 +213,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
       isCopyleft: effectiveLicense.isCopyleft,
       author,
     })
-  }, [part])
+  }, [part, effectiveLicense])
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setPart(prev => {
@@ -417,6 +416,9 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
   // How the part entered the registry, in the reader's vocabulary (#301).
   const publication = describePublication(part.originType, part.fileHostingType)
 
+  // The platform's display name, or its slug when the platform is not listed.
+  const sourcePlatformLabel = part.sourcePlatformName ?? part.sourcePlatform
+
   // File filtering is now handled by PartFileList component
 
   return (
@@ -510,6 +512,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 ) : (
                   <span className="font-medium text-text-primary">{part.originalAuthor}</span>
                 )}
+                {sourcePlatformLabel && <> on {sourcePlatformLabel}</>}
               </p>
             )}
             {part.partDetails.partName && (
@@ -520,15 +523,10 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
-            <div className="flex items-center gap-1">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="font-semibold text-text-primary">{part.stats.downloads}</span>
-              <span>downloads</span>
-            </div>
-            {SOCIAL_FEATURES_ENABLED && (
+          {/* Likes are the only counter on the page (#372), so the row exists
+              only while social features are on. */}
+          {SOCIAL_FEATURES_ENABLED && (
+            <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
               <div className="flex items-center gap-1">
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
@@ -536,16 +534,8 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <span className="font-semibold text-text-primary">{part.stats.likes}</span>
                 <span>likes</span>
               </div>
-            )}
-            <div className="flex items-center gap-1">
-              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-              </svg>
-              <span className="font-semibold text-text-primary">{part.stats.views}</span>
-              <span>views</span>
             </div>
-          </div>
+          )}
 
           {part.tags.length > 0 && (
             <div className="flex flex-wrap gap-xs">
@@ -651,16 +641,13 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
 
           </div>
 
+          {/* The API returns no author for a curated part: its page credits the
+              original designer under the title instead (#372). */}
           {part.author && (
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  {/* "Added by", not "Referenced by": the badge above reserves
-                      *Referenced* for a part whose files stay at the source, so
-                      reusing it here would label a Hosted part as referenced.
-                      This card names the account that brought the part in — the
-                      original author is credited under the title. */}
-                  {part.originType === 'curated' ? 'Added by' : 'Created by'}
+                  Created by
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
@@ -791,16 +778,10 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 </div>
               </div>
             )}
-            {part.category && (
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground font-medium">Category</span>
-                <span className="font-medium">
-                  {part.category.name}
-                </span>
-              </div>
-            )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-              <span className="text-muted-foreground font-medium">Uploaded</span>
+              <span className="text-muted-foreground font-medium">
+                {part.originType === 'curated' ? 'Added' : 'Uploaded'}
+              </span>
               <span className="text-sm">{formatDate(part.createdAt)}</span>
             </div>
           </CardContent>
@@ -885,7 +866,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 {part.sourcePlatform && (
                   <div className="flex flex-col gap-2">
                     <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                    <span className="text-sm font-medium">{part.sourcePlatformName ?? part.sourcePlatform}</span>
+                    <span className="text-sm font-medium">{sourcePlatformLabel}</span>
                   </div>
                 )}
 
@@ -897,7 +878,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     rel="noopener noreferrer"
                     className="text-sm text-primary hover:underline break-all"
                   >
-                    {part.sourcePlatform ? `View on ${part.sourcePlatformName ?? part.sourcePlatform}` : 'View original post'}
+                    {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
                   </a>
                 </div>
 
@@ -918,35 +899,21 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     )}
                   </div>
                 )}
-
-                {part.sourceLicense && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">Source License</span>
-                    <a
-                      href={part.sourceLicense.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 hover:opacity-80 transition"
-                    >
-                      <Badge variant="outline">{part.sourceLicense.shortName}</Badge>
-                    </a>
-                  </div>
-                )}
               </div>
             )}
 
-            {/* CP License — always rendered for all origin types */}
+            {/* License — always rendered, one per part (#372) */}
             <div className="border-t border-border-subtle pt-3">
               <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground font-medium">License on Common Parts Access</span>
-                {part.license ? (
+                <span className="text-sm text-muted-foreground font-medium">License</span>
+                {effectiveLicense ? (
                   <a
-                    href={part.license.url}
+                    href={effectiveLicense.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 hover:opacity-80 transition"
                   >
-                    <Badge variant="outline">{part.license.shortName}</Badge>
+                    <Badge variant="outline">{effectiveLicense.shortName}</Badge>
                   </a>
                 ) : (
                   <Badge variant="outline">—</Badge>
@@ -992,18 +959,33 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                         </Link>
                         <EvidenceLevelBadge level={p.reportStats.evidenceLevel} className="shrink-0" />
                       </div>
-                      {p.brand && (
-                        <div className="flex items-center gap-2 mt-2">
-                          <Link
-                            href={`/brands/${p.brand.slug}`}
-                            className="text-sm font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                          >
-                            {p.brand.name}
-                          </Link>
-                          {p.brand.verified && (
-                            <Badge variant="soft">
-                              ✓ Verified
-                            </Badge>
+                      {(p.brand || p.category) && (
+                        <div className="mt-2xs flex flex-wrap items-center gap-2xs text-sm">
+                          {p.brand && (
+                            <>
+                              <Link
+                                href={`/brands/${p.brand.slug}`}
+                                className="font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                              >
+                                {p.brand.name}
+                              </Link>
+                              {p.brand.verified && (
+                                <Badge variant="soft">
+                                  ✓ Verified
+                                </Badge>
+                              )}
+                            </>
+                          )}
+                          {p.brand && p.category && (
+                            <span aria-hidden="true" className="text-text-secondary">·</span>
+                          )}
+                          {p.category && (
+                            <Link
+                              href={categoryCanonicalPath(p.category.slug)}
+                              className="text-text-secondary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                            >
+                              {p.category.name}
+                            </Link>
                           )}
                         </div>
                       )}

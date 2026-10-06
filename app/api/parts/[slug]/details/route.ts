@@ -77,8 +77,6 @@ export async function GET(
           estimated_material_usage,
           thumbnail_url,
           images,
-          download_count,
-          view_count,
           like_count,
           tags,
           instructions,
@@ -127,14 +125,6 @@ export async function GET(
             reputation_score,
             verified_maker,
             created_at
-          ),
-          categories(
-            id,
-            name,
-            slug,
-            description,
-            icon,
-            path
           )
         `)
         .eq('slug', slug)
@@ -218,6 +208,7 @@ export async function GET(
               website_url,
               verified
             ),
+            categories(name, slug),
             product_references(id, value, type, region, language)
           )
         `)
@@ -236,8 +227,9 @@ export async function GET(
     if (likeError) console.error('Error checking like status:', likeError)
     if (partProductsError) console.error('Error fetching part products:', partProductsError)
 
-    const author = firstEmbedded(part.user_profiles)
-    const category = firstEmbedded(part.categories)
+    // A curated part is someone else's design: the page credits its original
+    // author, not the account that added it, so that profile is not returned (#372).
+    const author = part.origin_type === 'curated' ? null : firstEmbedded(part.user_profiles)
     const license = firstEmbedded(part.licenses)
     const sourceLicense = firstEmbedded(part.source_licenses)
 
@@ -281,9 +273,7 @@ export async function GET(
         thumbnailUrl: part.thumbnail_url,
         images: part.images || [],
         stats: {
-          downloads: part.download_count || 0,
           likes: part.like_count || 0,
-          views: part.view_count || 0,
         },
         viewerHasLiked: Boolean(likeRow),
         tags: part.tags || [],
@@ -336,6 +326,7 @@ export async function GET(
         } : null,
         products: compatibleProducts.map((p) => {
           const pBrand = firstEmbedded(p.brands)
+          const pCategory = firstEmbedded(p.categories)
           return {
             id: p.id,
             name: p.name,
@@ -345,18 +336,12 @@ export async function GET(
             discontinued: p.discontinued,
             image: resolveStorageUrl(p.image_url),
             brand: pBrand ? toBrandPayload(pBrand) : null,
+            // The category belongs to the product, not to the part (#372).
+            category: pCategory ? { name: pCategory.name, slug: pCategory.slug } : null,
             reportStats: p.reportStats,
             references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value, type: r.type })),
           }
         }),
-        category: category ? {
-          id: category.id,
-          name: category.name,
-          slug: category.slug,
-          description: category.description,
-          icon: resolveStorageUrl(category.icon),
-          path: category.path,
-        } : null,
         brands: derivedBrands,
         files: files || [],
         comments: (comments || []).map(comment => {

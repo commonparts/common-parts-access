@@ -46,6 +46,8 @@ A one-click report on the part page says whether the printed part worked on one 
 
 A part is linked to up to 50 products, across brands (`VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT` in `lib/utils/constants.ts`). The Compatibility step disables the product picker at the limit, and the draft `PATCH` endpoints of both tracks answer 400 above it. Every read of a part's links uses the same bound: draft resume and save, product-name resolution on resume (`GET /api/products?ids=`), and the part page, which lists every linked product.
 
+On the part page, the "Compatible with" card shows each linked product with its brand and its category. A category describes the product, not the part, so the "Part details" card has no category row (#372).
+
 ## Product creation
 
 Products are created inline in the publish flow's Compatibility step. `POST /api/products` refuses a case or spacing variant of an existing product name for the same brand and answers 409 with the existing record (`findProductByNormalizedName`, #279). The check runs at the API layer only: two simultaneous case-variant creations can both pass, a known and accepted gap.
