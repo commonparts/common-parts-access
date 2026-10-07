@@ -36,6 +36,15 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 
 ## Layout & Components
 - **Cards**: Use the shared `Card` primitives; default padding and `rounded-lg` with `shadow-surface`. Respect existing spacing patterns (`space-y-*` inside content).
+- **Part card** (#380): `components/part/part-card.tsx` renders the same card in every context (browse grid, home page section, search results, product page). From top to bottom:
+  1. **Thumbnail**, with nothing laid over it.
+  2. **Header row**: the brand eyebrow on the left, the context badge on the right when there is one.
+  3. **Name**.
+  4. **Fit line**: "Fits {product}, {product} +N more", in `text-text-secondary` with the product names in `text-text-primary`.
+  5. **Print line**: `{material} · {print time}` in `text-caption text-text-secondary` (`formatPrintLine()`); each part shows when known, and the line is omitted when both are missing.
+  6. **Provenance line**, pinned to the bottom of the card body so it aligns across a grid row: an outbound-link icon, the source platform name in `text-text-primary font-medium`, then ` · {licence short name}` in `text-text-secondary`, all at `text-caption`. A part without a source platform shows its licence alone, without the icon; a part with neither has no provenance line. The line is plain text: the part page carries the link to the source. Platform logos are not shown, as a logo is a third-party trademark.
+
+  The context badge, passed through the `badge` prop, is the only badge on a card: the evidence level of the part for the product (`EvidenceLevelBadge`) on a product page, nothing elsewhere. Every card is built from one select and one mapper (`PART_CARD_SELECT` and `mapPartRowToCard()` in `lib/supabase/queries/part.ts`).
 - **Part card GIF thumbnails** (#217): in every `PartCard` grid, a GIF thumbnail shows a still frame, drawn client-side onto a canvas by `components/part/part-card-gif-thumbnail.tsx`. It animates only while the pointer is over the thumbnail or the card holds keyboard focus, and never with `prefers-reduced-motion: reduce`. The animated image is mounted only while it is needed (until the still frame is drawn, then while the card is hovered or focused), so idle GIFs in a grid do not keep animating out of sight. `PartCard` marks the card and the thumbnail with `data-part-card` and `data-part-card-thumbnail` for this. The part page shows GIFs animated, as uploaded.
 - **Navbar**: Buttons (auth / "Publish a part" / logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.
 - **Hero**: Holds only the global search bar (see below); see [HERO_SECTION.md](./HERO_SECTION.md).

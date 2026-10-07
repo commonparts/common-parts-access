@@ -23,10 +23,10 @@ import { firstEmbedded } from '@/lib/utils/supabase-embed';
  * into "+N more". The untruncated total comes from the `fits_count` aggregate,
  * so the preview stays bounded no matter how many products a part fits.
  */
-const CARD_PRODUCT_PREVIEW_COUNT = 2;
+export const CARD_PRODUCT_PREVIEW_COUNT = 2;
 
 /** Sort key of the `fits` embed — the linked product's name, matching search_all. */
-const CARD_PRODUCT_ORDER = 'products(name)';
+export const CARD_PRODUCT_ORDER = 'products(name)';
 
 // Every embed of part_products is aliased (`fits`, `brand_fits`, `fits_count`,
 // and `fit_filter` / `brand_filter` below). PostgREST resolves an unaliased
@@ -45,12 +45,26 @@ const CARD_PRODUCT_ORDER = 'products(name)';
 // exactly the parts that have the most, and nondeterministically: PostgREST
 // returns no guaranteed order. The fan-out is one small row per link, under a
 // top-level page of 20, and `fits_count` reports the true total.
-const PART_CARD_SELECT = `
+//
+// This select and mapPartRowToCard build every part card (issue #380). The
+// print and provenance lines read the material, the print time, the licence
+// (`parts.license_id`, hinted because `source_license_id` also references
+// licenses) and the source platform name: to-one embeds, adding no row to the
+// fan-out. Callers order and truncate `fits` with CARD_PRODUCT_ORDER and
+// CARD_PRODUCT_PREVIEW_COUNT.
+export const PART_CARD_SELECT = `
   id,
   name,
   slug,
-  description,
   thumbnail_url,
+  material,
+  estimated_print_time,
+  licenses!parts_license_id_fkey(
+    short_name
+  ),
+  source_platforms(
+    name
+  ),
   fits:part_products(
     products(
       name,
@@ -125,7 +139,12 @@ function deriveCardBrands(row: PartCardRow): PartCardData['brands'] {
   );
 }
 
-function mapPartRowToCard(row: PartCardRow): PartCardData {
+/**
+ * The only mapper to PartCardData (issue #380): every part card, wherever it
+ * is rendered, is built from a PART_CARD_SELECT row through this function, so
+ * the same part shows the same card body in every context.
+ */
+export function mapPartRowToCard(row: PartCardRow): PartCardData {
   const products = (row.fits ?? [])
     .map((link) => firstEmbedded(link.products))
     .filter((product): product is NonNullable<typeof product> => product !== null)
@@ -135,14 +154,16 @@ function mapPartRowToCard(row: PartCardRow): PartCardData {
     id: row.id,
     slug: row.slug,
     title: row.name,
-    description: row.description,
-    thumbnailUrl: row.thumbnail_url,
+    thumbnailUrl: row.thumbnail_url ?? null,
     brands: deriveCardBrands(row),
     products,
     // The aggregate covers every link; the preview list is capped, so falling
     // back to its length would under-report the "+N more" overflow.
     productCount: row.fits_count?.[0]?.count ?? products.length,
-    isPremium: false,
+    material: row.material ?? null,
+    estimatedPrintTime: row.estimated_print_time ?? null,
+    sourcePlatformName: firstEmbedded(row.source_platforms)?.name ?? null,
+    license: firstEmbedded(row.licenses)?.short_name ?? null,
   };
 }
 
@@ -258,6 +279,44 @@ export async function fetchFeaturedPartCards(limit = 8) {
   }
 
   return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
+}
+
+/**
+ * Builds the cards of a known list of published parts, in the order of `ids`.
+ * Used by the search results page (issue #380): search_all returns its own
+ * row shape, so its part hits are hydrated here, in one query bounded by the
+ * number of ids, instead of being mapped to a card of their own. Ids that no
+ * longer resolve to a published part are dropped.
+ * RLS: "Anyone can view published parts" on parts; the embeds are covered by
+ * the public read policies of part_products, products, brands, licenses and
+ * source_platforms.
+ */
+export async function fetchPartCardsByIds(ids: string[]): Promise<PartCardData[]> {
+  const uniqueIds = Array.from(new Set(ids));
+  if (uniqueIds.length === 0) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('parts')
+    .select(PART_CARD_SELECT)
+    .in('id', uniqueIds)
+    .eq('status', 'published')
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
+    .limit(uniqueIds.length);
+
+  if (error) {
+    throw error;
+  }
+
+  // `in` returns rows in no particular order: restore the caller's ranking.
+  const cardsById = new Map(
+    ((data ?? []) as PartCardRow[]).map((row) => [row.id, mapPartRowToCard(row)]),
+  );
+  return uniqueIds
+    .map((id) => cardsById.get(id))
+    .filter((card): card is PartCardData => card !== undefined);
 }
 
 const PART_SEO_SELECT = `

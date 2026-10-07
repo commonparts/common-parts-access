@@ -1,10 +1,10 @@
 import * as React from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { formatPrintTime } from "@/lib/utils/formatters"
+import { formatPrintLine } from "@/lib/utils/formatters"
 import { isGifUrl } from "@/lib/utils/images"
 import { PartCardGifThumbnail } from "./part-card-gif-thumbnail"
 import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
@@ -12,16 +12,18 @@ import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/pa
 interface PartCardProps {
   part: PartCardData
   className?: string
-  variant?: "default" | "compact" | "detailed"
-  // Optional overlay on the thumbnail (e.g. compatibility badge on a product
-  // page). Rendered top-left so it never collides with the Premium badge.
+  /**
+   * The context badge, the only badge a card carries (issue #380): rendered
+   * on the right of the header row, never over the thumbnail. A product page
+   * passes the evidence level of the part for that product; other contexts
+   * pass nothing.
+   */
   badge?: React.ReactNode
-  // Render the part-meta row (material · print time) + license badge. Used
-  // where the compatibility line is redundant, such as a product page.
-  showPartMeta?: boolean
 }
 
 const THUMBNAIL_HOVER_CLASS = "transition-transform duration-200 group-hover:scale-105"
+
+const THUMBNAIL_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
@@ -31,7 +33,18 @@ const FOCUS_RING =
 // utility and drops the first. Classes that pair the two are concatenated
 // rather than passed through cn().
 const BRAND_LINE_CLASS =
-  "flex items-center gap-3xs overflow-hidden text-micro font-medium uppercase tracking-caps text-text-secondary"
+  "flex min-w-0 items-center gap-3xs overflow-hidden text-micro font-medium uppercase tracking-caps text-text-secondary"
+
+// Secondary lines under the name. The fit line clamps to two lines; the print
+// and provenance lines are one line each.
+const FIT_LINE_CLASS = "line-clamp-2 text-caption text-text-secondary"
+const PRINT_LINE_CLASS = "truncate text-caption text-text-secondary"
+
+// `mt-auto` pins the line to the bottom of the card body, which stretches to
+// the height of its grid row, so the provenance lines of a row align whatever
+// the length of the names and fit lines above them.
+const PROVENANCE_LINE_CLASS =
+  "mt-auto flex min-w-0 items-center gap-3xs text-caption text-text-secondary"
 
 // Truncation sits on each name, not on the row: the row is a flex container,
 // where `truncate` would clip without ever showing an ellipsis.
@@ -78,9 +91,8 @@ function BrandLine({ brands }: { brands: PartCardBrand[] }) {
 }
 
 /**
- * "Fits <product>, <product> +N more" — the products the part is mounted on.
- * Names link to their product page when the source exposes a slug; search
- * results carry the name only, so those render as plain text.
+ * "Fits <product>, <product> +N more" — the products the part is mounted on,
+ * each linking to its product page.
  */
 function ProductFitLine({
   products,
@@ -92,64 +104,92 @@ function ProductFitLine({
   const overflow = Math.max(0, total - products.length)
 
   return (
-    <p className="line-clamp-2 text-caption text-text-secondary">
-      <span className="text-text-tertiary">Fits </span>
+    <p className={FIT_LINE_CLASS}>
+      Fits{" "}
       {products.map((product, index) => (
-        <React.Fragment key={product.slug ?? `${product.name}-${index}`}>
+        <React.Fragment key={product.slug}>
           {index > 0 && ", "}
-          {product.slug ? (
-            <Link
-              href={`/product/${product.slug}`}
-              className={cn("text-text-primary hover:underline", FOCUS_RING)}
-            >
-              {product.name}
-            </Link>
-          ) : (
-            <span className="text-text-primary">{product.name}</span>
-          )}
+          <Link
+            href={`/product/${product.slug}`}
+            className={cn("text-text-primary hover:underline", FOCUS_RING)}
+          >
+            {product.name}
+          </Link>
         </React.Fragment>
       ))}
-      {overflow > 0 && <span className="text-text-tertiary"> +{overflow} more</span>}
+      {overflow > 0 && <> +{overflow} more</>}
     </p>
   )
 }
 
-export function PartCard({
-  part,
-  className,
-  variant = "default",
-  badge,
-  showPartMeta = false,
-}: PartCardProps) {
+/**
+ * Where the part comes from and under which licence: "{platform} · {licence}".
+ * Plain text, not a link — the card leads to the part page, which carries the
+ * link to the source. A part without a source platform shows its licence
+ * alone, without the outbound icon. Platform logos are deliberately not shown:
+ * a logo is a third-party trademark, displayed only with the platform's
+ * consent.
+ */
+function ProvenanceLine({
+  platformName,
+  license,
+}: {
+  platformName: string | null
+  license: string | null
+}) {
+  return (
+    <p className={PROVENANCE_LINE_CLASS}>
+      {platformName && (
+        <>
+          <ExternalLink aria-hidden="true" className="size-xs shrink-0" />
+          <span className="truncate font-medium text-text-primary">
+            <span className="sr-only">Source: </span>
+            {platformName}
+          </span>
+        </>
+      )}
+      {platformName && license && <span aria-hidden="true">·</span>}
+      {license && (
+        <span className="shrink-0">
+          <span className="sr-only">License: </span>
+          {license}
+        </span>
+      )}
+    </p>
+  )
+}
+
+/**
+ * The standard part card (issue #380), identical in every context: thumbnail,
+ * header row (brand eyebrow, context badge), name, fit line, print line and
+ * provenance line. Each line is omitted when it has nothing to show. Only the
+ * `badge` changes with the context.
+ */
+export function PartCard({ part, className, badge }: PartCardProps) {
   const partHref = `/parts/${part.slug}`
-  const printTime = formatPrintTime(part.estimatedPrintTime)
-  const isCompact = variant === "compact"
-  const thumbnailSizes = isCompact
-    ? "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-    : "(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
+  const printLine = formatPrintLine(part.material, part.estimatedPrintTime)
+  const hasProvenance = Boolean(part.sourcePlatformName || part.license)
+  const hasHeader = part.brands.length > 0 || Boolean(badge)
 
   return (
     <Card
       data-part-card=""
       className={cn(
-        "group transition-colors duration-200 hover:border-border-default",
+        "group flex h-full flex-col transition-colors duration-200 hover:border-border-default",
         className,
       )}
     >
       <Link href={partHref} className={cn("block", FOCUS_RING)}>
         <div
           data-part-card-thumbnail=""
-          className={cn(
-            "relative overflow-hidden rounded-t-lg",
-            isCompact ? "aspect-square" : "aspect-video",
-          )}
+          className="relative aspect-video overflow-hidden rounded-t-lg"
         >
           {part.thumbnailUrl && isGifUrl(part.thumbnailUrl) ? (
             <PartCardGifThumbnail
               key={part.thumbnailUrl}
               src={part.thumbnailUrl}
               alt={part.title}
-              sizes={thumbnailSizes}
+              sizes={THUMBNAIL_SIZES}
               className={THUMBNAIL_HOVER_CLASS}
             />
           ) : part.thumbnailUrl ? (
@@ -157,14 +197,14 @@ export function PartCard({
               src={part.thumbnailUrl}
               alt={part.title}
               fill
-              sizes={thumbnailSizes}
+              sizes={THUMBNAIL_SIZES}
               className={cn("object-cover", THUMBNAIL_HOVER_CLASS)}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-muted">
               <svg
                 aria-hidden="true"
-                className={cn("text-text-secondary", isCompact ? "h-12 w-12" : "h-16 w-16")}
+                className="h-16 w-16 text-text-secondary"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -173,57 +213,42 @@ export function PartCard({
               </svg>
             </div>
           )}
-          {part.isPremium && (
-            <Badge tone="accent" className="absolute right-sm top-sm">
-              Premium
-            </Badge>
-          )}
-          {badge && <div className="absolute left-sm top-sm z-10">{badge}</div>}
         </div>
       </Link>
 
       {/* Padded directly rather than through CardContent: that primitive hard-sets
-          `pt-0` for footer-style stacking, which no className can override here. */}
-      <div className={cn("space-y-2xs", isCompact ? "p-sm" : "p-md")}>
-        {/* Brand and name are one unit, tighter than the gaps around them. */}
+          `pt-0` for footer-style stacking, which no className can override here.
+          The body grows to the card's height so the provenance line can sit at
+          its bottom. */}
+      <div className="flex flex-1 flex-col gap-2xs p-md">
+        {/* Header row and name are one unit, tighter than the gaps around them. */}
         <div className="space-y-3xs">
-          {part.brands.length > 0 && <BrandLine brands={part.brands} />}
+          {hasHeader && (
+            <div className="flex items-center justify-between gap-xs">
+              {part.brands.length > 0 && <BrandLine brands={part.brands} />}
+              {badge && <div className="ml-auto shrink-0">{badge}</div>}
+            </div>
+          )}
 
           <Link href={partHref} className={cn("block", FOCUS_RING)}>
             {/* No reserved second line: a one-line name would otherwise leave an
                 empty row above the fit line. Colour is inherited from the Card
                 (text-text-primary) — setting it here would make cn() drop the
                 size token. */}
-            <h3
-              className={cn(
-                "line-clamp-2 font-heading font-semibold leading-snug transition-colors hover:text-primary",
-                isCompact ? "text-body" : "text-subtitle",
-              )}
-            >
+            <h3 className="line-clamp-2 font-heading text-subtitle font-semibold leading-snug transition-colors hover:text-primary">
               {part.title}
             </h3>
           </Link>
         </div>
 
-        {part.description && variant === "detailed" && (
-          <p className="line-clamp-2 text-body text-text-secondary">{part.description}</p>
-        )}
-
         {part.products.length > 0 && (
           <ProductFitLine products={part.products} total={part.productCount} />
         )}
 
-        {/* Part metadata (material, print time) + license badge */}
-        {showPartMeta && (
-          <div className="space-y-2xs">
-            {(part.material || printTime) && (
-              <div className="flex flex-wrap items-center gap-x-md gap-y-xs text-caption text-text-secondary">
-                {part.material && <span>{part.material}</span>}
-                {printTime && <span>{printTime}</span>}
-              </div>
-            )}
-            {part.license && <Badge variant="outline">{part.license}</Badge>}
-          </div>
+        {printLine && <p className={PRINT_LINE_CLASS}>{printLine}</p>}
+
+        {hasProvenance && (
+          <ProvenanceLine platformName={part.sourcePlatformName} license={part.license} />
         )}
       </div>
     </Card>

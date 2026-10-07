@@ -1,13 +1,28 @@
-import type { Brand, License, Part, PartStatus, Product, UserProfile } from './database';
+import type {
+	Brand,
+	License,
+	Part,
+	PartStatus,
+	Product,
+	SourcePlatform,
+	UserProfile,
+} from './database';
 export type { SourcePlatform } from './database';
 
 type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
 type PartCardBrandRef = Pick<Brand, 'name' | 'slug'>;
 
+type PartCardLicenseRef = Pick<License, 'short_name'>;
+type PartCardPlatformRef = Pick<SourcePlatform, 'name'>;
+
 export type PartCardRow = Pick<
 	Part,
-	'id' | 'name' | 'slug' | 'description' | 'thumbnail_url'
+	'id' | 'name' | 'slug' | 'thumbnail_url' | 'material' | 'estimated_print_time'
 > & {
+	/** The part's licence (`parts.license_id`), shown on the provenance line. */
+	licenses?: PartCardLicenseRef | PartCardLicenseRef[] | null;
+	/** The platform a referenced part comes from (`parts.source_platform`). */
+	source_platforms?: PartCardPlatformRef | PartCardPlatformRef[] | null;
 	/** Truncated preview of the part_products links — see CARD_PRODUCT_PREVIEW_COUNT. */
 	fits?: { products: PartCardProductRef | PartCardProductRef[] | null }[] | null;
 	/**
@@ -31,8 +46,7 @@ export type PartCardRow = Pick<
 /** A product the part is mounted on, as listed on the card's "Fits" line. */
 export interface PartCardProductFit {
 	name: string;
-	/** Null when the source has no linkable slug (search results carry names only). */
-	slug: string | null;
+	slug: string;
 }
 
 /** A brand the part is filed under, derived from one of its compatible products. */
@@ -45,8 +59,7 @@ export interface PartCardData {
 	id: string;
 	slug: string;
 	title: string;
-	description?: string | null;
-	thumbnailUrl?: string | null;
+	thumbnailUrl: string | null;
 	/**
 	 * Every distinct brand behind the part's compatible products, by name — the
 	 * card's primary attribution. A part shared across brands (issue #315)
@@ -56,12 +69,12 @@ export interface PartCardData {
 	/** First few compatible products; `productCount` holds the real total. */
 	products: PartCardProductFit[];
 	productCount: number;
-	isPremium?: boolean;
-	// Optional part metadata (e.g. product page). Rendered as a compact meta
-	// row + license badge when any is provided; other usages are unaffected.
-	material?: string | null;
-	license?: string | null;
-	estimatedPrintTime?: number | null; // minutes
+	/** Print line, with the print time below. Each is shown when known. */
+	material: string | null;
+	estimatedPrintTime: number | null; // minutes
+	/** Provenance line: the source platform name, then the licence short name. */
+	sourcePlatformName: string | null;
+	license: string | null;
 }
 
 export interface PartListOptions {

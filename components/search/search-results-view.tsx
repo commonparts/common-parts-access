@@ -15,32 +15,12 @@ import type { PartCardData } from "@/types/parts"
 import {
   SEARCH_TYPES,
   type ProductCandidate,
-  type SearchPartResult,
   type SearchResults,
   type SearchType,
 } from "@/types/search"
 
 // How many items each section previews in the "All" view before "See all".
 const PREVIEW_COUNT = 4
-
-// Map a search hit onto the shared PartCard shape, so a part looks the same
-// here as on /browse. Falls back to the single unlinked `product_name` when the
-// RPC predates 20260802141500_search_all_part_card_fields.
-function toPartCardData(hit: SearchPartResult): PartCardData {
-  const fits =
-    hit.products?.map((product) => ({ name: product.name, slug: product.slug })) ??
-    (hit.product_name ? [{ name: hit.product_name, slug: null }] : [])
-
-  return {
-    id: hit.id,
-    slug: hit.slug,
-    title: hit.name,
-    thumbnailUrl: hit.thumbnail_url,
-    brands: hit.brands ?? [],
-    products: fits,
-    productCount: hit.product_count ?? fits.length,
-  }
-}
 
 const TYPE_LABEL: Record<Exclude<SearchType, "all">, string> = {
   products: "Products",
@@ -50,6 +30,8 @@ const TYPE_LABEL: Record<Exclude<SearchType, "all">, string> = {
 
 interface SearchResultsViewProps {
   results: SearchResults
+  /** The part hits as standard part cards, in rank order (see fetchPartCardsByIds). */
+  partCards: PartCardData[]
   query: string
   initialType: SearchType
   brandSuggestion: BrandSuggestion | null
@@ -59,6 +41,7 @@ interface SearchResultsViewProps {
 
 export function SearchResultsView({
   results,
+  partCards,
   query,
   initialType,
   brandSuggestion,
@@ -68,7 +51,7 @@ export function SearchResultsView({
 
   const counts = {
     products: results.products.length,
-    parts: results.parts.length,
+    parts: partCards.length,
     brands: results.brands.length,
   }
   const total = counts.products + counts.parts + counts.brands
@@ -210,10 +193,7 @@ export function SearchResultsView({
             // Same grid as /browse and the home page — search results are the
             // same parts and must not be sized or spaced differently.
             <PartGrid
-              parts={(activeType === "all"
-                ? results.parts.slice(0, PREVIEW_COUNT)
-                : results.parts
-              ).map(toPartCardData)}
+              parts={activeType === "all" ? partCards.slice(0, PREVIEW_COUNT) : partCards}
             />
           ) : (
             <SectionEmpty label="parts" query={query} />

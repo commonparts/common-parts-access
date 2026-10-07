@@ -30,6 +30,23 @@ export function formatPrintTime(minutes: number | null | undefined): string | nu
 }
 
 /**
+ * The print line of a part card: "{material} · {print time}" (issue #380).
+ * Each part is kept only when known, and null is returned when both are
+ * missing, so the card omits the line instead of rendering it empty.
+ * @example formatPrintLine('PETG', 150) // "PETG · 2h 30m"
+ * @example formatPrintLine(null, 45) // "45m"
+ */
+export function formatPrintLine(
+  material: string | null | undefined,
+  minutes: number | null | undefined,
+): string | null {
+  const parts = [material?.trim() || null, formatPrintTime(minutes)].filter(
+    (part): part is string => part !== null,
+  )
+  return parts.length > 0 ? parts.join(' · ') : null
+}
+
+/**
  * Format file size from bytes to human readable format
  * @param bytes - Size in bytes
  * @param decimals - Number of decimal places (default: 2)

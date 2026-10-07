@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/layout/search-bar"
 import { SearchResultsView } from "@/components/search/search-results-view"
 import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supabase/queries/search"
 import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
+import { fetchPartCardsByIds } from "@/lib/supabase/queries/part"
 import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
 import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
@@ -40,6 +41,11 @@ export default async function SearchPage({
     ? await searchAll(query, SEARCH_MAX_LIMIT)
     : { products: [], parts: [], brands: [] }
 
+  // Part hits are rendered as the standard part card (issue #380): hydrated
+  // through the shared card query, by id and in rank order, in one query
+  // bounded by the number of hits (at most SEARCH_MAX_LIMIT).
+  const partCards = await fetchPartCardsByIds(results.parts.map((part) => part.id))
+
   const total = results.products.length + results.parts.length + results.brands.length
   const isMiss = Boolean(query) && total === 0
 
@@ -67,6 +73,7 @@ export default async function SearchPage({
         {query ? (
           <SearchResultsView
             results={results}
+            partCards={partCards}
             query={query}
             initialType={initialType}
             brandSuggestion={brandSuggestion}

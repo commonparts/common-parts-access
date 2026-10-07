@@ -8,7 +8,6 @@ import { PartCard } from "./part-card"
 interface PartGridProps {
   parts: PartCardData[]
   loading?: boolean
-  variant?: "default" | "compact" | "detailed"
   columns?: 12 | 6 | 4
   className?: string
 }
@@ -16,32 +15,17 @@ interface PartGridProps {
 export function PartGrid({
   parts,
   loading = false,
-  variant = "default",
   columns,
   className,
 }: PartGridProps) {
   const gridColumns = columns ?? 12
 
-  const getItemSpans = () => {
-    if (variant === "compact") {
-      if (gridColumns === 4) return "col-span-4 sm:col-span-2"
-      if (gridColumns === 6) return "col-span-6 sm:col-span-3 md:col-span-2"
-      return "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-2"
-    }
-
-    if (variant === "detailed") {
-      if (gridColumns === 4) return "col-span-4"
-      if (gridColumns === 6) return "col-span-6 sm:col-span-3"
-      return "col-span-12 md:col-span-6 lg:col-span-4"
-    }
-
-    // default
-    if (gridColumns === 4) return "col-span-4 sm:col-span-2"
-    if (gridColumns === 6) return "col-span-6 sm:col-span-3 md:col-span-2"
-    return "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3"
-  }
-
-  const itemSpans = getItemSpans()
+  const itemSpans =
+    gridColumns === 4
+      ? "col-span-4 sm:col-span-2"
+      : gridColumns === 6
+        ? "col-span-6 sm:col-span-3 md:col-span-2"
+        : "col-span-12 sm:col-span-6 md:col-span-4 lg:col-span-3"
 
   if (loading) {
     return (
@@ -77,7 +61,7 @@ export function PartGrid({
     <Grid columns={gridColumns} className={className}>
       {parts.map((part) => (
         <div key={part.id} className={itemSpans}>
-          <PartCard part={part} variant={variant} />
+          <PartCard part={part} />
         </div>
       ))}
     </Grid>

@@ -4,7 +4,6 @@ import * as React from "react"
 import { PartCard } from "@/components/part/part-card"
 import { EvidenceLevelBadge } from "@/components/part/evidence-level-badge"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
-import type { PartCardData } from "@/types/parts"
 
 type SortKey = "downloads" | "newest"
 
@@ -19,24 +18,6 @@ function sortParts(parts: ProductPart[], sortKey: SortKey): ProductPart[] {
     const bTime = b.created_at ? Date.parse(b.created_at) : 0
     return bTime - aTime
   })
-}
-
-// Map a product part onto the shared PartCard shape. Brand and compatibility
-// are omitted — this grid already sits on the page of the product these parts
-// fit — so the card carries material, print time and the license badge instead.
-function toPartCardData(part: ProductPart): PartCardData {
-  return {
-    id: part.id,
-    slug: part.slug,
-    title: part.name,
-    thumbnailUrl: part.thumbnail_url,
-    brands: [],
-    products: [],
-    productCount: 0,
-    material: part.material,
-    license: part.license_short_name,
-    estimatedPrintTime: part.estimated_print_time,
-  }
 }
 
 export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
@@ -63,10 +44,9 @@ export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
       <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
         {sorted.map((part) => (
           <PartCard
-            key={part.id}
-            part={toPartCardData(part)}
+            key={part.card.id}
+            part={part.card}
             badge={<EvidenceLevelBadge level={part.evidence_level} />}
-            showPartMeta
           />
         ))}
       </div>

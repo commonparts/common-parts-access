@@ -21,17 +21,10 @@ export interface SearchPartResult {
   part_number: string | null
   thumbnail_url: string | null
   product_name: string | null // a linked product; null => "Generic part"
-  license: string | null // license short name, e.g. "CC BY-NC-ND 4.0"
-  // Part card fields, added by 20260802141500_search_all_part_card_fields.
-  // Optional so a deployment that runs ahead of the migration degrades to a
-  // card without a brand eyebrow or fit line instead of crashing.
-  //
-  // `brands` is the distinct set behind the part's linked products since
-  // 20260922213250 (issue #315) — a part fitting products of several brands
-  // is filed under all of them.
-  brands?: { name: string; slug: string }[]
-  products?: { name: string; slug: string }[]
-  product_count?: number
+  // search_all also returns the license, brands, products and product_count
+  // of a part hit. They are not read here: the results page renders part hits
+  // as standard part cards, hydrated by id through the shared card query
+  // (issue #380), and the suggestions show the name and a product only.
 }
 
 export interface SearchBrandResult {
