@@ -58,11 +58,13 @@ export function isSafeRedirect(path: string): boolean {
 
 /**
  * Parses a 1-based page number from a URL search param.
- * Returns 1 for missing, malformed, or non-positive values.
+ * Returns 1 for missing, malformed, or non-positive values. Only a plain run
+ * of digits is a page number: `parseInt` alone would read "2abc" as page 2.
  */
 export function parsePageParam(raw: string | undefined): number {
-  const parsed = Number.parseInt(raw ?? '1', 10)
-  return Number.isFinite(parsed) && parsed >= 1 ? parsed : 1
+  if (!raw || !/^\d+$/.test(raw)) return 1
+  const parsed = Number(raw)
+  return Number.isSafeInteger(parsed) && parsed >= 1 ? parsed : 1
 }
 
 /**

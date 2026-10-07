@@ -6,6 +6,7 @@ import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
 import { Breadcrumbs } from "@/components/layout/breadcrumbs"
 import { Button } from "@/components/ui/button"
+import { PaginationLinks } from "@/components/browse/pagination-links"
 import { ProductPartsGrid } from "@/components/product/product-parts-grid"
 import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
 import { ProductReferences } from "@/components/product/product-references"
@@ -15,6 +16,7 @@ import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
 import { APP_NAME } from "@/lib/utils/constants"
 import { parseAcceptLanguage } from "@/lib/utils/locale"
 import { pickRegionalName, type ProductReference } from "@/lib/utils/product-references"
+import { parsePageParam } from "@/lib/utils/validation"
 import {
   buildBreadcrumbJsonLd,
   buildProductBreadcrumbTrail,
@@ -76,21 +78,31 @@ function formatProductionYears(releaseYear: number | null, discontinued: boolean
 
 export default async function ProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
 }) {
-  const { slug } = await params
+  const [{ slug }, { page: rawPage }] = await Promise.all([params, searchParams])
   const data = await fetchProductPageBySlug(slug)
   if (!data) notFound()
 
   const { product, references } = data
   const displayName = await resolveDisplayName(product.name, references)
 
-  const parts = await fetchProductPageParts({ productId: product.id })
+  // One page of parts, cut in the database (#373). An invalid or out-of-range
+  // ?page= falls back to page 1.
+  const listing = await fetchProductPageParts({
+    productId: product.id,
+    page: parsePageParam(rawPage),
+  })
+  // The empty state depends on the product having no part at all, not on the
+  // length of the current page.
+  const hasParts = listing.total > 0
 
   // Request counts are only rendered in the empty state — skip the RPC entirely
   // when the product already has parts.
-  const requestCounts = parts.length === 0 ? await fetchPartRequestCounts(product.id) : []
+  const requestCounts = hasParts ? [] : await fetchPartRequestCounts(product.id)
 
   const productionYears = formatProductionYears(product.release_year, product.discontinued)
 
@@ -142,9 +154,17 @@ export default async function ProductPage({
           </div>
         </div>
 
-        {parts.length > 0 ? (
+        {hasParts ? (
           <>
-            <ProductPartsGrid parts={parts} />
+            <div className="space-y-md">
+              <ProductPartsGrid parts={listing.parts} />
+              {/* Page 1 stays the bare canonical URL. */}
+              <PaginationLinks
+                basePath={productCanonicalPath(product.slug)}
+                page={listing.page}
+                totalPages={listing.totalPages}
+              />
+            </div>
 
             {/* Request capture — always available below the grid */}
             <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">

@@ -5,7 +5,7 @@ import { isValidUuid } from '@/lib/utils/validation'
 
 export const runtime = 'nodejs'
 
-// POST /api/parts/[slug]/download - Increment the anonymous download counter.
+// POST /api/parts/[slug]/download - Record an anonymous download row.
 // No account, cookie, or fingerprint is required or recorded (issue #250).
 export async function POST(
   request: NextRequest,

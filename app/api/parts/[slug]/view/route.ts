@@ -13,9 +13,9 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
     }
 
-    const result = await recordPartView(slug)
+    await recordPartView(slug)
 
-    return NextResponse.json({ success: true, views: result.estimatedViews })
+    return NextResponse.json({ success: true })
   } catch (error) {
     if (isPartNotFoundError(error)) {
       return NextResponse.json({ error: 'Part not found' }, { status: 404 })
