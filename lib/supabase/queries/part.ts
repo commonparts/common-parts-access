@@ -218,8 +218,11 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
       ? `${PART_CARD_SELECT}, ${BRAND_FILTER_JOIN}`
       : PART_CARD_SELECT;
 
-  // Rebuilt for each page it is run for: the query builder is consumed once
-  // awaited, and the fallback may run it twice.
+  /**
+   * Builds and runs the filtered, sorted query for one page. Rebuilt on each
+   * call rather than shared: a query builder is consumed once awaited, and
+   * fetchPageOrFirst may run it a second time for page 1.
+   */
   const runPage = (target: number) => {
     let query = supabase.from('parts').select(select, { count: 'exact' });
 
