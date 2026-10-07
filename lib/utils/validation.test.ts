@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizedHostname, normalizeEntityName } from './validation'
+import { normalizedHostname, normalizeEntityName, parsePageParam } from './validation'
 
 describe('normalizeEntityName', () => {
   it('trims leading and trailing whitespace', () => {
@@ -47,5 +47,33 @@ describe('normalizedHostname', () => {
     expect(normalizedHostname('')).toBeNull()
     expect(normalizedHostname('not a url')).toBeNull()
     expect(normalizedHostname('printables.com/model/3161')).toBeNull()
+  })
+})
+
+describe('parsePageParam', () => {
+  it('reads a positive integer', () => {
+    expect(parsePageParam('1')).toBe(1)
+    expect(parsePageParam('3')).toBe(3)
+  })
+
+  it('falls back to page 1 when the param is missing or empty', () => {
+    expect(parsePageParam(undefined)).toBe(1)
+    expect(parsePageParam('')).toBe(1)
+  })
+
+  it('falls back to page 1 for zero and negative values', () => {
+    expect(parsePageParam('0')).toBe(1)
+    expect(parsePageParam('-2')).toBe(1)
+  })
+
+  it('falls back to page 1 for malformed values', () => {
+    expect(parsePageParam('2abc')).toBe(1)
+    expect(parsePageParam('1.5')).toBe(1)
+    expect(parsePageParam(' 2')).toBe(1)
+    expect(parsePageParam('1e3')).toBe(1)
+  })
+
+  it('falls back to page 1 beyond the safe integer range', () => {
+    expect(parsePageParam('99999999999999999999')).toBe(1)
   })
 })

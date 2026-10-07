@@ -19,11 +19,6 @@ interface SortOptionsProps {
 
 const allSortOptions: SortOption[] = [
   {
-    key: 'popularity',
-    label: 'Most popular',
-    description: 'Most downloaded parts'
-  },
-  {
     key: 'newest',
     label: 'Newest first',
     description: 'Recently uploaded'
@@ -45,7 +40,7 @@ const sortOptions: SortOption[] = SOCIAL_FEATURES_ENABLED
   ? allSortOptions
   : allSortOptions.filter((option) => option.key !== 'likes')
 
-const DEFAULT_SORT_KEY = 'popularity'
+const DEFAULT_SORT_KEY = 'newest'
 
 /**
  * Resolves the sortBy URL param to an offered sort, so a stale link to a

@@ -91,7 +91,7 @@ export interface PartCardData {
 export interface PartListOptions {
 	page?: number;
 	limit?: number;
-	sortBy?: 'popularity' | 'likes' | 'views' | 'newest' | 'created_at';
+	sortBy?: 'likes' | 'views' | 'newest' | 'created_at';
 	sortOrder?: 'asc' | 'desc';
 	search?: string;
 	status?: string;

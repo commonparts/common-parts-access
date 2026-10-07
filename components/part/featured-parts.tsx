@@ -61,7 +61,7 @@ export function FeaturedParts() {
   return (
     <Section>
       <Container size="xl" className="space-y-lg">
-        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most downloaded parts</h2>
+        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Recently added parts</h2>
 
         <PartGrid parts={parts} loading={loading} className="mb-lg" />
 
