@@ -104,7 +104,6 @@ interface PartData {
     id: string
     name: string
     slug: string
-    image?: string
     brand?: {
       name: string
       slug: string

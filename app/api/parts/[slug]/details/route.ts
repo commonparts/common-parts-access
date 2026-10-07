@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { resolveStorageUrl } from '@/lib/storage/url'
 import { getSourcePlatformBySlug } from '@/lib/supabase/queries/platforms'
 import { distinctBrands } from '@/lib/utils/catalog'
 import { toPrintReportStats } from '@/lib/utils/print-reports'
@@ -168,7 +167,6 @@ export async function GET(
             id,
             name,
             slug,
-            image_url,
             brands(
               id,
               name,
@@ -283,7 +281,6 @@ export async function GET(
             id: p.id,
             name: p.name,
             slug: p.slug,
-            image: resolveStorageUrl(p.image_url),
             brand: pBrand ? toProductBrandPayload(pBrand) : null,
             // The category belongs to the product, not to the part (#372).
             category: pCategory ? { name: pCategory.name, slug: pCategory.slug } : null,
