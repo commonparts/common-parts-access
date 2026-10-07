@@ -6,6 +6,7 @@ import { SearchBar } from "@/components/layout/search-bar"
 import { SearchResultsView } from "@/components/search/search-results-view"
 import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supabase/queries/search"
 import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
+import { fetchPartCardsByIds } from "@/lib/supabase/queries/part"
 import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
 import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
@@ -40,7 +41,15 @@ export default async function SearchPage({
     ? await searchAll(query, SEARCH_MAX_LIMIT)
     : { products: [], parts: [], brands: [] }
 
-  const total = results.products.length + results.parts.length + results.brands.length
+  // Part hits are rendered as the standard part card (issue #380): hydrated
+  // through the shared card query, by id and in rank order, in one query
+  // bounded by the number of hits (at most SEARCH_MAX_LIMIT).
+  const partCards = await fetchPartCardsByIds(results.parts.map((part) => part.id))
+
+  // Counted on the hydrated cards, as the view counts them: a hit unpublished
+  // between the search and the hydration must not suppress the zero-result
+  // state (miss logging, brand suggestion, product candidates).
+  const total = results.products.length + partCards.length + results.brands.length
   const isMiss = Boolean(query) && total === 0
 
   // A zero-result search is logged (issue #320) and offers the products the
@@ -67,6 +76,7 @@ export default async function SearchPage({
         {query ? (
           <SearchResultsView
             results={results}
+            partCards={partCards}
             query={query}
             initialType={initialType}
             brandSuggestion={brandSuggestion}

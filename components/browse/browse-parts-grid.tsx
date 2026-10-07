@@ -158,7 +158,7 @@ export function BrowsePartsGrid() {
         </div>
       </Grid>
 
-      <PartGrid parts={parts} loading={loading} variant="default" className="mb-lg" />
+      <PartGrid parts={parts} loading={loading} className="mb-lg" />
 
       <Pagination
         currentPage={pagination.page}

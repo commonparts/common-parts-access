@@ -63,7 +63,7 @@ export function FeaturedParts() {
       <Container size="xl" className="space-y-lg">
         <h2 className="text-heading-md font-heading font-semibold text-text-primary">Most downloaded parts</h2>
 
-        <PartGrid parts={parts} loading={loading} variant="default" className="mb-lg" />
+        <PartGrid parts={parts} loading={loading} className="mb-lg" />
 
         {!loading && parts.length > 0 && (
           <div className="text-center">
