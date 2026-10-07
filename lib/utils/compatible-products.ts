@@ -138,3 +138,39 @@ export function limitProductGroups<T extends CompatibleProductRef>(
   }
   return limited
 }
+
+/** What the section shows for a filter query and collapse state. */
+export interface CompatibleProductsView {
+  /** Slugs of the products shown; every other row stays mounted but hidden. */
+  visibleSlugs: Set<string>
+  /** Products matching the query, before the collapse. */
+  matchCount: number
+}
+
+/**
+ * Resolves which products the section shows: the products matching the
+ * query, then, when the list is long, unfiltered and not expanded, only the
+ * first COLLAPSED_COMPATIBLE_PRODUCTS_COUNT of them in display order. A
+ * filtered list is never collapsed, so it never hides a match.
+ *
+ * The result is a set of slugs rather than a shorter list because the
+ * section keeps every row mounted and hides the others (#389): a row's print
+ * report controls hold the result, comment and reference the visitor filed,
+ * and unmounting them would resubmit empty details over the saved ones.
+ */
+export function resolveCompatibleProductsView<T extends CompatibleProductRef>(
+  products: readonly T[],
+  query: string,
+  showAll: boolean,
+): CompatibleProductsView {
+  const matches = filterCompatibleProducts(products, query)
+  const collapsed =
+    products.length > COLLAPSED_COMPATIBLE_PRODUCTS_COUNT && !showAll && !isActiveFilterQuery(query)
+  const groups = groupProductsByBrand(matches)
+  const shown = collapsed ? limitProductGroups(groups, COLLAPSED_COMPATIBLE_PRODUCTS_COUNT) : groups
+
+  return {
+    visibleSlugs: new Set(shown.flatMap((group) => group.products.map((product) => product.slug))),
+    matchCount: matches.length,
+  }
+}
