@@ -5,6 +5,7 @@ import { extractBucketStoragePath } from '@/lib/storage/path-utils';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import { distinctBrands } from '@/lib/utils/catalog';
+import { isValidHttpUrl } from '@/lib/utils/validation';
 import type { PartStatus } from '@/types/database';
 import type {
   PartCardData,
@@ -47,10 +48,10 @@ export const CARD_PRODUCT_ORDER = 'products(name)';
 // top-level page of 20, and `fits_count` reports the true total.
 //
 // This select and mapPartRowToCard build every part card (issue #380). The
-// print and provenance lines read the material, the print time, the licence
-// (`parts.license_id`, hinted because `source_license_id` also references
-// licenses) and the source platform name: to-one embeds, adding no row to the
-// fan-out. Callers order and truncate `fits` with CARD_PRODUCT_ORDER and
+// print and provenance lines read the material, the print time, the source
+// URL, the licence (`parts.license_id`, hinted because `source_license_id`
+// also references licenses) and the source platform name. The two lookups are
+// to-one embeds, adding no row to the fan-out. Callers order and truncate `fits` with CARD_PRODUCT_ORDER and
 // CARD_PRODUCT_PREVIEW_COUNT.
 export const PART_CARD_SELECT = `
   id,
@@ -59,6 +60,7 @@ export const PART_CARD_SELECT = `
   thumbnail_url,
   material,
   estimated_print_time,
+  source_url,
   licenses!parts_license_id_fkey(
     short_name
   ),
@@ -163,6 +165,9 @@ export function mapPartRowToCard(row: PartCardRow): PartCardData {
     material: row.material ?? null,
     estimatedPrintTime: row.estimated_print_time ?? null,
     sourcePlatformName: firstEmbedded(row.source_platforms)?.name ?? null,
+    // Validated here, once, so the card can render it as a link: a stored
+    // value with another scheme (javascript:, data:) never reaches an href.
+    sourceUrl: row.source_url && isValidHttpUrl(row.source_url) ? row.source_url : null,
     license: firstEmbedded(row.licenses)?.short_name ?? null,
   };
 }

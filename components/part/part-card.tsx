@@ -46,6 +46,10 @@ const PRINT_LINE_CLASS = "truncate text-caption text-text-secondary"
 const PROVENANCE_LINE_CLASS =
   "mt-auto flex min-w-0 items-center gap-3xs text-caption text-text-secondary"
 
+// The icon and the platform name, kept together whether they form a link or
+// plain text. Carries no size token, so it is safe to pass through cn().
+const SOURCE_PLATFORM_CLASS = "flex min-w-0 items-center gap-3xs font-medium text-text-primary"
+
 // Truncation sits on each name, not on the row: the row is a flex container,
 // where `truncate` would clip without ever showing an ellipsis.
 const BRAND_NAME_CLASS =
@@ -124,31 +128,48 @@ function ProductFitLine({
 
 /**
  * Where the part comes from and under which licence: "{platform} · {licence}".
- * Plain text, not a link — the card leads to the part page, which carries the
- * link to the source. A part without a source platform shows its licence
- * alone, without the outbound icon. Platform logos are deliberately not shown:
- * a logo is a third-party trademark, displayed only with the platform's
- * consent.
+ * The platform name links to the part's page on that platform when the part
+ * has a valid source URL, in a new tab; otherwise it is plain text. A part
+ * without a source platform shows its licence alone, without the outbound
+ * icon. Platform logos are deliberately not shown: a logo is a third-party
+ * trademark, displayed only with the platform's consent.
  */
 function ProvenanceLine({
   platformName,
+  sourceUrl,
   license,
 }: {
   platformName: string | null
+  sourceUrl: string | null
   license: string | null
 }) {
+  const platform = platformName && (
+    <>
+      <ExternalLink aria-hidden="true" className="size-xs shrink-0" />
+      <span className="truncate">
+        <span className="sr-only">Source: </span>
+        {platformName}
+        {sourceUrl && <span className="sr-only"> (opens in a new tab)</span>}
+      </span>
+    </>
+  )
+
   return (
     <p className={PROVENANCE_LINE_CLASS}>
-      {platformName && (
-        <>
-          <ExternalLink aria-hidden="true" className="size-xs shrink-0" />
-          <span className="truncate font-medium text-text-primary">
-            <span className="sr-only">Source: </span>
-            {platformName}
-          </span>
-        </>
-      )}
-      {platformName && license && <span aria-hidden="true">·</span>}
+      {platform &&
+        (sourceUrl ? (
+          <a
+            href={sourceUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(SOURCE_PLATFORM_CLASS, "hover:underline", FOCUS_RING)}
+          >
+            {platform}
+          </a>
+        ) : (
+          <span className={SOURCE_PLATFORM_CLASS}>{platform}</span>
+        ))}
+      {platform && license && <span aria-hidden="true">·</span>}
       {license && (
         <span className="shrink-0">
           <span className="sr-only">License: </span>
@@ -248,7 +269,11 @@ export function PartCard({ part, className, badge }: PartCardProps) {
         {printLine && <p className={PRINT_LINE_CLASS}>{printLine}</p>}
 
         {hasProvenance && (
-          <ProvenanceLine platformName={part.sourcePlatformName} license={part.license} />
+          <ProvenanceLine
+            platformName={part.sourcePlatformName}
+            sourceUrl={part.sourceUrl}
+            license={part.license}
+          />
         )}
       </div>
     </Card>

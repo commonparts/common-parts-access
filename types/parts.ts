@@ -17,7 +17,13 @@ type PartCardPlatformRef = Pick<SourcePlatform, 'name'>;
 
 export type PartCardRow = Pick<
 	Part,
-	'id' | 'name' | 'slug' | 'thumbnail_url' | 'material' | 'estimated_print_time'
+	| 'id'
+	| 'name'
+	| 'slug'
+	| 'thumbnail_url'
+	| 'material'
+	| 'estimated_print_time'
+	| 'source_url'
 > & {
 	/** The part's licence (`parts.license_id`), shown on the provenance line. */
 	licenses?: PartCardLicenseRef | PartCardLicenseRef[] | null;
@@ -74,6 +80,11 @@ export interface PartCardData {
 	estimatedPrintTime: number | null; // minutes
 	/** Provenance line: the source platform name, then the licence short name. */
 	sourcePlatformName: string | null;
+	/**
+	 * The part's page on its source platform, which the platform name links to.
+	 * Null unless `parts.source_url` is a valid http(s) URL.
+	 */
+	sourceUrl: string | null;
 	license: string | null;
 }
 
