@@ -7,10 +7,9 @@ import { pluralize } from "@/lib/utils/formatters"
 import { categoryCanonicalPath } from "@/lib/utils/seo"
 import {
   COLLAPSED_COMPATIBLE_PRODUCTS_COUNT,
-  filterCompatibleProducts,
   groupProductsByBrand,
   isActiveFilterQuery,
-  limitProductGroups,
+  resolveCompatibleProductsView,
 } from "@/lib/utils/compatible-products"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
 import { Badge } from "@/components/ui/badge"
@@ -75,15 +74,13 @@ export function CompatibleProducts({
   const collapsible = products.length > COLLAPSED_COMPATIBLE_PRODUCTS_COUNT
   const filtering = isActiveFilterQuery(query)
 
-  const matches = React.useMemo(() => filterCompatibleProducts(products, query), [products, query])
-  const groups = React.useMemo(() => {
-    const grouped = groupProductsByBrand(matches)
-    // A filtered list is already short and the visitor is looking for one
-    // product, so the collapsed view never hides a match.
-    return collapsible && !showAll && !filtering
-      ? limitProductGroups(grouped, COLLAPSED_COMPATIBLE_PRODUCTS_COUNT)
-      : grouped
-  }, [matches, collapsible, showAll, filtering])
+  // Every product is rendered; the filter and the collapsed view only hide
+  // rows (#389), so a row's print report details survive being hidden.
+  const groups = React.useMemo(() => groupProductsByBrand(products), [products])
+  const { visibleSlugs, matchCount } = React.useMemo(
+    () => resolveCompatibleProductsView(products, query, showAll),
+    [products, query, showAll],
+  )
 
   return (
     <Card className={cn("border-border-subtle", className)}>
@@ -111,14 +108,18 @@ export function CompatibleProducts({
               autoComplete="off"
             />
             <p role="status" className="text-caption text-text-secondary">
-              {filtering ? `${matches.length} of ${pluralize(products.length, "product")}` : ""}
+              {filtering ? `${matchCount} of ${pluralize(products.length, "product")}` : ""}
             </p>
           </div>
         )}
 
         <div id={listId} className="space-y-md">
           {groups.map((group) => (
-            <section key={group.brand?.slug ?? ""} className="space-y-xs">
+            <section
+              key={group.brand?.slug ?? ""}
+              hidden={!group.products.some((product) => visibleSlugs.has(product.slug))}
+              className="space-y-xs"
+            >
               <h3 className="flex flex-wrap items-center gap-2xs text-sm font-semibold text-text-primary">
                 {group.brand ? (
                   <>
@@ -138,6 +139,7 @@ export function CompatibleProducts({
                     partId={partId}
                     product={product}
                     canReport={canReport}
+                    hidden={!visibleSlugs.has(product.slug)}
                     onReportStatsChange={onReportStatsChange}
                   />
                 ))}
@@ -145,7 +147,7 @@ export function CompatibleProducts({
             </section>
           ))}
 
-          {filtering && matches.length === 0 && (
+          {filtering && matchCount === 0 && (
             <p className="text-sm text-text-secondary">
               No compatible product matches “{query.trim()}”.
             </p>
@@ -173,6 +175,8 @@ interface CompatibleProductRowProps {
   partId: string
   product: CompatibleProduct
   canReport: boolean
+  /** Outside the current filter or collapsed view: kept mounted, not shown. */
+  hidden: boolean
   onReportStatsChange: (productId: string, stats: PrintReportStats) => void
 }
 
@@ -180,12 +184,15 @@ interface CompatibleProductRowProps {
  * One compatible product: its name, linked to its product page, its evidence
  * level, its category and, on a published part, a "Report a print" toggle. The print report
  * controls mount on first open and stay mounted while hidden, so closing the
- * row does not lose the result the visitor just filed.
+ * row does not lose the result the visitor just filed. The row itself is
+ * hidden rather than unmounted when the filter or the collapsed view leaves it
+ * out (#389), for the same reason.
  */
 const CompatibleProductRow = React.memo(function CompatibleProductRow({
   partId,
   product,
   canReport,
+  hidden,
   onReportStatsChange,
 }: CompatibleProductRowProps) {
   const [reportOpen, setReportOpen] = React.useState(false)
@@ -203,7 +210,7 @@ const CompatibleProductRow = React.memo(function CompatibleProductRow({
   }
 
   return (
-    <li className="min-w-0 space-y-2xs rounded-lg border border-border-subtle bg-bg-surface px-sm py-xs">
+    <li hidden={hidden} className="min-w-0 space-y-2xs rounded-lg border border-border-subtle bg-bg-surface px-sm py-xs">
       <div className="flex flex-wrap items-center gap-x-xs gap-y-2xs">
         <Link
           href={`/product/${product.slug}`}
