@@ -6,7 +6,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 ## Flow
 1. User clicks a download action on the part page.
 2. A non-blocking, one-line license notice appears at the trigger: license, author, attribution obligation, and the ShareAlike clause for copyleft licenses (built by `formatLicenseNotice()` in `lib/utils/formatters.ts`). It informs — it never gates the download.
-3. **Single file:** client calls `/api/parts/[slug]/files/[fileId]/download-url`, then triggers the browser download and posts `/api/parts/[slug]/download` to count it.
+3. **Single file:** client calls `/api/parts/[slug]/files/[fileId]/download-url`, then triggers the browser download and posts `/api/parts/[slug]/download` to log it.
 4. **Bulk archive:** client calls `/api/parts/[slug]/files/archive`; server streams a ZIP that preserves nested folders and logs one row to `part_downloads` with `file_id = null`.
 5. Each download, single file or archive, is one row in `part_downloads`: an archive logs one row, not one per file.
 
@@ -57,7 +57,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 - Index: `(part_id, downloaded_at desc)`.
 
 ## Authentication
-- None. Downloads work without an account; unauthenticated and authenticated users are counted identically and anonymously.
+- None. Downloads work without an account; downloads by unauthenticated and authenticated users are logged identically and anonymously.
 
 ## Error Handling
 - 400: Invalid `fileId` on the logging POST.

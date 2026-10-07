@@ -3,6 +3,7 @@
 import * as React from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
+import { pluralize } from "@/lib/utils/formatters"
 import { categoryCanonicalPath } from "@/lib/utils/seo"
 import {
   COLLAPSED_COMPATIBLE_PRODUCTS_COUNT,
@@ -52,8 +53,6 @@ interface CompatibleProductsProps {
   className?: string
 }
 
-const pluralizeProducts = (count: number): string => `${count} ${count === 1 ? "product" : "products"}`
-
 /**
  * The "Compatible with" section of a part page (issue #355). It sits full
  * width so a long list never stretches the cards beside it. Products are
@@ -95,7 +94,7 @@ export function CompatibleProducts({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           </svg>
           Compatible with
-          <span className="text-sm font-regular text-text-secondary">{pluralizeProducts(products.length)}</span>
+          <span className="text-sm font-regular text-text-secondary">{pluralize(products.length, "product")}</span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-md">
@@ -112,7 +111,7 @@ export function CompatibleProducts({
               autoComplete="off"
             />
             <p role="status" className="text-caption text-text-secondary">
-              {filtering ? `${matches.length} of ${pluralizeProducts(products.length)}` : ""}
+              {filtering ? `${matches.length} of ${pluralize(products.length, "product")}` : ""}
             </p>
           </div>
         )}
