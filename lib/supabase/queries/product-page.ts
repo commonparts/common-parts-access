@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { ProductReference } from '@/lib/utils/product-references'
 import { toEvidenceLevel, type EvidenceLevel } from '@/lib/utils/evidence-level'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 import {
   CARD_PRODUCT_ORDER,
   CARD_PRODUCT_PREVIEW_COUNT,
@@ -13,12 +14,6 @@ import type { PartCardData, PartCardRow } from '@/types/parts'
 
 /** Parts per page of a product page, as on /browse. */
 const PRODUCT_PARTS_PAGE_SIZE = 20
-
-/**
- * PostgREST answers 416 with this code when the requested range starts past
- * the last row, i.e. for a page number beyond the last page.
- */
-const RANGE_NOT_SATISFIABLE = 'PGRST103'
 
 // Upper bound on references embedded in a product page. A product groups tens
 // of manufacturer references at most; this only guards against runaway data.
@@ -134,7 +129,7 @@ type ProductPartRow = PartCardRow & {
  */
 async function queryProductPartsPage(productId: string, page: number) {
   const supabase = await createClient()
-  const from = (page - 1) * PRODUCT_PARTS_PAGE_SIZE
+  const { from, to } = pageRange(page, PRODUCT_PARTS_PAGE_SIZE)
 
   return supabase
     .from('parts')
@@ -145,7 +140,7 @@ async function queryProductPartsPage(productId: string, page: number) {
     .order('id', { ascending: true })
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
-    .range(from, from + PRODUCT_PARTS_PAGE_SIZE - 1)
+    .range(from, to)
 }
 
 /**
@@ -153,8 +148,8 @@ async function queryProductPartsPage(productId: string, page: number) {
  * first, one row per part, built from the shared part card select and mapper
  * (issue #380) so they carry the same card body as everywhere else. The page
  * is cut in the database (#373): no query loads every part of a product.
- * A page past the last one falls back to page 1 rather than rendering an
- * empty grid under a product that has parts.
+ * A page past the last one falls back to page 1 (fetchPageOrFirst) rather
+ * than rendering an empty grid under a product that has parts.
  * RLS: "Anyone can view published parts" on parts and "Public or owner read"
  * on part_products; the card embeds are covered by the public read policies of
  * products, brands, licenses and source_platforms.
@@ -163,17 +158,9 @@ export async function fetchProductPageParts(input: {
   productId: string
   page: number
 }): Promise<ProductPartsPage> {
-  let page = Math.max(1, input.page)
-  let result = await queryProductPartsPage(input.productId, page)
-
-  const outOfRange =
-    page > 1 &&
-    (result.error?.code === RANGE_NOT_SATISFIABLE ||
-      (!result.error && (result.data ?? []).length === 0))
-  if (outOfRange) {
-    page = 1
-    result = await queryProductPartsPage(input.productId, page)
-  }
+  const { page, result } = await fetchPageOrFirst(input.page, (target) =>
+    queryProductPartsPage(input.productId, target),
+  )
 
   const { data, error, count } = result
   if (error) throw error
@@ -188,6 +175,6 @@ export async function fetchProductPageParts(input: {
     })),
     total,
     page,
-    totalPages: Math.max(1, Math.ceil(total / PRODUCT_PARTS_PAGE_SIZE)),
+    totalPages: countPages(total, PRODUCT_PARTS_PAGE_SIZE),
   }
 }

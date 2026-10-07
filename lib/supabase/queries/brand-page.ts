@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
 export const NAV_LISTING_PAGE_SIZE = 24
@@ -40,13 +41,6 @@ export interface ProductListingPage<T> {
   total: number
   page: number
   totalPages: number
-}
-
-/** Clamps a 1-based page and returns the PostgREST range bounds for it. */
-function pageRange(page: number): { page: number; from: number; to: number } {
-  const clamped = Math.max(1, page)
-  const from = (clamped - 1) * NAV_LISTING_PAGE_SIZE
-  return { page: clamped, from, to: from + NAV_LISTING_PAGE_SIZE - 1 }
 }
 
 /**
@@ -105,7 +99,8 @@ interface ProductRow {
  * parts_count, ordered by name. Only listed products — a published part or
  * an open part request (issues #312, #321) — are returned; is_listed derives
  * from trigger-maintained counts, so the filter runs in the database and the
- * pagination stays exact. Wrapped in React
+ * pagination stays exact. A page past the last one falls back to page 1
+ * (fetchPageOrFirst, #383). Wrapped in React
  * cache() (primitive args so the per-request key works) in case a future
  * caller shares it with metadata. Covered by the public read policies on
  * products and categories.
@@ -113,18 +108,21 @@ interface ProductRow {
 export const fetchBrandProductsPage = cache(
   async (brandId: string, rawPage: number): Promise<ProductListingPage<BrandPageProduct>> => {
     const supabase = await createClient()
-    const { page, from, to } = pageRange(rawPage)
 
-    const { data, error, count } = await supabase
-      .from('products')
-      .select('id, name, slug, image_url, parts_count, categories(id, name, slug)', {
-        count: 'exact',
-      })
-      .eq('brand_id', brandId)
-      .eq('is_listed', true)
-      .order('name', { ascending: true })
-      .range(from, to)
+    const { page, result } = await fetchPageOrFirst(rawPage, (target) => {
+      const { from, to } = pageRange(target, NAV_LISTING_PAGE_SIZE)
+      return supabase
+        .from('products')
+        .select('id, name, slug, image_url, parts_count, categories(id, name, slug)', {
+          count: 'exact',
+        })
+        .eq('brand_id', brandId)
+        .eq('is_listed', true)
+        .order('name', { ascending: true })
+        .range(from, to)
+    })
 
+    const { data, error, count } = result
     if (error) throw error
 
     const total = count ?? 0
@@ -139,7 +137,7 @@ export const fetchBrandProductsPage = cache(
       })),
       total,
       page,
-      totalPages: Math.max(1, Math.ceil(total / NAV_LISTING_PAGE_SIZE)),
+      totalPages: countPages(total, NAV_LISTING_PAGE_SIZE),
     }
   },
 )
@@ -151,7 +149,8 @@ export interface BrandCategoryListing extends ProductListingPage<BrandPageProduc
 /**
  * Loads the /brands/[brand]/[category] listing: the category by slug plus the
  * brand's listed products in that category (issues #312, #321),
- * paginated. Returns null when the category slug does not resolve (the route
+ * paginated; a page past the last one falls back to page 1 (fetchPageOrFirst,
+ * #383). Returns null when the category slug does not resolve (the route
  * 404s); an empty products array with a valid category renders the empty
  * state instead. Wrapped in React cache() with primitive args so
  * generateMetadata and the page component share the two queries per request.
@@ -174,17 +173,19 @@ export const fetchBrandCategoryListing = cache(
     if (categoryError) throw categoryError
     if (!category) return null
 
-    const { page, from, to } = pageRange(rawPage)
+    const { page, result } = await fetchPageOrFirst(rawPage, (target) => {
+      const { from, to } = pageRange(target, NAV_LISTING_PAGE_SIZE)
+      return supabase
+        .from('products')
+        .select('id, name, slug, image_url, parts_count', { count: 'exact' })
+        .eq('brand_id', brandId)
+        .eq('category_id', category.id)
+        .eq('is_listed', true)
+        .order('name', { ascending: true })
+        .range(from, to)
+    })
 
-    const { data, error, count } = await supabase
-      .from('products')
-      .select('id, name, slug, image_url, parts_count', { count: 'exact' })
-      .eq('brand_id', brandId)
-      .eq('category_id', category.id)
-      .eq('is_listed', true)
-      .order('name', { ascending: true })
-      .range(from, to)
-
+    const { data, error, count } = result
     if (error) throw error
 
     const total = count ?? 0
@@ -200,7 +201,7 @@ export const fetchBrandCategoryListing = cache(
       })),
       total,
       page,
-      totalPages: Math.max(1, Math.ceil(total / NAV_LISTING_PAGE_SIZE)),
+      totalPages: countPages(total, NAV_LISTING_PAGE_SIZE),
     }
   },
 )

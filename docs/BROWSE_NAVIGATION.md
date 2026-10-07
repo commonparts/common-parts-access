@@ -29,7 +29,7 @@ Navigation shows only what has something to offer (#312, #321):
 
 - **Subtree membership** is a `starts_with()` check on `categories.path`. Paths end with a slash, so `/cook/` never matches `/cooker/`.
 - **Single-child chains collapse**: when a category has exactly one child and nothing else to show, its page renders the descendant's content, so a click never reveals a single option.
-- **Paginated listings** keep one canonical URL without the `page` parameter.
+- **Paginated listings** keep one canonical URL without the `page` parameter. On the brand listings and the product page, a missing, malformed or non-positive `page` reads as page 1 (`parsePageParam`). On those pages and on `GET /api/parts`, a page past the last one re-queries page 1 instead of failing (`fetchPageOrFirst` in `lib/utils/pagination.ts`, #383), and `GET /api/parts` reports the page it returned in `pagination.page`. That route still parses `page` with `parseInt`, so a value such as `2abc` reads as page 2.
 - **The hub degrades**: if the navigation function is unavailable, `/browse` renders an empty navigation (the sections hide themselves) and keeps the parts grid.
 - **Grid filters** (category, brand, product, sort) are exploration tools. The grid defaults to newest first; there is no download-based sort (#373). The "Most liked" sort is hidden with the social features flag (#322).
 - All navigation functions are `SECURITY INVOKER` and filter on `parts.status = 'published'`, so anonymous and signed-in visitors see identical counts.
@@ -39,4 +39,5 @@ Navigation shows only what has something to offer (#312, #321):
 - `app/(public)/browse/page.tsx`, `app/(public)/categories/[slug]/page.tsx`, `app/(public)/brands/[brand]/page.tsx`, `app/(public)/brands/[brand]/[category]/page.tsx`
 - `components/browse/`
 - `lib/supabase/queries/browse-nav.ts`, `category-page.ts`, `brand-page.ts`
+- `lib/utils/pagination.ts`: page ranges and the out-of-range fallback shared by every paginated listing
 - Migrations: `20260715192445_browse_nav_function.sql`, `20260716181406_category_drilldown_nav.sql`, `20260922120000_hide_entities_without_parts.sql`, `20260926120000_list_products_with_open_requests.sql`
