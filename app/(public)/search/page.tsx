@@ -46,7 +46,10 @@ export default async function SearchPage({
   // bounded by the number of hits (at most SEARCH_MAX_LIMIT).
   const partCards = await fetchPartCardsByIds(results.parts.map((part) => part.id))
 
-  const total = results.products.length + results.parts.length + results.brands.length
+  // Counted on the hydrated cards, as the view counts them: a hit unpublished
+  // between the search and the hydration must not suppress the zero-result
+  // state (miss logging, brand suggestion, product candidates).
+  const total = results.products.length + partCards.length + results.brands.length
   const isMiss = Boolean(query) && total === 0
 
   // A zero-result search is logged (issue #320) and offers the products the
