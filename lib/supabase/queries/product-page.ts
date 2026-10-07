@@ -11,8 +11,14 @@ import {
 } from '@/lib/supabase/queries/part'
 import type { PartCardData, PartCardRow } from '@/types/parts'
 
-// Upper bound on parts fetched for a product page in one call.
-const MAX_PRODUCT_PARTS = 500
+/** Parts per page of a product page, as on /browse. */
+const PRODUCT_PARTS_PAGE_SIZE = 20
+
+/**
+ * PostgREST answers 416 with this code when the requested range starts past
+ * the last row, i.e. for a page number beyond the last page.
+ */
+const RANGE_NOT_SATISFIABLE = 'PGRST103'
 
 // Upper bound on references embedded in a product page. A product groups tens
 // of manufacturer references at most; this only guards against runaway data.
@@ -38,8 +44,16 @@ export interface ProductPart {
   card: PartCardData
   /** Evidence that this part fits this product — not the part in general (#317). */
   evidence_level: EvidenceLevel
-  download_count: number
-  created_at: string | null
+}
+
+/** One page of a product's parts, newest first, with the untruncated total. */
+export interface ProductPartsPage {
+  parts: ProductPart[]
+  /** Published parts linked to the product, across every page. */
+  total: number
+  /** The page actually returned: 1 when the requested page was out of range. */
+  page: number
+  totalPages: number
 }
 
 interface ProductRow {
@@ -109,39 +123,71 @@ export const fetchProductPageBySlug = cache(
 const PRODUCT_LINK_JOIN = 'product_link:part_products!inner(product_id, evidence_level)'
 
 type ProductPartRow = PartCardRow & {
-  download_count: number | null
-  created_at: string | null
   product_link: { evidence_level: string }[] | null
 }
 
 /**
- * Fetches the published parts shown on a product page, one row per part,
- * built from the shared part card select and mapper (issue #380) so they carry
- * the same card body as everywhere else. Sorting is left to the caller.
+ * Queries one page of a product's published parts with the exact total.
+ * Ordered by creation date, newest first, then by id so that parts created at
+ * the same instant keep a stable position across pages. The product filter
+ * goes through the inner join on part_products (idx_part_products_product).
+ */
+async function queryProductPartsPage(productId: string, page: number) {
+  const supabase = await createClient()
+  const from = (page - 1) * PRODUCT_PARTS_PAGE_SIZE
+
+  return supabase
+    .from('parts')
+    .select(`${PART_CARD_SELECT}, ${PRODUCT_LINK_JOIN}`, { count: 'exact' })
+    .eq('product_link.product_id', productId)
+    .eq('status', 'published')
+    .order('created_at', { ascending: false })
+    .order('id', { ascending: true })
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
+    .range(from, from + PRODUCT_PARTS_PAGE_SIZE - 1)
+}
+
+/**
+ * Fetches one page of the published parts shown on a product page, newest
+ * first, one row per part, built from the shared part card select and mapper
+ * (issue #380) so they carry the same card body as everywhere else. The page
+ * is cut in the database (#373): no query loads every part of a product.
+ * A page past the last one falls back to page 1 rather than rendering an
+ * empty grid under a product that has parts.
  * RLS: "Anyone can view published parts" on parts and "Public or owner read"
  * on part_products; the card embeds are covered by the public read policies of
  * products, brands, licenses and source_platforms.
  */
-export async function fetchProductPageParts(input: { productId: string }): Promise<ProductPart[]> {
-  const supabase = await createClient()
+export async function fetchProductPageParts(input: {
+  productId: string
+  page: number
+}): Promise<ProductPartsPage> {
+  let page = Math.max(1, input.page)
+  let result = await queryProductPartsPage(input.productId, page)
 
-  const { data, error } = await supabase
-    .from('parts')
-    .select(`${PART_CARD_SELECT}, download_count, created_at, ${PRODUCT_LINK_JOIN}`)
-    .eq('product_link.product_id', input.productId)
-    .eq('status', 'published')
-    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
-    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
-    .limit(MAX_PRODUCT_PARTS)
+  const outOfRange =
+    page > 1 &&
+    (result.error?.code === RANGE_NOT_SATISFIABLE ||
+      (!result.error && (result.data ?? []).length === 0))
+  if (outOfRange) {
+    page = 1
+    result = await queryProductPartsPage(input.productId, page)
+  }
 
+  const { data, error, count } = result
   if (error) throw error
 
-  // Cast through unknown, as in fetchPartCards: the client's select parser
-  // gives up on the card select once a filter join is appended to it.
-  return ((data ?? []) as unknown as ProductPartRow[]).map((row) => ({
-    card: mapPartRowToCard(row),
-    evidence_level: toEvidenceLevel(row.product_link?.[0]?.evidence_level),
-    download_count: row.download_count ?? 0,
-    created_at: row.created_at,
-  }))
+  const total = count ?? 0
+  return {
+    // Cast through unknown, as in fetchPartCards: the client's select parser
+    // gives up on the card select once a filter join is appended to it.
+    parts: ((data ?? []) as unknown as ProductPartRow[]).map((row) => ({
+      card: mapPartRowToCard(row),
+      evidence_level: toEvidenceLevel(row.product_link?.[0]?.evidence_level),
+    })),
+    total,
+    page,
+    totalPages: Math.max(1, Math.ceil(total / PRODUCT_PARTS_PAGE_SIZE)),
+  }
 }

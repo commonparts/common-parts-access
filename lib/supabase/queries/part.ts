@@ -174,8 +174,6 @@ export function mapPartRowToCard(row: PartCardRow): PartCardData {
 
 function resolveOrderColumn(sortBy?: PartListOptions['sortBy']) {
   switch (sortBy) {
-    case 'popularity':
-      return 'download_count';
     case 'likes':
       return 'like_count';
     case 'views':
@@ -266,7 +264,7 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   };
 }
 
-// Top parts by downloads for the featured section.
+// The most recently added published parts, for the home page section.
 export async function fetchFeaturedPartCards(limit = 8) {
   const supabase = await createClient();
 
@@ -274,7 +272,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
     .from('parts')
     .select(PART_CARD_SELECT)
     .eq('status', 'published')
-    .order('download_count', { ascending: false })
+    .order('created_at', { ascending: false })
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
     .limit(limit);

@@ -10,7 +10,7 @@ Device-based navigation (Flow P2 in [user-flows.md](./user-flows.md)): a visitor
 | `/categories/[slug]` | Drill-down at any depth: direct children with subtree counts and, when the category has products of its own, the brands covering them. | `fetch_category_page()` |
 | `/brands/[brand]` | Covered categories and the brand's products with part counts, paginated. Text-only brand name, no logo. | `fetch_brand_nav()` |
 | `/brands/[brand]/[category]` | A brand's products within one category, paginated. Target of the category crumb on product pages. | `fetchBrandCategoryListing()` |
-| `/product/[slug]` | Product page: compatible parts, open part requests, regional name. | `lib/supabase/queries/product-page.ts` |
+| `/product/[slug]` | Product page: compatible parts, newest first and paginated (20 per page, #373), open part requests, regional name. | `lib/supabase/queries/product-page.ts` |
 | `/parts/[slug]` | Part page (Flow P1). | `lib/supabase/queries/part.ts` |
 
 Breadcrumb on product pages: `Brand › Category › Product`. The brand crumb resolves to `/brands/[brand]`, the category crumb to `/brands/[brand]/[category]`.
@@ -31,7 +31,7 @@ Navigation shows only what has something to offer (#312, #321):
 - **Single-child chains collapse**: when a category has exactly one child and nothing else to show, its page renders the descendant's content, so a click never reveals a single option.
 - **Paginated listings** keep one canonical URL without the `page` parameter.
 - **The hub degrades**: if the navigation function is unavailable, `/browse` renders an empty navigation (the sections hide themselves) and keeps the parts grid.
-- **Grid filters** (category, brand, product, sort) are exploration tools. The "Most liked" sort is hidden with the social features flag (#322).
+- **Grid filters** (category, brand, product, sort) are exploration tools. The grid defaults to newest first; there is no download-based sort (#373). The "Most liked" sort is hidden with the social features flag (#322).
 - All navigation functions are `SECURITY INVOKER` and filter on `parts.status = 'published'`, so anonymous and signed-in visitors see identical counts.
 
 ## Key files

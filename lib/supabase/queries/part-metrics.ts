@@ -57,8 +57,10 @@ export interface RecordDownloadInput {
 
 /**
  * Inserts an anonymous download row for an already-resolved part id.
- * No user id, IP, or user agent is stored — the row only feeds the
- * download_count trigger (issue #250). Covered by the RLS policy
+ * No user id, IP, or user agent is stored: the row records the part, the
+ * file (null for an archive) and the moment (issue #250). No counter is kept
+ * on the part (#373); a public figure, if one is needed, is derived from
+ * these rows. Covered by the RLS policy
  * "Anyone can log anonymous downloads on published parts".
  * Use recordPartDownload() when only the slug is known.
  */
