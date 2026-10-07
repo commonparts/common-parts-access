@@ -220,9 +220,12 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   if (options.product) query = query.eq('fit_filter.product_id', options.product);
   if (search) query = query.ilike('name', `%${search}%`);
 
-  query = query.order(resolveOrderColumn(options.sortBy), {
-    ascending: sortOrder === 'asc',
-  });
+  // The id tie-breaker keeps parts with an equal sort value (same view count,
+  // same creation instant) in a stable position, so none repeats or vanishes
+  // between pages.
+  query = query
+    .order(resolveOrderColumn(options.sortBy), { ascending: sortOrder === 'asc' })
+    .order('id', { ascending: true });
 
   // Order before truncating, by the linked product's name: without an order the
   // embed returns a different subset per request, and ordering by anything else
