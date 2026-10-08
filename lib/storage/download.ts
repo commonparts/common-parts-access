@@ -12,7 +12,7 @@ interface DownloadResult {
 /**
  * Download a single file.
  * Anonymous — no account or cookie-based identification is required (issue #250).
- * Fires a non-blocking POST that increments the anonymous download counter.
+ * Fires a non-blocking POST that records an anonymous download row.
  */
 export async function downloadFile(file: PartPageFile, partSlug: string): Promise<DownloadResult> {
   try {
@@ -29,7 +29,7 @@ export async function downloadFile(file: PartPageFile, partSlug: string): Promis
 
     const { downloadUrl, filename } = await urlResponse.json()
 
-    // Increment the anonymous download counter (non-blocking)
+    // Record an anonymous download row (non-blocking)
     fetch(`/api/parts/${partSlug}/download`, {
       method: 'POST',
       headers: {
@@ -71,7 +71,7 @@ export async function downloadFile(file: PartPageFile, partSlug: string): Promis
 /**
  * Download all model files as a ZIP archive.
  * Anonymous — the archive endpoint requires no authentication and
- * increments the anonymous download counter server-side (issue #250).
+ * records an anonymous download row server-side (issue #250).
  */
 export async function downloadAllPartFiles(files: PartPageFile[], partSlug: string, partName?: string): Promise<DownloadResult> {
   if (!files || files.length === 0) {

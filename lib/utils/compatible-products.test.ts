@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
+  COLLAPSED_COMPATIBLE_PRODUCTS_COUNT,
   filterCompatibleProducts,
   groupProductsByBrand,
   isActiveFilterQuery,
   limitProductGroups,
+  resolveCompatibleProductsView,
 } from './compatible-products'
 
 const philips = { name: 'Philips', slug: 'philips' }
@@ -108,5 +110,53 @@ describe('limitProductGroups', () => {
 
   it('keeps every group under the limit', () => {
     expect(limitProductGroups(groups, 50)).toEqual(groups)
+  })
+})
+
+describe('resolveCompatibleProductsView', () => {
+  // One more product than the collapsed view shows, all from one brand, named
+  // so their display order is model-01, model-02, … model-13.
+  const many = Array.from({ length: COLLAPSED_COMPATIBLE_PRODUCTS_COUNT + 1 }, (_, i) => {
+    const n = String(i + 1).padStart(2, '0')
+    return { name: `Model ${n}`, slug: `model-${n}`, brand: braun, references: [{ value: `REF-${n}` }] }
+  })
+
+  it('shows every product of a short list', () => {
+    const view = resolveCompatibleProductsView(products, '', false)
+    expect(view.visibleSlugs).toEqual(new Set(products.map((p) => p.slug)))
+    expect(view.matchCount).toBe(products.length)
+  })
+
+  it('collapses a long list to the first products in display order', () => {
+    const view = resolveCompatibleProductsView(many, '', false)
+    expect(view.visibleSlugs.size).toBe(COLLAPSED_COMPATIBLE_PRODUCTS_COUNT)
+    expect(view.visibleSlugs.has('model-01')).toBe(true)
+    expect(view.visibleSlugs.has('model-13')).toBe(false)
+  })
+
+  it('shows every product of a long list once expanded', () => {
+    const view = resolveCompatibleProductsView(many, '', true)
+    expect(view.visibleSlugs.size).toBe(many.length)
+  })
+
+  // The visitor is looking for one product: a match past the collapse
+  // threshold must not be hidden.
+  it('never collapses a filtered list', () => {
+    const view = resolveCompatibleProductsView(many, 'ref 13', false)
+    expect(view.visibleSlugs).toEqual(new Set(['model-13']))
+    expect(view.matchCount).toBe(1)
+  })
+
+  it('reports no match without hiding the count of products', () => {
+    const view = resolveCompatibleProductsView(many, 'zzz', false)
+    expect(view.visibleSlugs.size).toBe(0)
+    expect(view.matchCount).toBe(0)
+  })
+
+  // A query of ignored characters behaves as empty: the list stays collapsed.
+  it('treats a punctuation-only query as no filter', () => {
+    const view = resolveCompatibleProductsView(many, ' - ', false)
+    expect(view.visibleSlugs.size).toBe(COLLAPSED_COMPATIBLE_PRODUCTS_COUNT)
+    expect(view.matchCount).toBe(many.length)
   })
 })

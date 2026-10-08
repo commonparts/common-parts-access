@@ -51,9 +51,10 @@ A part is linked to up to 50 products, across brands (`VALIDATION_LIMITS.PART.PR
 The part page lists every linked product in a full-width "Compatible with" section below the part header, so its length never changes the height of the other cards (`components/part/compatible-products.tsx`).
 
 - Products are grouped by brand, groups ordered by brand name and products by name within a group; products with no brand come last under "Other products". Each group heading links to the brand page and carries the brand's verified badge.
-- Each product is a compact row in a grid of one to three columns, depending on the width: the product name, linked to its product page, its evidence-level badge and its category, linked to the category page. A category describes the product, not the part, so the "Part details" card has no category row (#372). There is no product image.
+- Each product is a compact row in a grid of one to three columns, depending on the width: the product name, linked to its product page, its evidence-level badge and its category, linked to the category page. A category describes the product, not the part, so the "Part details" card has no category row (#372). There is no product image, and the part details endpoint does not return one (#389).
 - On a published part, each row has a "Report a print" toggle that opens the print report controls for that product.
 - Above 12 products (`COLLAPSED_COMPATIBLE_PRODUCTS_COUNT`), the section shows the first 12 and a "Show all N products" control, plus a filter field. The filter matches the product name, the brand name and the product's references, ignoring case, accents, spaces and punctuation. While a filter is entered, every match is shown.
+- Rows outside the filter or the collapsed view are hidden, not removed, so a print report filed on a product keeps its result, comment and reference when the row is hidden and shown again (#389).
 - The grouping, ordering, filtering and collapsing rules are pure functions in `lib/utils/compatible-products.ts`.
 
 ## Product creation

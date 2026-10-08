@@ -5,6 +5,8 @@ import { extractBucketStoragePath } from '@/lib/storage/path-utils';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import { distinctBrands } from '@/lib/utils/catalog';
+import { isValidHttpUrl } from '@/lib/utils/validation';
+import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination';
 import type { PartStatus } from '@/types/database';
 import type {
   PartCardData,
@@ -23,10 +25,10 @@ import { firstEmbedded } from '@/lib/utils/supabase-embed';
  * into "+N more". The untruncated total comes from the `fits_count` aggregate,
  * so the preview stays bounded no matter how many products a part fits.
  */
-const CARD_PRODUCT_PREVIEW_COUNT = 2;
+export const CARD_PRODUCT_PREVIEW_COUNT = 2;
 
 /** Sort key of the `fits` embed — the linked product's name, matching search_all. */
-const CARD_PRODUCT_ORDER = 'products(name)';
+export const CARD_PRODUCT_ORDER = 'products(name)';
 
 // Every embed of part_products is aliased (`fits`, `brand_fits`, `fits_count`,
 // and `fit_filter` / `brand_filter` below). PostgREST resolves an unaliased
@@ -45,12 +47,27 @@ const CARD_PRODUCT_ORDER = 'products(name)';
 // exactly the parts that have the most, and nondeterministically: PostgREST
 // returns no guaranteed order. The fan-out is one small row per link, under a
 // top-level page of 20, and `fits_count` reports the true total.
-const PART_CARD_SELECT = `
+//
+// This select and mapPartRowToCard build every part card (issue #380). The
+// print and provenance lines read the material, the print time, the source
+// URL, the licence (`parts.license_id`, hinted because `source_license_id`
+// also references licenses) and the source platform name. The two lookups are
+// to-one embeds, adding no row to the fan-out. Callers order and truncate `fits` with CARD_PRODUCT_ORDER and
+// CARD_PRODUCT_PREVIEW_COUNT.
+export const PART_CARD_SELECT = `
   id,
   name,
   slug,
-  description,
   thumbnail_url,
+  material,
+  estimated_print_time,
+  source_url,
+  licenses!parts_license_id_fkey(
+    short_name
+  ),
+  source_platforms(
+    name
+  ),
   fits:part_products(
     products(
       name,
@@ -125,7 +142,12 @@ function deriveCardBrands(row: PartCardRow): PartCardData['brands'] {
   );
 }
 
-function mapPartRowToCard(row: PartCardRow): PartCardData {
+/**
+ * The only mapper to PartCardData (issue #380): every part card, wherever it
+ * is rendered, is built from a PART_CARD_SELECT row through this function, so
+ * the same part shows the same card body in every context.
+ */
+export function mapPartRowToCard(row: PartCardRow): PartCardData {
   const products = (row.fits ?? [])
     .map((link) => firstEmbedded(link.products))
     .filter((product): product is NonNullable<typeof product> => product !== null)
@@ -135,21 +157,24 @@ function mapPartRowToCard(row: PartCardRow): PartCardData {
     id: row.id,
     slug: row.slug,
     title: row.name,
-    description: row.description,
-    thumbnailUrl: row.thumbnail_url,
+    thumbnailUrl: row.thumbnail_url ?? null,
     brands: deriveCardBrands(row),
     products,
     // The aggregate covers every link; the preview list is capped, so falling
     // back to its length would under-report the "+N more" overflow.
     productCount: row.fits_count?.[0]?.count ?? products.length,
-    isPremium: false,
+    material: row.material ?? null,
+    estimatedPrintTime: row.estimated_print_time ?? null,
+    sourcePlatformName: firstEmbedded(row.source_platforms)?.name ?? null,
+    // Validated here, once, so the card can render it as a link: a stored
+    // value with another scheme (javascript:, data:) never reaches an href.
+    sourceUrl: row.source_url && isValidHttpUrl(row.source_url) ? row.source_url : null,
+    license: firstEmbedded(row.licenses)?.short_name ?? null,
   };
 }
 
 function resolveOrderColumn(sortBy?: PartListOptions['sortBy']) {
   switch (sortBy) {
-    case 'popularity':
-      return 'download_count';
     case 'likes':
       return 'like_count';
     case 'views':
@@ -161,9 +186,14 @@ function resolveOrderColumn(sortBy?: PartListOptions['sortBy']) {
   }
 }
 
-// Paged list with optional filters/search/sorting for browse screens.
+/**
+ * Paged list of part cards with optional filters, search and sorting, for the
+ * browse grid (through GET /api/parts). A page past the last one falls back to
+ * page 1 (fetchPageOrFirst, #383), and `pagination.page` reports the page
+ * actually returned.
+ */
 export async function fetchPartCards(options: PartListOptions = {}): Promise<PartListResult> {
-  const page = Math.max(1, options.page || 1);
+  const requestedPage = options.page || 1;
   const limit = Math.max(1, options.limit || 20);
   const sortOrder = options.sortOrder === 'asc' ? 'asc' : 'desc';
   const search = options.search?.trim() || '';
@@ -188,32 +218,42 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
       ? `${PART_CARD_SELECT}, ${BRAND_FILTER_JOIN}`
       : PART_CARD_SELECT;
 
-  let query = supabase.from('parts').select(select, { count: 'exact' });
+  /**
+   * Builds and runs the filtered, sorted query for one page. Rebuilt on each
+   * call rather than shared: a query builder is consumed once awaited, and
+   * fetchPageOrFirst may run it a second time for page 1.
+   */
+  const runPage = (target: number) => {
+    let query = supabase.from('parts').select(select, { count: 'exact' });
 
-  if (options.status) query = query.eq('status', options.status);
-  if (options.category) query = query.eq('category_id', options.category);
-  if (options.brand) query = query.eq('brand_filter.products.brand_id', options.brand);
-  if (options.product) query = query.eq('fit_filter.product_id', options.product);
-  if (search) query = query.ilike('name', `%${search}%`);
+    if (options.status) query = query.eq('status', options.status);
+    if (options.category) query = query.eq('category_id', options.category);
+    if (options.brand) query = query.eq('brand_filter.products.brand_id', options.brand);
+    if (options.product) query = query.eq('fit_filter.product_id', options.product);
+    if (search) query = query.ilike('name', `%${search}%`);
 
-  query = query.order(resolveOrderColumn(options.sortBy), {
-    ascending: sortOrder === 'asc',
-  });
+    // The id tie-breaker keeps parts with an equal sort value (same view count,
+    // same creation instant) in a stable position, so none repeats or vanishes
+    // between pages.
+    query = query
+      .order(resolveOrderColumn(options.sortBy), { ascending: sortOrder === 'asc' })
+      .order('id', { ascending: true });
 
-  // Order before truncating, by the linked product's name: without an order the
-  // embed returns a different subset per request, and ordering by anything else
-  // would surface different products here than search_all does for the same
-  // part (it orders by name too), so the card would change between /browse and
-  // /search. PostgREST resolves `products(name)` against the embed's own join.
-  query = query
-    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
-    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
+    // Order before truncating, by the linked product's name: without an order the
+    // embed returns a different subset per request, and ordering by anything else
+    // would surface different products here than search_all does for the same
+    // part (it orders by name too), so the card would change between /browse and
+    // /search. PostgREST resolves `products(name)` against the embed's own join.
+    query = query
+      .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+      .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' });
 
-  const from = (page - 1) * limit;
-  const to = from + limit - 1;
-  query = query.range(from, to);
+    const { from, to } = pageRange(target, limit);
+    return query.range(from, to);
+  };
 
-  const { data, error, count } = await query;
+  const { page, result } = await fetchPageOrFirst(requestedPage, runPage);
+  const { data, error, count } = result;
 
   if (error) {
     throw error;
@@ -225,7 +265,7 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   // runtime). PartCardRow is the contract either way, as for PART_SEO_SELECT.
   const parts = ((data ?? []) as unknown as PartCardRow[]).map(mapPartRowToCard);
   const total = count || 0;
-  const totalPages = Math.ceil(total / limit) || 1;
+  const totalPages = countPages(total, limit);
 
   return {
     parts,
@@ -240,7 +280,7 @@ export async function fetchPartCards(options: PartListOptions = {}): Promise<Par
   };
 }
 
-// Top parts by downloads for the featured section.
+// The most recently added published parts, for the home page section.
 export async function fetchFeaturedPartCards(limit = 8) {
   const supabase = await createClient();
 
@@ -248,7 +288,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
     .from('parts')
     .select(PART_CARD_SELECT)
     .eq('status', 'published')
-    .order('download_count', { ascending: false })
+    .order('created_at', { ascending: false })
     .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
     .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
     .limit(limit);
@@ -258,6 +298,44 @@ export async function fetchFeaturedPartCards(limit = 8) {
   }
 
   return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
+}
+
+/**
+ * Builds the cards of a known list of published parts, in the order of `ids`.
+ * Used by the search results page (issue #380): search_all returns its own
+ * row shape, so its part hits are hydrated here, in one query bounded by the
+ * number of ids, instead of being mapped to a card of their own. Ids that no
+ * longer resolve to a published part are dropped.
+ * RLS: "Anyone can view published parts" on parts; the embeds are covered by
+ * the public read policies of part_products, products, brands, licenses and
+ * source_platforms.
+ */
+export async function fetchPartCardsByIds(ids: string[]): Promise<PartCardData[]> {
+  const uniqueIds = Array.from(new Set(ids));
+  if (uniqueIds.length === 0) return [];
+
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from('parts')
+    .select(PART_CARD_SELECT)
+    .in('id', uniqueIds)
+    .eq('status', 'published')
+    .order(CARD_PRODUCT_ORDER, { referencedTable: 'fits' })
+    .limit(CARD_PRODUCT_PREVIEW_COUNT, { referencedTable: 'fits' })
+    .limit(uniqueIds.length);
+
+  if (error) {
+    throw error;
+  }
+
+  // `in` returns rows in no particular order: restore the caller's ranking.
+  const cardsById = new Map(
+    ((data ?? []) as PartCardRow[]).map((row) => [row.id, mapPartRowToCard(row)]),
+  );
+  return uniqueIds
+    .map((id) => cardsById.get(id))
+    .filter((card): card is PartCardData => card !== undefined);
 }
 
 // user_profiles is a left join: a part whose owner deleted their account has
@@ -350,32 +428,36 @@ const MY_MODEL_SELECT = 'id, name, slug, created_at, thumbnail_url, status' as c
 
 /**
  * Fetches parts owned by a specific user, ordered by creation date descending.
- * Returns a paginated list suitable for the "My Parts" dashboard.
+ * Returns a paginated list suitable for the "My Parts" dashboard. A page past
+ * the last one falls back to page 1 (fetchPageOrFirst, #383).
  */
 export async function fetchUserParts(
   userId: string,
   options: { page?: number; limit?: number; status?: PartStatus } = {}
 ): Promise<MyPartListResult> {
-  const page = Math.max(1, options.page || 1);
   const limit = Math.max(1, Math.min(100, options.limit || 20));
   const supabase = await createClient();
 
-  let query = supabase
-    .from('parts')
-    .select(MY_MODEL_SELECT, { count: 'exact' })
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-    .range((page - 1) * limit, page * limit - 1);
+  const { page, result } = await fetchPageOrFirst(options.page || 1, (target) => {
+    const { from, to } = pageRange(target, limit);
+    let query = supabase
+      .from('parts')
+      .select(MY_MODEL_SELECT, { count: 'exact' })
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
-  if (options.status) {
-    query = query.eq('status', options.status);
-  }
+    if (options.status) {
+      query = query.eq('status', options.status);
+    }
+    return query;
+  });
 
-  const { data, error, count } = await query;
+  const { data, error, count } = result;
   if (error) throw error;
 
   const total = count || 0;
-  const totalPages = Math.ceil(total / limit) || 1;
+  const totalPages = countPages(total, limit);
 
   return {
     parts: (data ?? []).map(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatPrintTime, htmlToPlainText, pluralize } from './formatters'
+import { formatPrintLine, formatPrintTime, htmlToPlainText, pluralize } from './formatters'
 
 describe('formatPrintTime', () => {
   it('formats whole hours, minutes, and mixed durations', () => {
@@ -27,6 +27,24 @@ describe('formatPrintTime', () => {
   it('returns null for non-finite values', () => {
     expect(formatPrintTime(Number.NaN)).toBeNull()
     expect(formatPrintTime(Number.POSITIVE_INFINITY)).toBeNull()
+  })
+})
+
+describe('formatPrintLine', () => {
+  it('joins the material and the print time', () => {
+    expect(formatPrintLine('PETG', 150)).toBe('PETG · 2h 30m')
+  })
+
+  it('keeps whichever part is known', () => {
+    expect(formatPrintLine('PLA', null)).toBe('PLA')
+    expect(formatPrintLine(null, 45)).toBe('45m')
+    expect(formatPrintLine('  ', 60)).toBe('1h')
+  })
+
+  it('returns null when both are missing', () => {
+    expect(formatPrintLine(null, null)).toBeNull()
+    expect(formatPrintLine(undefined, 0)).toBeNull()
+    expect(formatPrintLine('', undefined)).toBeNull()
   })
 })
 

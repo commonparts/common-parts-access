@@ -8,7 +8,7 @@ import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
 export const runtime = 'nodejs'
 
 // GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
-// Anonymous: no account required, only the anonymous counter is incremented (issue #250).
+// Anonymous: no account required, only an anonymous download row is recorded (issue #250).
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ slug: string }> }

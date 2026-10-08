@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '20')
     const sortByParam = searchParams.get('sortBy') || 'created_at'
-    const allowedSort: PartListOptions['sortBy'][] = ['popularity', 'likes', 'views', 'newest', 'created_at']
+    const allowedSort: PartListOptions['sortBy'][] = ['likes', 'views', 'newest', 'created_at']
     const sortBy = allowedSort.includes(sortByParam as PartListOptions['sortBy'])
       ? (sortByParam as PartListOptions['sortBy'])
       : 'created_at'

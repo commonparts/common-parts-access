@@ -47,7 +47,7 @@ A spare part record (renamed from `models` in #314).
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
 | Media | `thumbnail_url`, `images` |
 | Trust | `verification_status`: `unverified` / `author_tested` / `community_validated` / `certified` |
-| Counters (trigger-maintained) | `view_count`, `download_count`, `like_count`, `makes_count` |
+| Counters (trigger-maintained) | `view_count`, `like_count`, `makes_count`. Downloads have no counter on the part: they are rows in `part_downloads` (#373). |
 | Curation | `curation_checklist` (jsonb), `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`, `needs_legal_review`, `legal_review_justification` |
 | Upload | `originality_attested`, `originality_attested_at` |
 

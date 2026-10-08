@@ -167,7 +167,6 @@ export interface Part {
   
   // Status and metrics
   status?: PartStatus;
-  download_count?: number;
   view_count?: number;
   like_count?: number;
   
