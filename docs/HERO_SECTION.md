@@ -15,7 +15,7 @@ The home page (`app/page.tsx`) is `Navbar` → `Hero` → `FeaturedParts` → `F
 - Submitting goes to `/search?q=…`; choosing a suggestion goes straight to its page. Search behaviour is described in [SEARCH.md](./SEARCH.md).
 
 ## Featured parts
-- `components/part/featured-parts.tsx` fetches `GET /api/parts/featured`, which returns the 8 most downloaded published parts (`fetchFeaturedPartCards(8)`), rendered as part cards.
+- `components/part/featured-parts.tsx` fetches `GET /api/parts/featured`, which returns the 8 most recently added published parts (`fetchFeaturedPartCards(8)`), rendered as part cards under the heading "Recently added parts" (#373).
 
 ## Not in the hero
 - The "Publish a part" call to action lives in the navbar, mobile menu, footer and profile menu (all targeting `/publish`), not in the hero.

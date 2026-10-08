@@ -22,7 +22,9 @@ Database values, column names, API routes and code paths **do not change**. Only
 | `origin_type = 'curated'`, `file_hosting_type = 'hosted'` | "Published elsewhere — files hosted on Common Parts" | **Hosted** |
 | `origin_type = 'curated'`, `file_hosting_type = 'link_out'` | "Published elsewhere — files at the source" | **Referenced** |
 
-Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the hosting outcome, never used as the track name — one word for both would recreate the ambiguity this rename removes. For the same reason the part-page author card reads **"Added by"** on the elsewhere track, not "Referenced by" (see #299): the account shown brought the part in, and on a `hosted` part nothing is referenced.
+Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the hosting outcome, never used as the track name — one word for both would recreate the ambiguity this rename removes.
+
+On the part page, a part from the elsewhere track credits its designer first (#372): the credit line under the title reads "Original design by {author} on {platform}" when the source platform is known, and no author card names the account that added the part (the part-details API does not return that profile). The "Part details" card labels the date **"Added"**. A part from the original track keeps its **"Created by"** card and the **"Uploaded"** date label. Both tracks show a single **"License"** row: the source license when the part has one, otherwise the publication license.
 
 ## Entry and orientation
 

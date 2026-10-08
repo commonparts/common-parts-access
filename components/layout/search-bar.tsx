@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils"
 import { pluralize } from "@/lib/utils/formatters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { SEARCH_MIN_QUERY_LENGTH, useSearchAutocomplete } from "@/hooks/use-search-autocomplete"
 import type {
@@ -290,11 +289,6 @@ export function SearchBar({
           {part.product_name ?? "Generic part"}
         </div>
       </div>
-      {part.license && (
-        <Badge variant="soft" className="shrink-0">
-          {part.license}
-        </Badge>
-      )}
     </Row>
   )
 

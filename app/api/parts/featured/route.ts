@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { fetchFeaturedPartCards } from '@/lib/supabase/queries/part'
 
-// GET /api/parts/featured - Get the most downloaded parts
+// GET /api/parts/featured - Get the most recently added parts
 export async function GET() {
   try {
     const parts = await fetchFeaturedPartCards(8)

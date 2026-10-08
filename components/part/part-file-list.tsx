@@ -5,23 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
-
-interface PartFile {
-  id: string
-  filename: string
-  original_filename: string
-  file_type: string
-  file_size: number
-  file_url: string
-  file_category: string
-  created_at: string
-}
+import type { PartPageFile } from "@/types/parts"
 
 interface PartFileListProps {
-  files: PartFile[]
+  files: PartPageFile[]
   showCard?: boolean
   className?: string
-  onFileDownload?: (file: PartFile) => Promise<void>
+  onFileDownload?: (file: PartPageFile) => Promise<void>
 }
 
 type FileCategory = "model" | "documentation" | "image" | string
@@ -90,11 +80,11 @@ const SpinnerIcon = () => (
 )
 
 interface FileRowProps {
-  file: PartFile
+  file: PartPageFile
   isDownloading: boolean
   iconWrapperClass: string
   icon: React.ReactNode
-  onDownload: (file: PartFile) => void
+  onDownload: (file: PartPageFile) => void
 }
 
 const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDownload }: FileRowProps) => (
@@ -134,7 +124,7 @@ export function PartFileList({
   const [downloadingFiles, setDownloadingFiles] = React.useState<Set<string>>(new Set())
 
   const handleDownload = React.useCallback(
-    async (file: PartFile) => {
+    async (file: PartPageFile) => {
       if (downloadingFiles.has(file.id)) {
         return
       }
@@ -163,7 +153,7 @@ export function PartFileList({
   const sections = React.useMemo(() => {
     if (files.length === 0) return []
 
-    const grouped = files.reduce<Record<FileCategory, PartFile[]>>((acc, file) => {
+    const grouped = files.reduce<Record<FileCategory, PartPageFile[]>>((acc, file) => {
       if (!acc[file.file_category]) {
         acc[file.file_category] = []
       }
