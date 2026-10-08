@@ -338,6 +338,8 @@ export async function fetchPartCardsByIds(ids: string[]): Promise<PartCardData[]
     .filter((card): card is PartCardData => card !== undefined);
 }
 
+// user_profiles is a left join: a part whose owner deleted their account has
+// a null user_id and must stay reachable (issue #178).
 const PART_SEO_SELECT = `
   id,
   name,
@@ -349,7 +351,7 @@ const PART_SEO_SELECT = `
   tags,
   original_author,
   original_author_url,
-  user_profiles!inner(username, display_name),
+  user_profiles(username, display_name),
   licenses!parts_license_id_fkey(name, url),
   source_licenses:licenses!parts_source_license_id_fkey(name, url),
   part_products(products(name, slug, brands(name, slug), categories(name, slug)))

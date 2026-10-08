@@ -109,7 +109,7 @@ export async function GET(
             requires_attribution,
             is_copyleft
           ),
-          user_profiles!inner(
+          user_profiles(
             username,
             display_name,
             avatar_url,
@@ -194,6 +194,8 @@ export async function GET(
 
     // A curated part is someone else's design: the page credits its original
     // author, not the account that added it, so that profile is not returned (#372).
+    // Also null when the owner deleted their account: user_profiles is a left
+    // join so the part stays reachable, and no author card is rendered (#178).
     const author = part.origin_type === 'curated' ? null : firstEmbedded(part.user_profiles)
     const license = firstEmbedded(part.licenses)
     const sourceLicense = firstEmbedded(part.source_licenses)
