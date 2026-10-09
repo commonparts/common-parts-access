@@ -346,7 +346,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
 
-A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables (#131). See [Data API grants](./DATA_MODEL.md#data-api-grants).
+A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 

@@ -85,11 +85,11 @@ grant insert on public.products to authenticated;
 grant select, insert, update, delete on public.parts to anon, authenticated;
 grant select, insert, update, delete on public.part_files to anon, authenticated;
 
--- Part–product links: `evidence_level` stays server-owned, so INSERT and
--- UPDATE remain limited to the two key columns (#317).
+-- Part–product links: `evidence_level` stays server-owned, so INSERT remains
+-- limited to the two key columns (#317). There is no UPDATE policy, so no
+-- UPDATE is granted here; the column UPDATE grant from #317 is left as is.
 grant select, delete on public.part_products to anon, authenticated;
 grant insert (part_id, product_id) on public.part_products to anon, authenticated;
-grant update (part_id, product_id) on public.part_products to anon, authenticated;
 
 -- Anonymous activity and demand.
 grant select, insert on public.part_views to anon, authenticated;

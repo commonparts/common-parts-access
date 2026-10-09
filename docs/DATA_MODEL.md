@@ -162,7 +162,7 @@ Foreign keys to `user_profiles` from `parts`, `part_likes`, `part_comments`, `co
 
 The Data API (PostgREST, supabase-js) reaches a table or function only when the calling role holds a privilege on it; RLS then filters the rows. Since #131, those privileges are granted explicitly in migrations instead of coming from the schema defaults.
 
-- **Default privileges.** Tables and sequences created by `postgres` in `public` receive no privilege for `anon`, `authenticated` or `service_role` (applied in #131, ahead of the Supabase platform change of October 30, 2026). A migration that creates a table grants its privileges in the same file. Function defaults are unchanged: a new function is executable by `PUBLIC` unless its migration revokes it.
+- **Default privileges.** Tables and sequences created by `postgres` in `public` receive no privilege for `anon`, `authenticated` or `service_role` (applied in #131, ahead of the Supabase platform change of October 30, 2026). A migration that creates a table grants its privileges in the same file. Primary keys are `uuid`; an `identity` column needs no sequence privilege, a `serial` column needs `USAGE` on its sequence for every role that inserts. Function defaults are unchanged: a new function is executable by `PUBLIC` unless its migration revokes it.
 - **Client roles.** `anon` and `authenticated` receive, per table, the commands that at least one RLS policy lets them use. A policy on role `public` applies to both.
 - **Service role.** `service_role` has `SELECT`, `INSERT`, `UPDATE`, `DELETE` on every table. It bypasses RLS and is used only server-side (`lib/supabase/admin.ts`, Edge Functions).
 
@@ -171,7 +171,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 | `brands`, `categories`, `licenses`, `source_platforms`, `product_references` | select | select |
 | `products` | select | select, insert |
 | `parts`, `part_files`, `part_comments`, `collections`, `collection_parts` | select, insert, update, delete | select, insert, update, delete |
-| `part_products` | select, delete, insert and update on `part_id`, `product_id` only (#317) | same as `anon` |
+| `part_products` | select, delete, insert on `part_id`, `product_id` only (#317) | same as `anon` |
 | `part_views`, `part_downloads`, `feedback` | select, insert | select, insert |
 | `part_requests` | insert | insert |
 | `curation_rejections` | none | select, insert |
@@ -179,6 +179,6 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 | `part_likes` | select, insert, delete | select, insert, delete |
 | `print_reports`, `search_misses` | none | none |
 
-The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131. They remain on the tables created before it and are filtered by RLS, which has no policy for them.
+The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131, nor was the `UPDATE` on `part_products (part_id, product_id)` granted in #317. They remain on the tables created before #131 and are filtered by RLS, which has no policy for them.
 
 Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage`) are executable by `anon`, `authenticated` and `service_role`; `generate_slug`, run by the product slug trigger, by `authenticated` and `service_role`.
