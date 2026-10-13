@@ -510,7 +510,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `feedback` | User feedback — entry point of the agent pipeline |
 
 All tables have RLS enabled. Always check policies before inserting or selecting.
-Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`; the human applies them. There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
+Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`. The human applies additive ones when their PR lands on `dev`; destructive ones (removing something the previous release still uses) are applied automatically when the release is merged into `main` (see `docs/DEV_STRATEGY.md`). There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
 
 ---
 

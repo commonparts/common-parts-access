@@ -2,7 +2,7 @@
 
 Current schema of the Common Parts Access database (Supabase, PostgreSQL), as of v1.2.0 (October 2026). For how it got here, see [DATA_MODEL_EVOLUTION.md](./DATA_MODEL_EVOLUTION.md) (historical).
 
-There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`, applied by the human. Every table in `public` has RLS enabled.
+There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied by the human, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled.
 
 ---
 
