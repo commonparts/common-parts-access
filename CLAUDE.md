@@ -94,6 +94,8 @@ const { data } = await supabase.from('parts').select('*')
 
 **RLS**
 - Every new table must have RLS enabled and explicit policies before any data is inserted.
+- Every new table must be granted explicitly in the migration that creates it: `anon` and `authenticated` get only the commands their policies use, `service_role` gets `select, insert, update, delete`. New tables in `public` receive no privilege by default, so a table without grants is unreachable through the Data API (see Data API grants in `docs/DATA_MODEL.md`). Use `uuid` or `identity` primary keys; a `serial` column also needs `grant usage on sequence` for every role that inserts.
+- Every new function called through the Data API, or run with the caller's privileges inside one, must be granted `execute` explicitly to the roles that call it.
 - Never use the service role key in client-facing code — it bypasses RLS entirely.
 - When writing a new query, state which RLS policy covers it.
 
