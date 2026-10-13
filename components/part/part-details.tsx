@@ -88,7 +88,6 @@ interface PartData {
   sourceUrl?: string | null
   originalAuthor?: string | null
   originalAuthorUrl?: string | null
-  sourceLicense?: PartLicense | null
   instructions?: string
   notes?: string
   createdAt: string
@@ -141,23 +140,20 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
   const [licenseNoticeVisible, setLicenseNoticeVisible] = useState(false)
   const viewTrackedRef = useRef(false)
 
-  // One license per part: the source license when the part has one, otherwise
-  // the license chosen on Common Parts Access (#372).
-  const effectiveLicense = part ? (part.sourceLicense ?? part.license) : null
-
   // Non-blocking license notice shown once a download is triggered (issue #250).
-  // Curated parts are governed by the source license and credit the original author.
+  // A curated part keeps the license chosen at the source (#374) and credits
+  // the original author.
   const licenseNotice = useMemo(() => {
-    if (!part || !effectiveLicense) return null
+    if (!part?.license) return null
     const author =
       part.originalAuthor || part.author?.displayName || part.author?.username || null
     return formatLicenseNotice({
-      licenseName: effectiveLicense.shortName || effectiveLicense.name,
-      requiresAttribution: effectiveLicense.requiresAttribution,
-      isCopyleft: effectiveLicense.isCopyleft,
+      licenseName: part.license.shortName || part.license.name,
+      requiresAttribution: part.license.requiresAttribution,
+      isCopyleft: part.license.isCopyleft,
       author,
     })
-  }, [part, effectiveLicense])
+  }, [part])
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setPart(prev => {
@@ -860,14 +856,14 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             <div className="border-t border-border-subtle pt-3">
               <div className="flex flex-col gap-2">
                 <span className="text-sm text-muted-foreground font-medium">License</span>
-                {effectiveLicense ? (
+                {part.license ? (
                   <a
-                    href={effectiveLicense.url}
+                    href={part.license.url}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 hover:opacity-80 transition"
                   >
-                    <Badge variant="outline">{effectiveLicense.shortName}</Badge>
+                    <Badge variant="outline">{part.license.shortName}</Badge>
                   </a>
                 ) : (
                   <Badge variant="outline">—</Badge>

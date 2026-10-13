@@ -37,7 +37,8 @@ export async function GET() {
 
 // POST /api/curation/drafts — creates the persistent draft once the source
 // step is complete. Requires the DB minimum for origin_type 'curated':
-// title, source URL, original author and source license. A part published
+// title, source URL, original author and the license chosen at the source,
+// stored in license_id (#374). A part published
 // elsewhere is always referenced (#396): the draft is created as link_out,
 // so the source platform is required too.
 export async function POST(request: NextRequest) {
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
     const sourceUrl = trimmedString(payload.sourceUrl)
     const originalAuthor = trimmedString(payload.originalAuthor)
     const originalAuthorUrl = trimmedString(payload.originalAuthorUrl)
-    const sourceLicenseId = trimmedString(payload.sourceLicenseId)
+    const licenseId = trimmedString(payload.licenseId)
     const sourcePlatform = trimmedString(payload.sourcePlatform)
     const hostingType = parseCuratedHostingType(payload.fileHostingType)
     if (!hostingType.ok) {
@@ -86,13 +87,13 @@ export async function POST(request: NextRequest) {
     if (originalAuthorUrl && (originalAuthorUrl.length > SOURCE_URL_MAX_LENGTH || !isValidHttpUrl(originalAuthorUrl))) {
       return NextResponse.json({ error: 'Original author URL must be a valid http(s) URL' }, { status: 400 })
     }
-    if (!isValidUuid(sourceLicenseId)) {
-      return NextResponse.json({ error: 'Source license is required' }, { status: 400 })
+    if (!isValidUuid(licenseId)) {
+      return NextResponse.json({ error: 'The license at the source is required' }, { status: 400 })
     }
 
-    const license = await getLicenseById(sourceLicenseId)
+    const license = await getLicenseById(licenseId)
     if (!license) {
-      return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
     }
 
     // Single round trip: the helper covers both platform existence and the
@@ -115,7 +116,7 @@ export async function POST(request: NextRequest) {
         name,
         sourceUrl,
         originalAuthor,
-        sourceLicenseId,
+        licenseId,
         sourcePlatform,
         originalAuthorUrl: originalAuthorUrl || null,
       })

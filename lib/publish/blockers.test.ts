@@ -107,9 +107,11 @@ describe('elsewhereTrackBlockers', () => {
     expect(blockers.map((b) => b.step)).toEqual([PUBLISH_STEPS.ORIGIN])
   })
 
-  it('blocks on a missing publication license, on Details', () => {
+  // The license is the one chosen at the source, captured with the
+  // attribution (#374).
+  it('blocks on a missing license at the source, on Origin', () => {
     const blockers = elsewhereTrackBlockers({ ...publishableElsewhere, licenseId: '' })
-    expect(blockers.map((b) => b.step)).toEqual([PUBLISH_STEPS.DETAILS])
+    expect(blockers.map((b) => b.step)).toEqual([PUBLISH_STEPS.ORIGIN])
   })
 
   it('blocks a part flagged for legal review, on Review', () => {

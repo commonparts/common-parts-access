@@ -18,9 +18,9 @@ A session is the shared 5-step stepper rendered by `components/publish/elsewhere
 
 | # | Step | Purpose |
 |---|------|---------|
-| 1 | **Origin** | Source URL + duplicate check + best-effort pre-fill, title, category, platform, author, declared source license, and the statement that the part is referenced at its source. Creates the draft (and kicks off the source-image import, which also runs when a draft without images is resumed). Carries the `duplicate`, `attribution`, `license` and `eligibility` criteria and the rejection recorder. |
+| 1 | **Origin** | Source URL + duplicate check + best-effort pre-fill, title, category, platform, author, the license at the source, and the statement that the part is referenced at its source. Creates the draft (and kicks off the source-image import, which also runs when a draft without images is resumed). Carries the `duplicate`, `attribution`, `license` and `eligibility` criteria and the rejection recorder. |
 | 2 | **Files** | Photos only — the model files stay at the source. Carries the `file` criterion. |
-| 3 | **Details** | Short description, instructions, tags, publication license, and print metadata. |
+| 3 | **Details** | Short description, instructions, tags, and print metadata. |
 | 4 | **Compatibility** | Brand and product assignment with demand context. Carries the `product_target` criterion. |
 | 5 | **Review** | Renders the real part page against the draft; checklist roll-up, legal-review escalation, publish or save as draft. |
 
@@ -31,7 +31,8 @@ The dedicated Checklist and Flags steps were dissolved in issue #302: the criter
 - **Duplicate check.** As the curator types the source URL, a debounced `GET /api/curation/source-check` looks it up against the `idx_parts_source_url` unique index. A hit blocks the step and links to the existing part.
 - **Pre-fill.** The same debounce also calls `GET /api/curation/prefill` — see [Pre-fill from the source URL](#pre-fill-from-the-source-url). Every field stays editable and manual entry always works.
 - **No hosting choice.** A part published elsewhere is always referenced (`link_out`) — see [File hosting](#file-hosting-always-link-out).
-- Creating the draft requires the DB minimum for `origin_type = 'curated'` — title, source URL, original author, and source license — plus the source platform, which a referenced part needs.
+- **One license.** A part published elsewhere keeps the license its designer chose: Common Parts Access does not hold the rights and grants no other terms. The Origin step has a single field, "License at the source", stored in `parts.license_id` (#374). It starts empty: the curator records the license declared at the source, or accepts the pre-filled one.
+- Creating the draft requires the DB minimum for `origin_type = 'curated'` — title, source URL, original author, and the license at the source — plus the source platform, which a referenced part needs.
 
 #### Pre-fill from the source URL
 
@@ -39,7 +40,7 @@ Pasting a source URL pre-fills what can be extracted, so curation starts from a 
 
 - **Platform detection** works for every seeded platform: the URL host is matched (www-insensitive) against `source_platforms.base_url`.
 - **Author, declared license and content** are extracted **for Printables only** in this phase, via the platform's public GraphQL API (`api.printables.com`), server-side:
-  - **Source step:** original author, author URL (`printables.com/@handle`), and the declared license (Printables' license abbreviation → SPDX id → the `licenses` row). Selecting/pre-filling the source license also pre-selects it as the **publication** license (still editable on Details).
+  - **Source step:** original author, author URL (`printables.com/@handle`), and the declared license (Printables' license abbreviation → SPDX id → the `licenses` row), written to the "License at the source" field.
   - **Details step:** short description (Printables `summary`), instructions (their rich-HTML `description`, converted to plain text), material, layer height (only when every listed gcode agrees on one value), and print-time / material-usage estimates. Infill, supports, colour and dimensions are not exposed by the API and stay manual.
 - **Images** are imported separately — see [Source-image import](#source-image-import).
 
@@ -55,7 +56,7 @@ The six criteria of **curation checklist v1**, defined once in `lib/curation/che
 | `product_target` | Product target identified | Targets an identifiable product; the product record is linked this session. |
 | `license` | License verified | SPDX license identified, among the licenses of the `licenses` table. NC and ND are accepted because the files stay at the source; a license that forbids sharing the model is not. |
 | `file` | Valid file | STL/3MF/STEP verified at the source and opens correctly. |
-| `attribution` | Attribution complete | Original author, source URL and source license captured. |
+| `attribution` | Attribution complete | Original author, source URL and the license at the source captured. |
 | `duplicate` | No duplicate | Source and part are not already in the registry. |
 
 Every criterion must be explicitly checked to publish. Checklist state is stored as `parts.curation_checklist` (jsonb `{criterion: boolean}`).
@@ -66,7 +67,7 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 ### 3. Details & entity assignment
 
-- **Text fields:** short description, instructions, category (drill-down), publication license. The publication-license select defaults to the declared source license and stays editable.
+- **Text fields:** short description, instructions, category (drill-down). The license is recorded on the Origin step.
 - **Entity assignment:** brand autocomplete (read-only list — brands are curated directly in the DB, not created here) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 - **Demand context:** `components/publish/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
 - **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
@@ -111,7 +112,7 @@ Any license of the `licenses` table is accepted, NC and ND included, because the
 1. All six checklist criteria explicitly checked.
 2. `needs_legal_review` is not set.
 3. `file_hosting_type` is `link_out` — a hosted curated draft cannot be published (#396).
-4. A publication license is set and exists in the `licenses` table.
+4. The license at the source (`license_id`) is set and exists in the `licenses` table.
 5. A source platform is set, and **no** model files are registered.
 6. ≥ 1 linked product (`product_target` made concrete).
 
@@ -131,9 +132,9 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 | `/api/curation/source-check?url=` | GET | Duplicate check on `source_url`; returns the existing part or `null`. |
 | `/api/curation/prefill?url=` | GET | Best-effort pre-fill (platform, author, license, print metadata, texts); null fields on any failure, never an error. |
 | `/api/curation/drafts` | GET | List the caller's open curated drafts (resume). |
-| `/api/curation/drafts` | POST | Create a draft (title + source URL + author + source license + source platform), always `link_out`. 409 on duplicate source URL; 400 if `fileHostingType` is `hosted`. |
+| `/api/curation/drafts` | POST | Create a draft (title + source URL + author + `licenseId`, the license at the source + source platform), always `link_out`. 409 on duplicate source URL; 400 if `fileHostingType` is `hosted`. |
 | `/api/curation/drafts/[id]` | GET | Full draft state for resume (owner only; `user_id` stripped from the response). |
-| `/api/curation/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. 400 if `fileHostingType` is `hosted`. |
+| `/api/curation/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. 400 if `fileHostingType` is `hosted`, or if `licenseId` is sent empty: a curated part cannot be saved without a license. |
 | `/api/curation/drafts/[id]/publish` | POST | Publication gate; 422 with `blockers[]` on failure. |
 | `/api/curation/drafts/[id]/import-images` | POST | Import the source gallery into the draft (Printables); best-effort, idempotent. |
 | `/api/curation/rejections` | POST | Record a rejection (source URL, reason, failed criteria). |

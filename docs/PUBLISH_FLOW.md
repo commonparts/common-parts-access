@@ -26,7 +26,7 @@ The elsewhere track only produces the **Referenced** pair (#396). The **Hosted**
 
 Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the outcome of the elsewhere track, never used as the track name — one word for both would recreate the ambiguity this rename removes.
 
-On the part page, a part from the elsewhere track credits its designer first (#372): the credit line under the title reads "Original design by {author} on {platform}" when the source platform is known, and no author card names the account that added the part (the part-details API does not return that profile). The "Part details" card labels the date **"Added"**. A part from the original track keeps its **"Created by"** card and the **"Uploaded"** date label. Both tracks show a single **"License"** row: the source license when the part has one, otherwise the publication license.
+On the part page, a part from the elsewhere track credits its designer first (#372): the credit line under the title reads "Original design by {author} on {platform}" when the source platform is known, and no author card names the account that added the part (the part-details API does not return that profile). The "Part details" card labels the date **"Added"**. A part from the original track keeps its **"Created by"** card and the **"Uploaded"** date label. Both tracks show a single **"License"** row, read from `parts.license_id`: for a part from the elsewhere track, the license chosen at the source (#374).
 
 ## Entry and orientation
 
@@ -51,9 +51,9 @@ Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same nam
 
 | # | Step | Original track | Elsewhere track |
 |---|------|----------------|-----------------|
-| 1 | **Origin** | Title, category, publication license (hostable whitelist), originality declaration. Creates the draft. | Source URL (duplicate check + pre-fill), title, category, platform, author, author URL, source license, and the statement that the part is referenced at its source. Creates the draft; kicks off source-image import. Rejection recorder available. |
+| 1 | **Origin** | Title, category, publication license (hostable whitelist), originality declaration. Creates the draft. | Source URL (duplicate check + pre-fill), title, category, platform, author, author URL, the license at the source, and the statement that the part is referenced at its source. Creates the draft; kicks off source-image import. Rejection recorder available. |
 | 2 | **Files** | Model files + photos, three-phase pipeline. | Photos only, with the model-file drop zone hidden entirely. |
-| 3 | **Details** | Short description, instructions, tags, print metadata. | Same, plus the publication license (defaults to the declared source license). |
+| 3 | **Details** | Short description, instructions, tags, print metadata. | Same. |
 | 4 | **Compatibility** | Brand + products, inline product creation, dedup-guarded. | Same, plus the demand panel. |
 | 5 | **Review** | Real part page rendered against the draft; publish or save as draft. | Same, plus the checklist roll-up, `needs_legal_review`, and the rejection recorder. |
 
@@ -63,7 +63,7 @@ Shared step components live in `components/publish/`; each track keeps its own o
 
 The elsewhere track has a single outcome (#396): the files stay at the original publication and Common Parts links to them (`link_out`). The Origin step states it — "Common Parts will link to the source; the files stay where they are published." — and offers no hosting choice, whatever the declared license. Hosting files is reserved for the original track.
 
-The referenced outcome carries its constraints: the source platform is required and must match the source URL's domain, and publishing is blocked if any model file is registered. The publication license may be any license of the `licenses` table, NC and ND included. The server-side rule is documented in [CURATION_TOOL.md](CURATION_TOOL.md#file-hosting-always-link-out).
+The referenced outcome carries its constraints: the source platform is required and must match the source URL's domain, and publishing is blocked if any model file is registered. The part keeps the license its designer chose at the source, recorded on the Origin step in `license_id` (#374); it may be any license of the `licenses` table, NC and ND included. The server-side rule is documented in [CURATION_TOOL.md](CURATION_TOOL.md#file-hosting-always-link-out).
 
 ## Checklist dissolution
 
@@ -72,7 +72,7 @@ The dedicated Checklist step is gone **as a step**. The six blocking criteria ar
 | Criterion | Rendered on | Adjacent to |
 |---|---|---|
 | `duplicate` | Step 1 | The source-URL field (a passing source-check is noted as a hint, but never ticks the box) |
-| `attribution` | Step 1 | Author / author URL / source license |
+| `attribution` | Step 1 | Author / author URL / license at the source |
 | `license` | Step 1 | The declared license + the referencing statement |
 | `eligibility` | Step 1 | A one-line scope reminder |
 | `file` | Step 2 | The source link |

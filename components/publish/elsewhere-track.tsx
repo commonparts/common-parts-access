@@ -50,7 +50,7 @@ const PREFILLABLE_FIELDS = [
   'sourcePlatform',
   'originalAuthor',
   'originalAuthorUrl',
-  'sourceLicenseId',
+  'licenseId',
   'description',
   'instructions',
   'material',
@@ -100,10 +100,13 @@ const numToStr = (value: number | null | undefined): string =>
  * A part published elsewhere is always referenced (#396): its files stay at
  * the source and only photos are uploaded here. The track offers no hosting
  * choice and saves every draft as `link_out`.
+ *
+ * The part keeps the license its designer chose at the source (#374): one
+ * field on Origin, stored in `license_id`, never defaulted.
  */
 export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTrackProps) {
   const router = useRouter()
-  const form = usePartUploadFormState()
+  const form = usePartUploadFormState({ preselectFirstLicense: false })
   const { formData, setFormData } = form
 
   const [step, setStep] = React.useState<PublishStepIndex>(PUBLISH_STEPS.ORIGIN)
@@ -203,7 +206,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           sourcePlatform: draft.source_platform ?? '',
           originalAuthor: draft.original_author ?? '',
           originalAuthorUrl: draft.original_author_url ?? '',
-          sourceLicenseId: draft.source_license_id ?? '',
           // The draft stores dimensions/print_settings as objects and the
           // estimates as numbers; the form holds each as a flat string.
           material: draft.material ?? '',
@@ -293,12 +295,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         for (const field of PREFILLABLE_FIELDS) {
           const value = prefill[field]
           if (value && !prev[field].trim()) next[field] = value
-        }
-        // The publication license defaults to the declared source license —
-        // any earlier licenseId value is just the form's arbitrary default,
-        // never a deliberate choice (the Details step comes later).
-        if (prefill.sourceLicenseId && next.sourceLicenseId === prefill.sourceLicenseId) {
-          next.licenseId = prefill.sourceLicenseId
         }
         return next
       })
@@ -416,7 +412,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
               sourcePlatform: formData.sourcePlatform,
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
-              sourceLicenseId: formData.sourceLicenseId,
+              licenseId: formData.licenseId,
               fileHostingType: CURATED_FILE_HOSTING_TYPE,
               checklist,
               ...flagPatchForStep(PUBLISH_STEPS.ORIGIN),
@@ -431,7 +427,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
               sourcePlatform: formData.sourcePlatform,
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
-              sourceLicenseId: formData.sourceLicenseId,
+              licenseId: formData.licenseId,
               fileHostingType: CURATED_FILE_HOSTING_TYPE,
             }),
           })
@@ -471,7 +467,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           return await patchDraft({
             description: formData.description,
             instructions: formData.instructions,
-            licenseId: formData.licenseId,
             tags: formData.tags,
             ...flagPatchForStep(PUBLISH_STEPS.DETAILS),
             ...serializePartMetadata(formData),
@@ -634,7 +629,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     formData.title.trim().length >= VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH &&
     formData.sourceUrl.trim().length > 0 &&
     formData.originalAuthor.trim().length > 0 &&
-    formData.sourceLicenseId.length > 0 &&
+    formData.licenseId.length > 0 &&
     formData.sourcePlatform.length > 0 &&
     !duplicate
 
@@ -867,40 +862,31 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
                 <div className="flex items-center gap-2xs">
-                  <Label htmlFor="elsewhere-source-license">License declared at the source *</Label>
-                  {prefilledFields.has('sourceLicenseId') && (
+                  <Label htmlFor="elsewhere-license">License at the source *</Label>
+                  {prefilledFields.has('licenseId') && (
                     <Badge variant="outline">Pre-filled</Badge>
                   )}
                 </div>
                 <DropdownInput
                   as="select"
-                  id="elsewhere-source-license"
-                  // The publication license defaults to the declared license,
-                  // but only while it still tracks it (or on the very first
-                  // pick) — never clobber a publication license deliberately
-                  // diverged from it on the Details step.
-                  onChange={(e) =>
-                    setFormData((prev) => {
-                      const next = { ...prev, sourceLicenseId: e.target.value }
-                      if (
-                        e.target.value &&
-                        (!prev.sourceLicenseId || prev.licenseId === prev.sourceLicenseId)
-                      ) {
-                        next.licenseId = e.target.value
-                      }
-                      return next
-                    })
-                  }
-                  value={formData.sourceLicenseId}
+                  id="elsewhere-license"
+                  value={formData.licenseId}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, licenseId: e.target.value }))}
                   required
                 >
-                  <option value="">Select the license declared at the source</option>
+                  <option value="">
+                    {form.loadingMeta ? 'Loading licenses…' : 'Select the license declared at the source'}
+                  </option>
                   {form.licenses.map((license) => (
                     <option key={license.id} value={license.id}>
                       {license.shortName} — {license.name}
                     </option>
                   ))}
                 </DropdownInput>
+                <p className="text-sm text-text-secondary">
+                  The part keeps the license its designer chose. It is referenced at its source, so
+                  NC and ND licenses are allowed.
+                </p>
               </div>
 
               <div className="rounded-md border border-border-subtle bg-bg-subtle p-sm">
@@ -981,29 +967,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             form={form}
             idPrefix="elsewhere"
             prefilledFields={prefilledFields}
-            licenseControl={
-              <div className="space-y-2xs">
-                <Label htmlFor="elsewhere-license">Publication license *</Label>
-                <DropdownInput
-                  as="select"
-                  id="elsewhere-license"
-                  value={formData.licenseId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, licenseId: e.target.value }))}
-                  required
-                >
-                  <option value="">Select the license the part is published under</option>
-                  {form.licenses.map((license) => (
-                    <option key={license.id} value={license.id}>
-                      {license.shortName} — {license.name}
-                    </option>
-                  ))}
-                </DropdownInput>
-                <p className="text-sm text-text-secondary">
-                  This part is referenced at its source, so NC and ND licenses are allowed — the
-                  files are never hosted here.
-                </p>
-              </div>
-            }
             flags={
               <div className="space-y-sm border-t border-border-subtle pt-md">
                 {renderFlagsForStep(PUBLISH_STEPS.DETAILS)}

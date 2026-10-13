@@ -28,8 +28,6 @@ export const FORBIDDEN_UPLOAD_FIELDS = [
   'original_author',
   'originalAuthorUrl',
   'original_author_url',
-  'sourceLicenseId',
-  'source_license_id',
 ] as const
 
 /**
