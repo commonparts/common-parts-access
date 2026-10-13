@@ -38,11 +38,16 @@ export default function TermsPage() {
             <p className="text-text-secondary">
               Common Parts Access is an open platform for publishing and accessing digital spare parts. It is an
               official interface of the Common Parts Infrastructure, operating as a structured registry where spare
-              part files can be published, discovered, and downloaded.
+              parts can be published, referenced, and discovered. The files of a part published on Common Parts Access
+              are downloaded on Common Parts Access. The files of a part referenced from another platform are
+              downloaded from its original publication.
             </p>
             <p className="text-text-secondary">Common Parts Access allows users to:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Browse and download digital spare part files in standard formats, including STL, 3MF, and STEP</li>
+              <li>
+                Browse digital spare parts and download their files in standard formats, including STL, 3MF, and STEP,
+                on Common Parts Access or at the original publication of a referenced part
+              </li>
               <li>Publish original or openly licensed spare part models with associated structured metadata</li>
               <li>Contribute metadata to improve the discoverability and usability of published parts</li>
             </ul>
@@ -119,10 +124,10 @@ export default function TermsPage() {
               Common Parts does not acquire any transfer of intellectual property rights over your content.
             </p>
             <p className="text-text-secondary">
-              Metadata associated with published parts - including title, description, category, material, print
-              settings, and dimensions - is published under the Creative Commons Zero (CC0) licence and enters the
-              public domain. By submitting metadata, you waive any related rights to the fullest extent permitted by
-              applicable law.
+              Data created on Common Parts Access, including the products a part is compatible with and the structured
+              fields contributors write here, is published under the Creative Commons Zero (CC0) licence. Content
+              taken from the original publication of a referenced part, such as its description, instructions, and
+              images, remains under the licence chosen by its author at the source and is credited to them.
             </p>
 
             <h3 className="text-h4">4.3 Licence granted to Common Parts</h3>
@@ -139,9 +144,10 @@ export default function TermsPage() {
 
             <h3 className="text-h4">4.4 Attribution of curated content</h3>
             <p className="text-text-secondary">
-              Common Parts Access includes parts curated from third-party open-source repositories. Such parts are
-              published under their original open licence, with full attribution to the original author and a link to
-              the original source. Common Parts does not modify the licence of any file it does not author.
+              Common Parts Access references parts published on other platforms. A referenced part keeps the licence
+              chosen by its author at the source, including licences with non-commercial or no-derivatives terms, is
+              credited to its author, and links to its original publication, where its files are downloaded. Common
+              Parts does not modify the licence of any work it does not author.
             </p>
           </section>
 
