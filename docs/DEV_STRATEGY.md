@@ -344,7 +344,10 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ## Database Schema (Supabase)
 
-There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step. The exception is a migration that removes something the previous release still uses, such as a column it inserts: it is applied only once the release that stops using it is live on `main`, and its header says so (#373, #405). The release PR toward `main` lists it as a step after merging.
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
+
+- **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
+- **Destructive migrations** remove something the previous release still uses, such as a column it inserts. Applying one earlier would break that release in every environment, since they share the database. They are applied automatically when the release is merged into `main`, and their header says so (#373, #405). The release PR toward `main` names them.
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
@@ -376,7 +379,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
 - GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
-- Schema changes version-controlled in `supabase/migrations/`, applied by the human to the single production database
+- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by the human, destructive ones automatically with the release to `main`
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 
