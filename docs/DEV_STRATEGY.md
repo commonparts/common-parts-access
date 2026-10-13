@@ -344,7 +344,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ## Database Schema (Supabase)
 
-There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step. The exception is a migration that removes something the previous release still uses, such as a column it inserts: it is applied only once the release that stops using it is live on `main`, and its header says so (#373, #405). The release PR toward `main` lists it as a step after merging.
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
