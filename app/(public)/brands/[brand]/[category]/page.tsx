@@ -154,7 +154,7 @@ export default async function BrandCategoryPage({
         </div>
 
         {products.length > 0 ? (
-          <div className="grid gap-sm sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-sm sm:grid-cols-2">
             {products.map((product) => (
               <ProductResultCard
                 key={product.id}
