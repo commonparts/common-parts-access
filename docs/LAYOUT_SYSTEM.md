@@ -47,7 +47,9 @@ import { Grid } from "@/components/layout/grid"
 
 Allowed column sets: `12`, `6`, `4`. Use responsive `col-span-*` only within grid contexts; avoid raw `grid-cols-*` elsewhere.
 
-Gutters use spacing tokens; default is `gap-lg`. Adjust with `className` (e.g., `gap-lg`) when needed.
+Gutters use spacing tokens; default is `gap-lg`. Adjust with `className` (e.g., `gap-md`) when needed.
+
+Below `sm`, `Grid` always narrows the column gap to `sm` (`max-sm:gap-x-sm`), including when a `gap-*` class is passed; the row gap is unchanged. The eleven column gaps of a 12-column grid otherwise set a minimum width (352px with `gap-lg`) wider than small phones, even when every child spans the full row (#393). Every current `Grid` child spans the full row below `sm`, so the narrower column gap is not visible there.
 
 ## Section Wrapper
 Use `Section` to normalize vertical rhythm:
