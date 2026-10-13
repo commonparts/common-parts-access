@@ -142,7 +142,7 @@ export default function TermsPage() {
               your explicit consent.
             </p>
 
-            <h3 className="text-h4">4.4 Attribution of curated content</h3>
+            <h3 className="text-h4">4.4 Referenced content</h3>
             <p className="text-text-secondary">
               Common Parts Access references parts published on other platforms. A referenced part keeps the licence
               chosen by its author at the source, including licences with non-commercial or no-derivatives terms, is
