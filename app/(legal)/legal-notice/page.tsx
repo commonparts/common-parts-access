@@ -42,6 +42,7 @@ export default function LegalNoticePage() {
               <li>Railway Corporation</li>
               <li>548 Market St PMB 68956, San Francisco, California 94104, United States</li>
               <li>Telephone: +1 415 707 7675</li>
+              <li>Email: team@railway.com</li>
             </ul>
 
             <h3 className="text-h4">2.2 Database and file storage</h3>
@@ -49,6 +50,7 @@ export default function LegalNoticePage() {
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>Supabase Pte. Ltd.</li>
               <li>65 Chulia Street, #38-02/03, OCBC Centre, Singapore 049513</li>
+              <li>Email: legal@supabase.com</li>
             </ul>
           </section>
 
