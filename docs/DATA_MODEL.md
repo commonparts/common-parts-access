@@ -51,7 +51,7 @@ A spare part record (renamed from `models` in #314).
 | Curation | `curation_checklist` (jsonb), `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`, `needs_legal_review`, `legal_review_justification` |
 | Upload | `originality_attested`, `originality_attested_at` |
 
-A `curated` part requires `source_url`, `original_author` and `license_id` (check `curated_requires_source`). `source_license_id` and its foreign key are dropped by `20261013150100_drop_parts_source_license_id.sql`, applied with the release; until then the check accepts either licence column (#374).
+A `curated` part requires `source_url`, `original_author` and `license_id` (check `curated_requires_source`). `source_license_id` and its foreign key are dropped by `20261013160000_drop_parts_source_license_id.sql`, applied with the release; until then the check accepts either licence column (#374).
 
 Publication rules per track are in [PUBLISH_FLOW.md](./PUBLISH_FLOW.md), [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) and [CURATION_TOOL.md](./CURATION_TOOL.md).
 

@@ -12,7 +12,7 @@
 -- part page, and PostgREST rejects a request that names a column that does
 -- not exist. Deploy the code to production before applying it: it is applied
 -- with the release to `main`. It requires
--- 20261013150000_curated_parts_accept_license_id.sql.
+-- 20261013153728_curated_parts_accept_license_id.sql.
 --
 -- What this migration does, in order:
 --

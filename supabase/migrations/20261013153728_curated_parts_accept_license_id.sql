@@ -3,7 +3,7 @@
 -- A part carries one licence: `parts.license_id`. For a part published
 -- elsewhere, it records the licence its designer chose at the source.
 -- `parts.source_license_id` is removed by the destructive migration
--- 20261013150100_drop_parts_source_license_id.sql, applied with the release.
+-- 20261013160000_drop_parts_source_license_id.sql, applied with the release.
 --
 -- Until then, two releases write curated drafts to the same database:
 --
