@@ -344,7 +344,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ## Database Schema (Supabase)
 
-There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step. The exception is a migration that removes something the previous release still uses, such as a column it inserts: it is applied only once the release that stops using it is live on `main`, and its header says so (#373, #405). The release PR toward `main` lists it as a step after merging.
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
@@ -355,12 +355,10 @@ The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table belo
 | `id` | uuid | Primary key |
 | `created_at` | timestamptz | Auto |
 | `user_id` | uuid | FK to `user_profiles`, nullable |
-| `email` | text | Optional, for anonymous users |
 | `type` | text | `bug / improvement / question / other` |
 | `title` | text | Short title (max 200) |
 | `description` | text | Full description (max 5000) |
 | `url` | text | Page where feedback was submitted |
-| `user_agent` | text | Browser info |
 | `status` | text | `pending / triaged / github_issue_created / closed` |
 | `github_issue_url` | text | Set after triage |
 | `github_issue_number` | integer | Set after triage |
@@ -387,7 +385,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `feedback` table in Supabase with RLS
 - `FeedbackForm` component using project design system
 - `FeedbackButton` floating widget available on all pages (via `app/layout.tsx`)
-- Captures: type, title, description, optional email, page URL, user agent, user ID
+- Captures: type, title, description, page URL, and the user ID when signed in. No email address or user agent is collected (#405)
 - Feedback insert extracted to `lib/supabase/queries/feedback.ts`
 
 ### ✅ Agent Triage
@@ -395,6 +393,7 @@ RLS: anyone can insert, users can read their own rows only.
 - Supabase Edge Function: `triage-feedback`
 - Triggered by Supabase database webhook on `feedback` INSERT
 - Classifies, reformulates, creates GitHub issue with correct labels
+- The issue states whether the submitter was signed in, never their user ID: issues are public (#405)
 - Idempotency guard against webhook retries
 - Env var validation with clear error messages
 - Updates `feedback` row with issue URL, number, and triage notes

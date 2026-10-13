@@ -33,7 +33,6 @@ interface FeedbackRow {
   type: string
   title: string
   description: string
-  email: string | null
   url: string | null
   user_id: string | null
   created_at: string
