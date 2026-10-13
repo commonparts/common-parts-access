@@ -35,7 +35,7 @@ export const CURATION_BLOCKING_CRITERIA: readonly CurationCriterion[] = [
   {
     key: 'attribution',
     label: 'Attribution complete',
-    description: 'Original author, source URL and source license captured on the record.',
+    description: 'Original author, source URL and the license at the source captured on the record.',
   },
   {
     key: 'duplicate',

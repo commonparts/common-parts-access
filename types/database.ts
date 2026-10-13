@@ -181,7 +181,6 @@ export interface Part {
 
   // License
   license_id?: string | null;
-  source_license_id?: string | null;
 
   // Validation
   verification_status: PartVerificationStatus;

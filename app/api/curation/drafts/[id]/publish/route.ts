@@ -16,8 +16,8 @@ type RouteContext = { params: Promise<{ id: string }> }
 //   - not flagged for legal review (saved but not publishable, Flow P3 §4.4)
 //   - link_out: a part published elsewhere is always referenced, never hosted
 //     (#396) — a hosted curated draft cannot be published
-//   - a publication license from the licenses table; NC/ND is acceptable
-//     because the files stay at the source
+//   - the license chosen at the source (license_id, #374), from the licenses
+//     table; NC/ND is acceptable because the files stay at the source
 //   - a source platform, and NO registered model files
 //   - at least one linked product (the product_target criterion made concrete),
 //     each belonging to a brand — same invariant as the upload gate. Since
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     if (!draft.license_id) {
-      blockers.push('A publication license is required')
+      blockers.push('The license at the source is required')
     } else {
       const license = await getLicenseById(draft.license_id)
       if (!license) {

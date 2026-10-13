@@ -116,25 +116,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.licenseId !== undefined) {
+      // The license chosen at the source (#374). A curated part cannot be
+      // saved without it (curated_requires_source), so it cannot be cleared.
       const licenseId = trimmedString(payload.licenseId)
-      if (licenseId) {
-        if (!isValidUuid(licenseId)) {
-          return NextResponse.json({ error: 'Invalid license' }, { status: 400 })
-        }
-        const { data: license, error } = await supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle()
-        if (error || !license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      if (!isValidUuid(licenseId)) {
+        return NextResponse.json({ error: 'The license at the source is required for a part published elsewhere' }, { status: 400 })
       }
-      patch.license_id = licenseId || null
-    }
-
-    if (payload.sourceLicenseId !== undefined) {
-      const sourceLicenseId = trimmedString(payload.sourceLicenseId)
-      if (!isValidUuid(sourceLicenseId)) {
-        return NextResponse.json({ error: 'Source license is required for curated parts' }, { status: 400 })
-      }
-      const license = await getLicenseById(sourceLicenseId)
-      if (!license) return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
-      patch.source_license_id = sourceLicenseId
+      const license = await getLicenseById(licenseId)
+      if (!license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      patch.license_id = licenseId
     }
 
     if (payload.sourcePlatform !== undefined) {

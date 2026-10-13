@@ -95,7 +95,7 @@ export function elsewhereTrackBlockers(state: ElsewhereTrackState): PublishBlock
   }
 
   if (!state.licenseId) {
-    blockers.push({ step: PUBLISH_STEPS.DETAILS, message: 'Choose the publication license' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Choose the license at the source' })
   }
 
   if (!state.sourcePlatform) {

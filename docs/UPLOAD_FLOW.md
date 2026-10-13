@@ -80,7 +80,7 @@ The review step also mirrors the file, brand and product conditions locally so a
 
 ## Flow narrowing
 
-`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl`, `sourceLicenseId` — each in both camelCase and snake_case. A payload carrying any of them is a **400**, checked before any database work.
+`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them is a **400**, checked before any database work.
 
 Two decisions worth keeping explicit:
 
