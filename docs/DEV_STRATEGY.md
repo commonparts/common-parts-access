@@ -347,7 +347,9 @@ Labels are the shared language between humans and agents. All issues must carry 
 There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
 
 - **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
-- **Destructive migrations** remove something the previous release still uses, such as a column it inserts. Applying one earlier would break that release in every environment, since they share the database. They are applied automatically when the release is merged into `main`, and their header says so (#373, #405). The release PR toward `main` names them.
+- **Destructive migrations** remove something the previous release still uses, such as a column it inserts. Applying one earlier would break that release in every environment, since they share the database. They are applied automatically when the release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
+
+The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
