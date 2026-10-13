@@ -19,7 +19,8 @@ export interface CurationPrefill {
   sourcePlatform: string | null
   originalAuthor: string | null
   originalAuthorUrl: string | null
-  sourceLicenseId: string | null
+  /** The license declared at the source, as a `licenses` row id (#374). */
+  licenseId: string | null
   // Details step — form-ready strings.
   description: string | null
   instructions: string | null
@@ -70,7 +71,7 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
   const spdxId = abbreviation ? PRINTABLES_LICENSE_TO_SPDX[abbreviation] : undefined
   if (spdxId) {
     const license = await getLicenseBySpdxId(spdxId)
-    if (license) result.sourceLicenseId = license.id
+    if (license) result.licenseId = license.id
   }
   return result
 }
@@ -97,7 +98,7 @@ export async function getPrefillFromSourceUrl(sourceUrl: string): Promise<Curati
     sourcePlatform: null,
     originalAuthor: null,
     originalAuthorUrl: null,
-    sourceLicenseId: null,
+    licenseId: null,
     description: null,
     instructions: null,
     material: null,

@@ -75,7 +75,8 @@ export function Pagination({
         </div>
       )}
 
-      <div className="flex items-center gap-1">
+      {/* Full pagination from `sm`; below it, the simplified one replaces it. */}
+      <div className="hidden items-center gap-1 sm:flex">
         {/* Previous Button */}
         <Button
           variant="outline"

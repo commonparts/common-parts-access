@@ -6,9 +6,9 @@ import {
   type CurationDraftPatch,
 } from '@/lib/supabase/queries/curation'
 import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
+import { CURATED_FILE_HOSTING_TYPE, parseCuratedHostingType } from '@/lib/curation/hosting'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
-import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import {
   COLOR_MAX_LENGTH,
@@ -116,25 +116,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.licenseId !== undefined) {
+      // The license chosen at the source (#374). A curated part cannot be
+      // saved without it (curated_requires_source), so it cannot be cleared.
       const licenseId = trimmedString(payload.licenseId)
-      if (licenseId) {
-        if (!isValidUuid(licenseId)) {
-          return NextResponse.json({ error: 'Invalid license' }, { status: 400 })
-        }
-        const { data: license, error } = await supabase.from('licenses').select('id').eq('id', licenseId).maybeSingle()
-        if (error || !license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      if (!isValidUuid(licenseId)) {
+        return NextResponse.json({ error: 'The license at the source is required for a part published elsewhere' }, { status: 400 })
       }
-      patch.license_id = licenseId || null
-    }
-
-    if (payload.sourceLicenseId !== undefined) {
-      const sourceLicenseId = trimmedString(payload.sourceLicenseId)
-      if (!isValidUuid(sourceLicenseId)) {
-        return NextResponse.json({ error: 'Source license is required for curated parts' }, { status: 400 })
-      }
-      const license = await getLicenseById(sourceLicenseId)
-      if (!license) return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
-      patch.source_license_id = sourceLicenseId
+      const license = await getLicenseById(licenseId)
+      if (!license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      patch.license_id = licenseId
     }
 
     if (payload.sourcePlatform !== undefined) {
@@ -144,19 +134,21 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     }
 
     if (payload.fileHostingType !== undefined) {
-      const fileHostingType = trimmedString(payload.fileHostingType)
-      if (fileHostingType !== 'hosted' && fileHostingType !== 'link_out') {
-        return NextResponse.json({ error: 'Invalid file hosting type' }, { status: 400 })
+      // A part published elsewhere is always referenced (#396): only link_out
+      // is accepted, which also moves a draft created before the rule to it.
+      const hostingType = parseCuratedHostingType(payload.fileHostingType)
+      if (!hostingType.ok) {
+        return NextResponse.json({ error: hostingType.error }, { status: 400 })
       }
       // Files already registered in storage contradict link-out (the whole
-      // point is NOT hosting them) — and NC/ND licenses forbid hosting.
-      if (fileHostingType === 'link_out' && draft.model_file_count > 0) {
+      // point is NOT hosting them).
+      if (draft.model_file_count > 0) {
         return NextResponse.json(
-          { error: 'Model files are already uploaded — a link-out part must not host files' },
+          { error: 'Model files are already uploaded — a part published elsewhere must not host files; remove them first' },
           { status: 409 },
         )
       }
-      patch.file_hosting_type = fileHostingType
+      patch.file_hosting_type = hostingType.value
     }
 
     if (payload.originalAuthor !== undefined) {
@@ -314,11 +306,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     // Cross-field invariant: the resulting state of a link-out draft must name
     // a source platform whose domain matches the (immutable) source URL. This
     // is also the single place platform existence is checked (one round trip).
-    const nextHostingType = patch.file_hosting_type ?? draft.file_hosting_type ?? 'hosted'
+    const nextHostingType = patch.file_hosting_type ?? draft.file_hosting_type ?? CURATED_FILE_HOSTING_TYPE
     const nextPlatform = patch.source_platform !== undefined ? patch.source_platform : draft.source_platform ?? null
     if (nextHostingType === 'link_out') {
       if (!nextPlatform) {
-        return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
+        return NextResponse.json({ error: 'A source platform is required for a part published elsewhere' }, { status: 400 })
       }
       const platformCheck = await validateSourceUrlMatchesPlatform(nextPlatform, draft.source_url ?? '')
       if (!platformCheck.ok) {
@@ -331,21 +323,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         .eq('slug', patch.source_platform)
         .maybeSingle()
       if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
-    }
-
-    // Cross-field invariant: a hosted draft cannot carry an NC/ND source
-    // license — those terms forbid hosting the files here (link-out only).
-    if (nextHostingType === 'hosted') {
-      const nextSourceLicenseId = patch.source_license_id ?? draft.source_license_id ?? null
-      if (nextSourceLicenseId) {
-        const sourceLicense = await getLicenseById(nextSourceLicenseId)
-        if (sourceLicense && !isHostableLicenseRow(sourceLicense)) {
-          return NextResponse.json(
-            { error: 'The declared source license (NC/ND) does not allow hosting files here — switch to link-out' },
-            { status: 400 },
-          )
-        }
-      }
     }
 
     // The DB constraint also enforces this pair; failing early gives a clean 400.

@@ -21,7 +21,7 @@ Most traffic is expected from search engines and direct links, so every public p
 ## Structured data
 
 - **Part pages use `3DModel`, not `Product`.** Parts are free printable files with no offer or price, so `Product` markup would not qualify for rich results and would misrepresent the page. The `BreadcrumbList` alongside it is the supported rich result.
-- **Attribution (P-2):** the creator is the original author for curated parts, falling back to the uploader. The license links to the effective license text (source license first).
+- **Attribution (P-2):** the creator is the original author for curated parts, falling back to the uploader. The license links to the text of the part's license (`license_id`; for a curated part, the license chosen at the source, #374).
 - `serializeJsonLd()` escapes `<`, so user-supplied names and descriptions cannot close the script element.
 
 ## Sitemap and robots (#257)

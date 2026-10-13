@@ -78,7 +78,6 @@ export interface PartFormData {
   sourcePlatform: string
   originalAuthor: string
   originalAuthorUrl: string
-  sourceLicenseId: string
   verificationStatus: PartVerificationStatus
   fileHostingType: PartFileHostingType
   // Advanced — print metadata
@@ -111,7 +110,18 @@ const emptyCreateProduct: CreateProductFormData = {
  */
 export type PartUploadFormState = ReturnType<typeof usePartUploadFormState>
 
-export function usePartUploadFormState() {
+interface UsePartUploadFormStateOptions {
+  /**
+   * Selects the first license once the list loads, unless the form already
+   * holds one. Off on the elsewhere track: the license at the source is
+   * recorded as found there or pre-filled, never defaulted (#374).
+   */
+  preselectFirstLicense?: boolean
+}
+
+export function usePartUploadFormState({
+  preselectFirstLicense = true,
+}: UsePartUploadFormStateOptions = {}) {
   const [formData, setFormData] = React.useState<PartFormData>({
     title: "",
     description: "",
@@ -130,7 +140,6 @@ export function usePartUploadFormState() {
     sourcePlatform: "",
     originalAuthor: "",
     originalAuthorUrl: "",
-    sourceLicenseId: "",
     verificationStatus: "unverified",
     fileHostingType: "hosted",
     // Advanced — print metadata
@@ -266,7 +275,7 @@ export function usePartUploadFormState() {
               }))
             : []
           setLicenses(rawLicenses)
-          if (rawLicenses.length > 0) {
+          if (preselectFirstLicense && rawLicenses.length > 0) {
             setFormData(prev => ({
               ...prev,
               licenseId: prev.licenseId || rawLicenses[0].id,
@@ -289,7 +298,8 @@ export function usePartUploadFormState() {
     return () => {
       cancelled = true
     }
-  }, [])
+    // Constant for the lifetime of a form, so the metadata loads once.
+  }, [preselectFirstLicense])
 
   React.useEffect(() => {
     let cancelled = false
