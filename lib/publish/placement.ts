@@ -21,7 +21,7 @@ export const CRITERION_STEP: Record<CurationCriterionKey, PublishStepIndex> = {
   duplicate: PUBLISH_STEPS.ORIGIN,
   // Judged against the author, author URL and source license fields.
   attribution: PUBLISH_STEPS.ORIGIN,
-  // Judged against the declared license and the resulting hosting outcome.
+  // Judged against the declared license.
   license: PUBLISH_STEPS.ORIGIN,
   // Judged against the scope reminder shown with the part's identity.
   eligibility: PUBLISH_STEPS.ORIGIN,
