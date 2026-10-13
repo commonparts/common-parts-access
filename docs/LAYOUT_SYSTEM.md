@@ -47,6 +47,8 @@ import { Grid } from "@/components/layout/grid"
 
 Allowed column sets: `12`, `6`, `4`. Use responsive `col-span-*` only within grid contexts; avoid raw `grid-cols-*` elsewhere.
 
+A raw grid that sets its columns only from a breakpoint (`sm:grid-cols-2`) also sets `grid-cols-1` below it (`grid grid-cols-1 gap-sm sm:grid-cols-2`). Without a column template, the grid has one implicit `auto` column that grows to its widest content, so a long name or a `truncate` line makes the page wider than the screen (#399).
+
 Gutters use spacing tokens; default is `gap-lg`. Adjust with `className` (e.g., `gap-md`) when needed.
 
 Below `sm`, `Grid` always narrows the column gap to `sm` (`max-sm:gap-x-sm`), including when a `gap-*` class is passed; the row gap is unchanged. The eleven column gaps of a 12-column grid otherwise set a minimum width (352px with `gap-lg`) wider than small phones, even when every child spans the full row (#393). Every current `Grid` child spans the full row below `sm`, so the narrower column gap is not visible there.

@@ -50,7 +50,7 @@ export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
           >
             Browse by category
           </h2>
-          <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 lg:grid-cols-3">
             {nav.roots.map((root) => (
               <CategoryTile
                 key={root.id}

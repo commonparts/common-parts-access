@@ -167,7 +167,7 @@ export function SearchResultsView({
           seeAllLabel={`See all ${pluralize(counts.products, "product")}`}
         >
           {counts.products > 0 ? (
-            <div className="grid gap-md sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
               {(activeType === "all"
                 ? results.products.slice(0, PREVIEW_COUNT)
                 : results.products
@@ -210,7 +210,7 @@ export function SearchResultsView({
           seeAllLabel={`See all ${pluralize(counts.brands, "brand")}`}
         >
           {counts.brands > 0 ? (
-            <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
               {(activeType === "all"
                 ? results.brands.slice(0, PREVIEW_COUNT)
                 : results.brands
