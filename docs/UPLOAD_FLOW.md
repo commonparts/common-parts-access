@@ -4,7 +4,7 @@
 
 The upload flow is the **public** contribution path: a contributor publishes a part **they designed themselves**, and the registry **hosts the files** (issue #293).
 
-That is the whole scope. Of the three ways a part enters the registry, the two that reference someone else's publication — link-out with files hosted here, and link-out with the files left at the source — belong to the [internal curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
+That is the whole scope. A part that references a publication made elsewhere — its files left at the source and linked to, never hosted here (#396) — belongs to the [curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
 
 **Route:** `/publish` (under the `(dashboard)` route group), shared with the elsewhere track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. Any authenticated user may publish. The former `/upload` route is removed, not redirected.
 

@@ -30,6 +30,7 @@ import {
   missingCriteria,
   type CurationFlagColumn,
 } from '@/lib/curation/checklist'
+import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { shouldImportOnResume, supportsImageImport } from '@/lib/curation/image-import'
 import { elsewhereTrackBlockers } from '@/lib/publish/blockers'
 import { FLAG_STEP } from '@/lib/publish/placement'
@@ -39,14 +40,9 @@ import {
   firstBlockedStep,
   type PublishStepIndex,
 } from '@/lib/publish/steps'
-import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { serializePartMetadata } from '@/lib/utils/part-metadata'
-import type {
-  CurationChecklist,
-  CurationCriterionKey,
-  PartFileHostingType,
-} from '@/types/database'
+import type { CurationChecklist, CurationCriterionKey } from '@/types/database'
 
 const SOURCE_CHECK_DEBOUNCE_MS = 500
 
@@ -100,6 +96,10 @@ const numToStr = (value: number | null | undefined): string =>
  * judges, and Review rolls them up above the publish button. Their definition,
  * their storage in `parts.curation_checklist` and the server-side gate are
  * unchanged.
+ *
+ * A part published elsewhere is always referenced (#396): its files stay at
+ * the source and only photos are uploaded here. The track offers no hosting
+ * choice and saves every draft as `link_out`.
  */
 export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTrackProps) {
   const router = useRouter()
@@ -185,7 +185,9 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         if (cancelled) return
 
         const draft = json.draft
-        const referenced = draft.file_hosting_type === 'link_out'
+        // False only for a draft saved as hosted before #396 — its blocker
+        // opens the Origin step, whose save references it.
+        const referenced = draft.file_hosting_type === CURATED_FILE_HOSTING_TYPE
         setDraftSlug(draft.slug)
         setFormData((prev) => ({
           ...prev,
@@ -202,7 +204,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           originalAuthor: draft.original_author ?? '',
           originalAuthorUrl: draft.original_author_url ?? '',
           sourceLicenseId: draft.source_license_id ?? '',
-          fileHostingType: referenced ? 'link_out' : 'hosted',
           // The draft stores dimensions/print_settings as objects and the
           // estimates as numbers; the form holds each as a flat string.
           material: draft.material ?? '',
@@ -250,9 +251,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         }
 
         // Derived from the draft rather than from state, which has not
-        // committed yet at this point in the effect. The publication license's
-        // hostability is left unknown here — the license list may still be
-        // loading, and an unknown must not manufacture a blocker.
+        // committed yet at this point in the effect.
         setStep(
           firstBlockedStep(
             elsewhereTrackBlockers({
@@ -260,7 +259,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
               referenced,
               sourcePlatform: draft.source_platform ?? '',
               licenseId: draft.license_id ?? '',
-              publicationLicenseHostable: null,
               modelFileCount: draft.model_file_count ?? 0,
               productCount: Array.isArray(draft.product_ids) ? draft.product_ids.length : 0,
               needsLegalReview: draft.needs_legal_review === true,
@@ -419,7 +417,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
               sourceLicenseId: formData.sourceLicenseId,
-              fileHostingType: formData.fileHostingType,
+              fileHostingType: CURATED_FILE_HOSTING_TYPE,
               checklist,
               ...flagPatchForStep(PUBLISH_STEPS.ORIGIN),
             })
@@ -434,7 +432,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
               originalAuthor: formData.originalAuthor,
               originalAuthorUrl: formData.originalAuthorUrl,
               sourceLicenseId: formData.sourceLicenseId,
-              fileHostingType: formData.fileHostingType,
+              fileHostingType: CURATED_FILE_HOSTING_TYPE,
             }),
           })
           const json = await res.json().catch(() => ({}))
@@ -475,10 +473,6 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
             instructions: formData.instructions,
             licenseId: formData.licenseId,
             tags: formData.tags,
-            // The hosting outcome can flip at any point when the declared
-            // license changes — persist it here too so the draft never drifts
-            // from what the tool shows.
-            fileHostingType: formData.fileHostingType,
             ...flagPatchForStep(PUBLISH_STEPS.DETAILS),
             ...serializePartMetadata(formData),
           })
@@ -541,7 +535,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         userId,
         partId: draftId,
         // A referenced part never hosts model files — only photos are uploaded.
-        modelFiles: formData.fileHostingType === 'link_out' ? [] : formData.files,
+        modelFiles: [],
         thumbnails: formData.thumbnails,
       })
       const allFiles = [...uploads.modelFiles, ...uploads.thumbnails]
@@ -623,45 +617,13 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
   const toggleFlag = (column: CurationFlagColumn, confirmed: boolean) =>
     setConfirmedFlags((prev) => ({ ...prev, [column]: confirmed }))
 
-  /**
-   * Switching back to hosting invalidates an NC/ND publication license — clear
-   * it so the select never shows a value the filtered list would hide. Fails
-   * closed: the selection survives only when the license is positively
-   * confirmed hostable, so an unloaded list or a stale id also clears.
-   */
-  const changeHosting = (value: PartFileHostingType) => {
-    setFormData((prev) => {
-      const next = { ...prev, fileHostingType: value }
-      if (value === 'hosted' && prev.licenseId) {
-        const license = form.licenses.find((l) => l.id === prev.licenseId)
-        if (!license || !isHostableLicense(license)) next.licenseId = ''
-      }
-      return next
-    })
-  }
-
-  // An NC/ND source license means the files cannot be hosted here at all.
-  const sourceLicense = form.licenses.find((l) => l.id === formData.sourceLicenseId)
-  const sourceLicenseForbidsHosting = Boolean(sourceLicense && !isHostableLicense(sourceLicense))
-  const referenced = formData.fileHostingType === 'link_out'
-
-  // Force referencing whenever the declared license forbids hosting — this
-  // covers pre-fill, manual selection and resumed drafts alike, and re-runs
-  // once the license list finishes loading so a pre-fill that lands first is
-  // caught.
-  React.useEffect(() => {
-    if (sourceLicenseForbidsHosting && formData.fileHostingType === 'hosted') {
-      setFormData((prev) => ({ ...prev, fileHostingType: 'link_out' }))
-    }
-  }, [sourceLicenseForbidsHosting, formData.fileHostingType, setFormData])
-
-  const publicationLicense = form.licenses.find((l) => l.id === formData.licenseId)
   const blockers = elsewhereTrackBlockers({
     checklist,
-    referenced,
+    // A draft saved as hosted resumes on Origin, and leaving Origin saves it
+    // as referenced — so the live state is always referenced.
+    referenced: true,
     sourcePlatform: formData.sourcePlatform,
     licenseId: formData.licenseId,
-    publicationLicenseHostable: publicationLicense ? isHostableLicense(publicationLicense) : null,
     modelFileCount,
     productCount: formData.productIds.length,
     needsLegalReview,
@@ -673,7 +635,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
     formData.sourceUrl.trim().length > 0 &&
     formData.originalAuthor.trim().length > 0 &&
     formData.sourceLicenseId.length > 0 &&
-    (!referenced || formData.sourcePlatform.length > 0) &&
+    formData.sourcePlatform.length > 0 &&
     !duplicate
 
   const criterion = (key: CurationCriterionKey) =>
@@ -798,9 +760,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                 </div>
                 <div className="space-y-2xs">
                   <div className="flex items-center gap-2xs">
-                    <Label htmlFor="elsewhere-platform">
-                      Platform{referenced ? ' *' : ''}
-                    </Label>
+                    <Label htmlFor="elsewhere-platform">Platform *</Label>
                     {prefilledFields.has('sourcePlatform') && (
                       <Badge variant="outline">Pre-filled</Badge>
                     )}
@@ -812,7 +772,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, sourcePlatform: e.target.value }))
                     }
-                    required={referenced}
+                    required
                   >
                     <option value="">Select platform</option>
                     {form.sourcePlatforms.map((platform) => (
@@ -943,46 +903,10 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                 </DropdownInput>
               </div>
 
-              {/* Where the files end up is a consequence of the declared
-                  license, not a control. Only the hostable case offers a
-                  choice, and only in one direction. */}
-              <div className="space-y-2xs rounded-md border border-border-subtle bg-bg-subtle p-sm">
+              <div className="rounded-md border border-border-subtle bg-bg-subtle p-sm">
                 <p className="text-sm text-text-primary">
-                  {referenced
-                    ? sourceLicenseForbidsHosting
-                      ? 'This license does not permit redistribution — Common Parts will link to the source.'
-                      : 'Common Parts will link to the source; the files stay where they are published.'
-                    : 'The files will be hosted on Common Parts.'}
+                  Common Parts will link to the source; the files stay where they are published.
                 </p>
-                {!sourceLicenseForbidsHosting && formData.sourceLicenseId && (
-                  <>
-                    {referenced ? (
-                      <Button variant="link" onClick={() => changeHosting('hosted')}>
-                        Host the files on Common Parts instead
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="link"
-                        onClick={() => changeHosting('link_out')}
-                        disabled={!formData.sourcePlatform || modelFileCount > 0}
-                      >
-                        Reference it at the source instead
-                      </Button>
-                    )}
-                    {!referenced && !formData.sourcePlatform && (
-                      <p className="text-sm text-text-secondary">
-                        To reference a part instead, name its platform above — the platform has to
-                        match where the source URL points.
-                      </p>
-                    )}
-                    {!referenced && modelFileCount > 0 && (
-                      <p className="text-sm text-text-secondary">
-                        Model files are already uploaded. A referenced part never hosts files, so
-                        remove them first.
-                      </p>
-                    )}
-                  </>
-                )}
               </div>
 
               {renderCriterion('license')}
@@ -1026,7 +950,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           <FilesStep
             form={form}
             idPrefix="elsewhere"
-            referenced={referenced}
+            referenced
             sourceUrl={formData.sourceUrl}
             modelFileCount={modelFileCount}
             imageUrls={imageUrls}
@@ -1068,18 +992,15 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                   required
                 >
                   <option value="">Select the license the part is published under</option>
-                  {form.licenses
-                    .filter((license) => referenced || isHostableLicense(license))
-                    .map((license) => (
-                      <option key={license.id} value={license.id}>
-                        {license.shortName} — {license.name}
-                      </option>
-                    ))}
+                  {form.licenses.map((license) => (
+                    <option key={license.id} value={license.id}>
+                      {license.shortName} — {license.name}
+                    </option>
+                  ))}
                 </DropdownInput>
                 <p className="text-sm text-text-secondary">
-                  {referenced
-                    ? 'This part is referenced at its source, so NC and ND licenses are allowed — the files are never hosted here.'
-                    : 'Only licenses allowing commercial use and modification are offered — hosting the files here requires them.'}
+                  This part is referenced at its source, so NC and ND licenses are allowed — the
+                  files are never hosted here.
                 </p>
               </div>
             }

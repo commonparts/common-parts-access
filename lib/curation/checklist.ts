@@ -25,7 +25,7 @@ export const CURATION_BLOCKING_CRITERIA: readonly CurationCriterion[] = [
   {
     key: 'license',
     label: 'License verified',
-    description: 'SPDX license identified. Hosting the files here requires a license allowing commercial use and modification; NC or ND terms mean the part is referenced at its source instead.',
+    description: 'SPDX license identified, among the licenses Common Parts lists. The part is referenced at its source, so NC and ND terms are accepted; a license that forbids sharing the model is not.',
   },
   {
     key: 'file',

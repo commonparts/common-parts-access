@@ -22,7 +22,9 @@ Database values, column names, API routes and code paths **do not change**. Only
 | `origin_type = 'curated'`, `file_hosting_type = 'hosted'` | "Published elsewhere — files hosted on Common Parts" | **Hosted** |
 | `origin_type = 'curated'`, `file_hosting_type = 'link_out'` | "Published elsewhere — files at the source" | **Referenced** |
 
-Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the hosting outcome, never used as the track name — one word for both would recreate the ambiguity this rename removes.
+The elsewhere track only produces the **Referenced** pair (#396). The **Hosted** row remains in the mapping because the column keeps the value, but no curated part carries it: the curation routes refuse to create a hosted draft, to set `hosted` on one, or to publish one.
+
+Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the outcome of the elsewhere track, never used as the track name — one word for both would recreate the ambiguity this rename removes.
 
 On the part page, a part from the elsewhere track credits its designer first (#372): the credit line under the title reads "Original design by {author} on {platform}" when the source platform is known, and no author card names the account that added the part (the part-details API does not return that profile). The "Part details" card labels the date **"Added"**. A part from the original track keeps its **"Created by"** card and the **"Uploaded"** date label. Both tracks show a single **"License"** row: the source license when the part has one, otherwise the publication license.
 
@@ -49,26 +51,19 @@ Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same nam
 
 | # | Step | Original track | Elsewhere track |
 |---|------|----------------|-----------------|
-| 1 | **Origin** | Title, category, publication license (hostable whitelist), originality declaration. Creates the draft. | Source URL (duplicate check + pre-fill), title, category, platform, author, author URL, source license, hosting outcome. Creates the draft; kicks off source-image import. Rejection recorder available. |
-| 2 | **Files** | Model files + photos, three-phase pipeline. | Same for hosted. Referenced: photos only, with the model-file drop zone hidden entirely. |
+| 1 | **Origin** | Title, category, publication license (hostable whitelist), originality declaration. Creates the draft. | Source URL (duplicate check + pre-fill), title, category, platform, author, author URL, source license, and the statement that the part is referenced at its source. Creates the draft; kicks off source-image import. Rejection recorder available. |
+| 2 | **Files** | Model files + photos, three-phase pipeline. | Photos only, with the model-file drop zone hidden entirely. |
 | 3 | **Details** | Short description, instructions, tags, print metadata. | Same, plus the publication license (defaults to the declared source license). |
 | 4 | **Compatibility** | Brand + products, inline product creation, dedup-guarded. | Same, plus the demand panel. |
 | 5 | **Review** | Real part page rendered against the draft; publish or save as draft. | Same, plus the checklist roll-up, `needs_legal_review`, and the rejection recorder. |
 
 Shared step components live in `components/publish/`; each track keeps its own orchestrator (`original-track.tsx`, `elsewhere-track.tsx`) because the endpoints, creation minimums and publish calls differ.
 
-### Hosting is a displayed consequence, not a selector
+### A part published elsewhere is always referenced
 
-The declared source license decides where the files end up, and the tool states the outcome:
+The elsewhere track has a single outcome (#396): the files stay at the original publication and Common Parts links to them (`link_out`). The Origin step states it — "Common Parts will link to the source; the files stay where they are published." — and offers no hosting choice, whatever the declared license. Hosting files is reserved for the original track.
 
-| Declared source license | Displayed outcome | Contributor action available |
-|---|---|---|
-| Hostable (per `isHostableLicense`) | "The files will be hosted on Common Parts." (`hosted`) | Override: "Reference it at the source instead" — one click. Sets `link_out`. |
-| NC / ND | "This license does not permit redistribution — Common Parts will link to the source." (`link_out`) | None. Hosting is not offered. |
-
-The override carries the existing link-out constraints: the source platform must match the source URL's domain, and publishing is blocked if any model file is registered. Rather than duplicating domain matching client-side, the override button is disabled with the reason shown in both cases; the server remains the check. Switching back to hosted clears a now-invalid NC/ND publication-license selection.
-
-The override deliberately has **no free-text reason field**: no column stores one, `curation_rejections` is for rejected sources rather than published parts, and a field that discards what you type is worse than no field (decision 2026-08-01).
+The referenced outcome carries its constraints: the source platform is required and must match the source URL's domain, and publishing is blocked if any model file is registered. The publication license may be any license of the `licenses` table, NC and ND included. The server-side rule is documented in [CURATION_TOOL.md](CURATION_TOOL.md#file-hosting-always-link-out).
 
 ## Checklist dissolution
 
@@ -78,9 +73,9 @@ The dedicated Checklist step is gone **as a step**. The six blocking criteria ar
 |---|---|---|
 | `duplicate` | Step 1 | The source-URL field (a passing source-check is noted as a hint, but never ticks the box) |
 | `attribution` | Step 1 | Author / author URL / source license |
-| `license` | Step 1 | The declared license + hosting outcome |
+| `license` | Step 1 | The declared license + the referencing statement |
 | `eligibility` | Step 1 | A one-line scope reminder |
-| `file` | Step 2 | The file list (hosted) or the source link (referenced) |
+| `file` | Step 2 | The source link |
 | `product_target` | Step 4 | The linked-products list |
 | *(roll-up of all six)* | Step 5 | The publish button, with jump links to any unmet criterion |
 
@@ -100,7 +95,7 @@ Both tools used to resume at a hardcoded step (Files for upload, Checklist for c
 
 ## Publish gates
 
-Unchanged, both of them — including HTTP 422 with `blockers[]`, server-side re-validation of everything, and the payload narrowing (400 on any narrowed key, presence-based, rejected not stripped).
+Unchanged by the unification, both of them — including HTTP 422 with `blockers[]`, server-side re-validation of everything, and the payload narrowing (400 on any narrowed key, presence-based, rejected not stripped). Since #396 the elsewhere gate also blocks a curated draft that is not `link_out` — see [CURATION_TOOL.md](CURATION_TOOL.md#publish-gate).
 
 ## What this deliberately does not do
 

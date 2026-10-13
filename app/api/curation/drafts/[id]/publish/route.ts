@@ -4,7 +4,7 @@ import { getCurationDraft, updateCurationDraft } from '@/lib/supabase/queries/cu
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
 import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
-import { isHostableLicenseRow } from '@/lib/utils/licenses'
+import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { isValidUuid } from '@/lib/utils/validation'
 
 type RouteContext = { params: Promise<{ id: string }> }
@@ -14,10 +14,11 @@ type RouteContext = { params: Promise<{ id: string }> }
 // failing any criterion cannot be published regardless of client state:
 //   - all six checklist v1 criteria explicitly checked
 //   - not flagged for legal review (saved but not publishable, Flow P3 §4.4)
-//   - a license set; the no-NC/ND whitelist applies to HOSTED parts only —
-//     link-out parts keep their files at the source, so NC/ND is acceptable
-//   - hosted: at least one registered model file
-//   - link-out: a source platform, and NO registered model files
+//   - link_out: a part published elsewhere is always referenced, never hosted
+//     (#396) — a hosted curated draft cannot be published
+//   - a publication license from the licenses table; NC/ND is acceptable
+//     because the files stay at the source
+//   - a source platform, and NO registered model files
 //   - at least one linked product (the product_target criterion made concrete),
 //     each belonging to a brand — same invariant as the upload gate. Since
 //     #315 a part's brands are its products', so a brandless product leaves
@@ -54,7 +55,11 @@ export async function POST(request: NextRequest, context: RouteContext) {
       blockers.push('The part is flagged for legal review and cannot be published')
     }
 
-    const isLinkOut = draft.file_hosting_type === 'link_out'
+    if (draft.file_hosting_type !== CURATED_FILE_HOSTING_TYPE) {
+      blockers.push(
+        'A part published elsewhere is always referenced, never hosted — save the Origin step again to reference it at its source',
+      )
+    }
 
     if (!draft.license_id) {
       blockers.push('A publication license is required')
@@ -62,31 +67,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
       const license = await getLicenseById(draft.license_id)
       if (!license) {
         blockers.push('The selected license could not be verified')
-      } else if (!isLinkOut && !isHostableLicenseRow(license)) {
-        blockers.push('Hosted parts require an open license (no NC/ND restrictions) — link out instead')
       }
     }
 
-    // The declared source license binds hosting too: NC/ND at the source
-    // means the files may only be linked out, never hosted here.
-    if (!isLinkOut && draft.source_license_id) {
-      const sourceLicense = await getLicenseById(draft.source_license_id)
-      if (!sourceLicense) {
-        blockers.push('The declared source license could not be verified')
-      } else if (!isHostableLicenseRow(sourceLicense)) {
-        blockers.push('The declared source license is NC/ND — hosting is not allowed, link out instead')
-      }
+    if (!draft.source_platform) {
+      blockers.push('A source platform is required for a part published elsewhere')
     }
-
-    if (isLinkOut) {
-      if (!draft.source_platform) {
-        blockers.push('A source platform is required for link-out parts')
-      }
-      if (draft.model_file_count > 0) {
-        blockers.push('A link-out part must not host model files — remove them or switch to hosted')
-      }
-    } else if (draft.model_file_count < 1) {
-      blockers.push('At least one model file must be uploaded and registered')
+    if (draft.model_file_count > 0) {
+      blockers.push('A part published elsewhere must not host model files — remove them')
     }
 
     if (draft.product_ids.length < 1) {

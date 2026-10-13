@@ -41,7 +41,7 @@ A spare part record (renamed from `models` in #314).
 | Identity | `id`, `name`, `slug` (unique), `description`, `part_name`, `part_number`, `tags`, `category_id` |
 | Owner | `user_id` → `user_profiles` (the account that added it) |
 | Lifecycle | `status`: `draft` / `published` / `archived` |
-| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` |
+| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` (a `curated` part is always `link_out`, enforced by the curation routes — #396) |
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
 | Licensing | `license_id` (publication license), `source_license_id` (license at the source) → `licenses` |
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
