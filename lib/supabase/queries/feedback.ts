@@ -6,9 +6,7 @@ interface SubmitFeedbackPayload {
   type: FeedbackType
   title: string
   description: string
-  email: string | null
   url: string | null
-  user_agent: string | null
 }
 
 /**

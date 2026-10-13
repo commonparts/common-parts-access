@@ -120,7 +120,7 @@ export default async function ProductPage({
         <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         {/* Identification header */}
-        <div className="grid gap-lg md:grid-cols-[minmax(0,16rem)_1fr]">
+        <div className="grid grid-cols-1 gap-lg md:grid-cols-[minmax(0,16rem)_1fr]">
           <div className="relative aspect-square overflow-hidden rounded-lg border border-border-subtle bg-bg-subtle">
             {product.image_url ? (
               // eslint-disable-next-line @next/next/no-img-element

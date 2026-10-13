@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
+import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import type {
   CurationChecklist,
@@ -16,7 +17,7 @@ import type {
 const CURATION_DRAFT_SELECT = `
   id, name, slug, user_id, description, instructions, status, origin_type,
   category_id, license_id, tags, thumbnail_url, images,
-  source_url, source_platform, original_author, original_author_url, source_license_id,
+  source_url, source_platform, original_author, original_author_url,
   verification_status, file_hosting_type,
   material, color, dimensions, print_settings,
   estimated_print_time, estimated_material_usage,
@@ -136,19 +137,19 @@ export interface CreateCurationDraftInput {
   name: string
   sourceUrl: string
   originalAuthor: string
-  sourceLicenseId: string
+  /** The license chosen at the source (#374). */
+  licenseId: string
   sourcePlatform?: string | null
   originalAuthorUrl?: string | null
-  /** 'hosted' (whitelist licenses only) or 'link_out' (NC/ND allowed — files stay at the source). */
-  fileHostingType?: 'hosted' | 'link_out'
 }
 
 /**
  * Creates the persistent draft row as soon as the source step is complete.
- * origin_type 'curated' requires source_url + original_author +
- * source_license_id at the DB level (curated_requires_source), which is why
+ * origin_type 'curated' requires source_url + original_author + license_id
+ * at the DB level (curated_requires_source), which is why
  * these three are the creation minimum — everything else arrives via PATCH.
- * Covered by the "Users can manage own parts" RLS policy.
+ * The draft is always link_out: a part published elsewhere is referenced,
+ * never hosted (#396). Covered by the "Users can manage own parts" RLS policy.
  */
 export async function createCurationDraft(
   userId: string,
@@ -169,8 +170,8 @@ export async function createCurationDraft(
       source_platform: input.sourcePlatform ?? null,
       original_author: input.originalAuthor,
       original_author_url: input.originalAuthorUrl ?? null,
-      source_license_id: input.sourceLicenseId,
-      file_hosting_type: input.fileHostingType ?? 'hosted',
+      license_id: input.licenseId,
+      file_hosting_type: CURATED_FILE_HOSTING_TYPE,
       // A fresh draft has confirmed nothing yet: every completeness flag
       // starts set and is cleared by explicit confirmation in the Flags step.
       // The column default (false) is for non-curated rows, where the flags
@@ -195,13 +196,12 @@ export interface CurationDraftPatch {
   description?: string | null
   instructions?: string | null
   category_id?: string | null
-  license_id?: string | null
+  license_id?: string
   tags?: string[]
   source_platform?: string | null
   original_author?: string
   original_author_url?: string | null
-  source_license_id?: string
-  file_hosting_type?: 'hosted' | 'link_out'
+  file_hosting_type?: typeof CURATED_FILE_HOSTING_TYPE
   material?: string | null
   color?: string | null
   dimensions?: PartDimensions | null

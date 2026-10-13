@@ -34,7 +34,6 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
   const [type, setType]               = useState<FeedbackType>('improvement')
   const [title, setTitle]             = useState('')
   const [description, setDescription] = useState('')
-  const [email, setEmail]             = useState('')
   const [status, setStatus]           = useState<'idle' | 'loading' | 'success' | 'error'>('idle')
 
   async function handleSubmit() {
@@ -46,9 +45,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
         type,
         title:       title.trim(),
         description: description.trim(),
-        email:       email.trim() || null,
         url:         typeof window !== 'undefined' ? window.location.href : null,
-        user_agent:  typeof navigator !== 'undefined' ? navigator.userAgent : null,
       }, supabase)
       setStatus('success')
       closeTimerRef.current = setTimeout(() => onClose?.(), 2000)
@@ -109,18 +106,6 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
           onChange={(e) => setDescription(e.target.value)}
           maxLength={5000}
           rows={4}
-        />
-      </div>
-
-      {/* Email (optional) */}
-      <div className="flex flex-col gap-xs">
-        <Label htmlFor="feedback-email">Email <span className="text-text-secondary font-normal">(optional)</span></Label>
-        <Input
-          id="feedback-email"
-          type="email"
-          placeholder="For follow-up"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
         />
       </div>
 

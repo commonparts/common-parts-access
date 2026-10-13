@@ -7,12 +7,9 @@ import {
 } from '@/lib/supabase/queries/curation'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
-import { isHostableLicenseRow } from '@/lib/utils/licenses'
+import { parseCuratedHostingType } from '@/lib/curation/hosting'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
-
-const VALID_FILE_HOSTING_TYPES = ['hosted', 'link_out'] as const
-type FileHostingType = (typeof VALID_FILE_HOSTING_TYPES)[number]
 
 const SOURCE_URL_MAX_LENGTH = 2048
 const AUTHOR_MAX_LENGTH = 200
@@ -40,7 +37,10 @@ export async function GET() {
 
 // POST /api/curation/drafts — creates the persistent draft once the source
 // step is complete. Requires the DB minimum for origin_type 'curated':
-// title, source URL, original author and source license.
+// title, source URL, original author and the license chosen at the source,
+// stored in license_id (#374). A part published
+// elsewhere is always referenced (#396): the draft is created as link_out,
+// so the source platform is required too.
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient()
@@ -59,19 +59,17 @@ export async function POST(request: NextRequest) {
     const sourceUrl = trimmedString(payload.sourceUrl)
     const originalAuthor = trimmedString(payload.originalAuthor)
     const originalAuthorUrl = trimmedString(payload.originalAuthorUrl)
-    const sourceLicenseId = trimmedString(payload.sourceLicenseId)
+    const licenseId = trimmedString(payload.licenseId)
     const sourcePlatform = trimmedString(payload.sourcePlatform)
-    const rawHostingType = trimmedString(payload.fileHostingType) || 'hosted'
-
-    if (!(VALID_FILE_HOSTING_TYPES as readonly string[]).includes(rawHostingType)) {
-      return NextResponse.json({ error: 'Invalid file hosting type' }, { status: 400 })
+    const hostingType = parseCuratedHostingType(payload.fileHostingType)
+    if (!hostingType.ok) {
+      return NextResponse.json({ error: hostingType.error }, { status: 400 })
     }
-    const fileHostingType = rawHostingType as FileHostingType
 
-    // Link-out keeps the files at the source, so the source platform claim is
-    // mandatory and must match where the URL actually points.
-    if (fileHostingType === 'link_out' && !sourcePlatform) {
-      return NextResponse.json({ error: 'A source platform is required for link-out parts' }, { status: 400 })
+    // The files stay at the source, so the source platform claim is mandatory
+    // and must match where the URL actually points.
+    if (!sourcePlatform) {
+      return NextResponse.json({ error: 'A source platform is required for a part published elsewhere' }, { status: 400 })
     }
 
     if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
@@ -89,41 +87,20 @@ export async function POST(request: NextRequest) {
     if (originalAuthorUrl && (originalAuthorUrl.length > SOURCE_URL_MAX_LENGTH || !isValidHttpUrl(originalAuthorUrl))) {
       return NextResponse.json({ error: 'Original author URL must be a valid http(s) URL' }, { status: 400 })
     }
-    if (!isValidUuid(sourceLicenseId)) {
-      return NextResponse.json({ error: 'Source license is required' }, { status: 400 })
+    if (!isValidUuid(licenseId)) {
+      return NextResponse.json({ error: 'The license at the source is required' }, { status: 400 })
     }
 
-    const license = await getLicenseById(sourceLicenseId)
+    const license = await getLicenseById(licenseId)
     if (!license) {
-      return NextResponse.json({ error: 'Invalid source license selected' }, { status: 400 })
-    }
-    // An NC/ND source license forbids hosting the files here — only link-out
-    // keeps them at the source, where those terms are honored.
-    if (fileHostingType === 'hosted' && !isHostableLicenseRow(license)) {
-      return NextResponse.json(
-        { error: 'The declared source license (NC/ND) does not allow hosting files here — switch to link-out' },
-        { status: 400 },
-      )
+      return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
     }
 
-    if (sourcePlatform) {
-      if (fileHostingType === 'link_out') {
-        // Single round trip: the helper covers both platform existence and
-        // the URL domain match required for link-out.
-        const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
-        if (!platformCheck.ok) {
-          return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
-        }
-      } else {
-        const { data: platform, error: platformError } = await supabase
-          .from('source_platforms')
-          .select('slug')
-          .eq('slug', sourcePlatform)
-          .maybeSingle()
-        if (platformError || !platform) {
-          return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
-        }
-      }
+    // Single round trip: the helper covers both platform existence and the
+    // URL domain match.
+    const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
+    if (!platformCheck.ok) {
+      return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
     }
 
     const duplicate = await findPartBySourceUrl(sourceUrl)
@@ -139,10 +116,9 @@ export async function POST(request: NextRequest) {
         name,
         sourceUrl,
         originalAuthor,
-        sourceLicenseId,
-        sourcePlatform: sourcePlatform || null,
+        licenseId,
+        sourcePlatform,
         originalAuthorUrl: originalAuthorUrl || null,
-        fileHostingType,
       })
       return NextResponse.json({ draft }, { status: 201 })
     } catch (insertError) {

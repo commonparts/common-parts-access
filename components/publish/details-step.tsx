@@ -21,12 +21,6 @@ interface DetailsStepProps {
    * source, so a "Pre-filled" marker is shown. Empty on the original track.
    */
   prefilledFields?: ReadonlySet<string>
-  /**
-   * Publication-license control. Rendered here on the elsewhere track only —
-   * the original track chose its license at Origin, where it gates draft
-   * creation.
-   */
-  licenseControl?: React.ReactNode
   /** Inline completeness confirmations owned by this step. */
   flags?: React.ReactNode
 }
@@ -61,7 +55,6 @@ export function DetailsStep({
   form,
   idPrefix,
   prefilledFields,
-  licenseControl,
   flags,
 }: DetailsStepProps) {
   const { formData, setFormData } = form
@@ -156,8 +149,6 @@ export function DetailsStep({
               </div>
             )}
           </div>
-
-          {licenseControl}
         </CardContent>
       </Card>
 

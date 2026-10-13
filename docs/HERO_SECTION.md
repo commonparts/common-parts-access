@@ -3,7 +3,7 @@
 The home page (`app/page.tsx`) is `Navbar` → `Hero` → `FeaturedParts` → `Footer`. Since issue #308 the hero is a single centred column built around the global search bar; the earlier two-lane layout (publish lane + product-picker search card) was removed.
 
 ## Layout
-- `Section` → `Container size="xl"` → `Grid columns={12}`, with one centred column capped at `max-w-xl`.
+- `Section` → `Container size="xl"` → one centred column capped at `max-w-xl` (`mx-auto w-full`). The hero uses no `Grid`: the fixed gaps of a 12-column grid made it wider than mobile screens (#393).
 - Headline: "Repair starts with access to the right part." (`text-heading-lg`).
 - Subheading: the canonical one-line definition of Common Parts Access (`text-body text-text-secondary`).
 - Below the copy: `SearchBar` with the placeholder "Search a brand, product or reference...".
