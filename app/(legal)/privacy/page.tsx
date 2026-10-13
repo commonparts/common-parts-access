@@ -79,7 +79,7 @@ export default function PrivacyPage() {
               <li>
                 Request logs of our hosting provider: Railway records, for each request to Common Parts Access, your IP
                 address, your browser&apos;s user agent, the page requested and the time. These logs are used only to
-                operate and secure the service, and are kept for the period set by Railway (see{' '}
+                operate and secure the service, and are kept for 7 days, the retention period of our Railway plan (see{' '}
                 <a href="https://docs.railway.com/observability/logs#log-retention" className="underline">
                   Railway&apos;s log retention
                 </a>{' '}
