@@ -13,7 +13,7 @@ export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
     <div className="space-y-md">
       <h2 className="font-heading text-heading-sm font-semibold text-text-primary">Parts</h2>
 
-      <div className="grid gap-md sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
         {parts.map((part) => (
           <PartCard
             key={part.card.id}

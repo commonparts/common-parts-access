@@ -50,8 +50,7 @@ export const CARD_PRODUCT_ORDER = 'products(name)';
 //
 // This select and mapPartRowToCard build every part card (issue #380). The
 // print and provenance lines read the material, the print time, the source
-// URL, the licence (`parts.license_id`, hinted because `source_license_id`
-// also references licenses) and the source platform name. The two lookups are
+// URL, the licence (`parts.license_id`) and the source platform name. The two lookups are
 // to-one embeds, adding no row to the fan-out. Callers order and truncate `fits` with CARD_PRODUCT_ORDER and
 // CARD_PRODUCT_PREVIEW_COUNT.
 export const PART_CARD_SELECT = `
@@ -353,7 +352,6 @@ const PART_SEO_SELECT = `
   original_author_url,
   user_profiles(username, display_name),
   licenses!parts_license_id_fkey(name, url),
-  source_licenses:licenses!parts_source_license_id_fkey(name, url),
   part_products(products(name, slug, brands(name, slug), categories(name, slug)))
 `;
 
@@ -388,9 +386,8 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
 
   const part = data as unknown as PartSeoRow;
   const author = firstEmbedded(part.user_profiles);
-  // Curated parts are governed by the source license — same precedence as the
-  // details route and the download license notice.
-  const license = firstEmbedded(part.source_licenses) ?? firstEmbedded(part.licenses);
+  // One licence per part (#374): for a curated part, the one chosen at the source.
+  const license = firstEmbedded(part.licenses);
 
   const products = (part.part_products ?? [])
     .map((row) => firstEmbedded(row.products))

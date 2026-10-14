@@ -2,7 +2,7 @@
 
 Current schema of the Common Parts Access database (Supabase, PostgreSQL), as of v1.2.0 (October 2026). For how it got here, see [DATA_MODEL_EVOLUTION.md](./DATA_MODEL_EVOLUTION.md) (historical).
 
-There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`, applied by the human. Every table in `public` has RLS enabled.
+There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied by the human, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled.
 
 ---
 
@@ -20,7 +20,7 @@ brands ─┐
         │                              ├─< part_files
         │                              ├─< part_views / part_downloads (anonymous)
         │                              ├─< part_likes / part_comments (hidden, #322)
-        │                              └── licenses (license_id, source_license_id)
+        │                              └── licenses (license_id)
         │
 products ─< part_requests        user_profiles ─< parts (user_id)
 search_misses (standalone)       curation_rejections (standalone)
@@ -41,15 +41,17 @@ A spare part record (renamed from `models` in #314).
 | Identity | `id`, `name`, `slug` (unique), `description`, `part_name`, `part_number`, `tags`, `category_id` |
 | Owner | `user_id` → `user_profiles` (the account that added it); null once that account is deleted (`ON DELETE SET NULL`, #178) |
 | Lifecycle | `status`: `draft` / `published` / `archived` |
-| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` |
+| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` (a `curated` part is always `link_out`, enforced by the curation routes — #396) |
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
-| Licensing | `license_id` (publication license), `source_license_id` (license at the source) → `licenses` |
+| Licensing | `license_id` → `licenses`: the licence of the part. For a `curated` part, the licence chosen at the source; one licence per part (#374) |
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
 | Media | `thumbnail_url`, `images` |
 | Trust | `verification_status`: `unverified` / `author_tested` / `community_validated` / `certified` |
 | Counters (trigger-maintained) | `view_count`, `like_count`, `makes_count`. Downloads have no counter on the part: they are rows in `part_downloads` (#373). |
 | Curation | `curation_checklist` (jsonb), `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`, `needs_legal_review`, `legal_review_justification` |
 | Upload | `originality_attested`, `originality_attested_at` |
+
+A `curated` part requires `source_url`, `original_author` and `license_id` (check `curated_requires_source`). `source_license_id` and its foreign key are dropped by `20261013160000_drop_parts_source_license_id.sql`, applied with the release; until then the check accepts either licence column (#374).
 
 Publication rules per track are in [PUBLISH_FLOW.md](./PUBLISH_FLOW.md), [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) and [CURATION_TOOL.md](./CURATION_TOOL.md).
 

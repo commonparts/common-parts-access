@@ -171,7 +171,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
             >
               Products
             </h2>
-            <div className="grid gap-sm sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-sm sm:grid-cols-2">
               {listing.products.map((product) => (
                 <ProductResultCard
                   key={product.id}

@@ -132,7 +132,6 @@ export type PartSeoRow = Pick<
 		| Pick<UserProfile, 'username' | 'display_name'>[]
 		| null;
 	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
-	source_licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
 	part_products?: {
 		products: PartSeoProductRow | PartSeoProductRow[] | null;
 	}[];
@@ -172,7 +171,7 @@ export interface PartSeoData {
 	/** Source author for curated parts — takes precedence for attribution. */
 	originalAuthor: string | null;
 	originalAuthorUrl: string | null;
-	/** Effective license: the source license when present, else the platform license. */
+	/** The part's license — for a curated part, the one chosen at the source (#374). */
 	licenseName: string | null;
 	licenseUrl: string | null;
 	products: PartSeoProductFit[];

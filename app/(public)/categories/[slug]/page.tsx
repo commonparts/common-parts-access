@@ -207,7 +207,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             >
               Subcategories
             </h2>
-            <div className="grid gap-sm sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 lg:grid-cols-3">
               {effective.children.map((child) => (
                 <CategoryTile
                   key={child.id}

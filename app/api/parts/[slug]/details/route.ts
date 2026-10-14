@@ -102,13 +102,6 @@ export async function GET(
             requires_attribution,
             is_copyleft
           ),
-          source_licenses:licenses!parts_source_license_id_fkey(
-            name,
-            short_name,
-            url,
-            requires_attribution,
-            is_copyleft
-          ),
           user_profiles(
             username,
             display_name,
@@ -198,7 +191,6 @@ export async function GET(
     // join so the part stays reachable, and no author card is rendered (#178).
     const author = part.origin_type === 'curated' ? null : firstEmbedded(part.user_profiles)
     const license = firstEmbedded(part.licenses)
-    const sourceLicense = firstEmbedded(part.source_licenses)
 
     /** All products linked via the part_products junction table. */
     const compatibleProducts = (partProducts ?? [])
@@ -259,13 +251,6 @@ export async function GET(
         sourceUrl: part.source_url,
         originalAuthor: part.original_author,
         originalAuthorUrl: part.original_author_url,
-        sourceLicense: sourceLicense ? {
-          name: sourceLicense.name,
-          shortName: sourceLicense.short_name,
-          url: sourceLicense.url,
-          requiresAttribution: sourceLicense.requires_attribution,
-          isCopyleft: sourceLicense.is_copyleft,
-        } : null,
         instructions: part.instructions,
         notes: part.notes,
         createdAt: part.created_at,
