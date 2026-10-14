@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
+import { AccountDeletionError, deleteAccount } from "@/lib/account/deletion";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createAccountDeletionSteps } from "@/lib/supabase/queries/account-deletion";
 import { createClient } from "@/lib/supabase/server";
 
 // GET /api/users - List users (admin only)
@@ -28,6 +30,9 @@ export async function POST() {
 }
 
 // DELETE /api/users - Delete current user account
+// Published parts stay without an owner, likes and comments are anonymized,
+// collections and unpublished parts are deleted (issue #178, see
+// docs/ACCOUNT_DELETION_POLICY.md).
 export async function DELETE() {
   const supabase = await createClient();
   const {
@@ -39,22 +44,25 @@ export async function DELETE() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let adminClient: ReturnType<typeof createAdminClient>;
   try {
-    const adminClient = createAdminClient();
-    const { error: deleteError } = await adminClient.auth.admin.deleteUser(user.id);
-
-    if (deleteError) {
-      console.error("deleteUser failed", deleteError);
-      return NextResponse.json(
-        { error: "Unable to delete account right now." },
-        { status: 500 },
-      );
-    }
+    adminClient = createAdminClient();
   } catch (err) {
-    console.error("deleteUser admin client error", err);
+    console.error("Account deletion: admin client unavailable", err);
     return NextResponse.json(
       { error: "Automated account deletion is not available yet. To delete your account, please email contact@commonparts.org." },
       { status: 503 },
+    );
+  }
+
+  try {
+    await deleteAccount(user.id, createAccountDeletionSteps(adminClient));
+  } catch (err) {
+    // The stage names where deletion stopped; every stage is safe to retry.
+    console.error("Account deletion failed", err instanceof AccountDeletionError ? err.stage : "unknown", err);
+    return NextResponse.json(
+      { error: "Unable to delete your account right now. Please try again, or email contact@commonparts.org if it keeps failing." },
+      { status: 500 },
     );
   }
 
