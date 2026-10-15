@@ -29,6 +29,9 @@ const CATEGORY_FOLDER_MAP: Record<string, string> = {
  *
  * Uses the [slug] route param to look up the part.
  * Derives public URLs server-side from bucket + path — never trusts client URLs.
+ * Never changes the part's status: publishing goes through the publish gate
+ * of the part's track only (#403). Refuses model files for a curated part,
+ * whose files stay at the source (#396); photos are accepted.
  *
  * Requires: authenticated user who owns the part.
  */
@@ -53,7 +56,7 @@ export async function POST(
     // Look up the part by slug — include images fields for merge on update
     const { data: part, error: partError } = await supabase
       .from('parts')
-      .select('id, user_id, thumbnail_url, images')
+      .select('id, user_id, origin_type, thumbnail_url, images')
       .eq('slug', slug)
       .single()
 
@@ -79,9 +82,6 @@ export async function POST(
 
     const payload = body as Record<string, unknown>
     const files = Array.isArray(payload.files) ? payload.files : []
-
-    // Optional: promote part status after files are registered
-    const intendedStatus = payload.intendedStatus === 'published' ? 'published' : null
 
     if (files.length === 0) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 })
@@ -216,6 +216,15 @@ export async function POST(
       )
     }
 
+    // A curated part references a publication made elsewhere: its files stay
+    // at the source and are never hosted here (#396). Only photos are accepted.
+    if (part.origin_type === 'curated' && modelFileCount > 0) {
+      return NextResponse.json(
+        { error: 'A part published elsewhere does not host model files: its files stay at the source. Upload photos only.' },
+        { status: 400 },
+      )
+    }
+
     // Check cumulative counts and total size against existing files for this part
     const [
       { count: existingModelFileCountRaw, error: modelFileCountError },
@@ -269,14 +278,6 @@ export async function POST(
       return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
     }
 
-    // Check publish eligibility before inserting — avoids DB writes that a 400 would orphan
-    if (intendedStatus === 'published' && modelFileCount === 0 && existingModelFileCount === 0) {
-      return NextResponse.json(
-        { error: 'At least one model file is required before publishing' },
-        { status: 400 },
-      )
-    }
-
     // Insert file rows
     const { error: insertError } = await supabase.from('part_files').insert(fileRows)
     if (insertError) {
@@ -284,9 +285,7 @@ export async function POST(
       return NextResponse.json({ error: 'Failed to register uploaded files' }, { status: 500 })
     }
 
-    // Update part: thumbnails and/or status promotion
-    const partUpdate: Record<string, unknown> = {}
-
+    // Update the part's gallery when photos were registered
     const imageFiles = fileRows.filter((f) => f.file_category === 'image')
     // The current gallery in canonical order — returned to the client so it
     // can preview registered images without a refetch.
@@ -296,18 +295,9 @@ export async function POST(
     let images = existingImages
     if (imageFiles.length > 0) {
       images = mergeImageUrls(part.thumbnail_url, part.images, imageFiles.map((f) => f.file_url))
-      partUpdate.images = images
-      partUpdate.thumbnail_url = images[0]
-    }
-
-    if (intendedStatus === 'published') {
-      partUpdate.status = 'published'
-    }
-
-    if (Object.keys(partUpdate).length > 0) {
       const { error: updateError } = await supabase
         .from('parts')
-        .update(partUpdate)
+        .update({ images, thumbnail_url: images[0] })
         .eq('id', partId)
         .select('id')
         .single()

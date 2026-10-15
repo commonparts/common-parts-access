@@ -161,7 +161,8 @@ export async function createUploadDraft(
  * Deliberately absent: origin_type, file_hosting_type, verification_status
  * and every source-attribution column. They are not editable through this
  * flow at all, so there is no key here for a caller to set — the narrowing
- * is enforced by the type, not only by route validation.
+ * is enforced by the type, not only by route validation. `status` is absent
+ * too: a draft is published by the publish gate only (#403).
  */
 export interface UploadDraftPatch {
   name?: string
@@ -176,7 +177,6 @@ export interface UploadDraftPatch {
   print_settings?: PartPrintSettings | null
   estimated_print_time?: number | null
   estimated_material_usage?: number | null
-  status?: 'draft' | 'published'
 }
 
 /**
