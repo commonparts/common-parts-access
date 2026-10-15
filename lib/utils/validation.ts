@@ -57,6 +57,15 @@ export function isSafeRedirect(path: string): boolean {
 }
 
 /**
+ * Reads a `redirect` search param and returns it only when it is a safe
+ * in-app path (see isSafeRedirect); returns null for a missing or unsafe value
+ * so callers fall back to their own default destination.
+ */
+export function parseRedirectParam(raw: string | null): string | null {
+  return raw && isSafeRedirect(raw) ? raw : null;
+}
+
+/**
  * Parses a 1-based page number from a URL search param.
  * Returns 1 for missing, malformed, or non-positive values. Only a plain run
  * of digits is a page number: `parseInt` alone would read "2abc" as page 2.

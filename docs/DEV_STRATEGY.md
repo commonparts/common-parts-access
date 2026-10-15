@@ -347,7 +347,14 @@ Labels are the shared language between humans and agents. All issues must carry 
 There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
 
 - **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
-- **Destructive migrations** remove something the previous release still uses, such as a column it inserts. Applying one earlier would break that release in every environment, since they share the database. They are applied automatically when the release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
+- **Destructive migrations** remove a table, column, constraint or function that application code has used. They are applied automatically when a release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
+
+The integration applies a release's migrations while Railway is still deploying it, so the release in production keeps running for a few minutes against the new schema. A destructive migration is therefore never released together with the code change that stops using what it removes (#416):
+
+1. **Release N** removes every use of the object from the code. Its migrations are additive only, for example relaxing a constraint the new code would otherwise fail. The PR that removes the last use opens an issue to drop the object.
+2. **Release N+1** carries the destructive migration, added through a PR toward `dev` once release N is in production. When it is merged into `main`, the release still in production no longer uses the removed object, and nothing fails during the deploy.
+
+Applying a destructive migration on `dev` is never an option: the release in production still uses the object until release N ships, and every environment shares the database.
 
 The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
 
