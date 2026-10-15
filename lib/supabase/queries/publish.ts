@@ -6,12 +6,11 @@ import { createAdminClient } from '@/lib/supabase/admin'
  * `POST /api/curation/drafts/[id]/publish`), after they have verified the
  * session, the ownership and every blocking condition.
  *
- * Uses the service role: the `parts_guard_owner_writes` trigger refuses any
- * status change made with the public API keys (#403), so the gates are the
- * only way a part becomes published. No RLS policy is involved. The update
- * writes `status` only and is scoped to the part, its owner and
- * `status = 'draft'`, so it can neither publish another user's part nor
- * publish a part twice.
+ * Uses the service role: the status transition is reserved to the gates, so
+ * that the database can refuse it from the public API keys (#403). No RLS
+ * policy is involved. The update writes `status` only and is scoped to the
+ * part, its owner and `status = 'draft'`, so it can neither publish another
+ * user's part nor publish a part twice.
  *
  * Returns false when no row matched: the part was published concurrently or
  * is no longer a draft of this owner.

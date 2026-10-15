@@ -24,8 +24,8 @@ type RouteContext = { params: Promise<{ id: string }> }
 //     each belonging to a brand — same invariant as the upload gate. Since
 //     #315 a part's brands are its products', so a brandless product leaves
 //     the part unreachable through brand -> product -> part navigation.
-// The draft -> published transition itself runs with the service role: the
-// database refuses it from the public API keys (#403).
+// The draft -> published transition itself runs with the service role, so
+// that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()

@@ -41,7 +41,7 @@ A spare part record (renamed from `models` in #314).
 | Identity | `id`, `name`, `slug` (unique), `description`, `part_name`, `part_number`, `tags`, `category_id` |
 | Owner | `user_id` → `user_profiles` (the account that added it); null once that account is deleted (`ON DELETE SET NULL`, #178) |
 | Lifecycle | `status`: `draft` / `published` / `archived` |
-| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` (a `curated` part is always `link_out`: check `parts_curated_link_out` and the curation routes — #396, #403) |
+| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` (a `curated` part is always `link_out`, enforced by the curation routes — #396) |
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
 | Licensing | `license_id` → `licenses`: the licence of the part. For a `curated` part, the licence chosen at the source; one licence per part (#374) |
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
@@ -52,13 +52,6 @@ A spare part record (renamed from `models` in #314).
 | Upload | `originality_attested`, `originality_attested_at` |
 
 A `curated` part requires `source_url`, `original_author` and `license_id` (check `curated_requires_source`). `source_license_id` and its foreign key are dropped by `20261013160000_drop_parts_source_license_id.sql`, applied with the release; until then the check accepts either licence column (#374).
-
-**Owner writes are guarded (#403).** The RLS policy "Users can manage own parts" grants `ALL` on the owner's rows, with no column restriction. The `parts_guard_owner_writes` trigger (`BEFORE INSERT OR UPDATE`, function `guard_parts_owner_writes()`, security invoker) restricts what the `anon` and `authenticated` roles may write:
-
-- on insert, `status` must be `draft` and `verification_status` must be `unverified`;
-- on update, `status`, `verification_status` and `origin_type` cannot change.
-
-A refused write raises SQLSTATE `42501`. The caller is identified by `current_user`, the role PostgREST switches to for the request. The service role, maintenance sessions (`postgres`) and the `postgres`-owned security definer counter functions are not restricted. The two publish gates therefore perform the `draft` → `published` transition with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), after validating the draft with the user's session. Archiving and unpublishing are not implemented.
 
 Publication rules per track are in [PUBLISH_FLOW.md](./PUBLISH_FLOW.md), [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) and [CURATION_TOOL.md](./CURATION_TOOL.md).
 

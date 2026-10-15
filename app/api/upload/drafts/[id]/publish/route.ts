@@ -22,8 +22,8 @@ type RouteContext = { params: Promise<{ id: string }> }
 //     which descends brand -> product -> part. The brands are the products'
 //     (issue #315), so linking products of several brands files the part
 //     under all of them.
-// The draft -> published transition itself runs with the service role: the
-// database refuses it from the public API keys (#403).
+// The draft -> published transition itself runs with the service role, so
+// that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()

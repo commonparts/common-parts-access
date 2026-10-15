@@ -354,7 +354,7 @@ The integration applies a release's migrations while Railway is still deploying 
 1. **Release N** removes every use of the object from the code. Its migrations are additive only, for example relaxing a constraint the new code would otherwise fail. The PR that removes the last use opens an issue to drop the object.
 2. **Release N+1** carries the destructive migration, added through a PR toward `dev` once release N is in production. When it is merged into `main`, the release still in production no longer uses the removed object, and nothing fails during the deploy.
 
-A migration that adds a constraint or a trigger the release in production would violate follows the destructive path too: its header says so, and it is applied with the release that stops making the refused writes (#403).
+A migration that adds a constraint or a trigger the release in production would violate follows the same path: release N stops making the writes it refuses, and release N+1 carries the migration, whose header says it is applied with the release to `main` (#403).
 
 Applying a destructive migration on `dev` is never an option: the release in production still uses the object until release N ships, and every environment shares the database.
 
