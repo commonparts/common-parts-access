@@ -351,8 +351,18 @@ There is a single Supabase database: production. Development, staging, PR enviro
 
 The integration applies a release's migrations while Railway is still deploying it, so the release in production keeps running for a few minutes against the new schema. A destructive migration is therefore never released together with the code change that stops using what it removes (#416):
 
-1. **Release N** removes every use of the object from the code. Its migrations are additive only, for example relaxing a constraint the new code would otherwise fail. The PR that removes the last use opens an issue to drop the object.
-2. **Release N+1** carries the destructive migration, added through a PR toward `dev` once release N is in production. When it is merged into `main`, the release still in production no longer uses the removed object, and nothing fails during the deploy.
+1. **Release N** removes every use of the object from the code. Its migrations are additive only, for example relaxing a constraint the new code would otherwise fail.
+2. **Release N+1** carries the destructive migration. When it is merged into `main`, the release still in production no longer uses the removed object, and nothing fails during the deploy.
+
+A migration that adds a constraint or a trigger the release in production would violate follows the same path: release N stops making the writes it refuses, and release N+1 carries the migration, whose header says it is applied with the release to `main` (#403).
+
+**Follow-up PRs (`status:next-release`).** The migration of release N+1 is never left to memory. When the PR of release N is opened, its follow-up is opened at once:
+
+- an issue for the migration, and a PR toward `dev` that closes it and carries the migration with its documentation;
+- the PR is a **draft**, so that it cannot be merged, and carries the `status:next-release` label;
+- its description starts with `Waits for #N in production`, naming the PR of release N.
+
+The follow-up PR is merged into `dev` only once the release carrying #N is in production. The `release` skill checks it at every release: after a release to `main`, it lists the open `status:next-release` PRs whose awaited PR is now in production; the PR is then updated from `dev`, its migration timestamp checked (#412), the label removed, and it is marked ready for review. A promotion to `staging` that contains a PR still labelled `status:next-release` is stopped.
 
 Applying a destructive migration on `dev` is never an option: the release in production still uses the object until release N ships, and every environment shares the database.
 

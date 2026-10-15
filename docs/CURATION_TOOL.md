@@ -97,11 +97,12 @@ The endpoint downloads the source gallery server-side and registers each image u
 
 ## File hosting: always link-out
 
-A part published elsewhere is always referenced (#396): `file_hosting_type = 'link_out'`, the files stay on the source platform, and Common Parts links to them. Hosting files is reserved for parts published here for the first time, through the [upload flow](UPLOAD_FLOW.md). The `file_hosting_type` column keeps its two values; the rule is enforced by the curation routes, from `lib/curation/hosting.ts`:
+A part published elsewhere is always referenced (#396): `file_hosting_type = 'link_out'`, the files stay on the source platform, and Common Parts links to them. Hosting files is reserved for parts published here for the first time, through the [upload flow](UPLOAD_FLOW.md). The `file_hosting_type` column keeps its two values; the rule is enforced by the database (check `parts_curated_link_out`, #422) and by the curation routes, from `lib/curation/hosting.ts`:
 
 - The tool offers no hosting choice and saves every draft as `link_out`.
 - `POST /api/curation/drafts` creates the draft as `link_out` (the default when `fileHostingType` is omitted) and returns **400** when `fileHostingType` is `hosted`. `PATCH /api/curation/drafts/[id]` does the same, and sending `link_out` moves a draft saved as `hosted` before the rule to it.
 - The publish gate blocks a curated draft that is not `link_out`.
+- `POST /api/parts/[slug]/files` returns **400** when model files are registered for a curated part; photos are accepted.
 
 Any license of the `licenses` table is accepted, NC and ND included, because the files are never redistributed from here. A referenced part requires a source platform whose domain matches the source URL, and publishing is blocked if any model file is registered.
 
@@ -115,6 +116,8 @@ Any license of the `licenses` table is accepted, NC and ND included, because the
 4. The license at the source (`license_id`) is set and exists in the `licenses` table.
 5. A source platform is set, and **no** model files are registered.
 6. ≥ 1 linked product (`product_target` made concrete).
+
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` never changes the status (#403).
 
 ## Persistent drafts
 
@@ -198,6 +201,7 @@ lib/curation/
   printables-api.ts                         Shared public-GraphQL client (server-side only)
   source-images.ts                          Gallery listing + numbered-filename builder
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
+lib/supabase/queries/publish.ts            draft -> published transition of both gates (service role)
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
 lib/utils/part-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
 lib/utils/licenses.ts                       isHostableLicense (NC/ND exclusion), shared by tool + gates

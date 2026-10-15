@@ -76,6 +76,8 @@ The review screen renders the **actual part page** (`components/part/part-detail
 6. A brand is set.
 7. At least one linked product, and every one of them belongs to that brand.
 
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` only registers files and updates the gallery: it never changes the status (#403).
+
 The review step also mirrors the file, brand and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
 
 ## Flow narrowing
@@ -87,7 +89,7 @@ Two decisions worth keeping explicit:
 - **Rejected, not stripped.** Silently ignoring a field a caller deliberately sent hides the real answer ("this flow cannot do that") behind a record that quietly isn't what was asked for.
 - **Presence, not value.** An explicit `fileHostingType: 'hosted'` is still refused: it is a caller driving a control this flow does not expose, and today's forced value is not a contract.
 
-The narrowing is also expressed in the types — `UploadDraftPatch` has no key for any of these columns — so a route cannot set one even by mistake. `createUploadDraft` sets `origin_type = 'original'`, `file_hosting_type = 'hosted'` and `verification_status = 'unverified'` explicitly rather than relying on column defaults, because the premise of the flow is that these three are not the contributor's to choose.
+The narrowing is also expressed in the types — `UploadDraftPatch` has no key for any of these columns — so a route cannot set one even by mistake. `createUploadDraft` sets `origin_type = 'original'`, `file_hosting_type = 'hosted'` and `verification_status = 'unverified'` explicitly rather than relying on column defaults, because the premise of the flow is that these three are not the contributor's to choose. The database holds the same line for any caller using the public API keys: a part is inserted as an unverified draft, and `status`, `verification_status` and `origin_type` cannot be changed afterwards (#422, see [DATA_MODEL.md](DATA_MODEL.md)).
 
 Covered by `lib/upload/payload.test.ts`.
 
