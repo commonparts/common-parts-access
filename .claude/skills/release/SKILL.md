@@ -5,7 +5,7 @@ description: Promotion and release procedure for Common Parts Access. Use when a
 
 # Release — promotion and release notes
 
-Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which the human applies when they land on `dev`. Destructive migrations are applied automatically when the release is merged into `main` (see `docs/DEV_STRATEGY.md`, Database Schema).
+Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which the human applies when they land on `dev`. Destructive migrations are applied automatically when the release is merged into `main`, and ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`, Database Schema).
 
 A promotion is always a PR. Open it, keep it green, and merge it only when the human asks for that merge, with a merge commit, never a squash: a squash would leave `staging` and `main` without `dev`'s history and every later promotion would conflict.
 
@@ -29,7 +29,8 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 
 1. `git fetch origin --tags`, then list the release content: `git log --oneline --no-merges origin/main..origin/staging`.
 2. **Version.** The number starts from the highest `v*` tag in the repository; the commits considered are those since the latest `v*` tag reachable from `origin/main` (older tags are not all reachable since a history rewrite). Any of those commit subjects starting with `feat(` bumps the minor version (`v1.2.1` → `v1.3.0`); otherwise bump the patch version. Never bump the major version: that is a human decision. The release workflow computes the version the same way and does not read it from the PR.
-3. Open the PR `staging` → `main`.
+3. **Destructive migrations.** For each promoted migration whose header says it is applied once the release is in production, search the code of the release in production for every object it removes: `git grep -n '<column or constraint>' origin/main -- app components lib hooks types supabase/functions`. If the production code still references one, the merge would break production until the deploy finishes: do not open the release PR. Tell the human, and move the migration to a later release through a PR toward `dev` (see `docs/DEV_STRATEGY.md`, Database Schema).
+4. Open the PR `staging` → `main`.
    - Title: `Release: promote staging to main (#first–#last)`.
    - Description: a summary of the promoted changes grouped by area, `No migration.` (or, for each promoted migration whose header says it is applied once the release is in production, a line naming the file that the merge applies; each such file must carry a timestamp later than the latest version in `supabase_migrations.schema_migrations`, or it is renamed through a PR toward `dev` first), a "Before merging" checklist (Railway staging deploy green, staging validation checklist from `docs/DEV_STRATEGY.md` passed, plus one line per behaviour worth checking by hand), and the release notes between the two markers below. The workflow publishes exactly what is between them.
 
@@ -51,8 +52,8 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 ```
 
    Release note style: institutional, precise and calm; English; present tense for states, past tense for changes; no "we", no promotional or emotional wording ("exciting", "enhanced", "improved experience").
-4. Wait for CI and the Copilot review. A finding that needs a code change goes through a PR toward `dev` and a new promotion to `staging`; the release PR picks it up. Update the release notes when the content changes.
-5. When the human asks for the merge: merge with a merge commit. `.github/workflows/release.yml` then creates the tag and the GitHub Release on the merge commit. Check that the release exists and that the Railway `production` deployment succeeds. If the release PR names a destructive migration, check that it was applied (the schema no longer has what it removes); if it was not, tell the human. Never apply a migration yourself.
+5. Wait for CI and the Copilot review. A finding that needs a code change goes through a PR toward `dev` and a new promotion to `staging`; the release PR picks it up. Update the release notes when the content changes.
+6. When the human asks for the merge: merge with a merge commit. `.github/workflows/release.yml` then creates the tag and the GitHub Release on the merge commit. Check that the release exists and that the Railway `production` deployment succeeds. If the release PR names a destructive migration, check that it was applied (the schema no longer has what it removes); if it was not, tell the human. Never apply a migration yourself.
 
 Claude Code sessions cannot create GitHub Releases themselves. If the workflow fails, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR. If no `Release` run appears after the merge, go straight to that manual run.
 

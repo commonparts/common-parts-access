@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { normalizedHostname, normalizeEntityName, parsePageParam } from './validation'
+import {
+  isSafeRedirect,
+  normalizedHostname,
+  normalizeEntityName,
+  parsePageParam,
+  parseRedirectParam,
+} from './validation'
 
 describe('normalizeEntityName', () => {
   it('trims leading and trailing whitespace', () => {
@@ -75,5 +81,55 @@ describe('parsePageParam', () => {
 
   it('falls back to page 1 beyond the safe integer range', () => {
     expect(parsePageParam('99999999999999999999')).toBe(1)
+  })
+})
+
+describe('isSafeRedirect', () => {
+  it('accepts in-app paths with query strings and fragments', () => {
+    expect(isSafeRedirect('/')).toBe(true)
+    expect(isSafeRedirect('/publish')).toBe(true)
+    expect(isSafeRedirect('/parts/hinge-clip?tab=files#download')).toBe(true)
+  })
+
+  it('rejects absolute and protocol-relative URLs', () => {
+    expect(isSafeRedirect('https://evil.com')).toBe(false)
+    expect(isSafeRedirect('//evil.com')).toBe(false)
+    expect(isSafeRedirect('javascript:alert(1)')).toBe(false)
+    expect(isSafeRedirect('publish')).toBe(false)
+  })
+
+  it('rejects backslashes, whitespace and control characters', () => {
+    expect(isSafeRedirect('/\\evil.com')).toBe(false)
+    expect(isSafeRedirect('/ /evil.com')).toBe(false)
+    expect(isSafeRedirect('/publish\n')).toBe(false)
+    expect(isSafeRedirect('/\tevil.com')).toBe(false)
+  })
+
+  it('rejects percent-encoded bypass attempts', () => {
+    expect(isSafeRedirect('/%2Fevil.com')).toBe(false)
+    expect(isSafeRedirect('/%5c%5cevil.com')).toBe(false)
+    expect(isSafeRedirect('/%0d%0aLocation:%20https://evil.com')).toBe(false)
+  })
+
+  it('rejects malformed percent-encoding', () => {
+    expect(isSafeRedirect('/%E0%A4%A')).toBe(false)
+  })
+})
+
+describe('parseRedirectParam', () => {
+  it('returns a safe in-app path unchanged', () => {
+    expect(parseRedirectParam('/publish')).toBe('/publish')
+    expect(parseRedirectParam('/dashboard')).toBe('/dashboard')
+  })
+
+  it('returns null for a missing or empty param', () => {
+    expect(parseRedirectParam(null)).toBeNull()
+    expect(parseRedirectParam('')).toBeNull()
+  })
+
+  it('returns null for an open-redirect attempt', () => {
+    expect(parseRedirectParam('https://evil.com')).toBeNull()
+    expect(parseRedirectParam('//evil.com')).toBeNull()
+    expect(parseRedirectParam('/%5c%5cevil.com')).toBeNull()
   })
 })

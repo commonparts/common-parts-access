@@ -13,14 +13,18 @@ export default function DeleteAccountPage() {
             Delete your account
           </CardTitle>
           <CardDescription className="text-body text-text-secondary">
-            This will permanently remove your account and associated data. This action cannot be undone.
+            This permanently deletes your account and your personal data. This action cannot be undone.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-sm">
-          <div className="rounded-lg border border-border-subtle bg-bg-muted p-md text-sm text-text-secondary">
+          <div className="space-y-xs rounded-lg border border-border-subtle bg-bg-muted p-md text-sm text-text-secondary">
             <p>
-              You will lose access to any models, likes, collections, and profile information. If you proceed, your
-              account will be removed and you will be signed out immediately.
+              Your profile, collections and unpublished parts are deleted. Parts you published stay available, no
+              longer attributed to you, and your likes are kept anonymously.
+            </p>
+            <p>
+              To have your published parts removed as well, email contact@commonparts.org before deleting your account.
+              If you proceed, you will be signed out immediately.
             </p>
           </div>
           <Button asChild variant="outline" className="w-full">
