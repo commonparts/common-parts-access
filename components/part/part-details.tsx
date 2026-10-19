@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartFileList } from "./part-file-list"
 import type { PrintReportReference } from "./print-report-controls"
 import { CompatibleProducts } from "./compatible-products"
+import { SourceLink } from "./source-link"
 
 
 /**
@@ -492,16 +493,12 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               {part.fileHostingType === 'link_out' ? (
                 part.sourceUrl && isValidHttpUrl(part.sourceUrl) ? (
                   <Button asChild className="inline-flex items-center gap-xs">
-                    <a
-                      href={part.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <SourceLink href={part.sourceUrl} slug={part.slug} context="part_page">
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                       View on {part.sourcePlatformName ?? 'the original source'}
-                    </a>
+                    </SourceLink>
                   </Button>
                 ) : (
                   <Button className="inline-flex items-center gap-xs" disabled>
@@ -822,14 +819,14 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
 
                 <div className="flex flex-col gap-2">
                   <span className="text-sm text-muted-foreground font-medium">Original Post</span>
-                  <a
+                  <SourceLink
                     href={part.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    slug={part.slug}
+                    context="part_page"
                     className="text-sm text-primary hover:underline break-all"
                   >
                     {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
-                  </a>
+                  </SourceLink>
                 </div>
 
                 {part.originalAuthor && (
