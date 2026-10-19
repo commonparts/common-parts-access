@@ -102,6 +102,7 @@ A part published elsewhere is always referenced (#396): `file_hosting_type = 'li
 - The tool offers no hosting choice and saves every draft as `link_out`.
 - `POST /api/curation/drafts` creates the draft as `link_out` (the default when `fileHostingType` is omitted) and returns **400** when `fileHostingType` is `hosted`. `PATCH /api/curation/drafts/[id]` does the same, and sending `link_out` moves a draft saved as `hosted` before the rule to it.
 - The publish gate blocks a curated draft that is not `link_out`.
+- `POST /api/parts/[slug]/files` returns **400** when model files are registered for a curated part; photos are accepted.
 
 Any license of the `licenses` table is accepted, NC and ND included, because the files are never redistributed from here. A referenced part requires a source platform whose domain matches the source URL, and publishing is blocked if any model file is registered.
 
@@ -115,6 +116,8 @@ Any license of the `licenses` table is accepted, NC and ND included, because the
 4. The license at the source (`license_id`) is set and exists in the `licenses` table.
 5. A source platform is set, and **no** model files are registered.
 6. ≥ 1 linked product (`product_target` made concrete).
+
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. `POST /api/parts/[slug]/files` never changes the status (#403).
 
 ## Persistent drafts
 
@@ -198,6 +201,7 @@ lib/curation/
   printables-api.ts                         Shared public-GraphQL client (server-side only)
   source-images.ts                          Gallery listing + numbered-filename builder
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
+lib/supabase/queries/publish.ts            draft -> published transition of both gates (service role)
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
 lib/utils/part-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
 lib/utils/licenses.ts                       isHostableLicense (NC/ND exclusion), shared by tool + gates
