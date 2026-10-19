@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { isSafeRedirect } from "@/lib/utils/validation";
+import { parseRedirectParam } from "@/lib/utils/validation";
 
 export function SignUpForm({
   className,
@@ -29,10 +29,7 @@ export function SignUpForm({
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectPath = (() => {
-    const raw = searchParams.get("redirect");
-    return raw && isSafeRedirect(raw) ? raw : null;
-  })();
+  const redirectPath = parseRedirectParam(searchParams.get("redirect"));
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();

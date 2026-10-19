@@ -344,7 +344,29 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ## Database Schema (Supabase)
 
-There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/` and applied by the human when the feature PR lands on `dev`, so promotions to `staging` and `main` carry no migration step.
+There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
+
+- **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
+- **Destructive migrations** remove a table, column, constraint or function that application code has used. They are applied automatically when a release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
+
+The integration applies a release's migrations while Railway is still deploying it, so the release in production keeps running for a few minutes against the new schema. A destructive migration is therefore never released together with the code change that stops using what it removes (#416):
+
+1. **Release N** removes every use of the object from the code. Its migrations are additive only, for example relaxing a constraint the new code would otherwise fail.
+2. **Release N+1** carries the destructive migration. When it is merged into `main`, the release still in production no longer uses the removed object, and nothing fails during the deploy.
+
+A migration that adds a constraint or a trigger the release in production would violate follows the same path: release N stops making the writes it refuses, and release N+1 carries the migration, whose header says it is applied with the release to `main` (#403).
+
+**Follow-up PRs (`status:next-release`).** The migration of release N+1 is never left to memory. When the PR of release N is opened, its follow-up is opened at once:
+
+- an issue for the migration, and a PR toward `dev` that closes it and carries the migration with its documentation;
+- the PR is a **draft**, so that it cannot be merged, and carries the `status:next-release` label;
+- its description starts with `Waits for #N in production`, naming the PR of release N.
+
+The follow-up PR is merged into `dev` only once the release carrying #N is in production. The `release` skill checks it at every release: after a release to `main`, it lists the open `status:next-release` PRs whose awaited PR is now in production; the PR is then updated from `dev`, its migration timestamp checked (#412), the label removed, and it is marked ready for review. A promotion to `staging` that contains a PR still labelled `status:next-release` is stopped.
+
+Applying a destructive migration on `dev` is never an option: the release in production still uses the object until release N ships, and every environment shares the database.
+
+The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
 
 A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
@@ -357,12 +379,10 @@ The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table belo
 | `id` | uuid | Primary key |
 | `created_at` | timestamptz | Auto |
 | `user_id` | uuid | FK to `user_profiles`, nullable |
-| `email` | text | Optional, for anonymous users |
 | `type` | text | `bug / improvement / question / other` |
 | `title` | text | Short title (max 200) |
 | `description` | text | Full description (max 5000) |
 | `url` | text | Page where feedback was submitted |
-| `user_agent` | text | Browser info |
 | `status` | text | `pending / triaged / github_issue_created / closed` |
 | `github_issue_url` | text | Set after triage |
 | `github_issue_number` | integer | Set after triage |
@@ -380,7 +400,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
 - GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
-- Schema changes version-controlled in `supabase/migrations/`, applied by the human to the single production database
+- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by the human, destructive ones automatically with the release to `main`
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 
@@ -389,7 +409,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `feedback` table in Supabase with RLS
 - `FeedbackForm` component using project design system
 - `FeedbackButton` floating widget available on all pages (via `app/layout.tsx`)
-- Captures: type, title, description, optional email, page URL, user agent, user ID
+- Captures: type, title, description, page URL, and the user ID when signed in. No email address or user agent is collected (#405)
 - Feedback insert extracted to `lib/supabase/queries/feedback.ts`
 
 ### ✅ Agent Triage
@@ -397,6 +417,7 @@ RLS: anyone can insert, users can read their own rows only.
 - Supabase Edge Function: `triage-feedback`
 - Triggered by Supabase database webhook on `feedback` INSERT
 - Classifies, reformulates, creates GitHub issue with correct labels
+- The issue states whether the submitter was signed in, never their user ID: issues are public (#405)
 - Idempotency guard against webhook retries
 - Env var validation with clear error messages
 - Updates `feedback` row with issue URL, number, and triage notes

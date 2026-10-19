@@ -59,16 +59,14 @@ export function originalTrackBlockers(state: OriginalTrackState): PublishBlocker
 
 export interface ElsewhereTrackState {
   checklist: CurationChecklist
-  /** True when the files stay at the source (`file_hosting_type = 'link_out'`). */
+  /**
+   * True when the files stay at the source (`file_hosting_type = 'link_out'`).
+   * A part published elsewhere is always referenced (#396); false only for a
+   * draft saved as hosted before that rule, which cannot be published.
+   */
   referenced: boolean
   sourcePlatform: string
   licenseId: string
-  /**
-   * Whether the chosen publication license permits hosting. Null while the
-   * license list is still loading — unknown is not treated as a blocker, since
-   * the server checks it regardless and a spurious block would be worse.
-   */
-  publicationLicenseHostable: boolean | null
   modelFileCount: number
   productCount: number
   needsLegalReview: boolean
@@ -89,30 +87,28 @@ export function elsewhereTrackBlockers(state: ElsewhereTrackState): PublishBlock
     }
   }
 
-  if (!state.licenseId) {
-    blockers.push({ step: PUBLISH_STEPS.DETAILS, message: 'Choose the publication license' })
-  } else if (!state.referenced && state.publicationLicenseHostable === false) {
+  if (!state.referenced) {
     blockers.push({
-      step: PUBLISH_STEPS.DETAILS,
-      message: 'Choose a publication license that allows hosting the files here',
+      step: PUBLISH_STEPS.ORIGIN,
+      message: 'Save this step again — a part published elsewhere is referenced at its source, never hosted',
     })
   }
 
-  if (state.referenced) {
-    if (!state.sourcePlatform) {
-      blockers.push({
-        step: PUBLISH_STEPS.ORIGIN,
-        message: 'Name the platform the part is published on',
-      })
-    }
-    if (state.modelFileCount > 0) {
-      blockers.push({
-        step: PUBLISH_STEPS.FILES,
-        message: 'Remove the uploaded model files — this part is referenced at its source',
-      })
-    }
-  } else if (state.modelFileCount < 1) {
-    blockers.push({ step: PUBLISH_STEPS.FILES, message: 'Upload at least one model file' })
+  if (!state.licenseId) {
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Choose the license at the source' })
+  }
+
+  if (!state.sourcePlatform) {
+    blockers.push({
+      step: PUBLISH_STEPS.ORIGIN,
+      message: 'Name the platform the part is published on',
+    })
+  }
+  if (state.modelFileCount > 0) {
+    blockers.push({
+      step: PUBLISH_STEPS.FILES,
+      message: 'Remove the uploaded model files — this part is referenced at its source',
+    })
   }
 
   if (state.productCount < 1) {

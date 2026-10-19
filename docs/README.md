@@ -18,6 +18,7 @@ Last reviewed: v1.2.0 (October 2026).
 | File | Type | Covers |
 |---|---|---|
 | [user-flows.md](./user-flows.md) | Planning | July 2026 flow plan (P1–P3), with an implementation status section |
+| [AUTH_FLOW.md](./AUTH_FLOW.md) | Reference | Protected routes, sign-in, post-login redirect, open-redirect protection, QA checklist |
 | [PUBLISH_FLOW.md](./PUBLISH_FLOW.md) | Reference | `/publish`: shared entry, vocabulary (original / hosted / referenced), five-step shell |
 | [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) | Reference | Original track engine (`/api/upload/**`) |
 | [CURATION_TOOL.md](./CURATION_TOOL.md) | Reference | Elsewhere track engine (`/api/curation/**`), checklist, prefill |

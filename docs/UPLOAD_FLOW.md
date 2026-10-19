@@ -4,7 +4,7 @@
 
 The upload flow is the **public** contribution path: a contributor publishes a part **they designed themselves**, and the registry **hosts the files** (issue #293).
 
-That is the whole scope. Of the three ways a part enters the registry, the two that reference someone else's publication — link-out with files hosted here, and link-out with the files left at the source — belong to the [internal curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
+That is the whole scope. A part that references a publication made elsewhere — its files left at the source and linked to, never hosted here (#396) — belongs to the [curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
 
 **Route:** `/publish` (under the `(dashboard)` route group), shared with the elsewhere track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. Any authenticated user may publish. The former `/upload` route is removed, not redirected.
 
@@ -76,11 +76,13 @@ The review screen renders the **actual part page** (`components/part/part-detail
 6. A brand is set.
 7. At least one linked product, and every one of them belongs to that brand.
 
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. `POST /api/parts/[slug]/files` only registers files and updates the gallery: it never changes the status (#403).
+
 The review step also mirrors the file, brand and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
 
 ## Flow narrowing
 
-`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl`, `sourceLicenseId` — each in both camelCase and snake_case. A payload carrying any of them is a **400**, checked before any database work.
+`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them is a **400**, checked before any database work.
 
 Two decisions worth keeping explicit:
 

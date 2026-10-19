@@ -19,9 +19,9 @@ import { PUBLISH_STEPS, type PublishStepIndex } from '@/lib/publish/steps'
 export const CRITERION_STEP: Record<CurationCriterionKey, PublishStepIndex> = {
   // Judged against the source URL and its duplicate check.
   duplicate: PUBLISH_STEPS.ORIGIN,
-  // Judged against the author, author URL and source license fields.
+  // Judged against the author, author URL and license at the source fields.
   attribution: PUBLISH_STEPS.ORIGIN,
-  // Judged against the declared license and the resulting hosting outcome.
+  // Judged against the declared license.
   license: PUBLISH_STEPS.ORIGIN,
   // Judged against the scope reminder shown with the part's identity.
   eligibility: PUBLISH_STEPS.ORIGIN,
