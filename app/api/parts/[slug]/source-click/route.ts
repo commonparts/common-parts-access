@@ -4,9 +4,14 @@ import { isPartNotFoundError } from '@/lib/utils/errors'
 import { isValidSlug } from '@/lib/utils/slug'
 import { isSourceClickContext, SOURCE_CLICK_CONTEXTS } from '@/lib/utils/source-clicks'
 
-// POST /api/parts/[slug]/source-click - Record an anonymous click on the
-// part's source link (issue #375). Body: { context: 'part_page' | 'card' }.
-// No account, cookie, or fingerprint is required or recorded.
+/**
+ * POST /api/parts/[slug]/source-click - Records an anonymous click on the
+ * part's source link (issue #375). Body: { context: 'part_page' | 'card' }.
+ * No account, cookie, or fingerprint is required or recorded: the route is
+ * public, like the view and download routes, and the RLS insert policy only
+ * accepts published parts. Answers 400 on an invalid slug, body or context,
+ * 404 when the part is missing or unpublished.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
