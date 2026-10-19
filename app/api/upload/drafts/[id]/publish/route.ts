@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getUploadDraft, updateUploadDraft } from '@/lib/supabase/queries/upload'
+import { getUploadDraft } from '@/lib/supabase/queries/upload'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
+import { publishDraftPart } from '@/lib/supabase/queries/publish'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { ATTESTATION_BLOCKER } from '@/lib/upload/attestation'
 import { isValidUuid } from '@/lib/utils/validation'
@@ -21,6 +22,8 @@ type RouteContext = { params: Promise<{ id: string }> }
 //     which descends brand -> product -> part. The brands are the products'
 //     (issue #315), so linking products of several brands files the part
 //     under all of them.
+// The draft -> published transition itself runs with the service role, so
+// that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
@@ -82,7 +85,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Publication blocked', blockers }, { status: 422 })
     }
 
-    await updateUploadDraft(id, user.id, { status: 'published' })
+    const published = await publishDraftPart(id, user.id)
+    if (!published) {
+      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+    }
     return NextResponse.json({ ok: true, slug: draft.slug })
   } catch (error) {
     console.error('Failed to publish uploaded part', error)

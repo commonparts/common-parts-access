@@ -2,7 +2,7 @@
 
 Current schema of the Common Parts Access database (Supabase, PostgreSQL), as of v1.2.0 (October 2026). For how it got here, see [DATA_MODEL_EVOLUTION.md](./DATA_MODEL_EVOLUTION.md) (historical).
 
-There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`, applied by the human. Every table in `public` has RLS enabled.
+There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied by the human, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled, and the Data API reaches a table only through explicit grants (see [Data API grants](#data-api-grants)).
 
 ---
 
@@ -20,7 +20,7 @@ brands ─┐
         │                              ├─< part_files
         │                              ├─< part_views / part_downloads (anonymous)
         │                              ├─< part_likes / part_comments (hidden, #322)
-        │                              └── licenses (license_id, source_license_id)
+        │                              └── licenses (license_id)
         │
 products ─< part_requests        user_profiles ─< parts (user_id)
 search_misses (standalone)       curation_rejections (standalone)
@@ -39,17 +39,19 @@ A spare part record (renamed from `models` in #314).
 | Group | Columns |
 |---|---|
 | Identity | `id`, `name`, `slug` (unique), `description`, `part_name`, `part_number`, `tags`, `category_id` |
-| Owner | `user_id` → `user_profiles` (the account that added it) |
+| Owner | `user_id` → `user_profiles` (the account that added it); null once that account is deleted (`ON DELETE SET NULL`, #178) |
 | Lifecycle | `status`: `draft` / `published` / `archived` |
-| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` |
+| Origin | `origin_type`: `original` / `curated` / `manufacturer`; `file_hosting_type`: `hosted` / `link_out` (a `curated` part is always `link_out`, enforced by the curation routes — #396) |
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
-| Licensing | `license_id` (publication license), `source_license_id` (license at the source) → `licenses` |
+| Licensing | `license_id` → `licenses`: the licence of the part. For a `curated` part, the licence chosen at the source; one licence per part (#374) |
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
 | Media | `thumbnail_url`, `images` |
 | Trust | `verification_status`: `unverified` / `author_tested` / `community_validated` / `certified` |
 | Counters (trigger-maintained) | `view_count`, `like_count`, `makes_count`. Downloads have no counter on the part: they are rows in `part_downloads` (#373). |
 | Curation | `curation_checklist` (jsonb), `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`, `needs_legal_review`, `legal_review_justification` |
 | Upload | `originality_attested`, `originality_attested_at` |
+
+A `curated` part requires `source_url`, `original_author` and `license_id` (check `curated_requires_source`). `source_license_id` and its foreign key are dropped by `20261013160000_drop_parts_source_license_id.sql`, applied with the release; until then the check accepts either licence column (#374).
 
 Publication rules per track are in [PUBLISH_FLOW.md](./PUBLISH_FLOW.md), [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) and [CURATION_TOOL.md](./CURATION_TOOL.md).
 
@@ -119,7 +121,7 @@ Demand for a part on a product ("Request this part"). `product_id`, `raw_query`,
 Zero-result searches submitted on `/search` (#320): `raw_query`, `normalized_query` (generated), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role.
 
 ### `curation_rejections`
-Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by`.
+Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by` (nullable, `ON DELETE SET NULL`).
 
 ---
 
@@ -129,9 +131,9 @@ Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`
 |---|---|---|
 | `part_views` | `part_id`, `viewed_at` | None (#324). See [PART_VIEWS.md](./PART_VIEWS.md). |
 | `part_downloads` | `part_id`, `file_id` (null for archive), `downloaded_at` | None (#324). See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md). |
-| `part_likes` | `user_id`, `part_id`, `liked_at` | User id. UI hidden (#322). See [PART_LIKES.md](./PART_LIKES.md). |
-| `part_comments` | `user_id`, `part_id`, `parent_id`, `content` | User id. No UI. |
-| `collections`, `collection_parts` | User collections of parts | User id. No UI. |
+| `part_likes` | `user_id`, `part_id`, `liked_at` | User id, null once the account is deleted. UI hidden (#322). See [PART_LIKES.md](./PART_LIKES.md). |
+| `part_comments` | `user_id`, `part_id`, `parent_id`, `content` | User id, null once the account is deleted. No UI. |
+| `collections`, `collection_parts` | User collections of parts | User id; deleted with the account. No UI. |
 
 ---
 
@@ -140,7 +142,15 @@ Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`
 - `user_profiles`: `id` (= `auth.users.id`, cascade delete), `username`, `display_name`, `bio`, `avatar_url`, `website_url`, `location`, `reputation_score`, `verified_maker`. Created by the `on_auth_user_created` trigger, see [USER_PROFILE_SETUP.md](./USER_PROFILE_SETUP.md).
 - `feedback`: entry point of the agent pipeline, see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase).
 
-Foreign keys to `user_profiles` from `parts`, `part_likes`, `part_comments`, `collections` and `curation_rejections` are `ON DELETE NO ACTION`; see the status note in [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
+On account deletion (#178), foreign keys to `user_profiles` behave as follows:
+
+| Column | On delete |
+|---|---|
+| `parts.user_id`, `part_likes.user_id`, `part_comments.user_id`, `curation_rejections.created_by` | `SET NULL` (published parts stay, anonymized) |
+| `feedback.user_id`, `part_requests.user_id`, `print_reports.user_id` | `SET NULL` |
+| `collections.user_id` | `CASCADE` (`collection_parts` cascades from `collections`) |
+
+`DELETE /api/users` first deletes the user's unpublished parts and their files, and the avatar, then calls `release_storage_ownership(p_user_id)` (security definer, service role only), which clears `owner` / `owner_id` on the user's remaining Storage objects: Supabase Auth refuses to delete a user who owns Storage objects. The `user_profiles_delete_unpublished_parts` trigger (`BEFORE DELETE` on `user_profiles`) deletes any unpublished part still owned by the user, so only published parts outlive their owner. See [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md).
 
 ---
 
@@ -154,4 +164,32 @@ Foreign keys to `user_profiles` from `parts`, `part_likes`, `part_comments`, `co
 | `fetch_browse_nav`, `fetch_category_page`, `fetch_brand_nav` | Navigation aggregates | [BROWSE_NAVIGATION.md](./BROWSE_NAVIGATION.md) |
 | `fetch_part_request_counts` | Open demand per product | [CURATION_TOOL.md](./CURATION_TOOL.md) |
 | `submit_print_report` | The only write path for print reports | [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) |
+| `release_storage_ownership` | Clears Storage ownership before an account is deleted (service role only) | [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md) |
 | `normalize_product_reference`, `fold_search_text` | Shared normalization rules | [SEARCH.md](./SEARCH.md) |
+
+---
+
+## Data API grants
+
+The Data API (PostgREST, supabase-js) reaches a table or function only when the calling role holds a privilege on it; RLS then filters the rows. Since #131, those privileges are granted explicitly in migrations instead of coming from the schema defaults.
+
+- **Default privileges.** Tables and sequences created by `postgres` in `public` receive no privilege for `anon`, `authenticated` or `service_role` (applied in #131, ahead of the Supabase platform change of October 30, 2026). A migration that creates a table grants its privileges in the same file. Primary keys are `uuid`; an `identity` column needs no sequence privilege, a `serial` column needs `USAGE` on its sequence for every role that inserts. Function defaults are unchanged: a new function is executable by `PUBLIC` unless its migration revokes it.
+- **Client roles.** `anon` and `authenticated` receive, per table, the commands that at least one RLS policy lets them use. A policy on role `public` applies to both.
+- **Service role.** `service_role` has `SELECT`, `INSERT`, `UPDATE`, `DELETE` on every table. It bypasses RLS and is used only server-side (`lib/supabase/admin.ts`, Edge Functions).
+
+| Table | `anon` | `authenticated` |
+|---|---|---|
+| `brands`, `categories`, `licenses`, `source_platforms`, `product_references` | select | select |
+| `products` | select | select, insert |
+| `parts`, `part_files`, `part_comments`, `collections`, `collection_parts` | select, insert, update, delete | select, insert, update, delete |
+| `part_products` | select, delete, insert on `part_id`, `product_id` only (#317) | same as `anon` |
+| `part_views`, `part_downloads`, `feedback` | select, insert | select, insert |
+| `part_requests` | insert | insert |
+| `curation_rejections` | none | select, insert |
+| `user_profiles` | select, insert, update | select, insert, update |
+| `part_likes` | select, insert, delete | select, insert, delete |
+| `print_reports`, `search_misses` | none | none |
+
+The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131, nor was the `UPDATE` on `part_products (part_id, product_id)` granted in #317. They remain on the tables created before #131 and are filtered by RLS, which has no policy for them.
+
+Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage`) are executable by `anon`, `authenticated` and `service_role`; `generate_slug`, run by the product slug trigger, by `authenticated` and `service_role`.

@@ -15,7 +15,10 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
-import { isSafeRedirect } from "@/lib/utils/validation";
+import { parseRedirectParam } from "@/lib/utils/validation";
+
+/** Where a user lands after signing in when no safe `redirect` param is set. */
+const DEFAULT_POST_LOGIN_PATH = "/";
 
 export function LoginForm({
   className,
@@ -26,10 +29,7 @@ export function LoginForm({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
-  const redirectPath = (() => {
-    const raw = searchParams.get("redirect");
-    return raw && isSafeRedirect(raw) ? raw : null;
-  })();
+  const redirectPath = parseRedirectParam(searchParams.get("redirect"));
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,18 +37,20 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { data, error } = await signInWithPassword(email, password);
+      const { error } = await signInWithPassword(email, password);
       if (error) throw error;
-      // Redirect to the originally requested page if present
-      // Use a full page navigation so the browser sends the freshly-written
-      // session cookie on the next HTTP request. A soft router.push can race
-      // with the cookie being flushed, causing the edge proxy to see no session
-      // and redirect back to /login even though the user just authenticated.
-      window.location.href = redirectPath || "/";
+      // Full document navigation is deliberate (#110, #112). A soft
+      // router.push sent users back to /login (#110): the client still holds
+      // state built for an anonymous visitor (server-rendered layouts, the
+      // router cache, prefetched protected routes). A fresh document load
+      // renders every segment with the new session cookie. replace() keeps
+      // /login out of the history so "back" does not return to the form.
+      window.location.replace(redirectPath ?? DEFAULT_POST_LOGIN_PATH);
     } catch (error: unknown) {
       console.error("[LoginForm] Login error:", error);
       setError(error instanceof Error ? error.message : "An error occurred");
-    } finally {
+      // Reset only on failure: on success the button stays in its loading
+      // state until the next document replaces this page.
       setIsLoading(false);
     }
   };

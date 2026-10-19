@@ -16,9 +16,9 @@ export default function ContributingPage() {
             <h1 className="text-h1">Contributing a part to the Common Parts Index</h1>
             <p className="mt-md text-text-secondary">
               The Common Parts Index is a public catalog of spare part models — reviewed, structured, and maintained
-              to help people repair the objects they own. Anyone can contribute. Some parts are hosted directly on
-              Common Parts; others are referenced here with a link to the original platform. This guide explains what
-              we accept, how to submit, and what happens after.
+              to help people repair the objects they own. Anyone can contribute. Parts published on Common Parts for
+              the first time are hosted here; parts already published elsewhere are referenced, with a link to the
+              original platform. This guide explains what we accept, how to submit, and what happens after.
             </p>
           </div>
 
@@ -53,15 +53,16 @@ export default function ContributingPage() {
                 traceable source are not accepted.
               </p>
               <p className="text-text-secondary">
-                For <strong className="font-medium text-text-primary">hosted parts</strong> — where the file is
-                stored and served directly by Common Parts — the license must be open: CC0, CC BY, CC BY-SA, MIT, or
-                GPL. If you are the original author and the model has no license, you can declare one at submission.
+                For <strong className="font-medium text-text-primary">hosted parts</strong> — parts published on
+                Common Parts for the first time, whose files are stored and served directly by Common Parts — the
+                license must be open: CC0, CC BY, CC BY-SA, MIT, or GPL. If you are the original author and the model
+                has no license, you can declare one at submission.
               </p>
               <p className="text-text-secondary">
-                For <strong className="font-medium text-text-primary">referenced parts</strong> — where the file
-                stays on the original platform and we link to it — any license is accepted, including NC, ND, or
-                proprietary licenses. Since Common Parts only links to the file and does not redistribute it, these
-                restrictions do not apply.
+                For <strong className="font-medium text-text-primary">referenced parts</strong> — parts already
+                published elsewhere, whose files stay on the original platform and which we link to — the Creative
+                Commons licenses are accepted, including NC and ND, as are the other licenses listed by the platform.
+                Licenses that forbid sharing the model, including proprietary licenses, are not accepted.
               </p>
             </div>
 
@@ -81,9 +82,11 @@ export default function ContributingPage() {
               <li>Decorative or cosmetic parts with no repair function</li>
               <li>Repair tools (a tool that helps you repair something is not a spare part)</li>
               <li>Parts with no identifiable product target</li>
+              <li>Models whose license forbids sharing them, including proprietary licenses</li>
               <li>
                 Models under CC NC or CC ND licenses <strong className="font-medium text-text-primary">hosted directly on Common Parts</strong> —
-                these licenses are incompatible with file redistribution. They may still be added as referenced parts.
+                these licenses are incompatible with file redistribution. A part under these licenses that is already
+                published elsewhere may still be added as a referenced part.
               </li>
               <li>Files that cannot be opened or are manifestly broken</li>
               <li>Verbatim republications of an already-indexed model from the same source with no added value</li>
@@ -182,19 +185,11 @@ export default function ContributingPage() {
               <h3 className="text-h4">If it is already published elsewhere</h3>
               <p className="text-text-secondary">
                 Parts from Printables, Thingiverse, GitHub or anywhere else follow a second path, so that attribution
-                to the original author and the terms of their license are handled properly. The license decides what
-                happens to the files, and you do not choose it — it follows from what the source permits:
+                to the original author and the terms of their license are handled properly. A part published elsewhere
+                is always referenced: its files stay at the original publication and Common Parts links to them,
+                under any of the licenses accepted for referenced parts. The part carries the{' '}
+                <strong className="font-medium text-text-primary">Referenced</strong> badge.
               </p>
-              <ul className="list-disc space-y-xs pl-md text-text-secondary">
-                <li>
-                  An open license means Common Parts can host the files — the part carries the{' '}
-                  <strong className="font-medium text-text-primary">Hosted</strong> badge.
-                </li>
-                <li>
-                  An NC or ND license does not permit redistribution, so the files stay at the source and we link to
-                  them — the part carries the <strong className="font-medium text-text-primary">Referenced</strong> badge.
-                </li>
-              </ul>
               <p className="text-text-secondary">
                 Start from the same place, with the URL where the part is published. Common Parts
                 checks it against what is already indexed, fills in what it can from the source, and
