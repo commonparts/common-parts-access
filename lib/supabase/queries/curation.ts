@@ -190,7 +190,10 @@ export async function createCurationDraft(
   return data as { id: string; slug: string }
 }
 
-/** Column-shaped patch for a curated draft; only defined keys are written. */
+/**
+ * Column-shaped patch for a curated draft; only defined keys are written.
+ * `status` is absent: a draft is published by the publish gate only (#403).
+ */
 export interface CurationDraftPatch {
   name?: string
   description?: string | null
@@ -216,7 +219,6 @@ export interface CurationDraftPatch {
   needs_category?: boolean
   needs_legal_review?: boolean
   legal_review_justification?: string | null
-  status?: 'draft' | 'published'
 }
 
 /**

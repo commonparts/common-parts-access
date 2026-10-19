@@ -5,7 +5,7 @@ description: Promotion and release procedure for Common Parts Access. Use when a
 
 # Release — promotion and release notes
 
-Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which the human applies when they land on `dev`. Destructive migrations are applied automatically when the release is merged into `main`, and ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`, Database Schema).
+Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which the human applies when they land on `dev`. Destructive migrations are applied automatically when the release is merged into `main`, and ship in a later release than the code change that stops using what they remove, through a draft follow-up PR labelled `status:next-release` (see `docs/DEV_STRATEGY.md`, Database Schema).
 
 A promotion is always a PR. Open it, keep it green, and merge it only when the human asks for that merge, with a merge commit, never a squash: a squash would leave `staging` and `main` without `dev`'s history and every later promotion would conflict.
 
@@ -17,7 +17,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 
 ## Promote `dev` to `staging`
 
-1. `git fetch origin`, then list what will be promoted: `git log --oneline --no-merges origin/staging..origin/dev`. If the list is empty, stop and say so.
+1. `git fetch origin`, then list what will be promoted: `git log --oneline --no-merges origin/staging..origin/dev`. If the list is empty, stop and say so. If a PR in the list carries the `status:next-release` label, stop: it waits for a release that is not in production yet. Tell the human (see `docs/DEV_STRATEGY.md`, Follow-up PRs).
 2. **Documentation check.** Read the full diff, application code included: `git diff origin/staging...origin/dev`. For each behaviour, schema or convention change, check that the documents named in the Documentation section of `CLAUDE.md` describe it. When a document is missing or inaccurate, fix it first through a feature branch and a PR toward `dev` (`docs(scope): ...`), then restart from step 1. When unsure whether a change needs documenting, do not invent content: leave it and mention it to the human.
 3. Open the PR `dev` → `staging`.
    - Title: `Promote dev to staging (#a, #b, …)`, listing the PR numbers being promoted.
@@ -54,6 +54,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
    Release note style: institutional, precise and calm; English; present tense for states, past tense for changes; no "we", no promotional or emotional wording ("exciting", "enhanced", "improved experience").
 5. Wait for CI and the Copilot review. A finding that needs a code change goes through a PR toward `dev` and a new promotion to `staging`; the release PR picks it up. Update the release notes when the content changes.
 6. When the human asks for the merge: merge with a merge commit. `.github/workflows/release.yml` then creates the tag and the GitHub Release on the merge commit. Check that the release exists and that the Railway `production` deployment succeeds. If the release PR names a destructive migration, check that it was applied (the schema no longer has what it removes); if it was not, tell the human. Never apply a migration yourself.
+7. **Follow-up PRs.** List the open PRs labelled `status:next-release`. For each one whose description names a PR (`Waits for #N in production`) that this release brought to `main`, update its branch from `dev`, check that its migration timestamp is later than every version in `supabase_migrations.schema_migrations` (rename it otherwise, #412), remove the label, mark it ready for review, and tell the human it can be merged into `dev` for the next release. List the others as still waiting.
 
 Claude Code sessions cannot create GitHub Releases themselves. If the workflow fails, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR. If no `Release` run appears after the merge, go straight to that manual run.
 

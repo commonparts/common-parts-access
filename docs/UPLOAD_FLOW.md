@@ -76,6 +76,8 @@ The review screen renders the **actual part page** (`components/part/part-detail
 6. A brand is set.
 7. At least one linked product, and every one of them belongs to that brand.
 
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. `POST /api/parts/[slug]/files` only registers files and updates the gallery: it never changes the status (#403).
+
 The review step also mirrors the file, brand and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
 
 ## Flow narrowing
