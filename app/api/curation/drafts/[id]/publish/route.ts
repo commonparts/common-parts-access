@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { getCurationDraft, updateCurationDraft } from '@/lib/supabase/queries/curation'
+import { getCurationDraft } from '@/lib/supabase/queries/curation'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
+import { publishDraftPart } from '@/lib/supabase/queries/publish'
 import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { isValidUuid } from '@/lib/utils/validation'
@@ -23,6 +24,8 @@ type RouteContext = { params: Promise<{ id: string }> }
 //     each belonging to a brand — same invariant as the upload gate. Since
 //     #315 a part's brands are its products', so a brandless product leaves
 //     the part unreachable through brand -> product -> part navigation.
+// The draft -> published transition itself runs with the service role, so
+// that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const supabase = await createClient()
@@ -88,7 +91,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Publication blocked', blockers }, { status: 422 })
     }
 
-    await updateCurationDraft(id, user.id, { status: 'published' })
+    const published = await publishDraftPart(id, user.id)
+    if (!published) {
+      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+    }
     return NextResponse.json({ ok: true, slug: draft.slug })
   } catch (error) {
     console.error('Failed to publish curated part', error)

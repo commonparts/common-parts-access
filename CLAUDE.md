@@ -94,6 +94,8 @@ const { data } = await supabase.from('parts').select('*')
 
 **RLS**
 - Every new table must have RLS enabled and explicit policies before any data is inserted.
+- Every new table must be granted explicitly in the migration that creates it: `anon` and `authenticated` get only the commands their policies use, `service_role` gets `select, insert, update, delete`. New tables in `public` receive no privilege by default, so a table without grants is unreachable through the Data API (see Data API grants in `docs/DATA_MODEL.md`). Use `uuid` or `identity` primary keys; a `serial` column also needs `grant usage on sequence` for every role that inserts.
+- Every new function called through the Data API, or run with the caller's privileges inside one, must be granted `execute` explicitly to the roles that call it.
 - Never use the service role key in client-facing code — it bypasses RLS entirely.
 - When writing a new query, state which RLS policy covers it.
 
@@ -510,7 +512,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `feedback` | User feedback — entry point of the agent pipeline |
 
 All tables have RLS enabled. Always check policies before inserting or selecting.
-Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`. The human applies additive ones when their PR lands on `dev`; destructive ones (removing a table, column, constraint or function that code has used) are applied automatically when a release is merged into `main`, and always ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`). There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
+Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`. The human applies additive ones when their PR lands on `dev`; destructive ones (removing a table, column, constraint or function that code has used) are applied automatically when a release is merged into `main`, and always ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`). The same applies to a migration that adds a constraint or trigger the release in production would violate. Such a migration is never left for later: when you open the PR of release N, open at once its follow-up — an issue, and a **draft** PR toward `dev` labelled `status:next-release` whose description starts with `Waits for #N in production`. There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
 
 ---
 
