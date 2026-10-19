@@ -42,7 +42,7 @@ A click is recorded only by the click handler of the link, which runs in the bro
   - `INSERT`: "Anyone can log anonymous source clicks on published parts" — any caller, signed in or not, for a published part.
   - No `SELECT` policy: only the service role reads the rows, and it bypasses RLS.
 - Grants (#131): `INSERT` to `anon` and `authenticated` (the insert does not read the row back); `SELECT`, `INSERT`, `UPDATE`, `DELETE` to `service_role`. See [Data API grants](./DATA_MODEL.md#data-api-grants).
-- Migration: `supabase/migrations/20261019120000_part_source_clicks.sql`.
+- Migration: `supabase/migrations/20261019185953_part_source_clicks.sql`.
 
 ## Aggregates
 The rows are read with the service role (Supabase dashboard or SQL). The source platform is not stored on the row: per-platform figures join the part's current `source_platform` to `source_platforms.slug`.

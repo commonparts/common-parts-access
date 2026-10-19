@@ -33,8 +33,9 @@
 --      reading the row back, as for `part_requests`); SELECT, INSERT,
 --      UPDATE and DELETE to `service_role`.
 --
--- Additive: applied by the human when the PR lands on `dev`. Until then the
--- endpoint answers 500 and no click is recorded; the links keep working.
+-- Additive: applied by the human when the PR lands on `dev`.
+--
+-- APPLIED to production on 2026-10-19 as version 20261019185953.
 
 -- 1. Table ---------------------------------------------------------------------
 
