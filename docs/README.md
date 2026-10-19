@@ -27,6 +27,7 @@ Last reviewed: v1.2.0 (October 2026).
 | [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) | Reference | Product references, regional names, evidence levels, print reports, compatible products on the part page |
 | [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md) | Reference | Anonymous downloads, archive, storage |
 | [PART_VIEWS.md](./PART_VIEWS.md) | Reference | Anonymous view counting |
+| [SOURCE_CLICKS.md](./SOURCE_CLICKS.md) | Reference | Anonymous clicks from referenced parts to their source |
 | [PART_LIKES.md](./PART_LIKES.md) | Reference | Likes (hidden behind the social features flag) |
 | [SEO.md](./SEO.md) | Reference | Metadata, structured data, sitemap, robots |
 | [USER_PROFILE_SETUP.md](./USER_PROFILE_SETUP.md) | Reference | Profile creation trigger at sign-up |

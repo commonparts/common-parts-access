@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card"
 import { formatPrintLine } from "@/lib/utils/formatters"
 import { isGifUrl } from "@/lib/utils/images"
 import { PartCardGifThumbnail } from "./part-card-gif-thumbnail"
+import { SourceLink } from "./source-link"
 import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
 
 interface PartCardProps {
@@ -132,13 +133,16 @@ function ProductFitLine({
  * has a valid source URL, in a new tab; otherwise it is plain text. A part
  * without a source platform shows its licence alone, without the outbound
  * icon. Platform logos are deliberately not shown: a logo is a third-party
- * trademark, displayed only with the platform's consent.
+ * trademark, displayed only with the platform's consent. A click on the
+ * platform link is recorded anonymously, as from the part page (issue #375).
  */
 function ProvenanceLine({
+  slug,
   platformName,
   sourceUrl,
   license,
 }: {
+  slug: string
   platformName: string | null
   sourceUrl: string | null
   license: string | null
@@ -158,14 +162,14 @@ function ProvenanceLine({
     <p className={PROVENANCE_LINE_CLASS}>
       {platform &&
         (sourceUrl ? (
-          <a
+          <SourceLink
             href={sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            slug={slug}
+            context="card"
             className={cn(SOURCE_PLATFORM_CLASS, "hover:underline", FOCUS_RING)}
           >
             {platform}
-          </a>
+          </SourceLink>
         ) : (
           <span className={SOURCE_PLATFORM_CLASS}>{platform}</span>
         ))}
@@ -270,6 +274,7 @@ export function PartCard({ part, className, badge }: PartCardProps) {
 
         {hasProvenance && (
           <ProvenanceLine
+            slug={part.slug}
             platformName={part.sourcePlatformName}
             sourceUrl={part.sourceUrl}
             license={part.license}

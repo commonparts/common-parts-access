@@ -18,7 +18,7 @@ brands ─┐
         │              │               │
         │              └─ print_reports┤
         │                              ├─< part_files
-        │                              ├─< part_views / part_downloads (anonymous)
+        │                              ├─< part_views / part_downloads / part_source_clicks (anonymous)
         │                              ├─< part_likes / part_comments (hidden, #322)
         │                              └── licenses (license_id)
         │
@@ -138,6 +138,7 @@ Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`
 |---|---|---|
 | `part_views` | `part_id`, `viewed_at` | None (#324). See [PART_VIEWS.md](./PART_VIEWS.md). |
 | `part_downloads` | `part_id`, `file_id` (null for archive), `downloaded_at` | None (#324). See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md). |
+| `part_source_clicks` | `part_id`, `context` (`part_page` / `card`), `clicked_at` | None (#375). See [SOURCE_CLICKS.md](./SOURCE_CLICKS.md). |
 | `part_likes` | `user_id`, `part_id`, `liked_at` | User id, null once the account is deleted. UI hidden (#322). See [PART_LIKES.md](./PART_LIKES.md). |
 | `part_comments` | `user_id`, `part_id`, `parent_id`, `content` | User id, null once the account is deleted. No UI. |
 | `collections`, `collection_parts` | User collections of parts | User id; deleted with the account. No UI. |
@@ -191,7 +192,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 | `parts`, `part_files`, `part_comments`, `collections`, `collection_parts` | select, insert, update, delete | select, insert, update, delete |
 | `part_products` | select, delete, insert on `part_id`, `product_id` only (#317) | same as `anon` |
 | `part_views`, `part_downloads`, `feedback` | select, insert | select, insert |
-| `part_requests` | insert | insert |
+| `part_requests`, `part_source_clicks` | insert | insert |
 | `curation_rejections` | none | select, insert |
 | `user_profiles` | select, insert, update | select, insert, update |
 | `part_likes` | select, insert, delete | select, insert, delete |
