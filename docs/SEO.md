@@ -30,6 +30,12 @@ Most traffic is expected from search engines and direct links, so every public p
 - `/robots.txt` (`app/robots.ts`) allows everything and points to the sitemap. Nothing is disallowed, on purpose: crawlers must fetch `/search` pages to read their `noindex` tag, and part pages render their details client-side from `/api/parts/[slug]/details`, so blocking `/api/` would keep crawlers from rendering them.
 - Absolute URLs are built with `absoluteAppUrl()` (`lib/utils/validation.ts`).
 
+## HTTP status of unknown pages (#275)
+
+- An unknown slug on a public entity page (`/parts/[slug]`, `/product/[slug]`, `/brands/[brand]`, `/brands/[brand]/[category]`, `/categories/[slug]`) answers HTTP 404 with the not-found page. The page calls `notFound()` when its query returns no row.
+- No `loading.tsx` may sit at the app root or in `app/(public)/`. A loading file is a Suspense boundary: the response starts streaming with status 200 before the page runs, so `notFound()` can only render the not-found UI and search engines see a soft 404. `app/route-boundaries.test.ts` fails if such a file is added.
+- The only loading boundary is `app/(dashboard)/loading.tsx`, on private pages. A client component that reads `useSearchParams()` gets its own `<Suspense>` in the page that renders it (`/login`, `/sign-up`, the `/browse` grid).
+
 ## Key files
 
 - `lib/utils/seo.ts`, `lib/utils/sitemap.ts`, `app/sitemap.ts`, `app/robots.ts`

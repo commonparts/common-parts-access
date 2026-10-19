@@ -184,6 +184,7 @@ This is the only gate between staging and production.
 - [ ] Sign up and login work correctly
 - [ ] Browse page loads without errors
 - [ ] Part detail page loads for a published part
+- [ ] An unknown slug returns HTTP 404: `curl -s -o /dev/null -w "%{http_code}" <staging URL>/product/does-not-exist` prints `404`
 - [ ] Upload flow works end to end (if applicable to this PR)
 
 **CI & QA**
