@@ -368,6 +368,8 @@ Applying a destructive migration on `dev` is never an option: the release in pro
 
 The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
 
+A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
+
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
 **`feedback`** — user-submitted feedback, entry point of the pipeline
