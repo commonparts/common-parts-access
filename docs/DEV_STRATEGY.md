@@ -184,6 +184,7 @@ This is the only gate between staging and production.
 - [ ] Sign up and login work correctly
 - [ ] Browse page loads without errors
 - [ ] Part detail page loads for a published part
+- [ ] An unknown slug returns HTTP 404: `curl -s -o /dev/null -w "%{http_code}" <staging URL>/product/does-not-exist` prints `404`
 - [ ] Upload flow works end to end (if applicable to this PR)
 
 **CI & QA**
@@ -367,6 +368,8 @@ The follow-up PR is merged into `dev` only once the release carrying #N is in pr
 Applying a destructive migration on `dev` is never an option: the release in production still uses the object until release N ships, and every environment shares the database.
 
 The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
+
+A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
