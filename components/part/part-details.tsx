@@ -32,6 +32,13 @@ const VERIFICATION_STATUS_LABELS: Partial<Record<PartData['verificationStatus'],
   community_validated: '✓✓ Community-validated',
 }
 
+/** Field label in the Attribution & license card: an eyebrow, distinct from every value (#204). */
+const ATTRIBUTION_LABEL_CLASS = "text-micro font-medium uppercase tracking-caps text-text-secondary"
+
+/** Base of every link in the Attribution & license card, with the keyboard focus ring. */
+const ATTRIBUTION_LINK_CLASS =
+  "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+
 interface PartDetailsProps {
   slug: string
   className?: string
@@ -786,87 +793,104 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           </Card>
         )}
 
-        {/* Attribution & License */}
+        {/* Attribution & license */}
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Attribution & License
+              Attribution & license
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Verification Status — hidden for statuses with no public label */}
-            {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground font-medium">Status:</span>
-                <Badge variant="soft">
-                  {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
-                </Badge>
-              </div>
-            )}
+          {/* Each field has its own treatment so the card scans at a glance
+              (#204): the designer as the strongest line, the source as a
+              link, the license as a badge with its full name, and the
+              verification status last, in a quieter footer. */}
+          <CardContent>
+            <dl className="space-y-sm">
+              {/* Source attribution — only rendered when a source URL is present */}
+              {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (
+                <>
+                  {part.originalAuthor && (
+                    <div className="space-y-3xs">
+                      <dt className={ATTRIBUTION_LABEL_CLASS}>Original author</dt>
+                      <dd className="text-bodyLg font-semibold text-text-primary">
+                        {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+                          <a
+                            href={part.originalAuthorUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(ATTRIBUTION_LINK_CLASS, "underline-offset-4")}
+                          >
+                            {part.originalAuthor}
+                          </a>
+                        ) : (
+                          part.originalAuthor
+                        )}
+                      </dd>
+                    </div>
+                  )}
 
-            {/* Source Attribution — only rendered when a source URL is present */}
-            {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (
-              <div className="space-y-3 border-t border-border-subtle pt-3">
-                {part.sourcePlatform && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                    <span className="text-sm font-medium">{sourcePlatformLabel}</span>
+                  <div className="space-y-3xs">
+                    <dt className={ATTRIBUTION_LABEL_CLASS}>Source</dt>
+                    {sourcePlatformLabel && (
+                      <dd className="text-body font-medium text-text-primary">{sourcePlatformLabel}</dd>
+                    )}
+                    <dd className="text-caption">
+                      <SourceLink
+                        href={part.sourceUrl}
+                        slug={part.slug}
+                        context="part_page"
+                        className={cn(ATTRIBUTION_LINK_CLASS, "break-all text-text-secondary underline underline-offset-2 hover:text-text-primary")}
+                      >
+                        {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
+                      </SourceLink>
+                    </dd>
                   </div>
-                )}
+                </>
+              )}
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm text-muted-foreground font-medium">Original Post</span>
-                  <SourceLink
-                    href={part.sourceUrl}
-                    slug={part.slug}
-                    context="part_page"
-                    className="text-sm text-primary hover:underline break-all"
-                  >
-                    {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
-                  </SourceLink>
-                </div>
-
-                {part.originalAuthor && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">Original Author</span>
-                    {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+              {/* License — always rendered, one per part (#372) */}
+              <div className="space-y-3xs">
+                <dt className={ATTRIBUTION_LABEL_CLASS}>License</dt>
+                {part.license ? (
+                  <>
+                    <dd>
                       <a
-                        href={part.originalAuthorUrl}
+                        href={part.license.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline"
+                        className={cn(ATTRIBUTION_LINK_CLASS, "inline-flex transition hover:opacity-80")}
                       >
-                        {part.originalAuthor}
+                        <Badge variant="outline" size="md">{part.license.shortName}</Badge>
                       </a>
-                    ) : (
-                      <span className="text-sm font-medium">{part.originalAuthor}</span>
+                    </dd>
+                    {part.license.name !== part.license.shortName && (
+                      <dd className="text-caption text-text-secondary">{part.license.name}</dd>
                     )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* License — always rendered, one per part (#372) */}
-            <div className="border-t border-border-subtle pt-3">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground font-medium">License</span>
-                {part.license ? (
-                  <a
-                    href={part.license.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 hover:opacity-80 transition"
-                  >
-                    <Badge variant="outline">{part.license.shortName}</Badge>
-                  </a>
+                  </>
                 ) : (
-                  <Badge variant="outline">—</Badge>
+                  <dd>
+                    <Badge variant="outline" size="md">—</Badge>
+                  </dd>
                 )}
               </div>
-            </div>
+
+              {/* Verification status — last and quieter: it qualifies the part
+                  rather than crediting anyone. Hidden for statuses with no
+                  public label. */}
+              {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
+                <div className="flex flex-wrap items-center justify-between gap-xs border-t border-border-subtle pt-sm">
+                  <dt className={ATTRIBUTION_LABEL_CLASS}>Verification</dt>
+                  <dd>
+                    <Badge variant="soft">
+                      {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
+                    </Badge>
+                  </dd>
+                </div>
+              )}
+            </dl>
           </CardContent>
         </Card>
 
