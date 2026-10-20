@@ -11,7 +11,7 @@ Every link to the part's source, rendered by the `SourceLink` component (`compon
 | Link | Where | `context` |
 |---|---|---|
 | "View on {platform}" primary button (`link_out` parts) | Part page | `part_page` |
-| "Original Post" link in the Attribution & License card | Part page | `part_page` |
+| "View on {platform}" link under Source in the Attribution & license card | Part page | `part_page` |
 | Source platform name on the provenance line | Every part card: browse grid, home page section, search results, product page | `card` |
 
 The "Original design by {author}" link points to the designer's profile, not to the part's source, and is not counted.
