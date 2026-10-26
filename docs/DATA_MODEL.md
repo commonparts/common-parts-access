@@ -200,7 +200,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 
 The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131, nor was the `UPDATE` on `part_products (part_id, product_id)` granted in #317. They remain on the tables created before #131 and are filtered by RLS, which has no policy for them.
 
-Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage`) are executable by `anon`, `authenticated` and `service_role`; `generate_slug`, run by the product slug trigger, by `authenticated` and `service_role`.
+Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage`) are executable by `anon`, `authenticated` and `service_role`; `generate_slug`, run by the product slug trigger, by `public` (see the table below).
 
 Functions reviewed against the Supabase security advisor (#435):
 
@@ -209,5 +209,7 @@ Functions reviewed against the Supabase security advisor (#435):
 | `increment_part_view_count()`, `increment_part_like_count()`, `decrement_part_like_count()`, `handle_new_user()` | `service_role` only; revoked from `public`, `anon`, `authenticated` | Trigger functions (security definer). A trigger function's `EXECUTE` privilege is checked when the trigger is created, not when it fires, so the counters and the profile created on sign-up do not need it. |
 | `fetch_part_request_counts(uuid)` | `anon`, `authenticated`, `service_role`; revoked from `public` | Called for every visitor by the public product page (open requests) and by `/api/curation/demand`. Security definer, returns aggregates only (description and count). The advisor still lists it, by design. |
 | `fetch_top_search_misses(integer, integer)`, `fetch_pending_product_references(integer)` | `authenticated`, `service_role` | Security definer. The app calls them with the service role, after `isCurator()` (see [SEARCH.md](./SEARCH.md)). The `authenticated` grant is kept until the release that stops using it is in production, then revoked by a follow-up migration. |
+| `update_category_path()`, `set_product_slug()` | `public` (so `anon` and `authenticated`), `service_role` | Trigger functions, security invoker. PostgreSQL refuses to call a trigger function outside a trigger, so the grant exposes nothing through the Data API. |
+| `generate_slug(text)` | `public` (so `anon` and `authenticated`), `service_role` | Security invoker, run as the caller by the product slug trigger. Computes a slug from its argument and reads no table. |
 
 `update_category_path()`, `generate_slug(text)` and `set_product_slug()` run with `search_path = ''` and reference every object by its schema (#435), like the other functions the migrations define in `public`.
