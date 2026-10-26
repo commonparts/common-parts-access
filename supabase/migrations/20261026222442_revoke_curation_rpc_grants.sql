@@ -11,11 +11,13 @@
 -- migration revokes EXECUTE from every other role.
 --
 -- This migration removes a privilege the release before #439 uses: that
--- release calls both functions as the signed-in user. Deploy #439 to
--- production before applying it: it is applied with the release to `main`.
--- It requires 20261026120000_restrict_function_grants.sql.
+-- release calls both functions as the signed-in user. It is applied once #439
+-- is in production (v1.6.0). It requires
+-- 20261026120000_restrict_function_grants.sql.
 --
 -- Every statement is a REVOKE or a GRANT, so the migration is idempotent.
+--
+-- APPLIED to production on 2026-10-26 as version 20261026222442.
 
 revoke execute on function public.fetch_top_search_misses(integer, integer) from public, anon, authenticated;
 revoke execute on function public.fetch_pending_product_references(integer) from public, anon, authenticated;
