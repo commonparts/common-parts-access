@@ -1,4 +1,5 @@
 # Supabase CLI configuration. Only the settings that differ from the CLI defaults are listed.
+# The GitHub integration deploys the functions declared here when a release is merged into main.
 
 # Local identifier used by the CLI (not the hosted project reference).
 project_id = "common-parts-access"
