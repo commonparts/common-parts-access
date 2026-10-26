@@ -317,12 +317,3 @@ export async function POST(
     return NextResponse.json({ error: 'Unexpected error while registering files' }, { status: 500 })
   }
 }
-
-// GET /api/parts/[slug]/files - List model files
-// Not yet implemented — tracked in GitHub issues
-export async function GET(
-  _request: NextRequest,
-  _context: { params: Promise<{ slug: string }> },
-) {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
-}
