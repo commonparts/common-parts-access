@@ -35,6 +35,24 @@ const SUPABASE_URL    = getRequiredEnvVar('SUPABASE_URL')
 const SUPABASE_KEY    = getSecretKey(SECRET_KEY_NAME)
 const WEBHOOK_SECRET  = getRequiredEnvVar('WEBHOOK_SECRET')
 
+// Compares two strings in constant time (#443). Both are hashed first: the digests have
+// a fixed length, so neither the matching prefix nor the length of the secret changes
+// how long the comparison takes. Web Crypto only, as the function has no shared utils.
+async function timingSafeEqual(a: string, b: string): Promise<boolean> {
+  const encoder = new TextEncoder()
+  const [digestA, digestB] = await Promise.all([
+    crypto.subtle.digest('SHA-256', encoder.encode(a)),
+    crypto.subtle.digest('SHA-256', encoder.encode(b)),
+  ])
+  const bytesA = new Uint8Array(digestA)
+  const bytesB = new Uint8Array(digestB)
+  let difference = 0
+  for (let i = 0; i < bytesA.length; i++) {
+    difference |= bytesA[i] ^ bytesB[i]
+  }
+  return difference === 0
+}
+
 // Label mapping from feedback type to GitHub labels
 const TYPE_LABELS: Record<string, string[]> = {
   bug:         ['type:bug', 'agent:triage'],
@@ -191,9 +209,10 @@ ${feedback.description}
 Deno.serve(async (req) => {
   // Verify the request comes from the database webhook. The platform JWT check is off
   // (verify_jwt = false in supabase/config.toml) because the secret keys are not JWTs,
-  // so this shared secret is the only authorisation on the function.
-  const authHeader = req.headers.get('Authorization')
-  if (authHeader !== `Bearer ${WEBHOOK_SECRET}`) {
+  // so this shared secret is the only authorisation on the function. It is compared in
+  // constant time, so the response time reveals nothing about the secret (#443).
+  const authHeader = req.headers.get('Authorization') ?? ''
+  if (!(await timingSafeEqual(authHeader, `Bearer ${WEBHOOK_SECRET}`))) {
     return new Response('Unauthorized', { status: 401 })
   }
 
