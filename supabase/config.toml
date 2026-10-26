@@ -1,0 +1,10 @@
+# Supabase CLI configuration. Only the settings that differ from the CLI defaults are listed.
+# The GitHub integration deploys the functions declared here when a release is merged into main.
+
+# Local identifier used by the CLI (not the hosted project reference).
+project_id = "common-parts-access"
+
+# The database webhook authenticates with WEBHOOK_SECRET, checked in the function code.
+# The platform JWT check stays off: it only accepts the legacy JWT-based keys (#436).
+[functions.triage-feedback]
+verify_jwt = false
