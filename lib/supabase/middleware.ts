@@ -25,18 +25,18 @@ export async function updateSession(request: NextRequest) {
   });
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
   // If env vars are missing, skip session management and pass through.
   // This prevents the middleware from crashing preview deployments
   // where environment variables have not been configured yet.
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseUrl || !supabasePublishableKey) {
     return supabaseResponse;
   }
 
   const supabase = createServerClient(
     supabaseUrl,
-    supabaseAnonKey,
+    supabasePublishableKey,
     {
       cookies: {
         getAll() {
