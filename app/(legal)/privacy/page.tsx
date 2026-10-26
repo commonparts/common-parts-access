@@ -68,8 +68,10 @@ export default function PrivacyPage() {
               <li>Date and time of actions performed on the platform</li>
             </ul>
             <p className="text-text-secondary">
-              Part views and file downloads are counted anonymously. Each one is recorded with the part and the time
-              only - never with your account, your IP address (in any form, hashed or not), or your browser details.
+              Part views, file downloads and clicks on the link to a part&apos;s source are counted anonymously. Each one
+              is recorded with the part and the time only (for a click on a source link, also whether it was made on the
+              part page or on a part card) - never with your account, your IP address (in any form, hashed or not), or
+              your browser details.
             </p>
 
             <h3 className="text-h4">3.4 Technical data</h3>

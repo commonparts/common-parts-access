@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PartFileList } from "./part-file-list"
 import type { PrintReportReference } from "./print-report-controls"
 import { CompatibleProducts } from "./compatible-products"
+import { SourceLink } from "./source-link"
 
 
 /**
@@ -30,6 +31,13 @@ const VERIFICATION_STATUS_LABELS: Partial<Record<PartData['verificationStatus'],
   author_tested: '✓ Author-tested',
   community_validated: '✓✓ Community-validated',
 }
+
+/** Field label in the Attribution & license card: an eyebrow, distinct from every value (#204). */
+const ATTRIBUTION_LABEL_CLASS = "text-micro font-medium uppercase tracking-caps text-text-secondary"
+
+/** Base of every link in the Attribution & license card, with the keyboard focus ring. */
+const ATTRIBUTION_LINK_CLASS =
+  "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 
 interface PartDetailsProps {
   slug: string
@@ -492,16 +500,12 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               {part.fileHostingType === 'link_out' ? (
                 part.sourceUrl && isValidHttpUrl(part.sourceUrl) ? (
                   <Button asChild className="inline-flex items-center gap-xs">
-                    <a
-                      href={part.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
+                    <SourceLink href={part.sourceUrl} slug={part.slug} context="part_page">
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
                       View on {part.sourcePlatformName ?? 'the original source'}
-                    </a>
+                    </SourceLink>
                   </Button>
                 ) : (
                   <Button className="inline-flex items-center gap-xs" disabled>
@@ -613,7 +617,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     </span>
                     {part.author.verifiedMaker && (
                       <Badge variant="soft">
-                        Verified Maker
+                        Verified maker
                       </Badge>
                     )}
                   </div>
@@ -663,13 +667,13 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              Part Details
+              Part details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {part.partDetails.partNumber && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground font-medium">Part Number</span>
+                <span className="text-muted-foreground font-medium">Part number</span>
                 <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{part.partDetails.partNumber}</span>
               </div>
             )}
@@ -746,7 +750,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H9.5a2 2 0 01-2-2V5a2 2 0 012-2H14" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7v10l3-3 3 3V7z" />
                 </svg>
-                Print Settings
+                Print settings
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -756,7 +760,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Print Time</p>
+                    <p className="text-sm text-muted-foreground">Print time</p>
                     <p className="font-semibold">{formatPrintTime(part.estimatedPrintTime)}</p>
                   </div>
                 </div>
@@ -767,14 +771,14 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Material Usage</p>
+                    <p className="text-sm text-muted-foreground">Material usage</p>
                     <p className="font-semibold">{part.estimatedMaterialUsage}g</p>
                   </div>
                 </div>
               )}
               {part.printSettings && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Recommended Settings</h4>
+                  <h4 className="font-medium text-sm">Recommended settings</h4>
                   <div className="space-y-2">
                     {typeof part.printSettings === 'object' && Object.entries(part.printSettings).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center text-sm">
@@ -789,87 +793,104 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           </Card>
         )}
 
-        {/* Attribution & License */}
+        {/* Attribution & license */}
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Attribution & License
+              Attribution & license
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Verification Status — hidden for statuses with no public label */}
-            {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground font-medium">Status:</span>
-                <Badge variant="soft">
-                  {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
-                </Badge>
-              </div>
-            )}
+          {/* Each field has its own treatment so the card scans at a glance
+              (#204): the designer as the strongest line, the source as a
+              link, the license as a badge with its full name, and the
+              verification status last, in a quieter footer. */}
+          <CardContent>
+            <dl className="space-y-sm">
+              {/* Source attribution — only rendered when a source URL is present */}
+              {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (
+                <>
+                  {part.originalAuthor && (
+                    <div className="space-y-3xs">
+                      <dt className={ATTRIBUTION_LABEL_CLASS}>Original author</dt>
+                      <dd className="text-bodyLg font-semibold text-text-primary">
+                        {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+                          <a
+                            href={part.originalAuthorUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={cn(ATTRIBUTION_LINK_CLASS, "underline-offset-4")}
+                          >
+                            {part.originalAuthor}
+                          </a>
+                        ) : (
+                          part.originalAuthor
+                        )}
+                      </dd>
+                    </div>
+                  )}
 
-            {/* Source Attribution — only rendered when a source URL is present */}
-            {part.sourceUrl && isValidHttpUrl(part.sourceUrl) && (
-              <div className="space-y-3 border-t border-border-subtle pt-3">
-                {part.sourcePlatform && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">Source Platform</span>
-                    <span className="text-sm font-medium">{sourcePlatformLabel}</span>
+                  <div className="space-y-3xs">
+                    <dt className={ATTRIBUTION_LABEL_CLASS}>Source</dt>
+                    {sourcePlatformLabel && (
+                      <dd className="text-body font-medium text-text-primary">{sourcePlatformLabel}</dd>
+                    )}
+                    <dd className="text-caption">
+                      <SourceLink
+                        href={part.sourceUrl}
+                        slug={part.slug}
+                        context="part_page"
+                        className={cn(ATTRIBUTION_LINK_CLASS, "break-all text-text-secondary underline underline-offset-2 hover:text-text-primary")}
+                      >
+                        {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
+                      </SourceLink>
+                    </dd>
                   </div>
-                )}
+                </>
+              )}
 
-                <div className="flex flex-col gap-2">
-                  <span className="text-sm text-muted-foreground font-medium">Original Post</span>
-                  <a
-                    href={part.sourceUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-sm text-primary hover:underline break-all"
-                  >
-                    {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
-                  </a>
-                </div>
-
-                {part.originalAuthor && (
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm text-muted-foreground font-medium">Original Author</span>
-                    {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+              {/* License — always rendered, one per part (#372) */}
+              <div className="space-y-3xs">
+                <dt className={ATTRIBUTION_LABEL_CLASS}>License</dt>
+                {part.license ? (
+                  <>
+                    <dd>
                       <a
-                        href={part.originalAuthorUrl}
+                        href={part.license.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-sm font-medium text-primary hover:underline"
+                        className={cn(ATTRIBUTION_LINK_CLASS, "inline-flex transition hover:opacity-80")}
                       >
-                        {part.originalAuthor}
+                        <Badge variant="outline" size="md">{part.license.shortName}</Badge>
                       </a>
-                    ) : (
-                      <span className="text-sm font-medium">{part.originalAuthor}</span>
+                    </dd>
+                    {part.license.name !== part.license.shortName && (
+                      <dd className="text-caption text-text-secondary">{part.license.name}</dd>
                     )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* License — always rendered, one per part (#372) */}
-            <div className="border-t border-border-subtle pt-3">
-              <div className="flex flex-col gap-2">
-                <span className="text-sm text-muted-foreground font-medium">License</span>
-                {part.license ? (
-                  <a
-                    href={part.license.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 hover:opacity-80 transition"
-                  >
-                    <Badge variant="outline">{part.license.shortName}</Badge>
-                  </a>
+                  </>
                 ) : (
-                  <Badge variant="outline">—</Badge>
+                  <dd>
+                    <Badge variant="outline" size="md">—</Badge>
+                  </dd>
                 )}
               </div>
-            </div>
+
+              {/* Verification status — last and quieter: it qualifies the part
+                  rather than crediting anyone. Hidden for statuses with no
+                  public label. */}
+              {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
+                <div className="flex flex-wrap items-center justify-between gap-xs border-t border-border-subtle pt-sm">
+                  <dt className={ATTRIBUTION_LABEL_CLASS}>Verification</dt>
+                  <dd>
+                    <Badge variant="soft">
+                      {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
+                    </Badge>
+                  </dd>
+                </div>
+              )}
+            </dl>
           </CardContent>
         </Card>
 
@@ -912,7 +933,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                Additional Notes
+                Additional notes
               </CardTitle>
             </CardHeader>
             <CardContent>
