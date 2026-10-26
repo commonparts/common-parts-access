@@ -497,6 +497,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `part_likes` | Like tracking |
 | `part_views` | View tracking |
 | `part_downloads` | Download tracking |
+| `part_source_clicks` | Clicks from a part to its source |
 | `part_comments` | Comments (hidden in MVP) |
 | `part_products` | Part–product compatibility, with evidence level |
 | `products` | Physical products that parts fit |

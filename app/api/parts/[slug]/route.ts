@@ -3,24 +3,6 @@ import { createClient } from '@/lib/supabase/server'
 import { deletePart } from '@/lib/supabase/queries/part'
 import { isValidSlug } from '@/lib/utils/slug'
 
-// GET /api/parts/[slug] - Get part by slug
-// Not yet implemented — tracked in GitHub issues
-export async function GET(
-  _request: NextRequest,
-  _context: { params: Promise<{ slug: string }> }
-) {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
-}
-
-// PUT /api/parts/[slug] - Update part
-// Not yet implemented — tracked in GitHub issues
-export async function PUT(
-  _request: NextRequest,
-  _context: { params: Promise<{ slug: string }> }
-) {
-  return NextResponse.json({ error: 'Not implemented' }, { status: 501 })
-}
-
 // DELETE /api/parts/[slug] - Delete part (authenticated owner only)
 export async function DELETE(
   _request: NextRequest,

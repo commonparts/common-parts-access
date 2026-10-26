@@ -9,7 +9,7 @@ How visitors find a device and its parts by typing what they read on it: a brand
 | Autocomplete | `SearchBar` (hero, navbar) → `GET /api/search?q=&limit=` | From 2 characters. Grouped suggestions (products, parts, brands) and a "see all results" footer. Keystrokes are never logged. |
 | Results page | `/search?q=&type=` | Server-rendered. Fetches the capped result groups once; the `type` chips (`all`, products, parts, brands) filter client-side. Part hits are rendered as standard part cards, hydrated by id and in rank order through the shared card query (`fetchPartCardsByIds()`, #380). `robots: noindex, follow`, and excluded from the sitemap. |
 | Zero-result state | `/search` | Logs the miss, suggests an exact brand match, and offers the "which product is it?" picker. |
-| Demand dashboard | `/dashboard/search-demand` | Signed-in users only. Most frequent misses and the queue of pending references. |
+| Demand dashboard | `/dashboard/search-demand` | Curators only (#435). Most frequent misses and the queue of pending references. |
 
 ## Matching: `search_all`
 
@@ -33,11 +33,14 @@ When `/search` returns nothing:
 
 Validation has no admin role: set `product_references.status` to `validated` or `rejected` in the Supabase dashboard. The `/dashboard/search-demand` page lists the pending queue and the top misses (`fetch_pending_product_references()`, `fetch_top_search_misses()`).
 
+**Curator access (#435).** Sign-up is open and the misses are free text typed by visitors, so the dashboard is not open to every signed-in user. Curators are listed by Supabase user id in the server-only `CURATOR_USER_IDS` environment variable (comma-separated; unset or empty means nobody), checked by `isCurator()` in `lib/auth/permissions.ts`. Any other user, signed in or not, gets the not-found page. The page then calls both RPCs with the service role (`lib/supabase/admin.ts`). Set it on every Railway environment that serves the dashboard: while it is unset, the page is not found for everyone.
+
 ## Key files
 
 - `app/api/search/route.ts`, `app/api/search/candidates/route.ts`, `app/api/product-references/route.ts`
 - `app/(public)/search/page.tsx`, `components/search/`
 - `components/layout/search-bar.tsx`, `hooks/use-search-autocomplete.ts`
 - `lib/supabase/queries/search.ts`, `lib/supabase/queries/search-demand.ts`
+- `lib/auth/permissions.ts` (curator check of the demand dashboard)
 - `lib/utils/locale.ts` (Accept-Language parsing), `lib/utils/product-references.ts`
 - `types/search.ts` (limits and payload types)

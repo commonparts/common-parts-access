@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import type { Part } from '@/types/database';
+import type { SourceClickContext } from '@/lib/utils/source-clicks';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
 type PublishedPartSlice = Pick<Part, 'id' | 'name' | 'like_count'>;
@@ -42,6 +43,34 @@ export async function recordPartView(slug: string): Promise<void> {
 	const { error: insertError } = await supabase
 		.from('part_views')
 		.insert({ part_id: part.id });
+
+	if (insertError) {
+		throw insertError;
+	}
+}
+
+/**
+ * Resolves a published part by slug, then records an anonymous click on its
+ * source link (issue #375). The row holds the part, where the link was
+ * clicked and the moment: no user id, IP, or user agent. Nothing is counted
+ * on the part and no figure is displayed publicly. Covered by the RLS policy
+ * "Anyone can log anonymous source clicks on published parts".
+ */
+export async function recordPartSourceClick(
+	slug: string,
+	context: SourceClickContext,
+): Promise<void> {
+	const supabase = await createClient();
+
+	const part = await getPublishedPart(
+		slug,
+		'id',
+		supabase,
+	);
+
+	const { error: insertError } = await supabase
+		.from('part_source_clicks')
+		.insert({ part_id: part.id, context });
 
 	if (insertError) {
 		throw insertError;

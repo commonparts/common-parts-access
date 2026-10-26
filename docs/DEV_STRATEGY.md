@@ -115,7 +115,7 @@ Triggered on:
 Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
-3. Lint (`npm run lint`)
+3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
 4. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
@@ -127,6 +127,16 @@ Railway deploys automatically on push to connected branches.
 | `main` | `production` |
 | `staging` | `staging` |
 | Pull requests | `common-parts-access-pr-<number>`, generated per PR |
+
+Each environment reaches the single Supabase project with the publishable and secret API keys (#436); the legacy `anon` and `service_role` keys are not used:
+
+| Variable | Key | Read by |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts` |
+| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion) |
+
+`NEXT_PUBLIC_` variables are inlined at build time: a new or changed value takes effect only after a rebuild, so it must exist in the environment before the build. `SUPABASE_SECRET_KEY` never takes the `NEXT_PUBLIC_` prefix. Both keys are created and rotated in Supabase Dashboard > Settings > API Keys.
 
 ---
 
@@ -246,7 +256,9 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Idempotency guard: skips processing if `github_issue_number` is already set
 
 **Response time:** 2–5 seconds end to end
-**Secrets required:** `MISTRAL_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `WEBHOOK_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`
+**Secrets required:** `MISTRAL_API_KEY`, `GITHUB_TOKEN`, `GITHUB_REPO`, `WEBHOOK_SECRET`. The function reads its secret key from `SUPABASE_SECRET_KEYS` (key `default`) and its URL from `SUPABASE_URL`, both provided by the platform (#436).
+**Authorization:** the webhook sends `Authorization: Bearer <WEBHOOK_SECRET>`, checked in the function code with a constant-time comparison of SHA-256 digests (#443). `WEBHOOK_SECRET` is a random value of its own, never a Supabase API key, and the webhook stores no Supabase key. The platform JWT check is off (`verify_jwt = false` in `supabase/config.toml`) because it only accepts the legacy JWT-based keys; a deploy outside the CLI must keep it off (`supabase functions deploy triage-feedback --no-verify-jwt`, or the JWT verification toggle in the dashboard).
+**Deployment:** the function is declared in `supabase/config.toml`, so the Supabase GitHub integration deploys it when a release that changes it is merged into `main`, after the release's migrations (#436). The secrets it reads must already exist in the project at that point, or the function fails at startup. The integration reads `config.toml` before applying migrations: an invalid file stops the migrations of the same release too.
 
 ---
 
@@ -538,6 +550,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── supabase/queries/           # All Supabase queries, one file per domain
 │   └── utils/                      # Validators, formatters, SEO, feature flags, …
 ├── supabase/
+│   ├── config.toml                 # Edge Function declaration, read by the CLI and the GitHub integration
 │   ├── functions/triage-feedback/  # Agent Triage edge function
 │   └── migrations/                 # Version-controlled schema changes
 ├── types/
