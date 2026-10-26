@@ -642,12 +642,13 @@ create trigger model_downloads_increment
   for each row execute function public.increment_model_download_count();
 
 -- ============================================================================
--- MANUAL STEP: Database webhook (not included — contains service role JWT)
+-- MANUAL STEP: Database webhook (not included — contains WEBHOOK_SECRET)
 -- ============================================================================
 -- The on_feedback_insert webhook trigger calls the Edge Function
 -- triage-feedback via supabase_functions.http_request(). It requires the
--- service role JWT in the Authorization header, which must NEVER be committed
--- to version control.
+-- function's WEBHOOK_SECRET in the Authorization header, which must NEVER be
+-- committed to version control. No Supabase API key is stored in the webhook
+-- (#436).
 --
 -- After applying this migration, recreate the webhook manually:
 --   Supabase Dashboard > Database > Webhooks > Create new
@@ -656,6 +657,6 @@ create trigger model_downloads_increment
 --     Method:   POST
 --     URL:      https://<project-ref>.supabase.co/functions/v1/triage-feedback
 --     Headers:  Content-type: application/json
---               Authorization: Bearer <SERVICE_ROLE_KEY>
+--               Authorization: Bearer <WEBHOOK_SECRET>
 --     Timeout:  5000
 -- ============================================================================

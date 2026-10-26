@@ -183,7 +183,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 
 - **Default privileges.** Tables and sequences created by `postgres` in `public` receive no privilege for `anon`, `authenticated` or `service_role` (applied in #131, ahead of the Supabase platform change of October 30, 2026). A migration that creates a table grants its privileges in the same file. Primary keys are `uuid`; an `identity` column needs no sequence privilege, a `serial` column needs `USAGE` on its sequence for every role that inserts. Function defaults are unchanged: a new function is executable by `PUBLIC` unless its migration revokes it.
 - **Client roles.** `anon` and `authenticated` receive, per table, the commands that at least one RLS policy lets them use. A policy on role `public` applies to both.
-- **Service role.** `service_role` has `SELECT`, `INSERT`, `UPDATE`, `DELETE` on every table. It bypasses RLS and is used only server-side (`lib/supabase/admin.ts`, Edge Functions).
+- **Service role.** `service_role` has `SELECT`, `INSERT`, `UPDATE`, `DELETE` on every table. It bypasses RLS and is reached only server-side through the secret key (`lib/supabase/admin.ts`, Edge Functions; #436).
 
 | Table | `anon` | `authenticated` |
 |---|---|---|
