@@ -5,30 +5,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { createAccountDeletionSteps } from "@/lib/supabase/queries/account-deletion";
 import { createClient } from "@/lib/supabase/server";
 
-// GET /api/users - List users (admin only)
-export async function GET() {
-  return NextResponse.json(
-    {
-      error: "Not implemented",
-      message:
-        "Admin user listing is not implemented yet. Track this work in a GitHub issue.",
-    },
-    { status: 501 },
-  );
-}
-
-// POST /api/users - Create user
-export async function POST() {
-  return NextResponse.json(
-    {
-      error: "Not implemented",
-      message:
-        "Admin user creation is not implemented yet. Track this work in a GitHub issue.",
-    },
-    { status: 501 },
-  );
-}
-
 // DELETE /api/users - Delete current user account
 // Published parts stay without an owner, likes and comments are anonymized,
 // collections and unpublished parts are deleted (issue #178, see

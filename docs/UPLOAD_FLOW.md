@@ -147,7 +147,7 @@ Rows that predate this flow carry `originality_attested = false`, and are not ba
 - No source attribution. The uploader is the author; there is no other author to credit.
 - No self-declared verification status. New parts are `unverified`; verification is granted by the registry, not claimed by the uploader.
 - No `manufacturer` origin. Brand-official uploads need a way to verify a brand identity, which does not exist yet.
-- No editing of an already-published part (`PUT /api/parts/[slug]` is still unimplemented).
+- No editing of an already-published part: `/api/parts/[slug]` only handles `DELETE`, and answers `405` to `PUT`.
 - No contributor-facing brand creation; brands stay DB-curated.
 
 ## References

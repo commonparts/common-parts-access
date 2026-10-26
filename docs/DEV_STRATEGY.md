@@ -115,7 +115,7 @@ Triggered on:
 Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
-3. Lint (`npm run lint`)
+3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
 4. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
