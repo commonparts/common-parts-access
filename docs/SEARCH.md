@@ -33,7 +33,7 @@ When `/search` returns nothing:
 
 Validation has no admin role: set `product_references.status` to `validated` or `rejected` in the Supabase dashboard. The `/dashboard/search-demand` page lists the pending queue and the top misses (`fetch_pending_product_references()`, `fetch_top_search_misses()`).
 
-**Curator access (#435).** Sign-up is open and the misses are free text typed by visitors, so the dashboard is not open to every signed-in user. Curators are listed by Supabase user id in the server-only `CURATOR_USER_IDS` environment variable (comma-separated; unset or empty means nobody), checked by `isCurator()` in `lib/auth/permissions.ts`. Any other user, signed in or not, gets the not-found page. The page then calls both RPCs with the service role (`lib/supabase/admin.ts`). The variable is set on every Railway environment that serves the dashboard.
+**Curator access (#435).** Sign-up is open and the misses are free text typed by visitors, so the dashboard is not open to every signed-in user. Curators are listed by Supabase user id in the server-only `CURATOR_USER_IDS` environment variable (comma-separated; unset or empty means nobody), checked by `isCurator()` in `lib/auth/permissions.ts`. Any other user, signed in or not, gets the not-found page. The page then calls both RPCs with the service role (`lib/supabase/admin.ts`). Set it on every Railway environment that serves the dashboard: while it is unset, the page is not found for everyone.
 
 ## Key files
 
