@@ -1,10 +1,13 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { notFound } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import {
   fetchPendingProductReferences,
   fetchTopSearchMisses,
 } from "@/lib/supabase/queries/search-demand"
+import { createClient } from "@/lib/supabase/server"
+import { isCurator } from "@/lib/auth/permissions"
 import { formatDate, formatRegionName } from "@/lib/utils/formatters"
 
 export const metadata: Metadata = {
@@ -22,11 +25,16 @@ const HEAD = `${CELL} font-medium text-text-secondary`
 /**
  * What searches could not answer (issue #320): the most frequent zero-result
  * searches, and the references visitors attached to a product from them.
- * Read-only and open to any signed-in user, like the curation tool — there is
- * no admin role. Pending references are validated or rejected by setting
- * `product_references.status` in the Supabase dashboard.
+ * Read-only and restricted to curators (#435): sign-up is open, and the misses
+ * are free text typed by visitors. Other users get a not-found page, so the
+ * route does not reveal that it exists. Pending references are validated or
+ * rejected by setting `product_references.status` in the Supabase dashboard.
  */
 export default async function SearchDemandPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!isCurator(user?.id)) notFound()
+
   const [misses, pending] = await Promise.all([
     fetchTopSearchMisses(MISSES_WINDOW_DAYS, MISSES_LIMIT),
     fetchPendingProductReferences(PENDING_LIMIT),

@@ -122,11 +122,12 @@ export interface PendingProductReference {
 
 /**
  * Most frequent zero-result searches of the last `sinceDays` days. The RPC is
- * executable by signed-in users only (security definer, as search_misses has
- * no read policy) and returns aggregates, never individual rows.
+ * security definer, as search_misses has no read policy, and returns
+ * aggregates, never individual rows. Uses the service role (#435): the caller
+ * must check `isCurator()` first, as `raw_query` is free text typed by visitors.
  */
 export async function fetchTopSearchMisses(sinceDays: number, limit: number): Promise<SearchMissSummary[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase.rpc('fetch_top_search_misses', {
     since_days: sinceDays,
     result_limit: limit,
@@ -139,11 +140,12 @@ export async function fetchTopSearchMisses(sinceDays: number, limit: number): Pr
 }
 
 /**
- * The validation queue: pending references, newest first. Signed-in users
- * only; pending rows are hidden from the public read policy.
+ * The validation queue: pending references, newest first. Pending rows are
+ * hidden from the public read policy. Uses the service role (#435): the caller
+ * must check `isCurator()` first.
  */
 export async function fetchPendingProductReferences(limit: number): Promise<PendingProductReference[]> {
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   const { data, error } = await supabase.rpc('fetch_pending_product_references', {
     result_limit: limit,
   })
