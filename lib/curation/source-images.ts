@@ -1,4 +1,5 @@
 import { FILE_TYPES } from '@/constants/app'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { sanitizeFilename } from '@/lib/storage/image-processing'
 import { parsePrintablesModelId, parseThingiverseThingId } from '@/lib/curation/prefill-parsing'
 import { PRINTABLES_BASE_URL, PRINTABLES_MEDIA_BASE_URL, queryPrintables } from '@/lib/curation/printables-api'
@@ -7,6 +8,7 @@ import {
   isThingiverseConfigured,
   THINGIVERSE_BASE_URL,
   THINGIVERSE_CDN_HOST,
+  THINGIVERSE_USER_AGENT,
 } from '@/lib/curation/thingiverse-api'
 import { normalizedHostname } from '@/lib/utils/validation'
 
@@ -16,6 +18,7 @@ import { normalizedHostname } from '@/lib/utils/validation'
  */
 
 const IMAGE_EXTENSIONS = new Set<string>(FILE_TYPES.IMAGE_FILES)
+const IMAGE_DOWNLOAD_TIMEOUT_MS = 15000
 
 interface PrintablesImagesData {
   print?: { images?: Array<{ filePath?: string | null } | null> | null } | null
@@ -81,6 +84,11 @@ interface SourceGallery {
   isEnabled: () => boolean
   parseId: (url: URL) => string | null
   listImageUrls: (id: string) => Promise<string[]>
+  /**
+   * Headers every image download from this platform's CDN carries. Never
+   * credentials: the CDN is not the API, so the app token stays out of it.
+   */
+  downloadHeaders: Readonly<Record<string, string>>
 }
 
 const SOURCE_GALLERIES: SourceGallery[] = [
@@ -90,6 +98,7 @@ const SOURCE_GALLERIES: SourceGallery[] = [
     isEnabled: () => true,
     parseId: parsePrintablesModelId,
     listImageUrls: fetchPrintablesImageUrls,
+    downloadHeaders: {},
   },
   {
     platform: 'thingiverse',
@@ -97,8 +106,19 @@ const SOURCE_GALLERIES: SourceGallery[] = [
     isEnabled: isThingiverseConfigured,
     parseId: parseThingiverseThingId,
     listImageUrls: fetchThingiverseImageUrls,
+    // cdn.thingiverse.com answers a Cloudflare challenge (403) to a client
+    // that does not identify itself — Node's default User-Agent included (#431).
+    downloadHeaders: { 'User-Agent': THINGIVERSE_USER_AGENT },
   },
 ]
+
+/** A draft's source gallery, resolved from its source URL. */
+export interface ResolvedSourceGallery {
+  /** Lists the gallery's image URLs in page order. Empty array on any failure. */
+  listImageUrls: () => Promise<string[]>
+  /** Headers to pass to `downloadSourceImage` for this gallery's images. */
+  downloadHeaders: Readonly<Record<string, string>>
+}
 
 /**
  * Source platforms the image import can run for on this server, passed to
@@ -110,12 +130,12 @@ export function enabledImageImportPlatforms(): string[] {
 }
 
 /**
- * Resolves a draft's source URL to the listing of its gallery, or null when
- * no enabled platform can read it. The host is checked before the path is
- * read as an id — otherwise https://example.com/model/3161 would pull the
- * Printables images of model 3161.
+ * Resolves a draft's source URL to its gallery, or null when no enabled
+ * platform can read it. The host is checked before the path is read as an
+ * id — otherwise https://example.com/model/3161 would pull the Printables
+ * images of model 3161.
  */
-export function sourceGalleryLister(sourceUrl: string): (() => Promise<string[]>) | null {
+export function resolveSourceGallery(sourceUrl: string): ResolvedSourceGallery | null {
   const host = normalizedHostname(sourceUrl)
   const gallery = SOURCE_GALLERIES.find((g) => g.host !== null && g.host === host && g.isEnabled())
   if (!gallery) return null
@@ -127,7 +147,71 @@ export function sourceGalleryLister(sourceUrl: string): (() => Promise<string[]>
   }
   if (!id) return null
   const galleryId = id
-  return () => gallery.listImageUrls(galleryId)
+  return {
+    listImageUrls: () => gallery.listImageUrls(galleryId),
+    downloadHeaders: gallery.downloadHeaders,
+  }
+}
+
+/** Outcome of one source-image download: the bytes, or why it was skipped. */
+export type SourceImageDownload =
+  | { ok: true; bytes: ArrayBuffer }
+  | { ok: false; reason: string }
+
+/**
+ * Downloads one gallery image for the import, server-side. Never throws: an
+ * image that cannot be used comes back as ok:false with a loggable reason
+ * (status, content type, size — never a header value or the body), and the
+ * caller skips it.
+ *
+ * Security: the listings only return URLs on the platform's own CDN host,
+ * and redirects are refused rather than followed, so a redirect cannot send
+ * the server to another host — an internal address included. The response
+ * must declare an image content type, so an HTML page served with a 200 is
+ * never stored as a picture.
+ */
+export async function downloadSourceImage(
+  url: string,
+  headers: Readonly<Record<string, string>>,
+): Promise<SourceImageDownload> {
+  let res: Response
+  try {
+    res = await fetch(url, {
+      headers: { ...headers },
+      cache: 'no-store',
+      redirect: 'manual',
+      signal: AbortSignal.timeout(IMAGE_DOWNLOAD_TIMEOUT_MS),
+    })
+  } catch (error) {
+    return { ok: false, reason: error instanceof Error && error.name === 'TimeoutError' ? 'timeout' : 'network error' }
+  }
+
+  if (res.status >= 300 && res.status < 400) return { ok: false, reason: `redirect refused (HTTP ${res.status})` }
+  if (!res.ok) {
+    const challenge = res.headers.get('cf-mitigated') ? ' (Cloudflare challenge)' : ''
+    return { ok: false, reason: `HTTP ${res.status}${challenge}` }
+  }
+  const contentType = res.headers.get('content-type')?.split(';')[0].trim().toLowerCase() ?? ''
+  if (!contentType.startsWith('image/')) {
+    return { ok: false, reason: `not an image (${contentType || 'no content type'})` }
+  }
+  // Reject oversized responses before buffering, when the server advertises
+  // the size — avoids pulling a large body just to drop it.
+  const declaredSize = Number(res.headers.get('content-length'))
+  if (Number.isFinite(declaredSize) && declaredSize > PART_UPLOAD_LIMITS.maxThumbnailSize) {
+    return { ok: false, reason: 'too large' }
+  }
+
+  let bytes: ArrayBuffer
+  try {
+    bytes = await res.arrayBuffer()
+  } catch {
+    return { ok: false, reason: 'body read failed' }
+  }
+  // Content-Length may be absent or wrong, so the buffered size is still checked.
+  if (bytes.byteLength === 0) return { ok: false, reason: 'empty body' }
+  if (bytes.byteLength > PART_UPLOAD_LIMITS.maxThumbnailSize) return { ok: false, reason: 'too large' }
+  return { ok: true, bytes }
 }
 
 /**
