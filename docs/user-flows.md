@@ -20,7 +20,7 @@ This document is the July 2026 plan and is kept as written below. What shipped, 
 - **P3 — Curation tool: built** (#280, #283–#287), then merged with the contributor upload into the single `/publish` flow (#301–#303). See [CURATION_TOOL.md](./CURATION_TOOL.md) and [PUBLISH_FLOW.md](./PUBLISH_FLOW.md).
   - *Differs:* brands are read-only in the app (curated in the Supabase dashboard); the flow does not create brands. Products can be created inline, guarded against normalized duplicates (#279).
 - **Search:** search by brand, commercial name and manufacturer reference (#319); zero-result searches are logged and visitors can attach an unknown reference to a product (#320). See [SEARCH.md](./SEARCH.md).
-- **Open decisions (§5):** 1 settled (#258, #314). 3 partly settled: Printables metadata is extracted server-side through its public API; other platforms have no extractor pending the ToS decision. 4 settled: the archive is generated on the fly.
+- **Open decisions (§5):** 1 settled (#258, #314). 3 partly settled: Printables metadata is extracted server-side through its public API, Thingiverse metadata through its official REST API with an app token (#431); other platforms have no extractor pending the ToS decision. 4 settled: the archive is generated on the fly.
 - **Deferred flows (§6):** public publishing shipped as the original track of `/publish` (#294, #301–#303). Likes, comments and collections are hidden behind a feature flag (#322).
 
 ---

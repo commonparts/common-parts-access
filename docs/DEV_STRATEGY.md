@@ -138,6 +138,8 @@ Each environment reaches the single Supabase project with the publishable and se
 
 `NEXT_PUBLIC_` variables are inlined at build time: a new or changed value takes effect only after a rebuild, so it must exist in the environment before the build. `SUPABASE_SECRET_KEY` never takes the `NEXT_PUBLIC_` prefix. Both keys are created and rotated in Supabase Dashboard > Settings > API Keys.
 
+`THINGIVERSE_APP_TOKEN` is optional and server-only: set in an environment, it enables the Thingiverse pre-fill and image import of the publish flow (#431, see [CURATION_TOOL.md](CURATION_TOOL.md#pre-fill-from-the-source-url)). It is read at request time, so a change takes effect without a rebuild.
+
 ---
 
 ## Complete PR & Deploy Workflow

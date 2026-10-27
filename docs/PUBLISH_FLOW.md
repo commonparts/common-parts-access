@@ -103,14 +103,15 @@ Unchanged by the unification, both of them — including HTTP 422 with `blockers
 - **No bulk import, no auto-publish.** The elsewhere track stays unitary and judged; the review screen stays in the path.
 - **No curator role.** Any authenticated user, both tracks. Quality is enforced by the server gates, not by access control.
 - **No change to `origin_type` semantics.** In particular, no `(original, link_out)` combination.
-- **No new extractors.** Pre-fill remains Printables-only.
+- **No extractor of its own.** Pre-fill is the curation tool's: Printables, and Thingiverse when `THINGIVERSE_APP_TOKEN` is set (#431) — see [CURATION_TOOL.md](CURATION_TOOL.md#pre-fill-from-the-source-url).
 - **No `manufacturer` origin, no contributor-facing brand creation.**
 
 ## Key files
 
 ```
-app/(dashboard)/publish/page.tsx           Entry: orientation question + merged drafts
+app/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms (#431)
 components/publish/
+  publish-page.tsx                          Orientation question + merged drafts
   orientation-question.tsx                 The one branching decision
   original-track.tsx                        Original-track orchestrator
   elsewhere-track.tsx                       Elsewhere-track orchestrator

@@ -3,11 +3,15 @@ import { getLicenseBySpdxId } from '@/lib/supabase/queries/licenses'
 import {
   derivePrintablesPrintMetadata,
   derivePrintablesTexts,
+  deriveThingiverseFields,
   parsePrintablesModelId,
+  parseThingiverseThingId,
   PRINTABLES_LICENSE_TO_SPDX,
   type PrintablesPrintDetails,
+  type ThingiverseThing,
 } from '@/lib/curation/prefill-parsing'
 import { PRINTABLES_BASE_URL, queryPrintables } from '@/lib/curation/printables-api'
+import { getThingiverse, isThingiverseConfigured } from '@/lib/curation/thingiverse-api'
 import { normalizedHostname } from '@/lib/utils/validation'
 
 /**
@@ -77,6 +81,22 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
 }
 
 /**
+ * Thingiverse extractor: author, texts and print settings via the official
+ * REST API (#431). The license is never pre-filled — see ThingiverseThing.
+ * Inactive without THINGIVERSE_APP_TOKEN: no request is sent and only the
+ * platform is detected. Returns {} on any failure. Never throws.
+ */
+async function extractFromThingiverse(url: URL): Promise<Partial<CurationPrefill>> {
+  if (!isThingiverseConfigured()) return {}
+  const thingId = parseThingiverseThingId(url)
+  if (!thingId) return {}
+
+  const thing = await getThingiverse<ThingiverseThing>(`/things/${thingId}`)
+  if (!thing || typeof thing !== 'object') return {}
+  return deriveThingiverseFields(thing)
+}
+
+/**
  * Per-platform extractors, keyed by source_platforms.slug. Platforms absent
  * from this registry still get platform detection — only author, license and
  * print metadata stay manual. Extractors run server-side only (issue #255:
@@ -84,6 +104,7 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
  */
 const EXTRACTORS: Record<string, (url: URL) => Promise<Partial<CurationPrefill>>> = {
   printables: extractFromPrintables,
+  thingiverse: extractFromThingiverse,
 }
 
 /**
