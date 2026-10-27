@@ -35,6 +35,7 @@ describe('getThingiverse', () => {
 
   it('returns null on an HTTP error, a malformed body or a network failure', async () => {
     vi.stubEnv('THINGIVERSE_APP_TOKEN', 'app-token')
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"error":"Thing 1 does not exist"}', { status: 404 })))
     expect(await getThingiverse('/things/1')).toBeNull()
@@ -44,5 +45,29 @@ describe('getThingiverse', () => {
 
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('timeout')))
     expect(await getThingiverse('/things/1')).toBeNull()
+
+    expect(errorLog).toHaveBeenCalledTimes(3)
+    errorLog.mockRestore()
+  })
+
+  it('logs the status and a Cloudflare challenge, never the token', async () => {
+    vi.stubEnv('THINGIVERSE_APP_TOKEN', 'app-token')
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(new Response('<html>', { status: 403, headers: { 'cf-mitigated': 'challenge' } })),
+    )
+    expect(await getThingiverse('/things/3161')).toBeNull()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{"error":"Unauthorized"}', { status: 401 })))
+    expect(await getThingiverse('/things/3161')).toBeNull()
+
+    const messages = errorLog.mock.calls.map((call) => call.join(' '))
+    expect(messages).toEqual([
+      'Thingiverse API: GET /things/3161 answered 403 (Cloudflare challenge)',
+      'Thingiverse API: GET /things/3161 answered 401',
+    ])
+    expect(messages.join(' ')).not.toContain('app-token')
+    errorLog.mockRestore()
   })
 })
