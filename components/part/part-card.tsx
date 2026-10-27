@@ -1,12 +1,10 @@
 import * as React from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
 import { formatPrintLine } from "@/lib/utils/formatters"
-import { isGifUrl } from "@/lib/utils/images"
-import { PartCardGifThumbnail } from "./part-card-gif-thumbnail"
+import { PartThumbnail } from "./part-thumbnail"
 import { SourceLink } from "./source-link"
 import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
 
@@ -209,35 +207,12 @@ export function PartCard({ part, className, badge }: PartCardProps) {
           data-part-card-thumbnail=""
           className="relative aspect-video overflow-hidden rounded-t-lg"
         >
-          {part.thumbnailUrl && isGifUrl(part.thumbnailUrl) ? (
-            <PartCardGifThumbnail
-              key={part.thumbnailUrl}
-              src={part.thumbnailUrl}
-              alt={part.title}
-              sizes={THUMBNAIL_SIZES}
-              className={THUMBNAIL_HOVER_CLASS}
-            />
-          ) : part.thumbnailUrl ? (
-            <Image
-              src={part.thumbnailUrl}
-              alt={part.title}
-              fill
-              sizes={THUMBNAIL_SIZES}
-              className={cn("object-cover", THUMBNAIL_HOVER_CLASS)}
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-muted">
-              <svg
-                aria-hidden="true"
-                className="h-16 w-16 text-text-secondary"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-              </svg>
-            </div>
-          )}
+          <PartThumbnail
+            src={part.thumbnailUrl}
+            alt={part.title}
+            sizes={THUMBNAIL_SIZES}
+            className={THUMBNAIL_HOVER_CLASS}
+          />
         </div>
       </Link>
 
