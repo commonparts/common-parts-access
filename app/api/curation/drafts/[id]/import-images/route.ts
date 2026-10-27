@@ -43,7 +43,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ imported: 0, images: draft.images ?? [], skipped: 'Images already registered for this draft' })
     }
 
-    // The lister checks the source URL host before reading its path as an id.
+    // resolveSourceGallery checks the source URL host before reading its path as an id.
     const gallery = draft.source_url ? resolveSourceGallery(draft.source_url) : null
     if (!gallery) {
       return NextResponse.json(
