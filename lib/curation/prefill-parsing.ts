@@ -142,20 +142,20 @@ export function parseThingiverseThingId(url: URL): string | null {
 
 /**
  * The fields of a GET /things/{id} response the extractor reads. Names and
- * shapes verified against live API responses (#431): print settings are the
- * `data` entries of the `details_parts` item of type "settings", each value
- * an HTML fragment such as "<div><p>0.2mm</p></div>".
- *
- * The `license` field is deliberately not read. It is a label without a
- * version ("Creative Commons - Attribution", "GNU - GPL", "Public Domain"),
- * and no other field or endpoint carries one. The license pre-fill maps only
- * on an exact license-and-version match with a `licenses` row, so a
- * Thingiverse license is never pre-filled: the curator records it.
+ * shapes verified against live API responses (#431):
+ * - `description_html` is the Thing's Summary, the only free-text body the
+ *   Thingiverse page shows. `instructions_html` is a leftover of an earlier
+ *   page layout, empty on current Things, and is not read.
+ * - print settings are the `data` entries of the `details_parts` item of
+ *   type "settings", each value an HTML fragment such as
+ *   "<div><p>0.2mm</p></div>".
+ * - `license` is a label without a version, mapped by
+ *   THINGIVERSE_LICENSE_TO_SPDX.
  */
 export interface ThingiverseThing {
   creator?: { name?: string | null; public_url?: string | null } | null
   description_html?: string | null
-  instructions_html?: string | null
+  license?: string | null
   details_parts?: Array<{
     type?: string | null
     data?: Array<Record<string, unknown> | null> | null
@@ -165,10 +165,40 @@ export interface ThingiverseThing {
 export interface ThingiverseFields {
   originalAuthor: string | null
   originalAuthorUrl: string | null
-  description: string | null
   instructions: string | null
   material: string | null
   layerHeight: string | null
+  /** SPDX id of the declared license, resolved to a `licenses` row by the caller. */
+  licenseSpdxId: string | null
+}
+
+/**
+ * Thingiverse license label (the API's `license` field) → SPDX id. The label
+ * carries no version, but each Thing page links the license it declares;
+ * every entry was checked against that link on live Thing pages, Things from
+ * 2014 to 2023 included (#431) — they all link the version listed here.
+ *
+ * Labels left out have no exact `licenses` row and stay empty for the
+ * curator: "Public Domain" links the retired Public Domain Certification
+ * (not CC0), "GNU - GPL" links GPL 2.0, "GNU - LGPL" links LGPL 2.1, "BSD
+ * License" links an unversioned BSD page, "All Rights Reserved" is not an
+ * open license.
+ */
+export const THINGIVERSE_LICENSE_TO_SPDX: Record<string, string> = {
+  'Creative Commons - Attribution': 'CC-BY-4.0',
+  'Creative Commons - Attribution - Share Alike': 'CC-BY-SA-4.0',
+  'Creative Commons - Attribution - No Derivatives': 'CC-BY-ND-4.0',
+  'Creative Commons - Attribution - Non-Commercial': 'CC-BY-NC-4.0',
+  'Creative Commons - Attribution - Non-Commercial - Share Alike': 'CC-BY-NC-SA-4.0',
+  'Creative Commons - Attribution - Non-Commercial - No Derivatives': 'CC-BY-NC-ND-4.0',
+  'Creative Commons - Public Domain Dedication': 'CC0-1.0',
+}
+
+/** SPDX id of a mapped Thingiverse license label, or null. Own keys only. */
+function thingiverseLicenseSpdxId(label: unknown): string | null {
+  if (typeof label !== 'string') return null
+  const key = label.trim()
+  return Object.hasOwn(THINGIVERSE_LICENSE_TO_SPDX, key) ? THINGIVERSE_LICENSE_TO_SPDX[key] : null
 }
 
 const THINGIVERSE_HOST = normalizedHostname(THINGIVERSE_BASE_URL)
@@ -201,12 +231,14 @@ function thingiverseSettingValues(thing: ThingiverseThing, key: string): string[
  * absent or ambiguous — a pre-filled value must never be a guess:
  * - author: the creator's user name, and their profile URL when it is on
  *   Thingiverse
- * - description: the Thing's summary, as plain text, capped at the column
- *   limit; instructions: its Instructions section, as plain text
+ * - instructions: the Thing's Summary, as plain text, capped at the column
+ *   limit. The short description stays empty: Thingiverse has no short
+ *   summary, and the first 250 characters of the body are not one.
  * - material: the declared filament material, when a single one-line value
  *   is given
  * - layerHeight: the declared resolution, only when it is a single plain
  *   number of millimetres ("0.2", ".2", "0.2mm") of at most 1 mm
+ * - licenseSpdxId: the declared license, when its label is mapped
  * Print time and material usage are not provided by the API and stay null.
  */
 export function deriveThingiverseFields(thing: ThingiverseThing): ThingiverseFields {
@@ -235,15 +267,12 @@ export function deriveThingiverseFields(thing: ThingiverseThing): ThingiverseFie
   return {
     originalAuthor: name,
     originalAuthorUrl,
-    description: capped(
-      typeof thing.description_html === 'string' ? htmlToPlainText(thing.description_html) : '',
-      VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH,
-    ),
     instructions: capped(
-      typeof thing.instructions_html === 'string' ? htmlToPlainText(thing.instructions_html) : '',
+      typeof thing.description_html === 'string' ? htmlToPlainText(thing.description_html) : '',
       VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH,
     ),
     material,
     layerHeight,
+    licenseSpdxId: thingiverseLicenseSpdxId(thing.license),
   }
 }

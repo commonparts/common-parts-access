@@ -152,8 +152,8 @@ function thing(overrides: Partial<ThingiverseThing> & { settings?: Record<string
   const { settings, ...rest } = overrides
   return {
     creator: { name: 'maker_jane', public_url: 'https://www.thingiverse.com/maker_jane' },
-    description_html: '<div><p>Replacement hinge for the lid.</p><p>Fits model A and B.</p></div>',
-    instructions_html: '',
+    description_html: '<div><p>Replacement hinge for the lid.</p><ol><li>Print flat.</li><li>Press in.</li></ol></div>',
+    license: 'Creative Commons - Attribution',
     details_parts: [
       { type: 'summary', data: [{ content: '<div><p>Replacement hinge for the lid.</p></div>' }] },
       {
@@ -177,34 +177,54 @@ function thing(overrides: Partial<ThingiverseThing> & { settings?: Record<string
 }
 
 describe('deriveThingiverseFields', () => {
-  it('derives the author, texts and print settings of a complete Thing', () => {
-    expect(
-      deriveThingiverseFields(
-        thing({ instructions_html: '<div><ol><li>Print flat.</li><li>Press in.</li></ol></div>' }),
-      ),
-    ).toEqual({
+  it('derives the author, instructions, print settings and license of a complete Thing', () => {
+    expect(deriveThingiverseFields(thing())).toEqual({
       originalAuthor: 'maker_jane',
       originalAuthorUrl: 'https://www.thingiverse.com/maker_jane',
-      description: 'Replacement hinge for the lid.\nFits model A and B.',
-      instructions: '- Print flat.\n- Press in.',
+      instructions: 'Replacement hinge for the lid.\n- Print flat.\n- Press in.',
       material: 'PETG',
       layerHeight: '0.2',
+      licenseSpdxId: 'CC-BY-4.0',
     })
   })
 
-  it('never returns a license, whatever the label', () => {
-    // The API's license labels carry no version, so no exact license-and-
-    // version match with a `licenses` row is possible (#431).
-    for (const license of [
-      'Creative Commons - Attribution',
-      'Creative Commons - Attribution - Share Alike',
-      'Creative Commons - Attribution - Non-Commercial - Share Alike',
-      'GNU - GPL',
-      'Public Domain',
-      'Some future license 4.0',
+  it('maps the Summary to the instructions and never fills the short description', () => {
+    const result = deriveThingiverseFields(thing())
+    expect(result.instructions).toContain('Replacement hinge for the lid.')
+    expect(result).not.toHaveProperty('description')
+  })
+
+  it('maps each license label whose Thing page links a version held in licenses', () => {
+    for (const [license, expected] of [
+      ['Creative Commons - Attribution', 'CC-BY-4.0'],
+      ['Creative Commons - Attribution - Share Alike', 'CC-BY-SA-4.0'],
+      ['Creative Commons - Attribution - No Derivatives', 'CC-BY-ND-4.0'],
+      ['Creative Commons - Attribution - Non-Commercial', 'CC-BY-NC-4.0'],
+      ['Creative Commons - Attribution - Non-Commercial - Share Alike', 'CC-BY-NC-SA-4.0'],
+      ['Creative Commons - Attribution - Non-Commercial - No Derivatives', 'CC-BY-NC-ND-4.0'],
+      ['Creative Commons - Public Domain Dedication', 'CC0-1.0'],
+      [' Creative Commons - Attribution ', 'CC-BY-4.0'],
     ]) {
-      const result = deriveThingiverseFields({ ...thing(), license } as ThingiverseThing)
-      expect(result).not.toHaveProperty('licenseId')
+      expect(deriveThingiverseFields(thing({ license })).licenseSpdxId).toBe(expected)
+    }
+  })
+
+  it('leaves the license empty when the label links another version or no exact license', () => {
+    // Public Domain links the retired Public Domain Certification, GNU - GPL
+    // links GPL 2.0, GNU - LGPL links LGPL 2.1, BSD License an unversioned
+    // page; none has a licenses row (#431).
+    for (const license of [
+      'Public Domain',
+      'GNU - GPL',
+      'GNU - LGPL',
+      'BSD License',
+      'All Rights Reserved',
+      'Some future license 4.0',
+      'constructor',
+      '',
+      null,
+    ]) {
+      expect(deriveThingiverseFields(thing({ license })).licenseSpdxId).toBeNull()
     }
   })
 
@@ -267,24 +287,24 @@ describe('deriveThingiverseFields', () => {
     const empty = {
       originalAuthor: null,
       originalAuthorUrl: null,
-      description: null,
       instructions: null,
       material: null,
       layerHeight: null,
+      licenseSpdxId: null,
     }
     expect(deriveThingiverseFields({})).toEqual(empty)
     expect(
       deriveThingiverseFields({
         creator: null,
         description_html: '<div><p>&nbsp;</p></div>',
-        instructions_html: null,
+        license: null,
         details_parts: [null, { type: 'settings', data: [null, { resolution: 12 }] }],
       }),
     ).toEqual(empty)
   })
 
-  it('caps the summary at the short-description limit', () => {
-    const result = deriveThingiverseFields(thing({ description_html: `<p>${'x'.repeat(300)}</p>` }))
-    expect(result.description).toHaveLength(250)
+  it('caps the Summary at the instructions limit', () => {
+    const result = deriveThingiverseFields(thing({ description_html: `<p>${'x'.repeat(9000)}</p>` }))
+    expect(result.instructions).toHaveLength(8000)
   })
 })

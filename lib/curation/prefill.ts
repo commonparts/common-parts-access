@@ -34,6 +34,16 @@ export interface CurationPrefill {
   estimatedMaterialUsage: string | null
 }
 
+/**
+ * The `licenses` row id of a mapped SPDX id, or null when there is no id or
+ * no row — the license then stays empty for the curator.
+ */
+async function licenseIdForSpdx(spdxId: string | null | undefined): Promise<string | null> {
+  if (!spdxId) return null
+  const license = await getLicenseBySpdxId(spdxId)
+  return license?.id ?? null
+}
+
 interface PrintablesPrintData {
   print?:
     | (PrintablesPrintDetails & {
@@ -72,17 +82,15 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
   if (print.user?.handle) result.originalAuthorUrl = `${PRINTABLES_BASE_URL}/@${print.user.handle}`
 
   const abbreviation = print.license?.abbreviation
-  const spdxId = abbreviation ? PRINTABLES_LICENSE_TO_SPDX[abbreviation] : undefined
-  if (spdxId) {
-    const license = await getLicenseBySpdxId(spdxId)
-    if (license) result.licenseId = license.id
-  }
+  const licenseId = await licenseIdForSpdx(abbreviation ? PRINTABLES_LICENSE_TO_SPDX[abbreviation] : null)
+  if (licenseId) result.licenseId = licenseId
   return result
 }
 
 /**
- * Thingiverse extractor: author, texts and print settings via the official
- * REST API (#431). The license is never pre-filled — see ThingiverseThing.
+ * Thingiverse extractor: author, declared license, instructions and print
+ * settings via the official REST API (#431). The license label is mapped
+ * by THINGIVERSE_LICENSE_TO_SPDX; an unmapped label stays empty.
  * Inactive without THINGIVERSE_APP_TOKEN: no request is sent and only the
  * platform is detected. Returns {} on any failure. Never throws.
  */
@@ -93,7 +101,8 @@ async function extractFromThingiverse(url: URL): Promise<Partial<CurationPrefill
 
   const thing = await getThingiverse<ThingiverseThing>(`/things/${thingId}`)
   if (!thing || typeof thing !== 'object') return {}
-  return deriveThingiverseFields(thing)
+  const { licenseSpdxId, ...fields } = deriveThingiverseFields(thing)
+  return { ...fields, licenseId: await licenseIdForSpdx(licenseSpdxId) }
 }
 
 /**
