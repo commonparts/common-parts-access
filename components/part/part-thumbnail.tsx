@@ -16,8 +16,9 @@ interface PartThumbnailProps {
 /**
  * A part's thumbnail, filling its parent: the parent sets the size and the
  * aspect ratio and must be `relative` with `overflow-hidden`. The image is
- * cropped to cover it. A GIF shows a still frame that animates on hover or
- * keyboard focus (#217). A part without a thumbnail shows a placeholder icon.
+ * cropped to cover it. A GIF shows a still frame that animates on hover, and
+ * on keyboard focus inside a `PartCard` (#217). A part without a thumbnail
+ * shows a placeholder icon.
  */
 export function PartThumbnail({ src, alt, sizes, className }: PartThumbnailProps) {
   if (src && isGifUrl(src)) {
