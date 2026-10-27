@@ -716,7 +716,7 @@ export function ElsewhereTrack({
                   type="url"
                   value={formData.sourceUrl}
                   onChange={(e) => setFormData((prev) => ({ ...prev, sourceUrl: e.target.value }))}
-                  placeholder="https://www.printables.com/model/…"
+                  placeholder="https://www.thingiverse.com/thing:…"
                   disabled={Boolean(draftId)}
                   required
                 />
