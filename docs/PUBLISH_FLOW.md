@@ -38,8 +38,10 @@ On the part page, a part from the elsewhere track credits its designer first (#3
 **Orientation question** (`lib/publish/tracks.ts`) — the only conscious branching decision in the flow:
 
 > **Where does this part come from?**
-> - **I designed it** — I'm publishing it here for the first time. → original track
 > - **It's already published elsewhere** — Printables, Thingiverse, GitHub, or another platform. → elsewhere track
+> - **I designed it** — I'm publishing it here for the first time. → original track
+
+The answers are shown in this order: referencing a part where it is already published comes first, ahead of uploading a model here.
 
 Authorship alone does not decide the track: a designer whose files live on their own GitHub answers "already published elsewhere" and becomes `origin_type = 'curated'` with themselves as `original_author`. This phrases the existing rule as a verifiable fact rather than a legal self-assessment.
 
