@@ -20,6 +20,8 @@ export interface PublishTrackDefinition {
   detail: string
   /** Short label on a draft row. */
   badge: string
+  /** Marked "Recommended" in the orientation question. */
+  recommended?: boolean
 }
 
 /**
@@ -31,19 +33,24 @@ export interface PublishTrackDefinition {
  * curated row with themselves as the original author. Asking *where the part
  * comes from* makes that answerable by looking, instead of asking someone to
  * assess their own legal standing.
+ *
+ * The order is the display order: referencing a part where it is already
+ * published comes first, ahead of uploading a model here, and is marked
+ * recommended.
  */
 export const PUBLISH_TRACKS: readonly PublishTrackDefinition[] = [
-  {
-    track: 'original',
-    answer: 'I designed it',
-    detail: "I'm publishing it here for the first time.",
-    badge: 'Original',
-  },
   {
     track: 'elsewhere',
     answer: "It's already published elsewhere",
     detail: 'Printables, Thingiverse, GitHub, or another platform — including my own.',
     badge: 'Published elsewhere',
+    recommended: true,
+  },
+  {
+    track: 'original',
+    answer: 'I designed it',
+    detail: "I'm publishing it here for the first time.",
+    badge: 'Original',
   },
 ] as const
 
