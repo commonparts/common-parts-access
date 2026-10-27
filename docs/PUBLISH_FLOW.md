@@ -41,7 +41,7 @@ On the part page, a part from the elsewhere track credits its designer first (#3
 > - **It's already published elsewhere** — Printables, Thingiverse, GitHub, or another platform. → elsewhere track
 > - **I designed it** — I'm publishing it here for the first time. → original track
 
-The answers are shown in this order: referencing a part where it is already published comes first, ahead of uploading a model here.
+The answers are shown in this order: referencing a part where it is already published comes first, ahead of uploading a model here, and carries a "Recommended" badge.
 
 Authorship alone does not decide the track: a designer whose files live on their own GitHub answers "already published elsewhere" and becomes `origin_type = 'curated'` with themselves as `original_author`. This phrases the existing rule as a verifiable fact rather than a legal self-assessment.
 
