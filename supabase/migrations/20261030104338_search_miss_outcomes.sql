@@ -45,6 +45,8 @@
 -- No new index: the outcome filter applies to at most one group per
 -- normalized query, after the aggregation over the time window that
 -- `idx_search_misses_created_at` already serves.
+--
+-- APPLIED to production on 2026-10-30 as version 20261030104338.
 
 -- ============================================================================
 -- 1. search_all

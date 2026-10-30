@@ -13,7 +13,7 @@ How visitors find a device and its parts by typing what they read on it: a brand
 
 ## Matching: `search_all`
 
-One database function returns `{ products, parts, brands }` (migrations `20260925200000_search_by_reference.sql`, `20260926120000_list_products_with_open_requests.sql` and `20261030120000_search_miss_outcomes.sql`).
+One database function returns `{ products, parts, brands }` (migrations `20260925200000_search_by_reference.sql`, `20260926120000_list_products_with_open_requests.sql` and `20261030104338_search_miss_outcomes.sql`).
 
 - **Folding.** Names are compared through `fold_search_text()`: lowercase with Latin accents removed, so "Kärcher" equals "karcher".
 - **Token coverage.** Each query token is matched on its own, so word order does not matter. A token counts fully when its compact form (no spaces, dots, slashes or hyphens) appears in the compact document, so "k3" matches "K 3". Otherwise it counts its trigram word similarity from 0.5 up, which tolerates a typo ("karchr").
