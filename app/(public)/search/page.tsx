@@ -24,6 +24,13 @@ function firstParam(value: string | string[] | undefined): string {
   return value ?? ""
 }
 
+/**
+ * The search results page. Runs the search once server-side, hydrates the part
+ * hits as standard cards, and classifies the search as served or unserved on
+ * those cards (issue #452). An unserved search is logged in `search_misses`
+ * and gets the zero-result block; this page is the only place that logs, as
+ * autocomplete keystrokes go through /api/search.
+ */
 export default async function SearchPage({
   searchParams,
 }: {

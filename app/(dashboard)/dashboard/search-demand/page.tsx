@@ -127,7 +127,13 @@ export default async function SearchDemandPage({
             </table>
           </div>
         ) : (
-          <p className="text-body text-text-secondary">No missed search in this window.</p>
+          <p className="text-body text-text-secondary">
+            {outcome ? (
+              <>No missed search with the outcome &ldquo;{OUTCOME_LABEL[outcome]}&rdquo; in this window.</>
+            ) : (
+              "No missed search in this window."
+            )}
+          </p>
         )}
       </section>
 

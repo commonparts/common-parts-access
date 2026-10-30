@@ -44,6 +44,13 @@ interface SearchResultsViewProps {
   candidates: ProductCandidate[]
 }
 
+/**
+ * The /search results. A served search shows its grouped results with the
+ * type filter. An unserved one (issue #452) leads with the zero-result block,
+ * so the part request is offered first, then lists the products the query
+ * names exactly and groups everything else under "Close matches": close
+ * results must never read as an answer to the query.
+ */
 export function SearchResultsView({
   results,
   partCards,
@@ -146,7 +153,7 @@ const UNSERVED_COPY: Record<SearchMissOutcome, { titleStart: string; titleEnd: s
     titleStart: "No parts published for",
     titleEnd: " yet",
     intro:
-      "The product is in the catalog, but nobody has published a part for it yet. Tell us what you need and requests with the most demand get sourced first.",
+      "These products are in the catalog, but nobody has published a part for them yet. Tell us what you need and requests with the most demand get sourced first.",
   },
 }
 
