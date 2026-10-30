@@ -12,15 +12,21 @@
 --   - letters only, 4 letters or more: model numbers ("v10" / "v11") never
 --     match a neighbour;
 --   - contained in no product or part document: a word the catalog knows is
---     never read as another one. Applied to every word of the catalog, an
---     edit distance of 1 pairs 131 of them (power / mower / tower,
---     shark / sharp, magic / mavic, latch / watch, karcher / archer);
+--     never read as another one. Applied to the 886 catalog words of 4
+--     letters or more on 2026-10-30, the distance rule below matches one
+--     catalog word to another 131 times, each direction counted (power /
+--     mower / tower, shark / sharp, magic / mavic, latch / watch,
+--     karcher / archer);
 --   - distance 1 from 5 letters, 2 from 8 letters; a 4-letter token only
 --     matches a word with one more letter ("dysn" / "dyson", "bosh" /
 --     "bosch"), as a substitution pairs too many short words ("mini" /
 --     "midi").
 -- A query whose tokens are all found this way is a full match, so "dysn v10"
 -- is served like "dyson v10".
+--
+-- Known limit, accepted: Levenshtein counts a swap of two adjacent letters
+-- as 2 edits, so a swap in a word of 5 to 7 letters ("dsyon", "bsoch") is
+-- not corrected. `fuzzystrmatch` has no variant that counts it as one edit.
 --
 -- What this migration does, in order:
 --
@@ -56,10 +62,12 @@ immutable
 parallel safe
 set search_path = ''
 as $$
-  -- The length check first: cheap, and it keeps levenshtein_less_equal()
-  -- within its 255-character limit (tokens are at most 100 characters).
-  select pg_catalog.abs(pg_catalog.length(word) - pg_catalog.length(token)) <= 2
-    and case
+  -- CASE evaluates its branches in order, unlike AND: the length check
+  -- always runs first, so levenshtein_less_equal(), which raises an error
+  -- above 255 characters, never sees a long word (tag length is not bounded
+  -- in the database; tokens are at most 100 characters).
+  select case
+      when pg_catalog.abs(pg_catalog.length(word) - pg_catalog.length(token)) > 2 then false
       when pg_catalog.length(token) >= 8 then extensions.levenshtein_less_equal(token, word, 2) <= 2
       when pg_catalog.length(token) >= 5 then extensions.levenshtein_less_equal(token, word, 1) <= 1
       -- One missing letter only: a substitution pairs too many short words.

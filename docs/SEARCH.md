@@ -18,7 +18,8 @@ One database function returns `{ products, parts, brands }` (migrations `2026092
 - **Folding.** Names are compared through `fold_search_text()`: lowercase with Latin accents removed, so "Kärcher" equals "karcher".
 - **Token coverage.** Each query token is matched on its own, so word order does not matter. A token counts fully when its compact form (no spaces, dots, slashes or hyphens) appears in the compact document, so "k3" matches "K 3". A token with a typo also counts fully when it is a typo candidate and a word of the document is within typo distance of it (#452, `search_typo_match()`, with `levenshtein_less_equal()` from the `fuzzystrmatch` extension):
   - a typo candidate is made of letters only, has 4 letters or more, and appears in no product or part document. A model number ("v10") is never matched to a neighbour ("v11"), and a word the catalog knows ("power") is never read as another one ("mower");
-  - the typo distance is 1 edit from 5 letters and 2 edits from 8 letters; a 4-letter token only matches a word with one more letter ("dysn" → "dyson", "bosh" → "bosch").
+  - the typo distance is 1 edit from 5 letters and 2 edits from 8 letters; a 4-letter token only matches a word with one more letter ("dysn" → "dyson", "bosh" → "bosch");
+  - known limit: a swap of two adjacent letters counts as 2 edits, so it is not corrected in a word of 5 to 7 letters ("dsyon", "bsoch").
 
   Otherwise a token counts its trigram word similarity from 0.5 up, which only ranks the hit.
 - **References.** Products also match on validated `product_references.normalized_value` by prefix, the query being normalized with `normalize_product_reference()`. "QP6520" finds QP6520/20 and QP6520/30. The prefix lookup only runs from 3 characters. References of every region are searched. Parts match through the references of the products they fit.
