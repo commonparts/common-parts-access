@@ -1,6 +1,6 @@
 -- Migration: typo-tolerant token matching (issue #452, point 4)
 --
--- 20261030120000 makes a search served only by a full match: every query
+-- 20261030104338 makes a search served only by a full match: every query
 -- token found. A token with a typo ("dysn v10") only counted its trigram
 -- similarity, below 1, so the search was logged as `approximate` and its
 -- results shown as close matches. Lowering the trigram threshold cannot fix
@@ -41,15 +41,17 @@
 --   4. Replaces `search_all`: a `typo_tokens` step lists the typo candidates
 --      of the query, and products and parts use the three-argument
 --      coverage. `part_docs` moves ahead of the scoring so that step can
---      read it. Nothing else changes from 20261030120000; brands keep the
+--      read it. Nothing else changes from 20261030104338; brands keep the
 --      two-argument coverage.
 --
--- Requires 20261030120000_search_miss_outcomes.sql. Additive: applied when
+-- Requires 20261030104338_search_miss_outcomes.sql. Additive: applied when
 -- the PR lands on `dev`. Checked against the catalog on 2026-10-30: "dysn",
 -- "karchr", "phillips", "bosh" and "nespreso" are corrected; "power",
 -- "shark" and "mower" are catalog words and are not; "cooper" can only reach
 -- "cooker" and "cooler", and no document holds "mini" with either, so
 -- "mini cooper" stays `approximate`.
+--
+-- APPLIED to production on 2026-10-30 as version 20261030104531.
 
 -- 1. Extension.
 create extension if not exists fuzzystrmatch with schema extensions;
