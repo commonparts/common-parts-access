@@ -22,7 +22,7 @@ Last reviewed: v1.2.0 (October 2026).
 | [PUBLISH_FLOW.md](./PUBLISH_FLOW.md) | Reference | `/publish`: shared entry, vocabulary (original / hosted / referenced), five-step shell |
 | [UPLOAD_FLOW.md](./UPLOAD_FLOW.md) | Reference | Original track engine (`/api/upload/**`) |
 | [CURATION_TOOL.md](./CURATION_TOOL.md) | Reference | Elsewhere track engine (`/api/curation/**`), checklist, prefill |
-| [SEARCH.md](./SEARCH.md) | Reference | Autocomplete, `/search`, reference matching, zero-result logging |
+| [SEARCH.md](./SEARCH.md) | Reference | Autocomplete, `/search`, reference matching, unserved search logging |
 | [BROWSE_NAVIGATION.md](./BROWSE_NAVIGATION.md) | Reference | `/browse`, category and brand pages, availability semantics |
 | [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) | Reference | Product references, regional names, evidence levels, print reports, compatible products on the part page |
 | [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md) | Reference | Anonymous downloads, archive, storage |

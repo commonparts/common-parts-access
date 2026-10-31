@@ -11,6 +11,9 @@ export interface SearchProductResult {
   // The manufacturer reference or regional name the query matched (issue
   // #319), as displayed; null when the product matched by name.
   reference: string | null
+  // Every query token found, a full-text match or a reference hit (issue
+  // #452); false for a close match (trigram similarity or partial coverage).
+  full_match: boolean
 }
 
 export interface SearchPartResult {
@@ -21,6 +24,7 @@ export interface SearchPartResult {
   part_number: string | null
   thumbnail_url: string | null
   product_name: string | null // a linked product; null => "Generic part"
+  full_match: boolean // same definition as SearchProductResult.full_match
   // search_all also returns the license, brands, products and product_count
   // of a part hit. They are not read here: the results page renders part hits
   // as standard part cards, hydrated by id through the shared card query
@@ -76,3 +80,16 @@ export interface ProductCandidate {
 }
 
 export const PRODUCT_CANDIDATES_LIMIT = 6
+
+// Why a search submitted on /search was unserved (issue #452), as stored in
+// `search_misses.outcome`. A search is served when a full match is a part or
+// a product with a published part; see classifySearch().
+export type SearchMissOutcome = "no_results" | "approximate" | "no_parts"
+
+export const SEARCH_MISS_OUTCOMES: SearchMissOutcome[] = ["no_results", "approximate", "no_parts"]
+
+export function isSearchMissOutcome(value: string | undefined): value is SearchMissOutcome {
+  return !!value && (SEARCH_MISS_OUTCOMES as string[]).includes(value)
+}
+
+export type SearchOutcome = "served" | SearchMissOutcome

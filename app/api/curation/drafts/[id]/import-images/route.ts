@@ -1,26 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getCurationDraft } from '@/lib/supabase/queries/curation'
-import { parsePrintablesModelId } from '@/lib/curation/prefill-parsing'
-import { PRINTABLES_BASE_URL } from '@/lib/curation/printables-api'
-import { fetchPrintablesImageUrls, numberedImageFilename } from '@/lib/curation/source-images'
+import { downloadSourceImage, numberedImageFilename, resolveSourceGallery } from '@/lib/curation/source-images'
 import { inferImageContentType } from '@/lib/storage/image-processing'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
-import { isValidUuid, normalizedHostname } from '@/lib/utils/validation'
+import { isValidUuid } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 
 export const runtime = 'nodejs'
-
-const IMAGE_DOWNLOAD_TIMEOUT_MS = 15000
-const PRINTABLES_HOST = normalizedHostname(PRINTABLES_BASE_URL)
 
 // POST /api/curation/drafts/[id]/import-images — imports the source's
 // gallery images into the draft: downloaded server-side, stored under
 // numbered filenames (00-…, 01-…) so the canonical filename sort makes the
 // source's first image the thumbnail and preserves the slideshow order.
-// Best-effort per image: an unreachable or invalid image is skipped, never
-// a failure of the whole import. Printables sources only for now.
+// Best-effort per image: an unreachable or invalid image is skipped and
+// logged with its reason, never a failure of the whole import. Printables
+// sources, and Thingiverse sources when THINGIVERSE_APP_TOKEN is set (#431).
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const supabase = await createClient()
@@ -47,25 +43,16 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ imported: 0, images: draft.images ?? [], skipped: 'Images already registered for this draft' })
     }
 
-    // "Printables sources only": the source URL host must actually be
-    // Printables before its path is read as a print id — otherwise a URL like
-    // https://example.com/model/3161 would pull Printables images for id 3161.
-    let printId: string | null = null
-    if (draft.source_url && normalizedHostname(draft.source_url) === PRINTABLES_HOST) {
-      try {
-        printId = parsePrintablesModelId(new URL(draft.source_url))
-      } catch {
-        printId = null
-      }
-    }
-    if (!printId) {
-      return NextResponse.json({ error: 'Image import is only available for Printables model sources' }, { status: 400 })
+    // resolveSourceGallery checks the source URL host before reading its path as an id.
+    const gallery = draft.source_url ? resolveSourceGallery(draft.source_url) : null
+    if (!gallery) {
+      return NextResponse.json(
+        { error: 'Image import is not available for this source: it needs a Printables model or Thingiverse Thing URL, and Thingiverse import must be enabled on the server' },
+        { status: 400 },
+      )
     }
 
-    const imageUrls = (await fetchPrintablesImageUrls(printId)).slice(
-      0,
-      PART_UPLOAD_LIMITS.maxThumbnailFiles,
-    )
+    const imageUrls = (await gallery.listImageUrls()).slice(0, PART_UPLOAD_LIMITS.maxThumbnailFiles)
     if (imageUrls.length === 0) {
       return NextResponse.json({ imported: 0, images: draft.images ?? [] })
     }
@@ -87,23 +74,12 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       const filename = numberedImageFilename(fileRows.length, imageUrl)
       if (!filename) continue
 
-      let bytes: ArrayBuffer
-      try {
-        const res = await fetch(imageUrl, {
-          cache: 'no-store',
-          signal: AbortSignal.timeout(IMAGE_DOWNLOAD_TIMEOUT_MS),
-        })
-        if (!res.ok) continue
-        // Reject oversized responses before buffering, when the server
-        // advertises the size — avoids pulling a large body just to drop it.
-        const declaredSize = Number(res.headers.get('content-length'))
-        if (Number.isFinite(declaredSize) && declaredSize > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
-        bytes = await res.arrayBuffer()
-      } catch {
+      const download = await downloadSourceImage(imageUrl, gallery.downloadHeaders)
+      if (!download.ok) {
+        console.error(`Image import: skipped ${filename} (${download.reason})`)
         continue
       }
-      // Content-Length may be absent or wrong, so the buffered size is still checked.
-      if (bytes.byteLength === 0 || bytes.byteLength > PART_UPLOAD_LIMITS.maxThumbnailSize) continue
+      const { bytes } = download
 
       const extension = filename.slice(filename.lastIndexOf('.'))
       const path = `${user.id}/${id}/thumbnails/${filename}`

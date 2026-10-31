@@ -6,6 +6,7 @@ import {
   PRODUCT_CANDIDATES_LIMIT,
   SEARCH_MAX_QUERY_LENGTH,
   type ProductCandidate,
+  type SearchMissOutcome,
 } from '@/types/search'
 
 // Postgres error codes the attachment insert maps to a client error.
@@ -15,15 +16,21 @@ const CHECK_VIOLATION = '23514'
 export type AttachReferenceResult = 'created' | 'unknown_product' | 'invalid_value'
 
 /**
- * Records a zero-result search (issue #320). The caller is the /search page,
- * after search_all returned nothing, so only submitted searches are logged,
- * never autocomplete keystrokes. Uses the service role: `search_misses` has
- * RLS on, no policy and no client privileges, so the page is the single way
- * in. Nothing identifying is stored — no IP, user or session id.
+ * Records an unserved search (issues #320, #452) with its outcome: nothing
+ * returned, close matches only, or a product without parts. The caller is the
+ * /search page, after classifying the results, so only submitted searches are
+ * logged, never autocomplete keystrokes. Uses the service role:
+ * `search_misses` has RLS on, no policy and no client privileges, so the page
+ * is the single way in. Nothing identifying is stored — no IP, user or
+ * session id.
  *
  * Never throws: losing one miss must not break the results page.
  */
-export async function logSearchMiss(query: string, locale: string | null): Promise<void> {
+export async function logSearchMiss(
+  query: string,
+  locale: string | null,
+  outcome: SearchMissOutcome,
+): Promise<void> {
   const rawQuery = query.trim().slice(0, SEARCH_MAX_QUERY_LENGTH).trim()
   // A query without a letter or digit normalizes to nothing (see the table's
   // CHECK constraint) and cannot be grouped with anything.
@@ -31,7 +38,7 @@ export async function logSearchMiss(query: string, locale: string | null): Promi
 
   try {
     const supabase = createAdminClient()
-    const { error } = await supabase.from('search_misses').insert({ raw_query: rawQuery, locale })
+    const { error } = await supabase.from('search_misses').insert({ raw_query: rawQuery, locale, outcome })
     if (error) console.error('logSearchMiss: insert failed', error)
   } catch (error) {
     console.error('logSearchMiss: failed', error)
@@ -98,11 +105,17 @@ export async function attachProductReference(
   throw error
 }
 
-/** One group of zero-result searches on the demand dashboard. */
+/** One group of unserved searches on the demand dashboard. */
 export interface SearchMissSummary {
   normalized_query: string
   /** The latest spelling of the group. */
   raw_query: string
+  /** The latest outcome of the group; the count covers every outcome. */
+  outcome: SearchMissOutcome
+  /**
+   * Number of distinct days (UTC) on which the group was logged in the window,
+   * not the number of rows: a reload logs the same search again (#456).
+   */
   miss_count: number
   last_seen: string
 }
@@ -121,16 +134,23 @@ export interface PendingProductReference {
 }
 
 /**
- * Most frequent zero-result searches of the last `sinceDays` days. The RPC is
+ * Most frequent unserved searches of the last `sinceDays` UTC days (today
+ * included), ranked by the number of days each was logged (#456), optionally
+ * only the groups whose latest outcome is `outcome` (#452). The RPC is
  * security definer, as search_misses has no read policy, and returns
  * aggregates, never individual rows. Uses the service role (#435): the caller
  * must check `isCurator()` first, as `raw_query` is free text typed by visitors.
  */
-export async function fetchTopSearchMisses(sinceDays: number, limit: number): Promise<SearchMissSummary[]> {
+export async function fetchTopSearchMisses(
+  sinceDays: number,
+  limit: number,
+  outcome: SearchMissOutcome | null = null,
+): Promise<SearchMissSummary[]> {
   const supabase = createAdminClient()
   const { data, error } = await supabase.rpc('fetch_top_search_misses', {
     since_days: sinceDays,
     result_limit: limit,
+    outcome_filter: outcome,
   })
   if (error) {
     console.error('fetchTopSearchMisses: RPC failed', error)

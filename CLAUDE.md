@@ -504,7 +504,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `product_references` | Product references and regional names, normalized |
 | `part_requests` | Open requests for a part on a product |
 | `print_reports` | Whether a printed part worked on a compatible product |
-| `search_misses` | Searches on `/search` that returned nothing, no personal data |
+| `search_misses` | Searches on `/search` that no part answered, with their outcome, no personal data |
 | `source_platforms` | External platforms that referenced parts come from |
 | `curation_rejections` | Sources rejected in the curation tool, with reason and failed criteria |
 | `brands` | Brand records |

@@ -3,11 +3,15 @@ import { getLicenseBySpdxId } from '@/lib/supabase/queries/licenses'
 import {
   derivePrintablesPrintMetadata,
   derivePrintablesTexts,
+  deriveThingiverseFields,
   parsePrintablesModelId,
+  parseThingiverseThingId,
   PRINTABLES_LICENSE_TO_SPDX,
   type PrintablesPrintDetails,
+  type ThingiverseThing,
 } from '@/lib/curation/prefill-parsing'
 import { PRINTABLES_BASE_URL, queryPrintables } from '@/lib/curation/printables-api'
+import { getThingiverse, isThingiverseConfigured } from '@/lib/curation/thingiverse-api'
 import { normalizedHostname } from '@/lib/utils/validation'
 
 /**
@@ -28,6 +32,16 @@ export interface CurationPrefill {
   layerHeight: string | null
   estimatedPrintTime: string | null
   estimatedMaterialUsage: string | null
+}
+
+/**
+ * The `licenses` row id of a mapped SPDX id, or null when there is no id or
+ * no row — the license then stays empty for the curator.
+ */
+async function licenseIdForSpdx(spdxId: string | null | undefined): Promise<string | null> {
+  if (!spdxId) return null
+  const license = await getLicenseBySpdxId(spdxId)
+  return license?.id ?? null
 }
 
 interface PrintablesPrintData {
@@ -68,12 +82,27 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
   if (print.user?.handle) result.originalAuthorUrl = `${PRINTABLES_BASE_URL}/@${print.user.handle}`
 
   const abbreviation = print.license?.abbreviation
-  const spdxId = abbreviation ? PRINTABLES_LICENSE_TO_SPDX[abbreviation] : undefined
-  if (spdxId) {
-    const license = await getLicenseBySpdxId(spdxId)
-    if (license) result.licenseId = license.id
-  }
+  const licenseId = await licenseIdForSpdx(abbreviation ? PRINTABLES_LICENSE_TO_SPDX[abbreviation] : null)
+  if (licenseId) result.licenseId = licenseId
   return result
+}
+
+/**
+ * Thingiverse extractor: author, declared license, instructions and print
+ * settings via the official REST API (#431). The license label is mapped
+ * by THINGIVERSE_LICENSE_TO_SPDX; an unmapped label stays empty.
+ * Inactive without THINGIVERSE_APP_TOKEN: no request is sent and only the
+ * platform is detected. Returns {} on any failure. Never throws.
+ */
+async function extractFromThingiverse(url: URL): Promise<Partial<CurationPrefill>> {
+  if (!isThingiverseConfigured()) return {}
+  const thingId = parseThingiverseThingId(url)
+  if (!thingId) return {}
+
+  const thing = await getThingiverse<ThingiverseThing>(`/things/${thingId}`)
+  if (!thing || typeof thing !== 'object') return {}
+  const { licenseSpdxId, ...fields } = deriveThingiverseFields(thing)
+  return { ...fields, licenseId: await licenseIdForSpdx(licenseSpdxId) }
 }
 
 /**
@@ -84,6 +113,7 @@ async function extractFromPrintables(url: URL): Promise<Partial<CurationPrefill>
  */
 const EXTRACTORS: Record<string, (url: URL) => Promise<Partial<CurationPrefill>>> = {
   printables: extractFromPrintables,
+  thingiverse: extractFromThingiverse,
 }
 
 /**

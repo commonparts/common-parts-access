@@ -39,12 +39,17 @@ The dedicated Checklist and Flags steps were dissolved in issue #302: the criter
 Pasting a source URL pre-fills what can be extracted, so curation starts from a filled form instead of a blank one (Flow P3 §4.3 step 2). Pre-fill is **best-effort and never blocks**: any failure falls back silently to manual entry, and every pre-filled field is marked with a "Pre-filled" badge that clears the moment the curator edits it (values are only ever written to empty fields, never over manual input).
 
 - **Platform detection** works for every seeded platform: the URL host is matched (www-insensitive) against `source_platforms.base_url`.
-- **Author, declared license and content** are extracted **for Printables only** in this phase, via the platform's public GraphQL API (`api.printables.com`), server-side:
+- **Author, declared license and content** are extracted for **Printables** and **Thingiverse**, server-side. Other platforms get platform detection only.
+- **Printables**, via the platform's public GraphQL API (`api.printables.com`):
   - **Source step:** original author, author URL (`printables.com/@handle`), and the declared license (Printables' license abbreviation → SPDX id → the `licenses` row), written to the "License at the source" field.
   - **Details step:** short description (Printables `summary`), instructions (their rich-HTML `description`, converted to plain text), material, layer height (only when every listed gcode agrees on one value), and print-time / material-usage estimates. Infill, supports, colour and dimensions are not exposed by the API and stay manual.
+- **Thingiverse**, via the official REST API (`api.thingiverse.com`, `GET /things/{id}`), when `THINGIVERSE_APP_TOKEN` is set (#431). The Thing id is read from a `thingiverse.com/thing:<id>` URL, with or without `www` and a sub-path such as `/files`.
+  - **Source step:** original author (the creator's user name), author URL (their `thingiverse.com` profile), and the declared license (`THINGIVERSE_LICENSE_TO_SPDX`: Thingiverse license label → SPDX id → the `licenses` row). The API label carries no version, but each Thing page links the license it declares; the mapping follows that link, checked on live Thing pages from 2014 to 2023 (#431). The six Creative Commons labels link the 4.0 licenses and map to the CC 4.0 rows; `Creative Commons - Public Domain Dedication` links CC0 1.0 and maps to `CC0-1.0`. `Public Domain` (the retired Public Domain Certification), `GNU - GPL` (GPL 2.0), `GNU - LGPL` (LGPL 2.1), `BSD License` (unversioned) and `All Rights Reserved` have no exact `licenses` row and stay empty for the curator.
+  - **Details step:** instructions (the Thing's Summary, as plain text, up to the 8,000-character limit), material (the declared filament material, when a single one-line value is given) and layer height (the declared resolution, only when it is a single number of millimetres of at most 1 mm, such as `0.2`, `.2` or `0.2mm`). Values written as `NA`, `N/A`, `none` or `-` count as not given. The Summary is the only free-text body of a Thing page; the short description stays empty for the curator, since Thingiverse has no short summary. Print-time and material-usage estimates are not provided by the API; infill, supports, colour and dimensions stay manual.
+  - **Activation.** Without `THINGIVERSE_APP_TOKEN`, the extractor and the image import are inactive: no request is sent to Thingiverse and the flow keeps platform detection only. The token is read server-side only and never reaches the client, a response or a log. Requests carry the fixed User-Agent `THINGIVERSE_USER_AGENT`.
 - **Images** are imported separately — see [Source-image import](#source-image-import).
 
-Extraction runs **server-side only** and is not exposed publicly. Thingiverse and other platforms deliberately have **no extractor yet** (automated retrieval is pending the ToS decision tracked in the issue); they still get platform detection. Implemented via `lib/curation/prefill.ts` (orchestration + Printables fetch), `lib/curation/prefill-parsing.ts` (pure, unit-tested parsing/mapping), and `lib/curation/printables-api.ts` (the shared GraphQL client).
+Extraction runs **server-side only** and is not exposed publicly. Implemented via `lib/curation/prefill.ts` (orchestration and the per-platform extractors), `lib/curation/prefill-parsing.ts` (pure, unit-tested parsing/mapping), `lib/curation/printables-api.ts` (the shared GraphQL client) and `lib/curation/thingiverse-api.ts` (the REST client).
 
 ### 2. Blocking checklist
 
@@ -80,14 +85,14 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 #### Source-image import
 
-The tool fires `POST /api/curation/drafts/[id]/import-images` in the background (Printables sources only) at two points:
+The tool fires `POST /api/curation/drafts/[id]/import-images` in the background for Printables sources, and for Thingiverse sources when `THINGIVERSE_APP_TOKEN` is set, at two points:
 
 - **Draft creation** — right after the Origin step creates the draft.
 - **Draft resume** — when a resumed draft has no registered image (`image_file_count = 0` and an empty `images` array). This covers drafts created outside the Origin step, which never went through the creation trigger, and drafts whose import failed at creation. A resumed draft that already has at least one image, or whose source platform is not supported, triggers nothing. The resume import fires once per resume (guarded against effect re-runs and React strict mode) and never blocks hydration.
 
-In both cases the Files step shows the import in progress, then the resulting grid and thumbnail, without a page reload. While the import runs, the photo field accepts neither a click nor a drop and the upload button is disabled; both are re-enabled when the import ends, whether it succeeded or failed. The import rewrites the part's image list from the state it read before importing, so a photo uploaded concurrently would drop out of the list (#357). The platform condition is shared by both triggers in `lib/curation/image-import.ts`.
+In both cases the Files step shows the import in progress, then the resulting grid and thumbnail, without a page reload. While the import runs, the photo field accepts neither a click nor a drop and the upload button is disabled; both are re-enabled when the import ends, whether it succeeded or failed. The import rewrites the part's image list from the state it read before importing, so a photo uploaded concurrently would drop out of the list (#357). The platform condition is shared by both triggers in `lib/curation/image-import.ts`. The platforms the import can run for depend on the server configuration, so the server page `app/(dashboard)/publish/page.tsx` computes them (`enabledImageImportPlatforms`) at request time and passes them to the client flow: without `THINGIVERSE_APP_TOKEN`, a Thingiverse draft triggers nothing.
 
-The endpoint downloads the source gallery server-side and registers each image under a numbered filename (`00-…`, `01-…`, in page order). The canonical filename sort (`sortImageUrls`) then makes `00` the thumbnail and keeps the slideshow in source order — no display-side change needed. It is **best-effort and idempotent**: unreachable, oversized (> 8 MB) or non-image entries are skipped (an image is any extension in `FILE_TYPES.IMAGE_FILES`, GIF included — #217) with gapless numbering, the batch is capped at the existing 10-image limit, and a draft that already has images is left untouched. A failed import is silent; the curator uploads photos manually. Implemented via `lib/curation/source-images.ts`; thumbnail selection is the shared `mergeImageUrls` in `lib/utils/images.ts`.
+The endpoint resolves the gallery from the draft's source URL (`resolveSourceGallery`): the URL host must be the platform's (`printables.com` or `thingiverse.com`, www-insensitive) before its path is read as a model or Thing id, and a platform not enabled on the server returns **400**. For Printables, the images come from the GraphQL API; for Thingiverse, from `GET /things/{id}/images`, in gallery order (`rank`), taking each image's original upload on `cdn.thingiverse.com` — any other host is dropped. The endpoint downloads the gallery server-side (`downloadSourceImage`) and registers each image under a numbered filename (`00-…`, `01-…`, in page order). The canonical filename sort (`sortImageUrls`) then makes `00` the thumbnail and keeps the slideshow in source order — no display-side change needed. It is **best-effort and idempotent**: unreachable, oversized (> 8 MB) or non-image entries are skipped (an image is any extension in `FILE_TYPES.IMAGE_FILES`, GIF included — #217, served with an `image/*` content type) with gapless numbering, the batch is capped at the existing 10-image limit, and a draft that already has images is left untouched. Downloads never follow a redirect, so they stay on the CDN host the listing returned. Thingiverse downloads carry `THINGIVERSE_USER_AGENT` and never the app token: `cdn.thingiverse.com` answers a Cloudflare challenge (403) to a client that does not identify itself (#431). A failed import is silent for the curator, who uploads photos manually; the server logs each skipped image with its filename and reason (HTTP status, Cloudflare challenge, refused redirect, content type, size, timeout). Implemented via `lib/curation/source-images.ts`; thumbnail selection is the shared `mergeImageUrls` in `lib/utils/images.ts`.
 
 ### 5. Review & publish
 
@@ -139,7 +144,7 @@ All require an authenticated session (401 otherwise). Files live under `app/api/
 | `/api/curation/drafts/[id]` | GET | Full draft state for resume (owner only; `user_id` stripped from the response). |
 | `/api/curation/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. 400 if `fileHostingType` is `hosted`, or if `licenseId` is sent empty: a curated part cannot be saved without a license. |
 | `/api/curation/drafts/[id]/publish` | POST | Publication gate; 422 with `blockers[]` on failure. |
-| `/api/curation/drafts/[id]/import-images` | POST | Import the source gallery into the draft (Printables); best-effort, idempotent. |
+| `/api/curation/drafts/[id]/import-images` | POST | Import the source gallery into the draft (Printables; Thingiverse when `THINGIVERSE_APP_TOKEN` is set); best-effort, idempotent. |
 | `/api/curation/rejections` | POST | Record a rejection (source URL, reason, failed criteria). |
 | `/api/curation/demand?productId=` | GET | Aggregate open part-request counts for a product. |
 
@@ -180,8 +185,9 @@ RLS: authenticated users may insert (with `created_by = auth.uid()`) and read.
 ## Key files
 
 ```
-app/(dashboard)/curation/page.tsx          Drafts list + session launcher
+app/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms
 components/publish/
+  publish-page.tsx                          Drafts list + session launcher (both tracks)
   elsewhere-track.tsx                       The 5-step stepper orchestrator
   legal-review-escalation.tsx               Legal-review flag + justification
   checklist-rollup.tsx                      Review roll-up of the six criteria
@@ -196,10 +202,12 @@ lib/publish/
   blockers.ts                               Local mirrors of both publish gates
 lib/curation/
   checklist.ts                              Criteria + flags definitions (single source of truth)
-  prefill.ts                                Source-URL pre-fill orchestration (Printables extractor)
+  prefill.ts                                Source-URL pre-fill orchestration (Printables, Thingiverse extractors)
   prefill-parsing.ts                        Pure, unit-tested parsing/mapping for pre-fill
   printables-api.ts                         Shared public-GraphQL client (server-side only)
-  source-images.ts                          Gallery listing + numbered-filename builder
+  thingiverse-api.ts                        Thingiverse REST client, app-token auth (server-side only)
+  image-import.ts                           When the UI triggers the image import (client-safe)
+  source-images.ts                          Per-platform gallery listing + numbered-filename builder
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
 lib/supabase/queries/publish.ts            draft -> published transition of both gates (service role)
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
@@ -221,4 +229,4 @@ supabase/migrations/20260717120000_curation_tool_fields.sql
 ## References
 
 - `docs/user-flows.md` — Flow P3 (§4)
-- Issues #254 (tool), #253 (entity dedup), #255 (source-URL pre-fill), #288 (draft deletion)
+- Issues #254 (tool), #253 (entity dedup), #255 (source-URL pre-fill), #288 (draft deletion), #431 (Thingiverse pre-fill and image import)

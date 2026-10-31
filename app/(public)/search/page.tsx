@@ -8,6 +8,7 @@ import { findExactBrandMatch, searchAll, type BrandSuggestion } from "@/lib/supa
 import { logSearchMiss, searchProductCandidates } from "@/lib/supabase/queries/search-demand"
 import { fetchPartCardsByIds } from "@/lib/supabase/queries/part"
 import { formatLocaleTag, parseAcceptLanguage } from "@/lib/utils/locale"
+import { classifySearch } from "@/lib/utils/search-outcome"
 import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCandidate } from "@/types/search"
 
 // Result pages are query variants, not entry points (issue #257): kept out of
@@ -23,6 +24,13 @@ function firstParam(value: string | string[] | undefined): string {
   return value ?? ""
 }
 
+/**
+ * The search results page. Runs the search once server-side, hydrates the part
+ * hits as standard cards, and classifies the search as served or unserved on
+ * those cards (issue #452). An unserved search is logged in `search_misses`
+ * and gets the zero-result block; this page is the only place that logs, as
+ * autocomplete keystrokes go through /api/search.
+ */
 export default async function SearchPage({
   searchParams,
 }: {
@@ -46,25 +54,31 @@ export default async function SearchPage({
   // bounded by the number of hits (at most SEARCH_MAX_LIMIT).
   const partCards = await fetchPartCardsByIds(results.parts.map((part) => part.id))
 
-  // Counted on the hydrated cards, as the view counts them: a hit unpublished
-  // between the search and the hydration must not suppress the zero-result
-  // state (miss logging, brand suggestion, product candidates).
-  const total = results.products.length + partCards.length + results.brands.length
-  const isMiss = Boolean(query) && total === 0
+  // A search is served only by a full match that is a part or a product with
+  // a published part (issue #452); close matches alone leave it unserved.
+  // Classified on the hydrated cards, as the view renders them: a hit
+  // unpublished between the search and the hydration must not serve it.
+  const outcome = query ? classifySearch(results, partCards) : "served"
 
-  // A zero-result search is logged (issue #320) and offers the products the
-  // query may name, so the visitor can attach an unknown reference to one.
-  // Only this page logs: /api/search serves autocomplete keystrokes.
+  // An unserved search is logged with its outcome (issues #320, #452) and
+  // offers the zero-result block: the brand the query names, and the
+  // products it may name, so the visitor can attach an unknown reference to
+  // one. Only this page logs: /api/search serves autocomplete keystrokes.
+  // A query that fully names a product without parts (no_parts) gets no
+  // picker: the matching product is listed, and the query is its name, not
+  // an unknown reference.
   let brandSuggestion: BrandSuggestion | null = null
   let candidates: ProductCandidate[] = []
-  if (isMiss) {
+  if (outcome !== "served") {
     const locale = parseAcceptLanguage((await headers()).get("accept-language"))
     ;[brandSuggestion, candidates] = await Promise.all([
       findExactBrandMatch(query),
       // The picker is optional: without candidates the visitor can still
       // search for the product or request the part.
-      searchProductCandidates(query).catch((): ProductCandidate[] => []),
-      logSearchMiss(query, formatLocaleTag(locale)),
+      outcome === "no_parts"
+        ? Promise.resolve([])
+        : searchProductCandidates(query).catch((): ProductCandidate[] => []),
+      logSearchMiss(query, formatLocaleTag(locale), outcome),
     ])
   }
 
@@ -79,6 +93,7 @@ export default async function SearchPage({
             partCards={partCards}
             query={query}
             initialType={initialType}
+            outcome={outcome}
             brandSuggestion={brandSuggestion}
             candidates={candidates}
           />

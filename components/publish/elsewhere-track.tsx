@@ -75,6 +75,8 @@ interface ElsewhereTrackProps {
   draftId: string | null
   /** Called when the session ends (published, turned down, or saved). */
   onExit: () => void
+  /** Source platforms the server can import a gallery from (#431). */
+  imageImportPlatforms: readonly string[]
 }
 
 const allFlagsUnconfirmed = (): Record<CurationFlagColumn, boolean> =>
@@ -104,7 +106,11 @@ const numToStr = (value: number | null | undefined): string =>
  * The part keeps the license its designer chose at the source (#374): one
  * field on Origin, stored in `license_id`, never defaulted.
  */
-export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTrackProps) {
+export function ElsewhereTrack({
+  draftId: initialDraftId,
+  onExit,
+  imageImportPlatforms,
+}: ElsewhereTrackProps) {
   const router = useRouter()
   const form = usePartUploadFormState({ preselectFirstLicense: false })
   const { formData, setFormData } = form
@@ -242,11 +248,14 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
         // background import as a freshly created one.
         if (
           resumeImportFiredFor.current !== resumedDraftId &&
-          shouldImportOnResume({
-            sourcePlatform: draft.source_platform,
-            imageFileCount: draft.image_file_count ?? 0,
-            imageCount: hydratedImages.length,
-          })
+          shouldImportOnResume(
+            {
+              sourcePlatform: draft.source_platform,
+              imageFileCount: draft.image_file_count ?? 0,
+              imageCount: hydratedImages.length,
+            },
+            imageImportPlatforms,
+          )
         ) {
           resumeImportFiredFor.current = resumedDraftId
           void importImagesFromSource(resumedDraftId)
@@ -442,7 +451,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
           setDraftSlug(json.draft.slug)
           // Kick off the source image import in the background — the Files
           // step shows the running state and the resulting count.
-          if (supportsImageImport(formData.sourcePlatform)) {
+          if (supportsImageImport(formData.sourcePlatform, imageImportPlatforms)) {
             void importImagesFromSource(newId)
           }
           // Creation cannot carry the category or the judgements made on this
@@ -506,6 +515,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
       patchDraftById,
       flagPatchForStep,
       importImagesFromSource,
+      imageImportPlatforms,
     ],
   )
 
@@ -706,7 +716,7 @@ export function ElsewhereTrack({ draftId: initialDraftId, onExit }: ElsewhereTra
                   type="url"
                   value={formData.sourceUrl}
                   onChange={(e) => setFormData((prev) => ({ ...prev, sourceUrl: e.target.value }))}
-                  placeholder="https://www.printables.com/model/…"
+                  placeholder="https://www.thingiverse.com/thing:…"
                   disabled={Boolean(draftId)}
                   required
                 />
