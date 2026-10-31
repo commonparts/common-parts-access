@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Alert } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DropdownInput } from '@/components/ui/dropdown-input'
@@ -358,9 +359,9 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
       <Stepper labels={PUBLISH_STEP_LABELS} current={step} ariaLabel="Publish steps" />
 
       {error && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
+        <Alert>
           {error}
-        </div>
+        </Alert>
       )}
 
       {step === PUBLISH_STEPS.ORIGIN && (

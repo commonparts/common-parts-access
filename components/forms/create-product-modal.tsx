@@ -1,5 +1,6 @@
 import * as React from "react"
 import { createPortal } from "react-dom"
+import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DropdownInput } from "@/components/ui/dropdown-input"
@@ -66,9 +67,9 @@ export function CreateProductModal({
 
             <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto">
             {error && (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <Alert>
                 {error}
-              </div>
+              </Alert>
             )}
 
             <div className="space-y-4" role="form" aria-label="Create product">
