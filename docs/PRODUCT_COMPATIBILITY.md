@@ -14,7 +14,7 @@ A product is a commercial name ("OneBlade Pro", "K 3 Power Control"). People ide
 
 - **Normalization.** `normalize_product_reference()` uppercases and removes spaces, hyphens, slashes and dots: "QP 6520/20", "qp6520-20" and "QP652020" are the same value. The generated `normalized_value` column uses it, and search normalizes queries with the same function.
 - **Regional names.** The product page reads the visitor's language and region from the Accept-Language header (`parseAcceptLanguage()` in `lib/utils/locale.ts`) and shows the matching `commercial_name` when one exists (`pickRegionalName()`), otherwise `products.name`. Region never filters search.
-- **Writes.** There is no admin role. Curated references are written through the Supabase dashboard or the service role. Visitors can suggest a reference from the zero-result search page; it is stored `pending` and only becomes public once its `status` is set to `validated`.
+- **Writes.** There is no admin role. Curated references are written through the Supabase dashboard or the service role. Visitors can suggest a reference from the search page when a search is unserved; it is stored `pending` and only becomes public once its `status` is set to `validated`.
 
 ## Compatibility evidence (#317)
 

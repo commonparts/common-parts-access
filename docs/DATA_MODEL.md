@@ -125,7 +125,7 @@ RLS on with no policy: written only through `submit_print_report()` by the servi
 Demand for a part on a product ("Request this part"). `product_id`, `raw_query`, `description`, `user_id` (nullable), `page_url`, `status`: `open` / `fulfilled` / `dismissed`, `fulfilled_by_part_id`. Never creates a GitHub issue.
 
 ### `search_misses`
-Zero-result searches submitted on `/search` (#320): `raw_query`, `normalized_query` (generated), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role.
+Unserved searches submitted on `/search` (#320, #452): `raw_query`, `normalized_query` (generated), `outcome` (`no_results` / `approximate` / `no_parts`, default `no_results`; see [SEARCH.md](./SEARCH.md#unserved-searches-320-452)), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role. A row is written on each render of an unserved `/search` page, so a reload logs the search again; `fetch_top_search_misses()` therefore counts distinct UTC days per query, not rows (#456).
 
 ### `curation_rejections`
 Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by` (nullable, `ON DELETE SET NULL`).
@@ -200,7 +200,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 
 The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131, nor was the `UPDATE` on `part_products (part_id, product_id)` granted in #317. They remain on the tables created before #131 and are filtered by RLS, which has no policy for them.
 
-Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage`) are executable by `anon`, `authenticated` and `service_role`; `generate_slug`, run by the product slug trigger, by `public` (see the table below).
+Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage` in its two forms, `search_typo_match`) are executable by `anon`, `authenticated` and `service_role`. `search_typo_match` calls `levenshtein_less_equal()` from the `fuzzystrmatch` extension, installed in the `extensions` schema (#452); `generate_slug`, run by the product slug trigger, by `public` (see the table below).
 
 Functions reviewed against the Supabase security advisor (#435):
 
@@ -208,7 +208,7 @@ Functions reviewed against the Supabase security advisor (#435):
 |---|---|---|
 | `increment_part_view_count()`, `increment_part_like_count()`, `decrement_part_like_count()`, `handle_new_user()` | `service_role` only; revoked from `public`, `anon`, `authenticated` | Trigger functions (security definer). A trigger function's `EXECUTE` privilege is checked when the trigger is created, not when it fires, so the counters and the profile created on sign-up do not need it. |
 | `fetch_part_request_counts(uuid)` | `anon`, `authenticated`, `service_role`; revoked from `public` | Called for every visitor by the public product page (open requests) and by `/api/curation/demand`. Security definer, returns aggregates only (description and count). The advisor still lists it, by design. |
-| `fetch_top_search_misses(integer, integer)`, `fetch_pending_product_references(integer)` | `authenticated`, `service_role` | Security definer. The app calls them with the service role, after `isCurator()` (see [SEARCH.md](./SEARCH.md)). The `authenticated` grant is kept until the release that stops using it is in production, then revoked by a follow-up migration. |
+| `fetch_top_search_misses(integer, integer, text)`, `fetch_pending_product_references(integer)` | `service_role` only; revoked from `public`, `anon`, `authenticated` (#440, restated in #452) | Security definer. They return visitor search text and the pending references, and sign-up is open. The app calls them with the service role, after `isCurator()` (see [SEARCH.md](./SEARCH.md)). |
 | `update_category_path()`, `set_product_slug()` | `public` (so `anon` and `authenticated`), `service_role` | Trigger functions, security invoker. PostgreSQL refuses to call a trigger function outside a trigger, so the grant exposes nothing through the Data API. |
 | `generate_slug(text)` | `public` (so `anon` and `authenticated`), `service_role` | Security invoker, run as the caller by the product slug trigger. Computes a slug from its argument and reads no table. |
 

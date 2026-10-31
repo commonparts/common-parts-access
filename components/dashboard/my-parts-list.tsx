@@ -4,8 +4,12 @@ import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
+import { PartThumbnail } from '@/components/part/part-thumbnail'
 import { formatDate } from '@/lib/utils/formatters'
 import type { MyPartListItem } from '@/types/parts'
+
+/** Rendered width of the square row thumbnail (the `2xl` spacing token, 64px). */
+const THUMBNAIL_SIZES = '64px'
 
 interface MyPartsListProps {
   initialParts: MyPartListItem[]
@@ -108,11 +112,20 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
             key={part.id}
             className="flex items-center justify-between gap-md px-lg py-sm"
           >
-            <div className="min-w-0 space-y-xs">
-              <p className="truncate text-sm font-medium text-text-primary">{part.name}</p>
-              <p className="text-xs text-text-secondary">
-                {part.createdAt ? `Uploaded ${formatDate(part.createdAt, 'medium')}` : 'Upload date unknown'}
-              </p>
+            <div className="flex min-w-0 items-center gap-sm">
+              <div className="relative size-2xl shrink-0 overflow-hidden rounded-md border border-border-subtle">
+                <PartThumbnail
+                  src={part.thumbnailUrl}
+                  alt={part.name}
+                  sizes={THUMBNAIL_SIZES}
+                />
+              </div>
+              <div className="min-w-0 space-y-xs">
+                <p className="truncate text-sm font-medium text-text-primary">{part.name}</p>
+                <p className="text-xs text-text-secondary">
+                  {part.createdAt ? `Uploaded ${formatDate(part.createdAt, 'medium')}` : 'Upload date unknown'}
+                </p>
+              </div>
             </div>
             <Button
               variant="ghost"

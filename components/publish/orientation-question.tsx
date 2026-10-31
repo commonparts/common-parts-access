@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PUBLISH_TRACKS, type PublishTrack } from '@/lib/publish/tracks'
 import { cn } from '@/lib/utils'
@@ -38,7 +39,10 @@ export function OrientationQuestion({ onChoose, className }: OrientationQuestion
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus',
               )}
             >
-              <span className="font-medium text-text-primary">{definition.answer}</span>
+              <span className="flex flex-wrap items-center gap-2xs">
+                <span className="font-medium text-text-primary">{definition.answer}</span>
+                {definition.recommended && <Badge tone="accent">Recommended</Badge>}
+              </span>
               <span className="text-sm text-text-secondary">{definition.detail}</span>
             </button>
           ))}
