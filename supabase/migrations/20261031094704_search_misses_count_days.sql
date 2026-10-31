@@ -28,6 +28,8 @@
 --
 -- No new index: the window is still a range on `created_at`, served by
 -- `idx_search_misses_created_at`, and the day is computed after it.
+--
+-- APPLIED to production on 2026-10-31 as version 20261031094704.
 
 create or replace function public.fetch_top_search_misses(
   since_days integer default 30,
