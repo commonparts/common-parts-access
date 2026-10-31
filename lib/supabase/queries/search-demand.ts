@@ -134,9 +134,9 @@ export interface PendingProductReference {
 }
 
 /**
- * Most frequent unserved searches of the last `sinceDays` days, ranked by the
- * number of days each was logged (#456), optionally only the groups whose
- * latest outcome is `outcome` (#452). The RPC is
+ * Most frequent unserved searches of the last `sinceDays` UTC days (today
+ * included), ranked by the number of days each was logged (#456), optionally
+ * only the groups whose latest outcome is `outcome` (#452). The RPC is
  * security definer, as search_misses has no read policy, and returns
  * aggregates, never individual rows. Uses the service role (#435): the caller
  * must check `isCurator()` first, as `raw_query` is free text typed by visitors.

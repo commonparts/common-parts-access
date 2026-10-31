@@ -16,12 +16,17 @@
 --   latest outcome, and the order is unchanged (`miss_count`, then
 --   `last_seen`). Logging is unchanged: rows are still written on each render.
 --
+--   The window now starts at midnight UTC and covers exactly `since_days`
+--   calendar days, today included. The rolling window it replaces
+--   (`now() - since_days`) touched `since_days + 1` dates, so a query
+--   searched every day would have shown 31 days under "Last 30 days".
+--
 -- The column keeps its name `miss_count`: the release in production reads it
 -- by that name, and the signature and return type are unchanged, so
 -- CREATE OR REPLACE keeps the grants and the code in production keeps
 -- working. The migration is therefore applied when the PR lands on `dev`.
 --
--- No new index: the window filter on `created_at` is served by
+-- No new index: the window is still a range on `created_at`, served by
 -- `idx_search_misses_created_at`, and the day is computed after it.
 
 create or replace function public.fetch_top_search_misses(
@@ -54,9 +59,12 @@ as $$
       pg_catalog.count(distinct (m.created_at at time zone 'UTC')::date)::int as miss_count,
       max(m.created_at) as last_seen
     from public.search_misses m
-    where m.created_at >= now() - pg_catalog.make_interval(
-      days => least(greatest(coalesce(since_days, 30), 1), 365)
-    )
+    -- Midnight UTC `since_days - 1` days ago: the count is per UTC day, so
+    -- the window is made of whole UTC days, today included.
+    where m.created_at >= (
+      pg_catalog.date_trunc('day', now() at time zone 'UTC')
+      - pg_catalog.make_interval(days => least(greatest(coalesce(since_days, 30), 1), 365) - 1)
+    ) at time zone 'UTC'
     group by m.normalized_query
   )
   select g.normalized_query, g.raw_query, g.outcome, g.miss_count, g.last_seen
@@ -67,7 +75,7 @@ as $$
 $$;
 
 comment on function public.fetch_top_search_misses(integer, integer, text) is
-  'Unserved searches of the last since_days days, ranked by the number of distinct UTC days each query was logged, optionally filtered by latest outcome (issues #320, #452, #456). Service role only.';
+  'Unserved searches of the last since_days UTC days (today included), ranked by the number of distinct UTC days each query was logged, optionally filtered by latest outcome (issues #320, #452, #456). Service role only.';
 
 -- CREATE OR REPLACE keeps the existing grants (20261030104338); restated so
 -- the file holds them.
