@@ -112,6 +112,10 @@ export interface SearchMissSummary {
   raw_query: string
   /** The latest outcome of the group; the count covers every outcome. */
   outcome: SearchMissOutcome
+  /**
+   * Number of distinct days (UTC) on which the group was logged in the window,
+   * not the number of rows: a reload logs the same search again (#456).
+   */
   miss_count: number
   last_seen: string
 }
@@ -130,7 +134,8 @@ export interface PendingProductReference {
 }
 
 /**
- * Most frequent unserved searches of the last `sinceDays` days, optionally
+ * Most frequent unserved searches of the last `sinceDays` UTC days (today
+ * included), ranked by the number of days each was logged (#456), optionally
  * only the groups whose latest outcome is `outcome` (#452). The RPC is
  * security definer, as search_misses has no read policy, and returns
  * aggregates, never individual rows. Uses the service role (#435): the caller

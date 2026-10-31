@@ -70,7 +70,8 @@ export default async function SearchDemandPage({
         <p className="text-body text-text-secondary">
           Last {MISSES_WINDOW_DAYS} days. A search is a miss unless a part, or a product with a
           published part, matches it fully. Spellings that normalize alike are counted together;
-          the outcome is the latest one.
+          a search counts once per day (UTC), however many times it was logged that day, and the
+          outcome is the latest one.
         </p>
         <nav aria-label="Filter misses by outcome" className="flex flex-wrap gap-xs">
           {[null, ...SEARCH_MISS_OUTCOMES].map((value) => {
@@ -101,7 +102,7 @@ export default async function SearchDemandPage({
                 <tr>
                   <th className={HEAD}>Search</th>
                   <th className={HEAD}>Outcome</th>
-                  <th className={HEAD}>Misses</th>
+                  <th className={HEAD}>Days</th>
                   <th className={HEAD}>Last seen</th>
                 </tr>
               </thead>
