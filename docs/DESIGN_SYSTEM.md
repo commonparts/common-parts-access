@@ -34,6 +34,15 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 <Badge asChild interactive tone="accent"><Link href="/browse">12 parts</Link></Badge>
 ```
 
+## Error banners
+An error raised by an action (a failed load, a rejected save, a blocking condition) is shown with `Alert` (`components/ui/alert.tsx`), never with ad hoc classes (#460). It uses the status error tokens: `bg-status-error`, `border-status-errorBorder`, `text-status-errorText`, with `rounded-lg`, `p-sm` and `text-sm`. It renders with `role="alert"`, so screen readers announce the message when it appears. It accepts `className` and the attributes of a `div`.
+
+A short inline error line, such as the message under a form, uses `text-sm text-status-errorText` without the banner surface. Destructive menu items use `text-status-errorText`. No `destructive` colour exists in the tokens: classes such as `text-destructive` generate nothing.
+
+```tsx
+{error && <Alert>{error}</Alert>}
+```
+
 ## Layout & Components
 - **Cards**: Use the shared `Card` primitives; default padding and `rounded-lg` with `shadow-surface`. Respect existing spacing patterns (`space-y-*` inside content).
 - **Part card** (#380): `components/part/part-card.tsx` renders the same card in every context (browse grid, home page section, search results, product page). From top to bottom:

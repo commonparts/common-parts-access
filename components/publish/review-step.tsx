@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PartDetails } from '@/components/part/part-details'
@@ -56,14 +57,14 @@ export function ReviewStep({
       {children}
 
       {serverBlockers.length > 0 && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
+        <Alert>
           <p className="font-medium">Publication blocked:</p>
           <ul className="mt-2xs list-disc pl-md">
             {serverBlockers.map((blocker) => (
               <li key={blocker}>{blocker}</li>
             ))}
           </ul>
-        </div>
+        </Alert>
       )}
 
       {blockers.length > 0 && (

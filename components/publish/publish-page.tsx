@@ -4,6 +4,7 @@ import * as React from 'react'
 import Image from 'next/image'
 import { Trash2 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
+import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,6 +15,9 @@ import { OriginalTrack } from '@/components/publish/original-track'
 import { mergeDraftLists, type PublishDraft } from '@/lib/publish/drafts'
 import { publishTrackDefinition, type PublishTrack } from '@/lib/publish/tracks'
 import { formatRelativeTime } from '@/lib/utils/formatters'
+
+/** Rendered width of a draft thumbnail: the `2xl` spacing token (64px). */
+const DRAFT_THUMBNAIL_SIZES = '64px'
 
 type Session =
   | { mode: 'idle' }
@@ -115,15 +119,15 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
       {session.mode === 'idle' && (
         <div className="space-y-lg">
           {error && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
+            <Alert>
               {error}
-            </div>
+            </Alert>
           )}
 
           <OrientationQuestion onChoose={(track) => setSession({ mode: 'new', track })} />
 
           <div className="space-y-md">
-            <h2 className="text-lg font-medium text-text-primary">In progress</h2>
+            <h2 className="font-heading text-heading-sm font-semibold text-text-primary">In progress</h2>
 
             {loading ? (
               <p className="text-sm text-text-secondary">Loading drafts…</p>
@@ -151,7 +155,7 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
                               src={draft.thumbnailUrl}
                               alt=""
                               fill
-                              sizes="48px"
+                              sizes={DRAFT_THUMBNAIL_SIZES}
                               className="object-cover"
                             />
                           </div>
