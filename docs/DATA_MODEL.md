@@ -125,7 +125,7 @@ RLS on with no policy: written only through `submit_print_report()` by the servi
 Demand for a part on a product ("Request this part"). `product_id`, `raw_query`, `description`, `user_id` (nullable), `page_url`, `status`: `open` / `fulfilled` / `dismissed`, `fulfilled_by_part_id`. Never creates a GitHub issue.
 
 ### `search_misses`
-Unserved searches submitted on `/search` (#320, #452): `raw_query`, `normalized_query` (generated), `outcome` (`no_results` / `approximate` / `no_parts`, default `no_results`; see [SEARCH.md](./SEARCH.md#unserved-searches-320-452)), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role.
+Unserved searches submitted on `/search` (#320, #452): `raw_query`, `normalized_query` (generated), `outcome` (`no_results` / `approximate` / `no_parts`, default `no_results`; see [SEARCH.md](./SEARCH.md#unserved-searches-320-452)), `locale` (from Accept-Language), `created_at`. No IP, user id or session id. RLS on with no policy: inserted by the service role. A row is written on each render of an unserved `/search` page, so a reload logs the search again; `fetch_top_search_misses()` therefore counts distinct UTC days per query, not rows (#456).
 
 ### `curation_rejections`
 Sources rejected in the curation tool: `source_url`, `reason`, `failed_criteria`, `created_by` (nullable, `ON DELETE SET NULL`).
