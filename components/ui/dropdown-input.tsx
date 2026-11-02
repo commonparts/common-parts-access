@@ -19,10 +19,13 @@ const DropdownInput = React.forwardRef<HTMLElement, DropdownInputProps>(
     return (
       <div className="relative w-full min-w-0">
         {as === "select" ? (
+          // `truncate` clips the selected label inside the select: WebKit on
+          // iOS otherwise lets a label wider than the field extend the page's
+          // scrollable width, without anything visibly overflowing (#218).
           <select
             ref={ref as React.Ref<HTMLSelectElement>}
             className={cn(
-              "flex w-full min-w-0 appearance-none rounded-lg border border-border-subtle bg-bg-surface px-md py-2xs text-sm text-text-primary shadow-none transition-colors placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:border-border-subtle disabled:text-text-disabled pr-10 cursor-pointer",
+              "flex w-full min-w-0 appearance-none rounded-lg border border-border-subtle bg-bg-surface px-md py-2xs text-sm text-text-primary shadow-none transition-colors placeholder:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus disabled:cursor-not-allowed disabled:bg-bg-disabled disabled:border-border-subtle disabled:text-text-disabled pr-10 cursor-pointer truncate",
               disabled && "cursor-not-allowed",
               className,
             )}
