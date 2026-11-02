@@ -89,7 +89,7 @@ export function RequestPartForm({
         </p>
       )}
       {state === "failed" && (
-        <p className="text-caption text-text-secondary">
+        <p role="alert" className="text-sm text-status-errorText">
           Something went wrong sending your request. Please try again.
         </p>
       )}

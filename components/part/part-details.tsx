@@ -346,7 +346,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             </svg>
           </div>
           <h3 className="text-lg font-semibold mb-2">Unable to load part</h3>
-          <p className="text-muted-foreground">{error}</p>
+          <p role="alert" className="text-body text-status-errorText">{error}</p>
         </div>
       </div>
     )
