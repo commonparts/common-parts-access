@@ -98,7 +98,7 @@ const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDow
         <Badge variant="outline" className="uppercase">
           {file.file_type.toUpperCase()}
         </Badge>
-        <span className="text-xs text-text-secondary">{formatFileSize(file.file_size)}</span>
+        <span className="text-xs text-text-secondary transition-colors group-hover:text-text-primary">{formatFileSize(file.file_size)}</span>
       </div>
     </div>
     <Button

@@ -697,31 +697,31 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <div className="space-y-1 text-sm">
                       {part.partDetails.dimensions.length && (
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Length:</span>
+                          <span className="text-text-primary">Length:</span>
                           <span className="font-mono">{part.partDetails.dimensions.length} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.width && (
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Width:</span>
+                          <span className="text-text-primary">Width:</span>
                           <span className="font-mono">{part.partDetails.dimensions.width} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.height && (
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Height:</span>
+                          <span className="text-text-primary">Height:</span>
                           <span className="font-mono">{part.partDetails.dimensions.height} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.diameter && (
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Diameter:</span>
+                          <span className="text-text-primary">Diameter:</span>
                           <span className="font-mono">{part.partDetails.dimensions.diameter} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.thickness && (
                         <div className="flex justify-between">
-                          <span className="text-text-secondary">Thickness:</span>
+                          <span className="text-text-primary">Thickness:</span>
                           <span className="font-mono">{part.partDetails.dimensions.thickness} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
@@ -760,7 +760,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-text-secondary">Print time</p>
+                    <p className="text-sm text-text-primary">Print time</p>
                     <p className="font-semibold">{formatPrintTime(part.estimatedPrintTime)}</p>
                   </div>
                 </div>
@@ -771,7 +771,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-text-secondary">Material usage</p>
+                    <p className="text-sm text-text-primary">Material usage</p>
                     <p className="font-semibold">{part.estimatedMaterialUsage}g</p>
                   </div>
                 </div>
