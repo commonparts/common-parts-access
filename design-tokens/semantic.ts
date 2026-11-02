@@ -29,6 +29,7 @@ export const semanticTokens = {
       // Institutional green backgrounds — used sparingly
       accent: colorPrimitives.green[100], // #EEF2EC
       accentSubtle: colorPrimitives.green[50], // #F4F7F3
+      overlay: colorPrimitives.overlay.light, // white at 70%: modal backdrops
     },
 
     border: {

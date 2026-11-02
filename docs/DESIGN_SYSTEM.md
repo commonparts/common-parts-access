@@ -4,7 +4,10 @@ Use this as a quick-reference for building or updating UI. It captures the curre
 
 ## Foundations
 - **Typography**: Use the configured font tokens (`font-body`, `font-heading`, `font-mono`). Default body text at `text-sm`; headings leverage the predefined `text-heading-*` scales. Keep tracking/weight consistent with existing sections (e.g., hero and cards).
-- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values.
+- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values. Tailwind generates classes only for the token families of `tailwind.config.ts` (`text`, `bg`, `border`, `action`, `institutional`, `status`): shadcn/ui palette names such as `text-muted-foreground`, `bg-muted` or `text-primary` produce no CSS. The tokens are CSS variables, so an opacity modifier on a token colour (`bg-bg-surface/70`) produces no CSS either.
+  - Secondary text uses `text-text-secondary`; loading skeletons and placeholders use `bg-bg-muted`; inset panels use `bg-bg-subtle`.
+  - Decorative accent icons (section headings) use `text-institutional-malachite`.
+  - Modal backdrops and translucent caption bars use `bg-bg-overlay` (the surface colour at 70% opacity), combined with `backdrop-blur-sm` behind a modal (#464).
 - **Spacing scale**: Rely on tokenized spacing utilities: `px-md py-sm` for controls, `gap-sm`/`space-y-sm` for small stacks, `gap-md`/`space-y-md` for medium groupings, `p-lg`/`p-xl` for larger containers. Avoid raw numbers.
 - **Radii**: Default radius is `rounded-lg` for controls and cards. Only increase radius when a specific pattern (e.g., pills) calls for it.
 - **Shadows**: Use semantic shadows: `shadow-surface` for inputs/cards, `shadow-overlay` for popovers/dropdowns, `shadow-raised` for primary CTAs. Avoid ad-hoc shadow definitions.

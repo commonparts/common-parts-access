@@ -30,6 +30,7 @@ export const darkTheme = {
       disabled: colorPrimitives.black[800],
       accent: colorPrimitives.green[900], // very dark green
       accentSubtle: colorPrimitives.green[800],
+      overlay: colorPrimitives.overlay.dark, // #1A1A1A at 70%
     },
 
     border: {

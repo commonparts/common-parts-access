@@ -140,7 +140,7 @@ export function PartCardGifThumbnail({ src, alt, sizes, className }: PartCardGif
       ref={rootRef}
       role="img"
       aria-label={alt}
-      className={cn("absolute inset-0", stillFrame === "failed" && "bg-muted", className)}
+      className={cn("absolute inset-0", stillFrame === "failed" && "bg-bg-muted", className)}
     >
       {animationMounted && (
         <Image

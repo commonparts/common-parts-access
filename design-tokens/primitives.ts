@@ -62,6 +62,12 @@ export const colorPrimitives = {
     800: "#78350F",
     900: "#451A03",
   },
+
+  // Translucent scrims behind modals
+  overlay: {
+    light: "rgba(255, 255, 255, 0.7)",
+    dark: "rgba(26, 26, 26, 0.7)",
+  },
 } as const
 
 export const spacingPrimitives = {
