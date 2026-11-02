@@ -32,10 +32,10 @@ export function PartGrid({
       <Grid columns={gridColumns} className={className}>
         {Array.from({ length: 12 }).map((_, i) => (
           <div key={i} className={cn("animate-pulse", itemSpans)}>
-            <div className="mb-sm aspect-video rounded-lg bg-muted"></div>
+            <div className="mb-sm aspect-video rounded-lg bg-bg-muted"></div>
             <div className="space-y-1">
-              <div className="h-4 w-3/4 rounded bg-muted"></div>
-              <div className="h-3 w-1/2 rounded bg-muted"></div>
+              <div className="h-4 w-3/4 rounded bg-bg-muted"></div>
+              <div className="h-3 w-1/2 rounded bg-bg-muted"></div>
             </div>
           </div>
         ))}

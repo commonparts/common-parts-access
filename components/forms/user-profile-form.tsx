@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar } from "@/components/ui/avatar"
 
@@ -118,8 +119,8 @@ export function UserProfileForm({
               {avatarPreview ? (
                 <Image src={avatarPreview} alt="Avatar preview" className="w-full h-full object-cover rounded-full" width={80} height={80} unoptimized />
               ) : (
-                <div className="w-full h-full bg-muted flex items-center justify-center">
-                  <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-full h-full bg-bg-muted flex items-center justify-center">
+                  <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
                 </div>
@@ -138,7 +139,7 @@ export function UserProfileForm({
                   <span>Change Picture</span>
                 </Button>
               </Label>
-              <p className="text-sm text-muted-foreground mt-1">
+              <p className="text-sm text-text-secondary mt-1">
                 JPG, PNG or WebP. Max size: 2MB
               </p>
             </div>
@@ -201,13 +202,12 @@ export function UserProfileForm({
 
           <div className="space-y-2">
             <Label htmlFor="bio">Bio</Label>
-            <textarea
+            <Textarea
               id="bio"
               rows={4}
               value={formData.bio}
               onChange={(e) => updateField('bio', e.target.value)}
               placeholder="Tell others about yourself..."
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             />
           </div>
 
@@ -307,7 +307,7 @@ export function UserProfileForm({
           <div className="flex items-center justify-between">
             <div>
               <Label>Public Profile</Label>
-              <p className="text-sm text-muted-foreground">Make your profile visible to other users</p>
+              <p className="text-sm text-text-secondary">Make your profile visible to other users</p>
             </div>
             <input
               type="checkbox"
@@ -320,7 +320,7 @@ export function UserProfileForm({
           <div className="flex items-center justify-between">
             <div>
               <Label>Email Notifications</Label>
-              <p className="text-sm text-muted-foreground">Receive notifications about your parts and activity</p>
+              <p className="text-sm text-text-secondary">Receive notifications about your parts and activity</p>
             </div>
             <input
               type="checkbox"
@@ -333,7 +333,7 @@ export function UserProfileForm({
           <div className="flex items-center justify-between">
             <div>
               <Label>Marketing Emails</Label>
-              <p className="text-sm text-muted-foreground">Receive updates about new features and promotions</p>
+              <p className="text-sm text-text-secondary">Receive updates about new features and promotions</p>
             </div>
             <input
               type="checkbox"

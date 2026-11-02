@@ -7,7 +7,7 @@ export const colorPrimitives = {
     300: "#D0D0CE",
     400: "#AAAAAA",
     500: "#888888",
-    600: "#777777",
+    600: "#6B6B6B",
     700: "#555555",
     800: "#333333",
     900: "#1A1A1A",
@@ -61,6 +61,12 @@ export const colorPrimitives = {
     700: "#92400E",
     800: "#78350F",
     900: "#451A03",
+  },
+
+  // Translucent scrims behind modals
+  overlay: {
+    light: "rgba(255, 255, 255, 0.7)",
+    dark: "rgba(26, 26, 26, 0.7)",
   },
 } as const
 

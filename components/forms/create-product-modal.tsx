@@ -46,7 +46,7 @@ export function CreateProductModal({
   // including the sticky navbar once it is "stuck" on its own compositing
   // layer (which a page-nested backdrop-filter cannot sample).
   return createPortal(
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-background/70 px-sm py-sm backdrop-blur-sm">
+    <div className="fixed inset-0 z-[60] overflow-y-auto bg-bg-overlay px-sm py-sm backdrop-blur-sm">
       <div className="flex min-h-full w-full items-start justify-center">
         <div className="w-full max-w-3xl">
           <Card
@@ -58,7 +58,7 @@ export function CreateProductModal({
             <CardHeader className="flex shrink-0 flex-row items-start justify-between space-y-0">
               <div className="space-y-1">
                 <CardTitle id="create-product-modal-title">Create new product</CardTitle>
-                <p className="text-sm text-muted-foreground">Prefilled from your current brand and category selections.</p>
+                <p className="text-sm text-text-secondary">Prefilled from your current brand and category selections.</p>
               </div>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 Cancel
@@ -152,7 +152,7 @@ export function CreateProductModal({
                     onFilesSelect={(files) => onChange("imageFile", files[0] ?? null)}
                   />
                   {data.imageFile && (
-                    <p className="text-sm text-muted-foreground">Selected: {data.imageFile.name}</p>
+                    <p className="text-sm text-text-secondary">Selected: {data.imageFile.name}</p>
                   )}
                 </div>
               </div>

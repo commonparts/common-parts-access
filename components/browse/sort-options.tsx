@@ -54,7 +54,7 @@ export function resolveSortKey(raw: string | null): string {
 export function SortOptions({ value, onChange, className }: SortOptionsProps) {
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
-      <span className="text-sm font-medium text-muted-foreground self-center mr-2">
+      <span className="text-sm font-medium text-text-secondary self-center mr-2">
         Sort by:
       </span>
       {sortOptions.map((option) => (
