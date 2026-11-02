@@ -13,9 +13,9 @@ export const darkTheme = {
 
     text: {
       primary: colorPrimitives.black[50], // #F7F7F6
-      secondary: colorPrimitives.black[400], // #AAAAAA
+      secondary: colorPrimitives.black[300], // #D0D0CE
       tertiary: colorPrimitives.black[500], // #888888
-      disabled: colorPrimitives.black[600], // #777777
+      disabled: colorPrimitives.black[600], // #6B6B6B
       inverse: colorPrimitives.black[900], // #1A1A1A
       link: colorPrimitives.green[400], // lighter green for dark bg
       linkHover: colorPrimitives.green[300],

@@ -11,7 +11,7 @@ export const semanticTokens = {
   color: {
     text: {
       primary: colorPrimitives.black[900], // #1A1A1A
-      secondary: colorPrimitives.black[600], // #777777
+      secondary: colorPrimitives.black[600], // #6B6B6B
       tertiary: colorPrimitives.black[400], // #AAAAAA
       disabled: colorPrimitives.black[300], // #D0D0CE
       inverse: colorPrimitives.surface.white, // #FFFFFF
