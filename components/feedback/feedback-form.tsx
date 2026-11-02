@@ -110,7 +110,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
       </div>
 
       {status === 'error' && (
-        <p className="text-sm text-text-secondary">Something went wrong. Please try again.</p>
+        <p role="alert" className="text-sm text-status-errorText">Something went wrong. Please try again.</p>
       )}
 
       <Button

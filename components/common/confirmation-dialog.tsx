@@ -110,7 +110,7 @@ export function ConfirmationDialog({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-background/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-bg-overlay backdrop-blur-sm"
         onClick={loading ? undefined : onCancel}
         aria-hidden="true"
       />

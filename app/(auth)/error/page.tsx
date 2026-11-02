@@ -31,7 +31,7 @@ export default async function Page({
           <CardContent className="space-y-4">
             {error ? (
               <>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-status-errorText">
                   {error}
                 </p>
                 {isConfirmationError && (
@@ -57,7 +57,7 @@ export default async function Page({
               </>
             ) : (
               <>
-                <p className="text-sm text-text-secondary">
+                <p className="text-sm text-status-errorText">
                   An unspecified error occurred during authentication.
                 </p>
                 <Button asChild>

@@ -64,7 +64,7 @@ export function UserProfileMenu() {
 					return (
 						<DropdownMenuItem
 							key={item.key}
-							className={item.destructive ? "text-destructive focus:text-destructive" : undefined}
+							className={item.destructive ? "text-status-errorText focus:text-status-errorText" : undefined}
 							onSelect={(event) => {
 								event.preventDefault();
 								switch (item.action) {

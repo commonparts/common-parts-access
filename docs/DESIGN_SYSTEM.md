@@ -4,7 +4,10 @@ Use this as a quick-reference for building or updating UI. It captures the curre
 
 ## Foundations
 - **Typography**: Use the configured font tokens (`font-body`, `font-heading`, `font-mono`). Default body text at `text-sm`; headings leverage the predefined `text-heading-*` scales. Keep tracking/weight consistent with existing sections (e.g., hero and cards).
-- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values.
+- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values. Tailwind generates classes only for the token families of `tailwind.config.ts` (`text`, `bg`, `border`, `action`, `institutional`, `status`): shadcn/ui palette names such as `text-muted-foreground`, `bg-muted` or `text-primary` produce no CSS. The tokens are CSS variables, so an opacity modifier on a token colour (`bg-bg-surface/70`) produces no CSS either.
+  - Secondary text uses `text-text-secondary`, which keeps at least 4.5:1 contrast on every background token in both themes (#464); loading skeletons and placeholders use `bg-bg-muted`; inset panels use `bg-bg-subtle`.
+  - Decorative accent icons (section headings) use `text-institutional-malachite`.
+  - Modal backdrops and translucent caption bars use `bg-bg-overlay` (the surface colour at 70% opacity), combined with `backdrop-blur-sm` behind a modal (#464).
 - **Spacing scale**: Rely on tokenized spacing utilities: `px-md py-sm` for controls, `gap-sm`/`space-y-sm` for small stacks, `gap-md`/`space-y-md` for medium groupings, `p-lg`/`p-xl` for larger containers. Avoid raw numbers.
 - **Radii**: Default radius is `rounded-lg` for controls and cards. Only increase radius when a specific pattern (e.g., pills) calls for it.
 - **Shadows**: Use semantic shadows: `shadow-surface` for inputs/cards, `shadow-overlay` for popovers/dropdowns, `shadow-raised` for primary CTAs. Avoid ad-hoc shadow definitions.
@@ -32,6 +35,15 @@ Supporting props: `size` (`sm` default ≈ 24px tall, `md` ≈ 27px), `shape` (`
 <Badge variant="soft" tone="success" dot>Published</Badge>
 <Badge variant="outline" size="md">CC BY-SA 4.0</Badge>
 <Badge asChild interactive tone="accent"><Link href="/browse">12 parts</Link></Badge>
+```
+
+## Error banners
+An error raised by an action (a failed load, a rejected save, a blocking condition) is shown with `Alert` (`components/ui/alert.tsx`), never with ad hoc classes (#460). It uses the status error tokens: `bg-status-error`, `border-status-errorBorder`, `text-status-errorText`, with `rounded-lg`, `p-sm` and `text-sm`. It renders with `role="alert"`, so screen readers announce the message when it appears. It accepts `className` and the attributes of a `div`.
+
+A short inline error line, such as the message under a form, uses `text-sm text-status-errorText` with `role="alert"`, without the banner surface (#463): the five auth forms (sign-in, sign-up, password reset request, password update, account deletion), the feedback form, the part request form, the product suggestion form of the search page, and the error row of the search bar dropdown. A full-area load failure (the browse grid, the featured parts section, the part page) keeps its empty-state layout, with a title and an icon, and renders the message in `text-body text-status-errorText` with `role="alert"`. The auth error page (`app/(auth)/error/page.tsx`) renders its message in `text-sm text-status-errorText` without `role="alert"`, since the message is the page itself rather than the result of an action on it. No error message uses `text-action-primary` or the neutral text tokens. Destructive menu items use `text-status-errorText`. No `destructive` colour exists in the tokens: classes such as `text-destructive` generate nothing.
+
+```tsx
+{error && <Alert>{error}</Alert>}
 ```
 
 ## Layout & Components

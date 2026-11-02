@@ -235,7 +235,7 @@ export function PartCard({ part, className, badge }: PartCardProps) {
                 empty row above the fit line. Colour is inherited from the Card
                 (text-text-primary) — setting it here would make cn() drop the
                 size token. */}
-            <h3 className="line-clamp-2 font-heading text-subtitle font-semibold leading-snug transition-colors hover:text-primary">
+            <h3 className="line-clamp-2 font-heading text-subtitle font-semibold leading-snug transition-colors hover:text-text-link">
               {part.title}
             </h3>
           </Link>

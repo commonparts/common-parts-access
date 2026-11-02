@@ -322,13 +322,13 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         <div className="animate-pulse space-y-lg">
           <Grid columns={12} className="items-start gap-lg">
             <div className="col-span-12 lg:col-span-7">
-              <div className="aspect-video rounded-lg border border-border-subtle bg-muted" />
+              <div className="aspect-video rounded-lg border border-border-subtle bg-bg-muted" />
             </div>
             <div className="col-span-12 lg:col-span-5 space-y-sm">
-              <div className="h-8 w-3/4 rounded bg-muted" />
-              <div className="h-4 w-full rounded bg-muted" />
-              <div className="h-4 w-2/3 rounded bg-muted" />
-              <div className="h-10 w-40 rounded bg-muted" />
+              <div className="h-8 w-3/4 rounded bg-bg-muted" />
+              <div className="h-4 w-full rounded bg-bg-muted" />
+              <div className="h-4 w-2/3 rounded bg-bg-muted" />
+              <div className="h-10 w-40 rounded bg-bg-muted" />
             </div>
           </Grid>
         </div>
@@ -340,13 +340,13 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     return (
       <div className={cn("w-full", className)}>
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 bg-muted rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="w-16 h-16 mx-auto mb-4 bg-bg-muted rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <h3 className="text-lg font-semibold mb-2">Unable to load part</h3>
-          <p className="text-muted-foreground">{error}</p>
+          <p role="alert" className="text-body text-status-errorText">{error}</p>
         </div>
       </div>
     )
@@ -373,7 +373,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     <div className={cn("w-full space-y-lg", className)}>
       <Grid columns={12} className="items-start gap-lg">
         <div className="col-span-12 lg:col-span-7 space-y-sm">
-          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle bg-muted">
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-border-subtle bg-bg-muted">
             {allImages.length > 0 ? (
               <Image
                 src={allImages[selectedImageIndex]}
@@ -595,7 +595,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
-                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-muted">
+                <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-bg-muted">
                   {part.author.avatar ? (
                     <Image
                       src={part.author.avatar}
@@ -647,7 +647,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <Card className="col-span-12 lg:col-span-8 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 Instructions
@@ -664,7 +664,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
               Part details
@@ -673,55 +673,55 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <CardContent className="space-y-3">
             {part.partDetails.partNumber && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground font-medium">Part number</span>
-                <span className="font-mono text-sm bg-muted px-2 py-1 rounded">{part.partDetails.partNumber}</span>
+                <span className="text-text-secondary font-medium">Part number</span>
+                <span className="font-mono text-sm bg-bg-muted px-2 py-1 rounded">{part.partDetails.partNumber}</span>
               </div>
             )}
             {part.partDetails.material && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground font-medium">Material</span>
+                <span className="text-text-secondary font-medium">Material</span>
                 <span className="font-medium">{part.partDetails.material}</span>
               </div>
             )}
             {part.partDetails.color && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground font-medium">Color</span>
+                <span className="text-text-secondary font-medium">Color</span>
                 <span className="font-medium">{part.partDetails.color}</span>
               </div>
             )}
             {part.partDetails.dimensions && (
               <div className="flex flex-col gap-2">
-                <span className="text-muted-foreground font-medium">Dimensions</span>
-                <div className="bg-muted/50 p-3 rounded-lg">
+                <span className="text-text-secondary font-medium">Dimensions</span>
+                <div className="bg-bg-subtle p-3 rounded-lg">
                   {typeof part.partDetails.dimensions === 'object' ? (
                     <div className="space-y-1 text-sm">
                       {part.partDetails.dimensions.length && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Length:</span>
+                          <span className="text-text-primary">Length:</span>
                           <span className="font-mono">{part.partDetails.dimensions.length} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.width && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Width:</span>
+                          <span className="text-text-primary">Width:</span>
                           <span className="font-mono">{part.partDetails.dimensions.width} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.height && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Height:</span>
+                          <span className="text-text-primary">Height:</span>
                           <span className="font-mono">{part.partDetails.dimensions.height} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.diameter && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Diameter:</span>
+                          <span className="text-text-primary">Diameter:</span>
                           <span className="font-mono">{part.partDetails.dimensions.diameter} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
                       {part.partDetails.dimensions.thickness && (
                         <div className="flex justify-between">
-                          <span className="text-muted-foreground">Thickness:</span>
+                          <span className="text-text-primary">Thickness:</span>
                           <span className="font-mono">{part.partDetails.dimensions.thickness} {part.partDetails.dimensions.unit || 'mm'}</span>
                         </div>
                       )}
@@ -733,7 +733,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               </div>
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-              <span className="text-muted-foreground font-medium">
+              <span className="text-text-secondary font-medium">
                 {part.originType === 'curated' ? 'Added' : 'Uploaded'}
               </span>
               <span className="text-sm">{formatDate(part.createdAt)}</span>
@@ -746,7 +746,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H9.5a2 2 0 01-2-2V5a2 2 0 012-2H14" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7v10l3-3 3 3V7z" />
                 </svg>
@@ -755,23 +755,23 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             </CardHeader>
             <CardContent className="space-y-4">
               {part.estimatedPrintTime && (
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                  <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-3 bg-bg-subtle rounded-lg">
+                  <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Print time</p>
+                    <p className="text-sm text-text-primary">Print time</p>
                     <p className="font-semibold">{formatPrintTime(part.estimatedPrintTime)}</p>
                   </div>
                 </div>
               )}
               {part.estimatedMaterialUsage && (
-                <div className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                  <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2 p-3 bg-bg-subtle rounded-lg">
+                  <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground">Material usage</p>
+                    <p className="text-sm text-text-primary">Material usage</p>
                     <p className="font-semibold">{part.estimatedMaterialUsage}g</p>
                   </div>
                 </div>
@@ -782,7 +782,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                   <div className="space-y-2">
                     {typeof part.printSettings === 'object' && Object.entries(part.printSettings).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center text-sm">
-                        <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                        <span className="text-text-secondary capitalize">{key.replace(/_/g, ' ')}</span>
                         <Badge variant="outline">{String(value)}</Badge>
                       </div>
                     ))}
@@ -797,7 +797,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         <Card className="col-span-12 md:col-span-6 xl:col-span-4 border-border-subtle">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2">
-              <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               Attribution & license
@@ -930,7 +930,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
           <Card className="col-span-12 lg:col-span-6 border-border-subtle">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
                 Additional notes

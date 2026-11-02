@@ -124,7 +124,7 @@ export function CompatibilityStep({
                     <button
                       type="button"
                       onClick={() => form.removeProduct(pid)}
-                      className="ml-2xs rounded-full hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                      className="ml-2xs rounded-full hover:text-status-errorText focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                       aria-label={`Remove ${form.productNames[pid] ?? 'product'}`}
                     >
                       ×

@@ -4,6 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -697,9 +698,9 @@ export function ElsewhereTrack({
       <Stepper labels={PUBLISH_STEP_LABELS} current={step} ariaLabel="Publish steps" />
 
       {error && (
-        <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
+        <Alert>
           {error}
-        </div>
+        </Alert>
       )}
 
       {step === PUBLISH_STEPS.ORIGIN && (
@@ -731,7 +732,7 @@ export function ElsewhereTrack({
               </div>
 
               {duplicate && (
-                <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-sm text-sm text-destructive">
+                <Alert>
                   This source is already in the registry:{' '}
                   {duplicate.status === 'published' ? (
                     <Link href={`/parts/${duplicate.slug}`} className="font-medium underline">
@@ -741,7 +742,7 @@ export function ElsewhereTrack({
                     <span className="font-medium">{duplicate.name} (draft)</span>
                   )}
                   . A second record cannot be created.
-                </div>
+                </Alert>
               )}
 
               {renderCriterion(
