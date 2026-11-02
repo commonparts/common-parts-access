@@ -34,6 +34,7 @@ const config: Config = {
           disabled: "var(--color-background-disabled)",
           accent: "var(--color-background-accent)",
           accentSubtle: "var(--color-background-accentSubtle)",
+          overlay: "var(--color-background-overlay)",
         },
         border: {
           DEFAULT: "var(--color-border-default)",

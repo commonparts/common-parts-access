@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Menu, X } from "lucide-react";
 
+import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { USER_PROFILE_MENU_ITEMS, UserProfileMenuAction } from "@/components/user/profile-menu-items";
 import { signOut } from "@/lib/supabase/queries/auth.client";
@@ -155,7 +156,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                         key={item.key}
                         variant="ghost"
                         size="sm"
-                        className={`w-full justify-start font-medium ${item.destructive ? "text-destructive hover:text-destructive" : ""}`}
+                        className={`w-full justify-start font-medium ${item.destructive ? "text-status-errorText hover:text-status-errorText" : ""}`}
                         onClick={() => {
                           void handleUserMenuAction(item.action);
                         }}
@@ -167,9 +168,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                   })}
 
                   {signOutError && (
-                    <p className="rounded-md border border-border-default bg-bg-muted px-sm py-xs text-sm text-destructive">
-                      {signOutError}
-                    </p>
+                    <Alert>{signOutError}</Alert>
                   )}
                 </>
               ) : (

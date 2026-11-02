@@ -129,7 +129,7 @@ export function BrowsePartsGrid() {
         </div>
         <div className="space-y-xs">
           <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
-          <p className="text-body text-text-secondary">{error}</p>
+          <p role="alert" className="text-body text-status-errorText">{error}</p>
         </div>
         <Button onClick={() => fetchParts()}>Try again</Button>
       </div>

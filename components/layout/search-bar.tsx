@@ -378,8 +378,8 @@ export function SearchBar({
               Searching…
             </div>
           ) : error ? (
-            <div className="px-md py-md text-sm text-text-secondary">
-              Something went wrong. <span className="text-text-primary">Try again.</span>
+            <div role="alert" className="px-md py-md text-sm text-status-errorText">
+              Something went wrong. Try again.
             </div>
           ) : hasResults ? (
             <>
