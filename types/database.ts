@@ -232,7 +232,7 @@ export interface PartFile {
   original_filename: string; // max 255 chars
   file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
   file_size: number; // bytes (BIGINT)
-  file_url: string;
+  file_url: string | null; // Deprecated (#56): not written; storage location is upload_path
   file_category: string; // model, documentation, image (max 20 chars)
   upload_path: string; // Storage path
   checksum?: string | null; // File integrity (max 64 chars)

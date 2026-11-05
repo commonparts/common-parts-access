@@ -28,3 +28,34 @@ export function resolveStorageUrl(pathOrUrl: string | null | undefined): string 
 
   return `${supabaseUrl.replace(/\/+$/, '')}/storage/v1/object/public/${pathOrUrl}`
 }
+
+/**
+ * Resolves every string entry of a stored image list (for example
+ * `parts.images`) to a full public URL. Non-string entries are dropped, and a
+ * value that is not an array yields an empty list.
+ */
+export function resolveStorageUrls(pathsOrUrls: unknown): string[] {
+  if (!Array.isArray(pathsOrUrls)) return []
+  return pathsOrUrls
+    .filter((entry): entry is string => typeof entry === 'string')
+    .map((entry) => resolveStorageUrl(entry))
+}
+
+interface StoredPartMedia {
+  thumbnail_url?: string | null
+  images?: string[] | null
+}
+
+/**
+ * Returns a copy of a part row with its thumbnail and gallery resolved to
+ * public URLs, for API responses. The stored row keeps its storage
+ * references: write paths merge new images into the stored values, never
+ * into a resolved copy (#56).
+ */
+export function withResolvedPartMedia<T extends StoredPartMedia>(row: T): T {
+  return {
+    ...row,
+    ...(row.thumbnail_url !== undefined && { thumbnail_url: resolveStorageUrl(row.thumbnail_url) }),
+    ...(row.images != null && { images: resolveStorageUrls(row.images) }),
+  }
+}

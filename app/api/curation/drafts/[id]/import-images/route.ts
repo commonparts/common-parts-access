@@ -5,6 +5,7 @@ import { downloadSourceImage, numberedImageFilename, resolveSourceGallery } from
 import { inferImageContentType } from '@/lib/storage/image-processing'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
+import { resolveStorageUrls } from '@/lib/storage/url'
 import { isValidUuid } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 
@@ -40,7 +41,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     // Idempotency: the import targets a fresh draft. Once any image exists
     // (imported or manual), re-running would duplicate or reorder — skip.
     if (draft.image_file_count > 0) {
-      return NextResponse.json({ imported: 0, images: draft.images ?? [], skipped: 'Images already registered for this draft' })
+      return NextResponse.json({ imported: 0, images: resolveStorageUrls(draft.images), skipped: 'Images already registered for this draft' })
     }
 
     // resolveSourceGallery checks the source URL host before reading its path as an id.
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
 
     const imageUrls = (await gallery.listImageUrls()).slice(0, PART_UPLOAD_LIMITS.maxThumbnailFiles)
     if (imageUrls.length === 0) {
-      return NextResponse.json({ imported: 0, images: draft.images ?? [] })
+      return NextResponse.json({ imported: 0, images: resolveStorageUrls(draft.images) })
     }
 
     const fileRows: {
@@ -63,10 +64,11 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       original_filename: string
       file_type: string
       file_size: number
-      file_url: string
       file_category: 'image'
       upload_path: string
     }[] = []
+    // Public URL of each imported image, in import order, for the gallery.
+    const importedImageUrls: string[] = []
 
     for (const imageUrl of imageUrls) {
       // Numbering follows successful imports so the sequence stays gapless
@@ -95,6 +97,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       }
 
       const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.MODEL_THUMBNAILS).getPublicUrl(path)
+      importedImageUrls.push(publicData.publicUrl)
       const originalName = imageUrl.split('/').pop() ?? filename
       fileRows.push({
         part_id: id,
@@ -102,14 +105,13 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         original_filename: originalName.slice(0, MAX_FILENAME_LENGTH),
         file_type: extension.replace(/^\./, ''),
         file_size: bytes.byteLength,
-        file_url: publicData.publicUrl,
         file_category: 'image',
         upload_path: path,
       })
     }
 
     if (fileRows.length === 0) {
-      return NextResponse.json({ imported: 0, images: draft.images ?? [] })
+      return NextResponse.json({ imported: 0, images: resolveStorageUrls(draft.images) })
     }
 
     const { error: insertError } = await supabase.from('part_files').insert(fileRows)
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ error: 'Failed to register imported images' }, { status: 500 })
     }
 
-    const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, fileRows.map((f) => f.file_url))
+    const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, importedImageUrls)
     const { error: updateError } = await supabase
       .from('parts')
       .update({ images: sortedImages, thumbnail_url: sortedImages[0] })
@@ -132,7 +134,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       console.error('Image import: failed to update part thumbnail', updateError)
     }
 
-    return NextResponse.json({ imported: fileRows.length, images: sortedImages })
+    return NextResponse.json({ imported: fileRows.length, images: resolveStorageUrls(sortedImages) })
   } catch (error) {
     console.error('Curation image import failed', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

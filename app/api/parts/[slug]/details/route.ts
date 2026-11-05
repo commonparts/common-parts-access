@@ -7,6 +7,7 @@ import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { resolveStorageUrl, resolveStorageUrls } from '@/lib/storage/url'
 
 /**
  * Compatible products listed on a part page, each rendering print report
@@ -137,7 +138,7 @@ export async function GET(
     ] = await Promise.all([
       supabase
         .from('part_files')
-        .select('id, original_filename, file_type, file_size, file_url, file_category')
+        .select('id, original_filename, file_type, file_size, file_category')
         .eq('part_id', part.id)
         .order('created_at', { ascending: true })
         .limit(MAX_PART_FILES),
@@ -229,8 +230,10 @@ export async function GET(
         printSettings: part.print_settings,
         estimatedPrintTime: part.estimated_print_time,
         estimatedMaterialUsage: part.estimated_material_usage,
-        thumbnailUrl: part.thumbnail_url,
-        images: part.images || [],
+        // Stored storage references resolve to public URLs here, at the
+        // response boundary (#56).
+        thumbnailUrl: resolveStorageUrl(part.thumbnail_url),
+        images: resolveStorageUrls(part.images),
         stats: {
           likes: part.like_count || 0,
         },
@@ -257,7 +260,7 @@ export async function GET(
         author: author ? {
           username: author.username,
           displayName: author.display_name,
-          avatar: author.avatar_url,
+          avatar: resolveStorageUrl(author.avatar_url),
           location: author.location,
           verifiedMaker: author.verified_maker,
         } : null,
