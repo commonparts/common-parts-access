@@ -1,10 +1,10 @@
 import { createClient } from "@/lib/supabase/client";
-import type { UserProfile } from "@/types/users";
+import type { TablesUpdate } from "@/types/supabase";
 
 /**
  * Update user profile
  */
-export async function updateUserProfile(userId: string, updates: Partial<UserProfile>) {
+export async function updateUserProfile(userId: string, updates: TablesUpdate<"user_profiles">) {
   const supabase = createClient();
   
   return await supabase

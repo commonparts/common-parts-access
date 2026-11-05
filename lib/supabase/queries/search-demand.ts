@@ -65,7 +65,7 @@ export async function searchProductCandidates(
     console.error('searchProductCandidates: RPC failed', error)
     throw error
   }
-  return (data ?? []) as ProductCandidate[]
+  return data ?? []
 }
 
 /**
@@ -150,13 +150,21 @@ export async function fetchTopSearchMisses(
   const { data, error } = await supabase.rpc('fetch_top_search_misses', {
     since_days: sinceDays,
     result_limit: limit,
-    outcome_filter: outcome,
+    // Omitted rather than null: the argument defaults to null (every outcome),
+    // and the generated Args type has no null for an argument with a default.
+    outcome_filter: outcome ?? undefined,
   })
   if (error) {
     console.error('fetchTopSearchMisses: RPC failed', error)
     throw error
   }
-  return (data ?? []) as SearchMissSummary[]
+  return (data ?? []).map((row) => ({
+    ...row,
+    // Cast: the outcome comes from search_misses.outcome, whose CHECK
+    // constraint allows exactly the SearchMissOutcome values; the generated
+    // type of a text column is `string`.
+    outcome: row.outcome as SearchMissOutcome,
+  }))
 }
 
 /**
@@ -173,5 +181,5 @@ export async function fetchPendingProductReferences(limit: number): Promise<Pend
     console.error('fetchPendingProductReferences: RPC failed', error)
     throw error
   }
-  return (data ?? []) as PendingProductReference[]
+  return data ?? []
 }

@@ -139,5 +139,5 @@ export async function fetchPartRequestCounts(productId: string): Promise<PartReq
     throw error
   }
 
-  return (data ?? []) as PartRequestCount[]
+  return data ?? []
 }

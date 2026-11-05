@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "@/types/supabase";
 
 /**
  * Server-only Supabase client authenticated with the secret key
@@ -17,7 +18,7 @@ export function createAdminClient() {
     );
   }
 
-  return createClient(url, secretKey, {
+  return createClient<Database>(url, secretKey, {
     auth: {
       autoRefreshToken: false,
       persistSession: false,

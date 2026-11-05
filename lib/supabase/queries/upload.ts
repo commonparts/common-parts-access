@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { narrowPartRow } from '@/lib/supabase/rows'
 import type { Part, PartDimensions, PartPrintSettings } from '@/types/database'
 
 /**
@@ -34,13 +35,7 @@ const DRAFTS_LIST_LIMIT = 50
 const PRODUCT_LINKS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 const PART_FILES_LIMIT = 100
 
-export interface UploadDraftListItem {
-  id: string
-  name: string
-  slug: string
-  thumbnail_url: string | null
-  updated_at: string | null
-}
+export type UploadDraftListItem = Pick<Part, 'id' | 'name' | 'slug' | 'thumbnail_url' | 'updated_at'>
 
 /**
  * Lists the contributor's own open upload drafts, most recently touched
@@ -60,13 +55,19 @@ export async function listUploadDrafts(userId: string): Promise<UploadDraftListI
     .limit(DRAFTS_LIST_LIMIT)
 
   if (error) throw error
-  return (data ?? []) as UploadDraftListItem[]
+  return data ?? []
 }
 
-export interface UploadDraft extends Partial<Part> {
-  id: string
-  name: string
-  slug: string
+/** The parts columns read by UPLOAD_DRAFT_SELECT. */
+type UploadDraftColumns =
+  | 'id' | 'name' | 'slug' | 'user_id' | 'description' | 'instructions' | 'status' | 'origin_type'
+  | 'category_id' | 'license_id' | 'tags' | 'thumbnail_url' | 'images'
+  | 'verification_status' | 'file_hosting_type'
+  | 'material' | 'color' | 'dimensions' | 'print_settings'
+  | 'estimated_print_time' | 'estimated_material_usage'
+  | 'originality_attested' | 'originality_attested_at' | 'created_at' | 'updated_at'
+
+export type UploadDraft = Pick<Part, UploadDraftColumns> & {
   product_ids: string[]
   model_file_count: number
   image_file_count: number
@@ -101,8 +102,8 @@ export async function getUploadDraft(id: string): Promise<UploadDraft | null> {
 
   const fileRows = files ?? []
   return {
-    ...(part as unknown as Part),
-    product_ids: (links ?? []).map((l) => l.product_id as string),
+    ...narrowPartRow(part),
+    product_ids: (links ?? []).map((l) => l.product_id),
     model_file_count: fileRows.filter((f) => f.file_category === 'model').length,
     image_file_count: fileRows.filter((f) => f.file_category === 'image').length,
   }
@@ -152,7 +153,7 @@ export async function createUploadDraft(
     .single()
 
   if (error) throw error
-  return data as { id: string; slug: string }
+  return data
 }
 
 /**
@@ -213,7 +214,7 @@ export async function updateUploadDraft(
 
     if (readError) throw readError
 
-    const current = new Set((existing ?? []).map((l) => l.product_id as string))
+    const current = new Set((existing ?? []).map((l) => l.product_id))
     const target = new Set(productIds)
     const toAdd = productIds.filter((pid) => !current.has(pid))
     const toRemove = [...current].filter((pid) => !target.has(pid))

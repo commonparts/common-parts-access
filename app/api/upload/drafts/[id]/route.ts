@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { withResolvedPartMedia } from '@/lib/storage/url'
+import { omitKey } from '@/lib/utils/objects'
 import {
   getUploadDraft,
   updateUploadDraft,
@@ -43,8 +44,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
 
     // user_id is fetched for the ownership check only — never echoed back.
-    const clientDraft = withResolvedPartMedia(draft)
-    delete clientDraft.user_id
+    const clientDraft = omitKey(withResolvedPartMedia(draft), 'user_id')
     return NextResponse.json({ draft: clientDraft })
   } catch (error) {
     console.error('Failed to load upload draft', error)
