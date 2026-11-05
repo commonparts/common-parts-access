@@ -23,6 +23,8 @@
 --
 -- No index, RLS policy or grant changes: the column keeps its type and the
 -- table keeps its policies and privileges.
+--
+-- APPLIED to production on 2026-11-05 as version 20261105101644.
 
 alter table public.part_files
   alter column file_url drop not null;
