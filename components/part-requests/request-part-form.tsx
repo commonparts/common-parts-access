@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { requestPart } from "@/lib/actions/part-requests"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -20,9 +21,8 @@ export interface RequestPartFormProps {
 }
 
 /**
- * Shared "request this part" form. Submits to POST /api/part-requests
- * (anonymous allowed) with an optional product_id and raw_query — never touches
- * the feedback table / triage pipeline, so it can't create a GitHub issue.
+ * Shared "request this part" form. Submits through the `requestPart` Server
+ * Action (anonymous allowed) with an optional product id and raw query.
  */
 export function RequestPartForm({
   productId,
@@ -45,20 +45,14 @@ export function RequestPartForm({
 
     setState("submitting")
     try {
-      const res = await fetch("/api/part-requests", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: trimmed,
-          productId,
-          rawQuery,
-          pageUrl: typeof window !== "undefined" ? window.location.href : undefined,
-        }),
+      const response = await requestPart({
+        description: trimmed,
+        productId,
+        rawQuery,
+        pageUrl: window.location.href,
       })
-      if (!res.ok) throw new Error(`Request failed: ${res.status}`)
-      setState("done")
-    } catch (err) {
-      console.error("RequestPartForm: submission failed", err)
+      setState(response.ok ? "done" : "failed")
+    } catch {
       setState("failed")
     }
   }

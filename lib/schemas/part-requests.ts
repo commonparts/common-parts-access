@@ -2,9 +2,9 @@ import { z } from 'zod'
 import { isValidUuid } from '@/lib/utils/validation'
 
 /**
- * POST /api/part-requests — part demand ("Request this part"). The bounds
- * mirror the CHECK constraints on part_requests, so bad input gets a clean
- * 400 before the round trip. A non-empty `description` is the core demand
+ * Part demand ("Request this part"), submitted through the `requestPart`
+ * Server Action. The bounds mirror the CHECK constraints on part_requests, so
+ * bad input is rejected before the round trip. A non-empty `description` is the core demand
  * signal and is required; everything else is optional context.
  */
 

@@ -19,7 +19,7 @@ The project is solo-operated and in MVP stage. The human is the final decision-m
 - **Never modify** `design-tokens/`, `lib/supabase/server.ts`, `lib/supabase/client.ts`, `middleware.ts`, or `app/layout.tsx` without explicit instruction
 - **Never hardcode hex colors or arbitrary spacing values** — always use design tokens
 - **Never mix server and client Supabase imports** in the same file
-- **Never use `'use server'`** — this project uses API routes, not Server Actions
+- **Mutations triggered from our own UI are Server Actions** in `lib/actions/[domain].ts`, never a new API route. `'use server'` appears only at the top of those files. See Server Actions, reads and API routes below
 - **Never install new dependencies** without asking first
 - **Never make assumptions** — if there is any open question or doubt (about a schema, a file, an API, the intent of an issue), verify it first: read the actual code, check the actual schema via the Supabase MCP, read the actual issue via the GitHub MCP, or ask the human. Acting on an unverified guess is never acceptable.
 
@@ -35,7 +35,7 @@ If a quick fix violates them, flag it and propose the right implementation inste
 - If you write the same logic twice, extract it. Component, hook, utility function, or query — pick the right abstraction.
 - Before creating anything new, check `components/ui/`, `components/layout/`, and `lib/` for existing solutions.
 - Props must be typed with interfaces. Components must be composable — accept `className` and spread remaining props where it makes sense.
-- Data-fetching logic always lives in `lib/supabase/queries/` — never inline in a component or API route.
+- Data-fetching logic always lives in `lib/supabase/queries/` — never inline in a component, API route or Server Action.
 - **Helper placement** — before writing any helper function (validator, formatter, URL utility, slug util, etc.) inside a component or API route, you must:
   1. Check `lib/utils/` for an existing file that already owns that domain (e.g. `validation.ts` for validators and URL helpers, `formatters.ts` for formatters, `slug.ts` for slug utilities).
   2. If a suitable file exists, add the function there and import it — never define it inline.
@@ -54,10 +54,16 @@ interface Props {
 const MyCard = () => <div style={{ padding: 24 }}>My content</div>
 ```
 
+### Conciseness — less hand-written code
+
+- Write code concisely. Prefer library and framework defaults over custom code: default error messages, generated types, upstream shadcn components unchanged.
+- Keep comments to what the code cannot say.
+- Report in every PR the net change in hand-written lines, excluding generated files, tests and docs. A positive net change must be justified.
+
 ### Scalability — design for growth
 
 - **Database queries**: always paginate — never fetch unbounded lists. Use `.range()` or `.limit()` on every list query.
-- **API routes**: validate all inputs before touching the database, through a Zod schema (see Input validation). Never call `request.json()` directly.
+- **API routes and Server Actions**: validate all inputs before touching the database, through a Zod schema (see Input validation). Never call `request.json()` directly.
 - **Components**: use `React.memo` for list items rendered in large grids (PartCard, FileRow, etc.).
 - **Indexes**: if you write a query that filters or orders by a column, mention it — the human will add the index.
 - **State**: keep state as local as possible. Don't lift state to the top of the tree unless multiple siblings genuinely need it.
@@ -80,10 +86,10 @@ const { data } = await supabase.from('parts').select('*')
 **Authentication**
 - Always verify the user session before any write or privileged read: `const { data: { user } } = await supabase.auth.getUser()`
 - Never use `auth.getSession()` for authorization — it reads from the cookie and can be spoofed. Always use `auth.getUser()` which verifies with the Supabase server.
-- Return 401 immediately if `user` is null on protected routes.
+- Return 401 immediately if `user` is null on protected routes. A protected Server Action returns `{ ok: false, error }` instead: it is a public endpoint like a route.
 
 **Input validation**
-- Validate every request body and query parameter with a Zod schema: type, length, allowed values. Schemas live in `lib/schemas/[domain].ts`; routes parse with `parseJsonBody(request, schema)` and `parseSearchParams(searchParams, schema)` from `lib/api/parse.ts`, which answer a 400 naming the invalid field.
+- Validate every request body and query parameter with a Zod schema: type, length, allowed values. Schemas live in `lib/schemas/[domain].ts`; routes parse with `parseJsonBody(request, schema)` and `parseSearchParams(searchParams, schema)` from `lib/api/parse.ts`, which answer a 400 naming the invalid field. A Server Action parses its argument with `validate(schema, input)` from the same file and returns the failure as is.
 - Give each field the message the interface should show, naming the field in words (`'Title must be between 3 and 200 characters'`). A field without its own message gets Zod's, prefixed with its path.
 - Derive the TypeScript type of a payload from its schema (`z.output<typeof schema>`); never declare it a second time by hand. Never write `typeof` shape checks in a route.
 - Keep business rules that are not shape validation (ownership, license hostability, publish blockers) out of the schema, in the route or in `lib/`.
@@ -167,13 +173,14 @@ Run through this before every commit:
 - [ ] `npm run test` passes (CI also enforces the coverage threshold with `npm run test:coverage`)
 - [ ] No hardcoded colors, spacing values, or hex codes
 - [ ] No unbounded database queries
-- [ ] All API routes verify authentication where required
+- [ ] All API routes and Server Actions verify authentication where required
 - [ ] No `console.log` left in production code (use `console.error` for real errors only)
 - [ ] No `any` types introduced
 - [ ] Every new request input is parsed with a Zod schema; no cast on a query result without a comment saying why
 - [ ] Additive migration applied and `types/supabase.ts` regenerated from production in the same PR
 - [ ] No new dependency installed without asking
 - [ ] Commit message follows Conventional Commits and references the issue number
+- [ ] The PR description reports the net change in hand-written lines (see Conciseness)
 - [ ] The `docs/` files affected by the change are updated in the same PR, or none are affected (see Documentation below)
 
 ---
@@ -284,7 +291,8 @@ components/
   user/           # User profile components
 
 lib/
-  api/            # Request parsing with Zod (parseJsonBody, parseSearchParams)
+  actions/        # Server Actions ('use server'), one file per domain
+  api/            # Input validation with Zod (validate, parseJsonBody, parseSearchParams)
   env.ts          # Validated server environment variables (serverEnv)
   public-env.ts   # Validated public environment variables (client-safe)
   schemas/        # Zod schemas of the API inputs, one file per domain
@@ -362,9 +370,48 @@ export async function getFeedbackById(id: string) {
 
 ---
 
+## Server Actions, reads and API routes
+
+- **Mutations triggered from our own UI**: Server Actions, in `lib/actions/[domain].ts`. Next.js checks the request origin for them by default.
+- **Reads**: fetched in Server Components and passed as props. A GET route is kept only when a client component must read after an interaction (autocomplete, debounced pre-fill or duplicate check) or when a client outside the app calls it. Reads never go through a Server Action: actions are POST requests, run one at a time per client and are not cacheable.
+- **API routes** remain for downloads, redirects, binary responses, webhooks and anything called from outside the app.
+- Data access stays in `lib/supabase/queries/`: actions call query functions, they do not contain queries.
+
+Existing mutation routes migrate to Server Actions when a change touches them, not as a standalone rewrite (#491).
+
+## Adding new Server Actions
+
+Follow `lib/actions/print-reports.ts` as the canonical example. An action is a public endpoint: whatever the component sends, the server sees untrusted input.
+- Put `'use server'` at the top of `lib/actions/[domain].ts`; export only async functions from it.
+- Type the argument as the schema's input (`z.input<typeof schema>`) so the component is checked at compile time, then validate it with `validate(schema, input)` before anything else.
+- Verify the user with `auth.getUser()` before any write. An action open to anonymous visitors still resolves the user the same way, to record who acted.
+- Return a `Result<T>` from `lib/api/parse.ts`: `{ ok: true, data }` or `{ ok: false, error }` with the message the interface shows. Expected failures are returned, never thrown: Next.js replaces the message of an error thrown from an action in production.
+- Return only what the component needs, never a database row.
+
+```typescript
+'use server'
+
+import type { z } from 'zod'
+import { validate, type Result } from '@/lib/api/parse'
+import { exampleSchema } from '@/lib/schemas/example'
+import { createClient } from '@/lib/supabase/server'
+import { createExample } from '@/lib/supabase/queries/example'
+
+export async function addExample(input: z.input<typeof exampleSchema>): Promise<Result<{ id: string }>> {
+  const parsed = validate(exampleSchema, input)
+  if (!parsed.ok) return parsed
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { ok: false, error: 'Sign in to add an example' }
+
+  return { ok: true, data: await createExample(parsed.data, user.id) }
+}
+```
+
 ## Adding new API routes
 
-Follow `app/api/parts/route.ts` as the canonical example:
+Only for the cases listed above. Follow `app/api/parts/route.ts` as the canonical example:
 - Use `createClient` from `@/lib/supabase/server`
 - Parse the body and the query parameters with a Zod schema from `lib/schemas/` (see Input validation)
 - Return `NextResponse.json()`

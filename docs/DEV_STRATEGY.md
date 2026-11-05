@@ -105,6 +105,7 @@ Husky hooks:
 - CI must pass before merge is possible
 - Copilot code review runs automatically on every PR
 - All blocking Copilot findings must be resolved before merge
+- The description reports the net change in hand-written lines, excluding generated files, tests and docs; a positive net change is justified (#491)
 
 ### CI Pipeline (GitHub Actions)
 
@@ -521,6 +522,15 @@ Native to GitHub, agentic architecture since March 2026, configurable via a sing
 **Why squash merges into `dev` and merge commits for promotions?**
 Each feature lands on `dev` as one squashed commit, so history stays readable and release notes list one line per change. Promotions (`dev` → `staging` → `main`) use merge commits: a squash would leave `staging` and `main` without `dev`'s history, and every later promotion would conflict.
 
+**Why Server Actions for UI mutations? (#491)**
+Most mutation routes were each called from a single place in our own UI, and each needed a route file, a client `fetch` call, JSON parsing and a second declaration of the request and response types. A Server Action replaces this with a typed function call, and Next.js checks the request origin for it by default. The rule:
+- Mutations triggered from our own UI are Server Actions in `lib/actions/[domain].ts`. Each one validates its input with a Zod schema and verifies the user with `auth.getUser()` before anything else, like a route: an action is a public endpoint. It returns `{ ok: true, data }` or `{ ok: false, error }`.
+- Reads are fetched in Server Components and passed as props. A GET route is kept only when a client component must read after an interaction (autocomplete, debounced pre-fill or duplicate check) or when a client outside the app calls it. Actions are POST requests, run one at a time per client and are not cacheable, so reads never use them.
+- API routes remain for downloads, redirects, binary responses, webhooks and anything called from outside the app.
+- Data access stays in `lib/supabase/queries/`; actions call query functions.
+
+Print reports and part requests were migrated first (#491). The other mutation routes migrate when a change touches them, not as a standalone rewrite.
+
 **Why 0 required approvals on PRs?**
 Solo project. The goal of PR protection is forcing CI + Copilot review to run. The human reviews and merges manually anyway.
 
@@ -548,7 +558,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
 │   ├── (legal)/                    # Privacy, terms, legal notice
 │   ├── (public)/                   # Browse, brands, categories, product, parts, search
-│   ├── api/                        # API routes (no Server Actions)
+│   ├── api/                        # API routes: downloads, redirects, binary responses, webhooks, external callers
 │   ├── layout.tsx                  # FeedbackButton mounted here
 │   ├── robots.ts / sitemap.ts      # Crawler entry points
 ├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
@@ -556,7 +566,8 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── design-tokens/                  # Token sources (edit only with approval)
 ├── hooks/
 ├── lib/
-│   ├── api/parse.ts                # Request body and query parsing with Zod, 400 on invalid input
+│   ├── actions/                    # Server Actions for mutations from our own UI, one file per domain
+│   ├── api/parse.ts                # Input validation with Zod: Result type for actions, 400 for routes
 │   ├── env.ts / public-env.ts      # Validated environment variables
 │   ├── curation/ publish/ upload/  # Publish-flow logic per track
 │   ├── schemas/                    # Zod schemas of the API inputs, one file per domain

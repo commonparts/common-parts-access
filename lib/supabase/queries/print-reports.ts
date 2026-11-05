@@ -20,8 +20,8 @@ export class PrintReportSubmissionError extends Error {
  * Records or replaces a print report and returns the pair's fresh counters.
  *
  * Uses the service role: `submit_print_report()` is executable by the service
- * role only, so the API route, which owns the reporter cookie and therefore
- * the rate limit, is the single way in. `print_reports` has RLS enabled and no
+ * role only, so the `reportPrint` Server Action, which owns the reporter
+ * cookie and therefore the rate limit, is the single way in. `print_reports` has RLS enabled and no
  * policy; the function is security definer and checks the part is published.
  */
 export async function submitPrintReport(
