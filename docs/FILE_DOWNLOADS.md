@@ -48,7 +48,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 **`part_files` table:**
 - `upload_path` — Storage path in the bucket of the file's `file_category` (source of truth)
 - `file_category` — `model` or `image`; selects the bucket
-- The former `file_url` (full public URL) is no longer written or read; it is dropped by `20261105130000_relative_storage_references.sql`, applied with the release (#56)
+- The former `file_url` (full public URL) is dropped by `20261105125752_relative_storage_references.sql` (#56)
 - `filename` — Display-safe name
 - `original_filename` — Uploader-provided name
 

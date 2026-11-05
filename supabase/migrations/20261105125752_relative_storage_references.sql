@@ -22,12 +22,14 @@
 --      nullable, unread and unwritten since
 --      20261105101644_part_files_file_url_nullable.sql.
 --
--- Why it is applied when the release is merged into `main`: there is one
--- database behind every environment. Step 1 needs a release in production that
--- resolves relative references, and step 2 needs one that no longer writes
--- `file_url`. The release before this one does both (#56, first step), so this
--- migration ships in the release after it and is applied automatically when
--- that release is merged into `main`.
+-- When it is applied: there is one database behind every environment. Step 1
+-- needs a release in production that resolves relative references, and step 2
+-- needs one that no longer writes `file_url`. The release carrying #478 does
+-- both, and it was in production when this migration was applied.
+--
+-- APPLIED to production on 2026-11-05 as version 20261105125752. The file
+-- carries that version so that the Supabase GitHub integration finds it in
+-- the migration history and does not apply it a second time with the release.
 --
 -- Triggers: `parts_guard_owner_writes` lets maintenance roles write freely,
 -- and `parts_status_parts_count` fires on status changes only. No table here
