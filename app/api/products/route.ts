@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
 import { isValidUuid, trimmedString } from '@/lib/utils/validation'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { STORAGE_BUCKETS } from '@/constants/app'
+import { isOwnStorageReference } from '@/lib/storage/path-utils'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
@@ -73,7 +75,16 @@ export async function POST(request: NextRequest) {
     const brandId = trimmedString(body.brandId)
     const categoryId = trimmedString(body.categoryId)
     const description = typeof body.description === 'string' ? body.description : undefined
-    const imageUrl = typeof body.imageUrl === 'string' ? body.imageUrl : undefined
+    // `imageUrl` is the storage reference of an image the user uploaded to
+    // their own folder of the product thumbnails bucket (#56). Anything else
+    // (a URL, another user's object) is refused rather than stored.
+    const imageUrl = trimmedString(body.imageUrl) || undefined
+    if (imageUrl && !isOwnStorageReference(imageUrl, STORAGE_BUCKETS.PRODUCT_THUMBNAILS, user.id)) {
+      return NextResponse.json(
+        { error: 'Invalid product image: upload the image to your own product image folder first' },
+        { status: 400 },
+      )
+    }
     const discontinued = Boolean(body.discontinued)
 
     const releaseYear = body.releaseYear !== undefined && body.releaseYear !== null

@@ -163,7 +163,7 @@ export interface Part {
   
   // Files and media
   thumbnail_url?: string | null;
-  images?: string[] | null; // Array of image URLs (text[])
+  images?: string[] | null; // Storage references `bucket/path` (text[]), resolved at the API boundary (#56)
   
   // Status and metrics
   status?: PartStatus;
@@ -232,9 +232,8 @@ export interface PartFile {
   original_filename: string; // max 255 chars
   file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
   file_size: number; // bytes (BIGINT)
-  file_url: string | null; // Deprecated (#56): not written; storage location is upload_path
   file_category: string; // model, documentation, image (max 20 chars)
-  upload_path: string; // Storage path
+  upload_path: string; // Storage path, in the bucket of file_category
   checksum?: string | null; // File integrity (max 64 chars)
   created_at?: string;
 }
