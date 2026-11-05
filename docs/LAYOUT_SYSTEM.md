@@ -12,7 +12,7 @@ Use Tailwind defaults (familiar and intent-based):
 - `2xl` 1536px
 
 ## Container Tokens
-Container widths are defined in `tailwind.config.ts` via `max-w-container-sm/md/lg/xl`:
+Container widths are defined in `app/globals.css` (`--max-width-container-*`) and used as `max-w-container-sm/md/lg/xl`:
 
 | Token           | Max width | Recommended use              |
 | --------------- | --------- | ---------------------------- |

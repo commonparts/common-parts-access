@@ -9,7 +9,7 @@ import {
   type PrintReportStats,
 } from "@/lib/utils/print-reports"
 import { Button } from "@/components/ui/button"
-import { DropdownInput } from "@/components/ui/dropdown-input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -147,8 +147,7 @@ export function PrintReportControls({
           {references.length > 0 && (
             <div className="space-y-2xs">
               <Label htmlFor={`${idPrefix}-reference`}>Your product reference (optional)</Label>
-              <DropdownInput
-                as="select"
+              <NativeSelect
                 id={`${idPrefix}-reference`}
                 value={referenceId}
                 onChange={(e) => setReferenceId(e.target.value)}
@@ -159,7 +158,7 @@ export function PrintReportControls({
                     {reference.value}
                   </option>
                 ))}
-              </DropdownInput>
+              </NativeSelect>
             </div>
           )}
           <div className="flex gap-xs">

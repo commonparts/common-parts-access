@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import { plexSans, plexMono } from "./fonts";
 import "./globals.css";
-import { lightTheme, themeToCSSVars } from "@/design-tokens";
 import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { APP_URL } from "@/lib/utils/constants";
-
-const lightThemeCSSVars = themeToCSSVars(lightTheme);
 
 export const metadata: Metadata = {
   metadataBase: new URL(APP_URL),
@@ -21,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${plexSans.variable} ${plexMono.variable}`}>
-      <body style={lightThemeCSSVars}>
+      <body>
         {children}
         <FeedbackButton />
       </body>

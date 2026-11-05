@@ -7,10 +7,13 @@
     "components/ui/card.tsx": [
       "exports"
     ],
+    "components/ui/command.tsx": [
+      "exports"
+    ],
     "components/ui/dropdown-menu.tsx": [
       "exports"
     ],
-    "design-tokens/themes.ts": [
+    "components/ui/popover.tsx": [
       "exports"
     ],
     "types/supabase.ts": [

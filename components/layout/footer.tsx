@@ -35,7 +35,7 @@ const footerColumns: FooterColumn[] = [
 ];
 
 const licenseLinkClassName =
-  "rounded-sm underline transition-colors duration-fast hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-subtle";
+  "rounded-sm underline transition-colors duration-fast hover:text-text-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-subtle";
 
 export function Footer() {
   return (
@@ -86,7 +86,7 @@ export function Footer() {
 
         {/* Bottom bar */}
         <div className="flex flex-col items-start justify-between gap-sm border-t border-border-default pt-md md:flex-row md:items-center">
-          <p className="max-w-[480px] text-caption italic leading-normal text-text-tertiary">
+          <p className="max-w-container-sm text-caption italic leading-normal text-text-tertiary">
             Common Parts Access is an official interface of the Common Parts
             Infrastructure.
           </p>

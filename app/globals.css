@@ -1,47 +1,208 @@
-body {
-  font-family: var(--font-body), 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+@import 'tailwindcss';
+
+/* Design tokens: Tailwind generates the utilities from these variables. */
+@theme {
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #6b6b6b;
+  --color-text-tertiary: #aaaaaa;
+  --color-text-disabled: #d0d0ce;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #2d6a4f;
+  --color-text-linkHover: #234f3e;
+
+  --color-bg-page: #ffffff;
+  --color-bg-surface: #ffffff;
+  --color-bg-subtle: #f7f7f6;
+  --color-bg-muted: #efefed;
+  --color-bg-hover: #efefed;
+  --color-bg-disabled: #efefed;
+  --color-bg-accent: #eef2ec;
+  --color-bg-accentSubtle: #f4f7f3;
+  --color-bg-overlay: rgb(255 255 255 / 0.7);
+
+  --color-border-default: #e4e4e2;
+  --color-border-subtle: #e4e4e2;
+  --color-border-strong: #888888;
+  --color-border-focus: #2d6a4f;
+
+  --color-action-primary: #2d6a4f;
+  --color-action-primaryHover: #234f3e;
+  --color-action-primaryActive: #1b3d30;
+  --color-action-disabled: #d0d0ce;
+
+  --color-institutional-viridian: #234f3e;
+  --color-institutional-malachite: #2d6a4f;
+
+  --color-status-success: #eef2ec;
+  --color-status-successText: #1b3d30;
+  --color-status-error: #fef2f2;
+  --color-status-errorText: #9b2c2c;
+  --color-status-errorBorder: #f9c4c4;
+  --color-status-warning: #fffbeb;
+  --color-status-warningText: #b45309;
+  --color-status-warningBorder: #fde68a;
+
+  --spacing-3xs: 4px;
+  --spacing-2xs: 8px;
+  --spacing-xs: 12px;
+  --spacing-sm: 16px;
+  --spacing-md: 24px;
+  --spacing-lg: 32px;
+  --spacing-xl: 48px;
+  --spacing-2xl: 64px;
+  --spacing-3xl: 80px;
+  --spacing-4xl: 96px;
+  --spacing-5xl: 120px;
+
+  /* max-w-* reads --max-width before --spacing: without these, max-w-sm would be 16px. */
+  --max-width-xs: 20rem;
+  --max-width-sm: 24rem;
+  --max-width-md: 28rem;
+  --max-width-lg: 32rem;
+  --max-width-xl: 36rem;
+  --max-width-2xl: 42rem;
+  --max-width-3xl: 48rem;
+  --max-width-4xl: 56rem;
+  --max-width-5xl: 64rem;
+  --max-width-container-sm: 480px;
+  --max-width-container-md: 680px;
+  --max-width-container-lg: 1100px;
+  --max-width-container-xl: 1200px;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-pill: 9999px;
+
+  --shadow-surface: 0 1px 2px rgb(26 26 26 / 0.04);
+  --shadow-raised: 0 2px 4px rgb(26 26 26 / 0.06);
+  --shadow-overlay: 0 4px 8px rgb(26 26 26 / 0.08);
+  --shadow-modal: 0 8px 16px rgb(26 26 26 / 0.1);
+
+  --font-sans: var(--font-plex-sans), 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-heading: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', 'SFMono-Regular', 'Consolas', monospace;
+
+  --text-micro: 11px;
+  --text-caption: 13px;
+  --text-body: 14px;
+  --text-bodyLg: 15px;
+  --text-subtitle: 17px;
+  --text-heading-sm: 22px;
+  --text-heading-md: 28px;
+  --text-heading-lg: 32px;
+  --text-display: 42px;
+  --text-display-lg: 48px;
+
+  --font-weight-regular: 400;
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-relaxed: 1.65;
+
+  --tracking-tight: -0.02em;
+  --tracking-snug: -0.01em;
+  --tracking-wide: 0.01em;
+  --tracking-mono: 0.08em;
+  --tracking-caps: 0.1em;
+
+  --transition-duration-fast: 100ms;
+  --transition-duration-medium: 150ms;
+  --transition-duration-slow: 200ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Dark palette, not applied yet: no page sets the `dark` class. */
+.dark {
+  --color-text-primary: #f7f7f6;
+  --color-text-secondary: #d0d0ce;
+  --color-text-tertiary: #888888;
+  --color-text-disabled: #6b6b6b;
+  --color-text-inverse: #1a1a1a;
+  --color-text-link: #6b9a60;
+  --color-text-linkHover: #a8c4a0;
 
+  --color-bg-page: #1a1a1a;
+  --color-bg-surface: #333333;
+  --color-bg-subtle: #555555;
+  --color-bg-muted: #555555;
+  --color-bg-hover: #555555;
+  --color-bg-disabled: #333333;
+  --color-bg-accent: #0c1c16;
+  --color-bg-accentSubtle: #132b22;
+  --color-bg-overlay: rgb(26 26 26 / 0.7);
+
+  --color-border-default: #555555;
+  --color-border-subtle: #333333;
+  --color-border-strong: #888888;
+  --color-border-focus: #6b9a60;
+
+  --color-action-primary: #2d6a4f;
+  --color-action-primaryHover: #6b9a60;
+  --color-action-primaryActive: #234f3e;
+  --color-action-disabled: #555555;
+
+  --color-status-success: #0c1c16;
+  --color-status-successText: #a8c4a0;
+  --color-status-error: #2d1111;
+  --color-status-errorText: #f09898;
+  --color-status-errorBorder: #742a2a;
+  --color-status-warning: #451a03;
+  --color-status-warningText: #fcd34d;
+  --color-status-warningBorder: #92400e;
+}
+
+/* Tailwind v4 draws borders in currentcolor and gives buttons the default cursor; the components expect these instead. */
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-border-default);
+  }
+
+  button:not(:disabled),
+  [role='button']:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+/*
+ * space-y-* keeps its Tailwind v3 rule: a top margin on each visible child
+ * after the first. The v4 rule (a bottom margin on each child before the last)
+ * is lost on an inline first child such as a label and adds a gap before a
+ * hidden last child. Tailwind's own rule multiplies its margins by
+ * --tw-space-y-reverse; `none` makes them invalid, so they compute to 0.
+ */
+@utility space-y-* {
+  & > * {
+    --tw-space-y-reverse: none;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    margin-top: --spacing(--value(number));
+    margin-top: --value(--spacing-*);
+    margin-bottom: 0;
+  }
+}
+
+/* Utilities of the same name set the font size; these add the rest. */
 @layer components {
   .text-body {
-    font-family: var(--font-body);
-    font-size: var(--typography-size-body);
-    font-weight: var(--typography-weight-body);
-    line-height: var(--typography-lineHeight-body);
+    font-family: var(--font-sans);
     color: var(--color-text-primary);
   }
 
   .text-caption {
-    font-family: var(--font-body);
-    font-size: var(--typography-size-caption);
+    font-family: var(--font-sans);
     color: var(--color-text-secondary);
   }
 
-  .text-heading-sm {
-    font-family: var(--font-heading);
-    font-size: var(--typography-size-headingSm);
-    font-weight: var(--typography-weight-semibold);
-    line-height: var(--typography-lineHeight-heading);
-  }
-
-  .text-heading-md {
-    font-family: var(--font-heading);
-    font-size: var(--typography-size-headingMd);
-    font-weight: var(--typography-weight-semibold);
-  }
-
+  .text-heading-sm,
+  .text-heading-md,
   .text-heading-lg {
-    font-family: var(--font-heading);
-    font-size: var(--typography-size-headingLg);
-    font-weight: var(--typography-weight-semibold);
-  }
-
-  .text-mono {
-    font-family: var(--font-mono);
-    font-size: var(--typography-size-caption);
+    font-weight: var(--font-weight-semibold);
   }
 }

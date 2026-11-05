@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Alert } from '@/components/ui/alert'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
-import { DropdownInput } from '@/components/ui/dropdown-input'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Stepper } from '@/components/ui/stepper'
@@ -387,8 +387,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                 <Label>Category *</Label>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   {form.categoryLevels.map((level, idx) => (
-                    <DropdownInput
-                      as="select"
+                    <NativeSelect
                       key={level.parentId ?? `root-${idx}`}
                       value={form.categoryPath[idx] ?? ''}
                       onChange={(e) => form.handleCategorySelect(idx, e.target.value)}
@@ -407,15 +406,14 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                           {cat.name}
                         </option>
                       ))}
-                    </DropdownInput>
+                    </NativeSelect>
                   ))}
                 </div>
               </div>
 
               <div className="space-y-2xs">
                 <Label htmlFor="original-license">License *</Label>
-                <DropdownInput
-                  as="select"
+                <NativeSelect
                   id="original-license"
                   value={formData.licenseId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, licenseId: e.target.value }))}
@@ -430,7 +428,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                       {license.shortName} — {license.name}
                     </option>
                   ))}
-                </DropdownInput>
+                </NativeSelect>
                 <p className="text-sm text-text-secondary">
                   Common Parts hosts and redistributes your files, so the license must allow
                   commercial use and modification. Licenses with NC or ND restrictions cannot be

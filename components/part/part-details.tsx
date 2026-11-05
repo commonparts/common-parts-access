@@ -37,7 +37,7 @@ const ATTRIBUTION_LABEL_CLASS = "text-micro font-medium uppercase tracking-caps 
 
 /** Base of every link in the Attribution & license card, with the keyboard focus ring. */
 const ATTRIBUTION_LINK_CLASS =
-  "rounded-sm hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+  "rounded-sm hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 
 interface PartDetailsProps {
   slug: string
@@ -399,10 +399,10 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                   key={index}
                   onClick={() => setSelectedImageIndex(index)}
                   className={cn(
-                    "flex-shrink-0 overflow-hidden rounded border",
+                    "shrink-0 overflow-hidden rounded border",
                     "h-16 w-16",
                     index === selectedImageIndex
-                      ? "border-primary ring-2 ring-primary"
+                      ? "border-action-primary ring-2 ring-action-primary"
                       : "hover:opacity-80",
                   )}
                 >
@@ -436,7 +436,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     {index > 0 && <span aria-hidden="true"> · </span>}
                     <Link
                       href={`/brands/${brand.slug}`}
-                      className="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                      className="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                     >
                       {brand.name}
                     </Link>

@@ -102,7 +102,7 @@ export function ConfirmationDialog({
   // "stuck" (its own compositing layer), leaving the header sharp.
   return createPortal(
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center"
+      className="fixed inset-0 z-60 flex items-center justify-center"
       role="dialog"
       aria-modal="true"
       aria-labelledby={`${dialogId}-title`}
@@ -110,7 +110,7 @@ export function ConfirmationDialog({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-bg-overlay backdrop-blur-sm"
+        className="absolute inset-0 bg-bg-overlay backdrop-blur-xs"
         onClick={loading ? undefined : onCancel}
         aria-hidden="true"
       />
@@ -119,7 +119,7 @@ export function ConfirmationDialog({
         ref={containerRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-lg shadow-overlay focus:outline-none',
+          'relative z-10 w-full max-w-sm rounded-lg border border-border-default bg-bg-surface p-lg shadow-overlay focus:outline-hidden',
           className
         )}
       >

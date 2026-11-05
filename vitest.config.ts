@@ -21,7 +21,6 @@ export default defineConfig({
         '**/*.spec.{ts,tsx}',
         '**/*.config.{ts,js,mjs}',
         '**/types/**',
-        'design-tokens/**',
       ],
       // Start at 0 — raise these thresholds as tests are added.
       thresholds: {
