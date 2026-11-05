@@ -1,5 +1,6 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
+import { serverEnv } from "@/lib/env";
 import type { Database } from "@/types/supabase";
 
 /**
@@ -9,13 +10,13 @@ import type { Database } from "@/types/supabase";
  * client bundles; Supabase also rejects the key when sent from a browser.
  */
 export function createAdminClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secretKey = process.env.SUPABASE_SECRET_KEY;
+  const url = serverEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const secretKey = serverEnv("SUPABASE_SECRET_KEY");
 
-  if (!url || !secretKey) {
-    throw new Error(
-      "Missing Supabase admin configuration: set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SECRET_KEY",
-    );
+  // The secret key is optional configuration: without it, the features that
+  // need the service role report that they are unavailable.
+  if (!secretKey) {
+    throw new Error("Missing Supabase admin configuration: set SUPABASE_SECRET_KEY");
   }
 
   return createClient<Database>(url, secretKey, {
