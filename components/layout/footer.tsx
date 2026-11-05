@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/logo";
+import { CODE_LICENSE, DATA_LICENSE } from "@/lib/utils/licenses";
 
 interface FooterLink {
   label: string
@@ -32,6 +33,9 @@ const footerColumns: FooterColumn[] = [
     ],
   },
 ];
+
+const licenseLinkClassName =
+  "rounded-sm underline transition-colors duration-fast hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-subtle";
 
 export function Footer() {
   return (
@@ -86,9 +90,20 @@ export function Footer() {
             Common Parts Access is an official interface of the Common Parts
             Infrastructure.
           </p>
-          <p className="font-mono text-micro text-text-tertiary">
-            © {new Date().getFullYear()} Common Parts
-          </p>
+          <div className="flex flex-wrap items-center gap-x-sm gap-y-3xs font-mono text-micro text-text-tertiary">
+            <p>© {new Date().getFullYear()} Common Parts</p>
+            <p>
+              Code under{" "}
+              <a href={CODE_LICENSE.url} className={licenseLinkClassName}>
+                {CODE_LICENSE.shortName}
+              </a>
+              . Data under{" "}
+              <a href={DATA_LICENSE.url} className={licenseLinkClassName}>
+                {DATA_LICENSE.shortName}
+              </a>
+              .
+            </p>
+          </div>
         </div>
       </div>
     </footer>

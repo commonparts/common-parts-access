@@ -66,6 +66,15 @@ Issues are triaged automatically and reviewed by the core team.
 
 ---
 
+## License of contributions
+
+- Code contributions are published under the [MIT License](./LICENSE).
+- Data contributions (products, product references, compatibilities between parts and products, structured fields, print reports) are published under the [Creative Commons Attribution-ShareAlike 4.0 International license (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/), with attribution to "Common Parts Access contributors".
+
+Part files, and content taken from the original publication of a referenced part, keep the license chosen by their author.
+
+---
+
 ## License reminder
 
 By publishing a part on Common Parts Access, you confirm that:

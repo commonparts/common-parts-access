@@ -57,7 +57,7 @@ Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same nam
 | 2 | **Files** | Model files + photos, three-phase pipeline. | Photos only, with the model-file drop zone hidden entirely. |
 | 3 | **Details** | Short description, instructions, tags, print metadata. | Same. |
 | 4 | **Compatibility** | Brand + products, inline product creation, dedup-guarded. | Same, plus the demand panel. |
-| 5 | **Review** | Real part page rendered against the draft; publish or save as draft. | Same, plus the checklist roll-up, `needs_legal_review`, and the rejection recorder. |
+| 5 | **Review** | Real part page rendered against the draft; a notice that the data entered is published under CC BY-SA 4.0 while files and source content keep their author's license, linking to section 4.2 of the Terms of use (#476); publish or save as draft. | Same, plus the checklist roll-up, `needs_legal_review`, and the rejection recorder. |
 
 Shared step components live in `components/publish/`; each track keeps its own orchestrator (`original-track.tsx`, `elsewhere-track.tsx`) because the endpoints, creation minimums and publish calls differ.
 
