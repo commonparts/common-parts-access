@@ -28,7 +28,7 @@ interface PrintablesImagesData {
  * Lists a print's gallery image URLs in page order (the API returns them in
  * the order the Printables page shows them). Empty array on any failure.
  */
-export async function fetchPrintablesImageUrls(printId: string): Promise<string[]> {
+async function fetchPrintablesImageUrls(printId: string): Promise<string[]> {
   const data = await queryPrintables<PrintablesImagesData>(
     'query($id: ID!) { print(id: $id) { images { filePath } } }',
     { id: printId },
@@ -70,7 +70,7 @@ export function thingiverseImageUrls(images: unknown): string[] {
 }
 
 /** Lists a Thing's gallery image URLs in page order. Empty array on any failure. */
-export async function fetchThingiverseImageUrls(thingId: string): Promise<string[]> {
+async function fetchThingiverseImageUrls(thingId: string): Promise<string[]> {
   return thingiverseImageUrls(await getThingiverse<unknown>(`/things/${thingId}/images`))
 }
 

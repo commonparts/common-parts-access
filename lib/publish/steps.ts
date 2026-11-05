@@ -10,8 +10,6 @@
 
 export const PUBLISH_STEP_LABELS = ['Origin', 'Files', 'Details', 'Compatibility', 'Review'] as const
 
-export type PublishStepLabel = (typeof PUBLISH_STEP_LABELS)[number]
-
 /** Step indices, named so call sites read as intent rather than magic numbers. */
 export const PUBLISH_STEPS = {
   ORIGIN: 0,

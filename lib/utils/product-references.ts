@@ -1,7 +1,7 @@
 import type { VisitorLocale } from './locale'
 import { isValidUuid } from './validation'
 
-export const PRODUCT_REFERENCE_TYPES = ['manufacturer_ref', 'commercial_name', 'ean'] as const
+const PRODUCT_REFERENCE_TYPES = ['manufacturer_ref', 'commercial_name', 'ean'] as const
 export type ProductReferenceType = (typeof PRODUCT_REFERENCE_TYPES)[number]
 
 /** A known reference of a product, as the product page reads it. */

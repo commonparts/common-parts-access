@@ -160,6 +160,7 @@ Run through this before every commit:
 
 - [ ] `npx tsc --noEmit` passes with zero errors
 - [ ] `npm run lint` passes with zero warnings
+- [ ] `npm run knip` reports no unused file, dependency or export (exceptions are listed in `knip.json`)
 - [ ] `npm run test` passes (CI also enforces the coverage threshold with `npm run test:coverage`)
 - [ ] No hardcoded colors, spacing values, or hex codes
 - [ ] No unbounded database queries

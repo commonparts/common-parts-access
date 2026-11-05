@@ -11,7 +11,7 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 // ASCII control characters (C0 range plus DEL) are stripped from all text.
 const CONTROL_CHARS = /[\u0000-\u001F\u007F]/g
 
-export interface CreatePartRequestInput {
+interface CreatePartRequestInput {
   productId?: string | null
   rawQuery?: string | null
   description?: string | null

@@ -1,4 +1,4 @@
-import type { CurationChecklist, CurationCriterionKey, Part } from '@/types/database'
+import type { CurationChecklist, CurationCriterionKey } from '@/types/database'
 
 /**
  * Curation checklist v1 — the six blocking criteria (Flow P3 §4.3.3).
@@ -119,6 +119,3 @@ export const CURATION_FLAGS: readonly CurationFlag[] = [
     description: 'The category assignment is certain, not a best guess.',
   },
 ] as const
-
-/** The needs_* flag subset of a part row, as stored in the database. */
-export type CurationFlagState = Pick<Part, CurationFlagColumn>

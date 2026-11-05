@@ -14,7 +14,7 @@ import {
 } from '@/lib/utils/seo'
 
 /** The sitemap protocol's limit on URLs per file (sitemaps.org). */
-export const SITEMAP_MAX_URLS = 50_000
+const SITEMAP_MAX_URLS = 50_000
 
 /** Navigation roots always listed, ahead of the derived entity pages. */
 const SITEMAP_STATIC_PATHS = ['/', '/browse'] as const

@@ -20,7 +20,7 @@ const PRODUCT_PARTS_PAGE_SIZE = 20
 // of manufacturer references at most; this only guards against runaway data.
 const MAX_PRODUCT_REFERENCES = 200
 
-export interface ProductPageProduct {
+interface ProductPageProduct {
   id: string
   name: string
   slug: string

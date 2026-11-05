@@ -7,9 +7,3 @@ export interface UserProfile {
   created_at?: string;
   updated_at?: string;
 }
-
-export interface CreateUserProfileParams {
-  id: string;
-  username: string;
-  display_name?: string;
-}

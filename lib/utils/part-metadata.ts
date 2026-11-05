@@ -8,8 +8,8 @@ import type { PartDimensions, PartPrintSettings } from '@/types/database'
  * caller maps to a 400.
  */
 
-export const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
-export const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
+const ALLOWED_DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
+const ALLOWED_SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
 
 // Column length limits mirrored from the parts table CHECK constraints.
 export const MATERIAL_MAX_LENGTH = 100
