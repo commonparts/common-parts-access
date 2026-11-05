@@ -6,6 +6,7 @@ import { inferImageContentType } from '@/lib/storage/image-processing'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
 import { resolveStorageUrls } from '@/lib/storage/url'
+import { toStorageReference } from '@/lib/storage/path-utils'
 import { isValidUuid } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
 
@@ -67,8 +68,9 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       file_category: 'image'
       upload_path: string
     }[] = []
-    // Public URL of each imported image, in import order, for the gallery.
-    const importedImageUrls: string[] = []
+    // Storage reference of each imported image, in import order, for the
+    // gallery: relative `bucket/path`, resolved at the API boundary (#56).
+    const importedImageRefs: string[] = []
 
     for (const imageUrl of imageUrls) {
       // Numbering follows successful imports so the sequence stays gapless
@@ -96,8 +98,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         continue
       }
 
-      const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.MODEL_THUMBNAILS).getPublicUrl(path)
-      importedImageUrls.push(publicData.publicUrl)
+      importedImageRefs.push(toStorageReference(STORAGE_BUCKETS.MODEL_THUMBNAILS, path))
       const originalName = imageUrl.split('/').pop() ?? filename
       fileRows.push({
         part_id: id,
@@ -125,7 +126,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
       return NextResponse.json({ error: 'Failed to register imported images' }, { status: 500 })
     }
 
-    const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, importedImageUrls)
+    const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, importedImageRefs)
     const { error: updateError } = await supabase
       .from('parts')
       .update({ images: sortedImages, thumbnail_url: sortedImages[0] })
