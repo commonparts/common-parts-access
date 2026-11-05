@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
+import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
 
 export const metadata = {
   title: 'Contributing a part',
@@ -209,6 +210,24 @@ export default function ContributingPage() {
             </p>
             <p className="text-text-secondary">
               We do not modify your model or its metadata without contacting you. Attribution is permanent and public.
+            </p>
+          </section>
+
+          <section className="space-y-sm">
+            <h2 className="text-h3">License of the data you contribute</h2>
+            <p className="text-text-secondary">
+              The data you add to the Index (compatible products, product references, print settings, structured
+              fields and print reports) is published under the{' '}
+              <a href={DATA_LICENSE.url} className="underline">
+                {DATA_LICENSE.name} license ({DATA_LICENSE.shortName})
+              </a>
+              , with attribution to &ldquo;{DATA_LICENSE.attribution}&rdquo;. Part files, and the description,
+              instructions and images taken from the original publication of a referenced part, keep the license
+              chosen by their author. See{' '}
+              <Link href={TERMS_LICENSES_SECTION_HREF} className="underline">
+                section 4.2 of the Terms of use
+              </Link>
+              .
             </p>
           </section>
 

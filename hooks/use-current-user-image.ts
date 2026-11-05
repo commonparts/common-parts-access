@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { resolveStorageUrl } from '@/lib/storage/url'
 import { useEffect, useState } from 'react'
 
 export const useCurrentUserImage = () => {
@@ -38,7 +39,9 @@ export const useCurrentUserImage = () => {
         return
       }
 
-      setImage(profile?.avatar_url ?? null)
+      // A stored avatar may be a storage reference; resolve it like every
+      // other storage reference before rendering (#56).
+      setImage(resolveStorageUrl(profile?.avatar_url ?? null))
     }
 
     fetchUserImage()

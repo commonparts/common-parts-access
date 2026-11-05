@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { FILE_TYPES, MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
+import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
+import { partFileBucket } from '@/lib/storage/path-utils'
+import { resolveStorageUrls } from '@/lib/storage/url'
 
 export const runtime = 'nodejs'
 
@@ -12,11 +14,6 @@ const MAX_PATH_LENGTH = 500
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
 const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
-
-const CATEGORY_BUCKET_MAP: Record<string, string> = {
-  model: STORAGE_BUCKETS.MODEL_FILES,
-  image: STORAGE_BUCKETS.MODEL_THUMBNAILS,
-} as const
 
 const CATEGORY_FOLDER_MAP: Record<string, string> = {
   model: 'files',
@@ -28,7 +25,8 @@ const CATEGORY_FOLDER_MAP: Record<string, string> = {
  * them directly to Supabase Storage. Also updates part thumbnail/images.
  *
  * Uses the [slug] route param to look up the part.
- * Derives public URLs server-side from bucket + path — never trusts client URLs.
+ * Stores the storage path of each file (`upload_path`); the gallery URLs are
+ * derived server-side from bucket + path — never trusts client URLs.
  * Never changes the part's status: publishing goes through the publish gate
  * of the part's track only (#403). Refuses model files for a curated part,
  * whose files stay at the source (#396); photos are accepted.
@@ -97,10 +95,12 @@ export async function POST(
       original_filename: string
       file_type: string
       file_size: number
-      file_url: string
       file_category: string
       upload_path: string
     }[] = []
+    // Public URL of each registered image, in registration order, for the
+    // part's gallery (parts.images).
+    const newImageUrls: string[] = []
 
     for (const raw of files) {
       if (typeof raw !== 'object' || raw === null) {
@@ -138,7 +138,7 @@ export async function POST(
       }
 
       // Validate category and matching bucket before applying category-specific limits
-      const expectedBucket = CATEGORY_BUCKET_MAP[category]
+      const expectedBucket = partFileBucket(category)
       if (!expectedBucket) {
         return NextResponse.json({ error: `Invalid file category: ${category}` }, { status: 400 })
       }
@@ -178,8 +178,11 @@ export async function POST(
         return NextResponse.json({ error: 'File path does not match authenticated user, part, and filename' }, { status: 403 })
       }
 
-      // Derive public URL server-side — never trust client-provided URLs
-      const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path)
+      // Derive the gallery URL server-side — never trust client-provided URLs
+      if (category === 'image') {
+        const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path)
+        newImageUrls.push(publicData.publicUrl)
+      }
 
       fileRows.push({
         part_id: partId,
@@ -187,7 +190,6 @@ export async function POST(
         original_filename: originalName,
         file_type: normalizedExtension,
         file_size: size,
-        file_url: publicData.publicUrl,
         file_category: category,
         upload_path: path,
       })
@@ -286,15 +288,14 @@ export async function POST(
     }
 
     // Update the part's gallery when photos were registered
-    const imageFiles = fileRows.filter((f) => f.file_category === 'image')
     // The current gallery in canonical order — returned to the client so it
     // can preview registered images without a refetch.
     const existingImages = Array.isArray(part.images)
       ? part.images.filter((img): img is string => typeof img === 'string')
       : []
     let images = existingImages
-    if (imageFiles.length > 0) {
-      images = mergeImageUrls(part.thumbnail_url, part.images, imageFiles.map((f) => f.file_url))
+    if (newImageUrls.length > 0) {
+      images = mergeImageUrls(part.thumbnail_url, part.images, newImageUrls)
       const { error: updateError } = await supabase
         .from('parts')
         .update({ images, thumbnail_url: images[0] })
@@ -305,13 +306,13 @@ export async function POST(
       if (updateError) {
         console.error('Failed to update part after file registration', updateError)
         return NextResponse.json(
-          { registered: fileRows.length, images: existingImages, warning: 'Files were registered, but the part could not be updated' },
+          { registered: fileRows.length, images: resolveStorageUrls(existingImages), warning: 'Files were registered, but the part could not be updated' },
           { status: 201 },
         )
       }
     }
 
-    return NextResponse.json({ registered: fileRows.length, images }, { status: 201 })
+    return NextResponse.json({ registered: fileRows.length, images: resolveStorageUrls(images) }, { status: 201 })
   } catch (error) {
     console.error('File registration failed', error)
     return NextResponse.json({ error: 'Unexpected error while registering files' }, { status: 500 })

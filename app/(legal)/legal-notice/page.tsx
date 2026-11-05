@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
+import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
 
 export const metadata = {
   title: 'Legal Notice',
@@ -63,6 +64,19 @@ export default function LegalNoticePage() {
                 Terms of use
               </Link>{' '}
               describe these licences and the rights attached to them.
+            </p>
+            <p className="text-text-secondary">
+              The index data created on Common Parts Access (products, product references, compatibilities between
+              parts and products, structured fields written here, and aggregated print reports) is published under the{' '}
+              <a href={DATA_LICENSE.url} className="underline">
+                {DATA_LICENSE.name} licence ({DATA_LICENSE.shortName})
+              </a>
+              , with attribution to &ldquo;{DATA_LICENSE.attribution}&rdquo;, as set out in{' '}
+              <Link href={TERMS_LICENSES_SECTION_HREF} className="underline">
+                section 4.2 of the Terms of use
+              </Link>
+              . Content taken from the original publication of a referenced part and part files remain under the
+              licence chosen by their author.
             </p>
           </section>
 

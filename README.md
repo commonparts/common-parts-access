@@ -74,6 +74,8 @@ The source code is published under the [MIT License](./LICENSE).
 
 Part models published on Common Parts Access retain their original license. Common Parts does not claim ownership of models it does not author. Attribution to original creators is mandatory and systematically displayed.
 
+The index data created on Common Parts Access is published under the [Creative Commons Attribution-ShareAlike 4.0 International license (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/), with attribution to "Common Parts Access contributors". It covers the products and product references, the compatibilities between parts and products, the structured fields contributors write on Common Parts Access, and aggregated print reports. Content taken from the original publication of a referenced part (description, instructions, images) and part files keep the license chosen by their author.
+
 ---
 
 ## About Common Parts

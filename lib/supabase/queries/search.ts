@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { resolveStorageUrl } from '@/lib/storage/url'
 import {
   emptySearchResults,
   SEARCH_DEFAULT_LIMIT,
@@ -44,9 +45,17 @@ export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LI
   // The RPC always returns a jsonb object with the three keys; fall back
   // defensively so callers never have to null-check the groups.
   const results = (data ?? {}) as Partial<SearchResults>
+  // The RPC returns stored storage references; they resolve to public URLs
+  // here, before any caller renders them (#56).
   return {
-    products: results.products ?? [],
-    parts: results.parts ?? [],
+    products: (results.products ?? []).map((product) => ({
+      ...product,
+      image_url: resolveStorageUrl(product.image_url),
+    })),
+    parts: (results.parts ?? []).map((part) => ({
+      ...part,
+      thumbnail_url: resolveStorageUrl(part.thumbnail_url),
+    })),
     brands: results.brands ?? [],
   }
 }

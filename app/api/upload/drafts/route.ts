@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { withResolvedPartMedia } from '@/lib/storage/url'
 import { createUploadDraft, listUploadDrafts } from '@/lib/supabase/queries/upload'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
@@ -17,7 +18,7 @@ export async function GET() {
     }
 
     const drafts = await listUploadDrafts(user.id)
-    return NextResponse.json({ drafts })
+    return NextResponse.json({ drafts: drafts.map(withResolvedPartMedia) })
   } catch (error) {
     console.error('Failed to list upload drafts', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

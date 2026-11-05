@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS } from '@/constants/app';
 import { extractBucketStoragePath } from '@/lib/storage/path-utils';
+import { resolveStorageUrl } from '@/lib/storage/url';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import { distinctBrands } from '@/lib/utils/catalog';
@@ -156,7 +157,7 @@ export function mapPartRowToCard(row: PartCardRow): PartCardData {
     id: row.id,
     slug: row.slug,
     title: row.name,
-    thumbnailUrl: row.thumbnail_url ?? null,
+    thumbnailUrl: resolveStorageUrl(row.thumbnail_url ?? null),
     brands: deriveCardBrands(row),
     products,
     // The aggregate covers every link; the preview list is capped, so falling
@@ -408,7 +409,7 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     name: part.name,
     slug: part.slug,
     description: part.description ?? null,
-    thumbnailUrl: part.thumbnail_url ?? null,
+    thumbnailUrl: resolveStorageUrl(part.thumbnail_url ?? null),
     createdAt: part.created_at ?? null,
     updatedAt: part.updated_at ?? null,
     tags: Array.isArray(part.tags) ? part.tags : [],
@@ -463,7 +464,7 @@ export async function fetchUserParts(
         name: row.name,
         slug: row.slug,
         createdAt: row.created_at ?? null,
-        thumbnailUrl: row.thumbnail_url ?? null,
+        thumbnailUrl: resolveStorageUrl(row.thumbnail_url),
         status: (row.status ?? 'draft') as MyPartListItem['status'],
       })
     ),

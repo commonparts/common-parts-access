@@ -45,7 +45,7 @@ A spare part record (renamed from `models` in #314).
 | Attribution | `source_url`, `source_platform`, `source_published_at`, `original_author`, `original_author_url` |
 | Licensing | `license_id` → `licenses`: the licence of the part. For a `curated` part, the licence chosen at the source; one licence per part (#374) |
 | Print data | `material`, `color`, `dimensions` (jsonb), `print_settings` (jsonb), `estimated_print_time`, `estimated_material_usage`, `instructions`, `notes` |
-| Media | `thumbnail_url`, `images` |
+| Media | `thumbnail_url`, `images`: storage references, resolved to public URLs at the API boundary (see Storage references below) |
 | Trust | `verification_status`: `unverified` / `author_tested` / `community_validated` / `certified` |
 | Counters (trigger-maintained) | `view_count`, `like_count`, `makes_count`. Downloads have no counter on the part: they are rows in `part_downloads` (#373). |
 | Curation | `curation_checklist` (jsonb), `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`, `needs_legal_review`, `legal_review_justification` |
@@ -105,7 +105,10 @@ A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/k
 External platforms parts come from: `slug`, `name`, `base_url`, `logo_url`, `import_supported`, `active`.
 
 ### `part_files`
-Files attached to a part: `filename`, `original_filename`, `file_type`, `file_size`, `file_category`, `upload_path` (storage path, source of truth), `file_url`, `checksum`. Storage buckets keep their historical ids `model-files` and `model-thumbnails`. See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md).
+Files attached to a part: `filename`, `original_filename`, `file_type`, `file_size`, `file_category`, `upload_path` (storage path, source of truth), `checksum`. `upload_path` is relative to the bucket of `file_category`: `model` → `model-files`, `image` → `model-thumbnails` (`partFileBucket()` in `lib/storage/path-utils.ts`). Storage buckets keep their historical ids `model-files` and `model-thumbnails`. `file_url` is deprecated (#56): nullable since `20261105101644_part_files_file_url_nullable.sql`, no longer written or read, and dropped by a later migration. See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md).
+
+#### Storage references
+`parts.thumbnail_url`, `parts.images`, `products.image_url` and `user_profiles.avatar_url` hold storage references. Every read that returns them to a client resolves them with `resolveStorageUrl()` / `resolveStorageUrls()` (`lib/storage/url.ts`): a relative `bucket/path` becomes `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}`, a full URL is returned unchanged. The rows written so far hold full public URLs; the application still writes full URLs for these columns (#56).
 
 ---
 
