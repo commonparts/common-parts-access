@@ -10,6 +10,9 @@ import { z } from 'zod'
  * output (`z.infer`), never a second declaration kept in sync by hand.
  */
 
+/** Outcome of a validation or a Server Action: the value, or the message to show. */
+export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
+
 /** Result of a parse: the validated value, or the 400 response to return as is. */
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; response: NextResponse }
 
@@ -30,13 +33,13 @@ const fieldErrorMap: z.core.$ZodErrorMap = (issue) => {
 
 /**
  * Validates `input` against `schema`. Returns the parsed value, or the message
- * of the first issue. Does not throw. Exported for the validation that does
- * not come from a request (and for tests); routes use the helpers below.
+ * of the first issue. Does not throw. Server Actions call it directly;
+ * routes use the helpers below.
  */
 export function validate<Schema extends z.ZodType>(
   schema: Schema,
   input: unknown,
-): { ok: true; data: z.output<Schema> } | { ok: false; error: string } {
+): Result<z.output<Schema>> {
   const result = schema.safeParse(input, { error: fieldErrorMap })
   if (result.success) return { ok: true, data: result.data }
   return { ok: false, error: result.error.issues[0]?.message ?? 'Invalid request' }

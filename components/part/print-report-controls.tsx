@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { reportPrint } from "@/lib/actions/print-reports"
 import { cn } from "@/lib/utils"
 import {
   MAX_PRINT_REPORT_COMMENT_LENGTH,
@@ -62,25 +63,20 @@ export function PrintReportControls({
     setPending(true)
     setMessage(null)
     try {
-      const response = await fetch("/api/print-reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          partId,
-          productId,
-          result,
-          // Always resend the details so changing the result keeps them.
-          comment,
-          productReferenceId: referenceId || null,
-        }),
+      const response = await reportPrint({
+        partId,
+        productId,
+        result,
+        // Always resend the details so changing the result keeps them.
+        comment,
+        productReferenceId: referenceId || null,
       })
-      const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setMessage(data?.error ?? "Report failed: please try again")
+        setMessage(response.error)
         return false
       }
       setReportedResult(result)
-      onStatsChange(data.stats)
+      onStatsChange(response.data)
       setMessage(successMessage)
       return true
     } catch {

@@ -38,7 +38,7 @@ A one-click report on the part page says whether the printed part worked on one 
 - **One report per reporter per pair.** Reporting again replaces the earlier report; this is also how an optional comment or product reference is added after the one-click result.
 - **Reporter identity:** `reporter_hash`, a SHA-256 of a random `cpa_reporter` cookie id (one year), or of the user id when signed in. No IP address is stored.
 - **Rate limit:** 20 part–product pairs per reporter per hour; editing an existing report is not limited.
-- **Write path:** `POST /api/print-reports` (open to anonymous visitors) → `submit_print_report()`, executable by the service role only. The table has RLS with no policy.
+- **Write path:** the `reportPrint` Server Action (`lib/actions/print-reports.ts`, open to anonymous visitors, #491) → `submit_print_report()`, executable by the service role only. The table has RLS with no policy.
 - **Effects:** a trigger recounts the pair after every change, updating `works_count`, `works_with_adjustments_count`, `does_not_work_count`, `evidence_level`, and `parts.makes_count`, which counts every report.
 - Comments are stored but not shown publicly; the part page reads the counters on `part_products`.
 
@@ -65,6 +65,6 @@ Products are created inline in the publish flow's Compatibility step. `POST /api
 
 - `app/(public)/product/[slug]/page.tsx`, `lib/supabase/queries/product-page.ts`
 - `components/part/compatible-products.tsx`, `lib/utils/compatible-products.ts`
-- `app/api/print-reports/route.ts`, `lib/supabase/queries/print-reports.ts`, `lib/utils/print-reports.ts`, `lib/utils/reporter-session.ts`, `lib/utils/evidence-level.ts`
+- `lib/actions/print-reports.ts`, `lib/supabase/queries/print-reports.ts`, `lib/utils/print-reports.ts`, `lib/utils/reporter-session.ts`, `lib/utils/evidence-level.ts`
 - `app/api/products/route.ts`, `lib/utils/product-references.ts`, `lib/utils/locale.ts`
 - Migrations: `20260923120000_product_references.sql`, `20260925120000_part_product_evidence_level.sql`, `20260925180000_print_reports.sql`

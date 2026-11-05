@@ -47,7 +47,7 @@ stay silent on it.
 - Flag any new UI element built from scratch instead of using existing
   components from `components/ui/` (Button, Input, Card, Badge, etc.).
 
-- Flag any Supabase query written inline in a component or API route
+- Flag any Supabase query written inline in a component, API route or Server Action
   instead of extracted to a function in `lib/supabase/queries/`.
 
 - Flag any utility function (validator, formatter, URL helper, slug util,
@@ -59,8 +59,12 @@ stay silent on it.
 
 - Flag any use of the `any` type in TypeScript.
 
-- Flag any `'use server'` directive — this project uses API routes only,
-  never Server Actions.
+- Flag any `'use server'` directive outside `lib/actions/`, and any Server
+  Action that does not validate its input with a Zod schema (`validate`)
+  before anything else, or that writes without resolving the user with
+  `auth.getUser()`. Flag a new API route for a mutation called only from
+  our own UI: it must be a Server Action. Flag a Server Action used for a
+  read.
 
 - Flag any import of `@/lib/supabase/server` inside a file that has
   `'use client'` at the top, or vice versa.

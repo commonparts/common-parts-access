@@ -9,7 +9,7 @@ function reportId() {
 }
 
 /**
- * POST /api/print-reports — a print report (issue #318). Comment and
+ * A print report (issue #318), submitted through the `reportPrint` Server Action. Comment and
  * reference are optional: an empty comment or a null reference means "none".
  */
 export const printReportSchema = z.object(

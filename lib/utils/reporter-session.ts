@@ -4,7 +4,7 @@ import { isValidUuid } from './validation'
 
 /**
  * Reporter identity for print reports (issue #318). Server-only: call it from
- * a Route Handler, where `cookies()` can also set the cookie.
+ * a Server Action or a Route Handler, where `cookies()` can also set the cookie.
  */
 
 const REPORTER_COOKIE_NAME = 'cpa_reporter'
