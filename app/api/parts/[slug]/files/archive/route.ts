@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
-import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
+import { toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
+
+// The archive holds the part's model files only. The upload flow caps them
+// per part, so the cap bounds the read without ever dropping a file.
+const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles
 
 // GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
 // Anonymous: no account required, only an anonymous download row is recorded (issue #250).
@@ -30,9 +35,11 @@ export async function GET(
 
     const { data: files, error: filesError } = await supabase
       .from('part_files')
-      .select('id, original_filename, filename, upload_path, file_url')
+      .select('id, original_filename, filename, upload_path')
       .eq('part_id', part.id)
+      .eq('file_category', 'model')
       .order('created_at', { ascending: true })
+      .limit(MAX_ARCHIVE_FILES)
 
     if (filesError) {
       console.error('Failed to fetch model files:', filesError)
@@ -49,8 +56,8 @@ export async function GET(
     let addedFiles = 0
 
     for (const file of files) {
-      const storagePath = extractModelStoragePath(file.upload_path) ||
-        extractModelStoragePath(file.file_url)
+      // upload_path is the file's path in the model-files bucket (#56).
+      const storagePath = file.upload_path?.replace(/^\/+/, '')
 
       if (!storagePath) {
         console.warn('Skipping file without storage path', file.id)

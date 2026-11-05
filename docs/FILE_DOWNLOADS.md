@@ -19,11 +19,12 @@ Downloads are anonymous: no account or cookie-based identification is required (
 ### API Endpoints
 
 **`/api/parts/[slug]/files/[fileId]/download-url`** (GET)
-- Validates part is published, resolves storage path, and returns a public URL plus filename.
+- Validates the slug and the file id (UUID), checks the part is published, and returns `{ downloadUrl, filename }`.
+- The URL is built from the file's `upload_path` in the bucket of its `file_category` (`partFileBucket()`), resolved by `resolveStorageUrl()` (#56). A file whose category maps to no bucket returns 404.
 
 **`/api/parts/[slug]/files/archive`** (GET, Node runtime)
 - Anonymous — no authentication required.
-- Streams a ZIP containing every asset for the part.
+- Streams a ZIP of the part's model files (`file_category = 'model'`), read from the `model-files` bucket by `upload_path`. Images are not included. The read is capped at the per-part model file limit (`PART_UPLOAD_LIMITS.maxModelFiles`).
 - Folder name inside the archive (and the downloaded filename) matches the part name; nested folders from `upload_path` are preserved via `buildZipEntryPath()`.
 - Inserts one anonymous `part_downloads` row (`file_id = null`) via `recordPartDownload()`.
 
@@ -35,18 +36,19 @@ Downloads are anonymous: no account or cookie-based identification is required (
 ## Storage Strategy
 
 **Public Bucket Approach**
-- Bucket: `model-files` (public).
-- URL format: `https://{project}.supabase.co/storage/v1/object/public/model-files/{path}`
+- Buckets: `model-files` for model files, `model-thumbnails` for images (both public). The bucket of a file follows its `file_category` (`PART_FILE_CATEGORY_BUCKETS` in `lib/storage/path-utils.ts`).
+- URL format: `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/{bucket}/{upload_path}`. No public URL is stored on `part_files`: it is built at the API boundary (#56).
 
 **Path Structure**
-- Pattern: `user-{userId}/part-{partId}/.../filename.ext`
-- Nested paths are kept; `buildZipEntryPath()` strips the user/model prefix but retains deeper folders in the ZIP.
+- Pattern: `{userId}/{partId}/files/{filename}` for model files, `{userId}/{partId}/thumbnails/{filename}` for images (checked by `POST /api/parts/[slug]/files`).
+- Nested paths are kept; `buildZipEntryPath()` strips the user/part prefix but retains deeper folders in the ZIP.
 
 ## Database Fields
 
 **`part_files` table:**
-- `upload_path` — Relative storage path (source of truth)
-- `file_url` — Optional public URL; avoid storing signed URLs
+- `upload_path` — Storage path in the bucket of the file's `file_category` (source of truth)
+- `file_category` — `model` or `image`; selects the bucket
+- `file_url` — Deprecated and nullable (#56): no longer written or read; dropped by a later migration
 - `filename` — Display-safe name
 - `original_filename` — Uploader-provided name
 
@@ -60,16 +62,17 @@ Downloads are anonymous: no account or cookie-based identification is required (
 - None. Downloads work without an account; downloads by unauthenticated and authenticated users are logged identically and anonymously.
 
 ## Error Handling
-- 400: Invalid `fileId` on the logging POST.
-- 404: Part missing/unpublished or no files.
+- 400: Invalid `fileId` on the logging POST; invalid slug or `fileId` on `download-url`.
+- 404: Part missing/unpublished, no files, or a file with no storage location.
 - 503/500: Upstream storage or server failures; logged server-side.
 - Tracking failures are logged and non-blocking.
 
 ## Reusable Functions
 - `recordPartDownload()` (`lib/supabase/queries/part-metrics.ts`) — Anonymous `part_downloads` insert shared by the single-file and archive endpoints.
 - `formatLicenseNotice()` (`lib/utils/formatters.ts`) — One-line license/attribution notice shown at download trigger.
-- `extractStoragePath(url: string): string | null` — Pulls bucket-relative paths from Supabase URLs.
-- `getPublicStorageUrl(storagePath: string): string` — Builds a public URL from a relative path.
+- `partFileBucket(category)` (`lib/storage/path-utils.ts`) — Bucket of a part file category, null for an unknown one.
+- `extractBucketStoragePath(reference, bucket)` (`lib/storage/path-utils.ts`) — Bucket-relative path of a stored reference, a public URL or a relative `bucket/path`.
+- `resolveStorageUrl(reference)` (`lib/storage/url.ts`) — Public URL of a relative `bucket/path` reference; a full URL is returned unchanged.
 - `buildZipEntryPath()` — Normalizes storage paths and preserves nested folders inside the ZIP.
 
 ## Future Enhancements

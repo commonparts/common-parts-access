@@ -1,6 +1,7 @@
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
@@ -131,7 +132,7 @@ export const fetchBrandProductsPage = cache(
         id: row.id,
         name: row.name,
         slug: row.slug,
-        image_url: row.image_url,
+        image_url: resolveStorageUrl(row.image_url),
         parts_count: row.parts_count ?? 0,
         category: firstEmbedded(row.categories),
       })),
@@ -195,7 +196,7 @@ export const fetchBrandCategoryListing = cache(
         id: row.id,
         name: row.name,
         slug: row.slug,
-        image_url: row.image_url,
+        image_url: resolveStorageUrl(row.image_url),
         parts_count: row.parts_count ?? 0,
         category,
       })),

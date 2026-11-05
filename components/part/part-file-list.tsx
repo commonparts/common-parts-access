@@ -11,7 +11,8 @@ interface PartFileListProps {
   files: PartPageFile[]
   showCard?: boolean
   className?: string
-  onFileDownload?: (file: PartPageFile) => Promise<void>
+  /** Downloads one file; the list holds no URL of its own (#56). */
+  onFileDownload: (file: PartPageFile) => Promise<void>
 }
 
 type FileCategory = "model" | "documentation" | "image" | string
@@ -132,11 +133,7 @@ export function PartFileList({
       setDownloadingFiles((prev) => new Set(prev).add(file.id))
 
       try {
-        if (onFileDownload) {
-          await onFileDownload(file)
-        } else {
-          window.open(file.file_url, "_blank")
-        }
+        await onFileDownload(file)
       } catch (error) {
         console.error("Download failed:", error)
       } finally {

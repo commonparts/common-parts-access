@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import type { ProductReference } from '@/lib/utils/product-references'
 import { toEvidenceLevel, type EvidenceLevel } from '@/lib/utils/evidence-level'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 import {
   CARD_PRODUCT_ORDER,
@@ -100,7 +101,7 @@ export const fetchProductPageBySlug = cache(
       slug: row.slug,
       release_year: row.release_year,
       discontinued: Boolean(row.discontinued),
-      image_url: row.image_url,
+      image_url: resolveStorageUrl(row.image_url),
       brand: firstEmbedded(row.brands),
       category: firstEmbedded(row.categories),
     }
