@@ -8,7 +8,7 @@ const DUPLICATE_DOTS_REGEX = /\.\.+/g
  * Storage bucket of each `part_files.file_category`. The bucket is not stored
  * on the row: `upload_path` is relative to the bucket of its category.
  */
-export const PART_FILE_CATEGORY_BUCKETS: Readonly<Record<string, string>> = {
+const PART_FILE_CATEGORY_BUCKETS: Readonly<Record<string, string>> = {
   model: STORAGE_BUCKETS.MODEL_FILES,
   image: STORAGE_BUCKETS.MODEL_THUMBNAILS,
 }

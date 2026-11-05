@@ -16,7 +16,7 @@ export interface BrowseNavBrand {
   product_count: number
 }
 
-export interface BrowseNavRoot {
+interface BrowseNavRoot {
   id: string
   name: string
   slug: string

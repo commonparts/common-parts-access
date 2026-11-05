@@ -5,7 +5,7 @@ import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
-export const NAV_LISTING_PAGE_SIZE = 24
+const NAV_LISTING_PAGE_SIZE = 24
 
 export interface BrandPageBrand {
   id: string
@@ -23,7 +23,7 @@ export interface BrandPageProduct {
   category: { id: string; name: string; slug: string } | null
 }
 
-export interface BrandCoveredCategory {
+interface BrandCoveredCategory {
   id: string
   name: string
   slug: string

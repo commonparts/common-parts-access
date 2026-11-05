@@ -23,7 +23,7 @@ import { PrintReportControls, type PrintReportReference } from "./print-report-c
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 
-export interface CompatibleProduct {
+interface CompatibleProduct {
   id: string
   name: string
   slug: string

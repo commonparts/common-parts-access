@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server'
 // — never per-row count queries. Product counts only count products with a
 // published part.
 
-export interface CategoryPageCategory {
+interface CategoryPageCategory {
   id: string
   name: string
   slug: string
@@ -20,12 +20,12 @@ export interface CategoryPageCategory {
 }
 
 /** Ancestor of the page's category, ordered root-first — the breadcrumb. */
-export interface CategoryPageAncestor {
+interface CategoryPageAncestor {
   name: string
   slug: string
 }
 
-export interface CategoryPageChild {
+interface CategoryPageChild {
   id: string
   name: string
   slug: string
@@ -37,7 +37,7 @@ export interface CategoryPageChild {
 }
 
 /** Brand covering the category's direct products — target of /brands/[brand]/[category]. */
-export interface CategoryPageBrand {
+interface CategoryPageBrand {
   id: string
   name: string
   slug: string

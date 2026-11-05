@@ -29,7 +29,7 @@ export interface ClientUploadedFile {
  * Best-effort removal of uploaded storage objects, grouped by bucket.
  * Swallows errors so the original failure is never masked.
  */
-export async function cleanupUploadedFiles(
+async function cleanupUploadedFiles(
   files: { bucket: string; path: string }[],
 ): Promise<void> {
   if (files.length === 0) return

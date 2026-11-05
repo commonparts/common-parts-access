@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 
-export type SortOption = {
+type SortOption = {
   key: string
   label: string
   description?: string

@@ -7,7 +7,6 @@ import type {
 	SourcePlatform,
 	UserProfile,
 } from './database';
-export type { SourcePlatform } from './database';
 
 type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
 type PartCardBrandRef = Pick<Brand, 'name' | 'slug'>;

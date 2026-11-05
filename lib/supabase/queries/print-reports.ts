@@ -7,7 +7,7 @@ import {
 } from '@/lib/utils/print-reports'
 
 /** Domain errors raised by `submit_print_report()`, matched on the message. */
-export const PRINT_REPORT_ERRORS = [
+const PRINT_REPORT_ERRORS = [
   'PRINT_REPORT_NOT_FOUND',
   'PRINT_REPORT_INVALID_REFERENCE',
   'PRINT_REPORT_RATE_LIMITED',

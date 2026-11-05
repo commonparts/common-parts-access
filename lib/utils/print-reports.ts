@@ -5,7 +5,7 @@ import { toEvidenceLevel, type EvidenceLevel } from './evidence-level'
  * What a reporter says about a printed part on one product (issue #318).
  * Mirrors the check constraint on `print_reports.result`.
  */
-export const PRINT_REPORT_RESULTS = ['works', 'works_with_adjustments', 'does_not_work'] as const
+const PRINT_REPORT_RESULTS = ['works', 'works_with_adjustments', 'does_not_work'] as const
 export type PrintReportResult = (typeof PRINT_REPORT_RESULTS)[number]
 
 /** Mirrors the check constraint on `print_reports.comment`. */

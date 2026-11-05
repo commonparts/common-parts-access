@@ -72,23 +72,6 @@ export interface Product {
   updated_at?: string;
 }
 
-// Captures part demand ("Request this part"). Deliberately separate from
-// feedback: no triage pipeline, demand accumulates until fulfilled, and its
-// aggregates are publicly displayable (unlike feedback's restrictive RLS).
-export type PartRequestStatus = 'open' | 'fulfilled' | 'dismissed';
-
-export interface PartRequest {
-  id: string;
-  product_id?: string | null;
-  raw_query?: string | null;
-  description?: string | null;
-  user_id?: string | null;
-  page_url?: string | null;
-  status: PartRequestStatus;
-  fulfilled_by_part_id?: string | null;
-  created_at?: string;
-}
-
 // Row shape returned by the fetch_part_request_counts RPC — aggregate only,
 // never any row-level or identifying data.
 export interface PartRequestCount {
@@ -107,7 +90,7 @@ export interface PartDimensions {
   unit?: 'mm' | 'cm' | 'in';
 }
 
-export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
+type SupportType = 'none' | 'buildplate_only' | 'everywhere';
 
 export interface PartPrintSettings {
   layer_height?: number; // mm, non-negative
@@ -212,97 +195,6 @@ export interface Part {
 
   created_at?: string;
   updated_at?: string;
-}
-
-// Rejection traceability (Flow P3 §4.3.3): a rejected source is recorded with
-// its reason and failed criteria, independently of any part row.
-export interface CurationRejection {
-  id: string;
-  source_url: string;
-  reason: string;
-  failed_criteria: CurationCriterionKey[];
-  created_by: string | null; // Null once the curator's account is deleted (issue #178)
-  created_at?: string;
-}
-
-export interface PartFile {
-  id: string;
-  part_id: string;
-  filename: string; // max 255 chars
-  original_filename: string; // max 255 chars
-  file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
-  file_size: number; // bytes (BIGINT)
-  file_url: string | null; // Deprecated (#56): not written; storage location is upload_path
-  file_category: string; // model, documentation, image (max 20 chars)
-  upload_path: string; // Storage path
-  checksum?: string | null; // File integrity (max 64 chars)
-  created_at?: string;
-}
-
-export interface PartLike {
-  id: string;
-  user_id: string | null; // Null once the liking account is deleted (issue #178)
-  part_id: string;
-  liked_at?: string;
-}
-
-export interface PartDownload {
-  id: string;
-  part_id: string;
-  file_id: string | null; // Nullable for archive/ZIP downloads
-  downloaded_at?: string;
-}
-
-export interface PartComment {
-  id: string;
-  part_id: string;
-  user_id: string | null; // Null once the author's account is deleted (issue #178)
-  parent_id?: string | null; // For nested comments
-  content: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Collection {
-  id: string;
-  name: string; // max 200 chars
-  description?: string | null;
-  user_id: string;
-  is_public?: boolean;
-  thumbnail_url?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CollectionPart {
-  collection_id: string;
-  part_id: string;
-  added_at?: string;
-}
-
-// ============================================================================
-// Enhanced Types with Relations - Used in queries and API responses
-// ============================================================================
-
-export interface PartWithRelations extends Part {
-  user_profiles?: UserProfile | UserProfile[];
-  brands?: Brand | Brand[];
-  categories?: Category | Category[];
-  products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
-  licenses?: License | License[];
-}
-
-// ============================================================================
-// Database Filter Types
-// ============================================================================
-
-export interface PartFilters {
-  category_id?: string;
-  brand_id?: string;
-  product_id?: string;
-  status?: PartStatus;
-  user_id?: string;
-  tags?: string[];
 }
 
 export interface SourcePlatform {

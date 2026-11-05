@@ -47,34 +47,6 @@ export function formatPrintLine(
 }
 
 /**
- * Format file size from bytes to human readable format
- * @param bytes - Size in bytes
- * @param decimals - Number of decimal places (default: 2)
- * @returns Formatted file size string
- */
-export function formatFileSize(bytes: number, decimals: number = 2): string {
-  if (bytes === 0) return "0 Bytes"
-  
-  const k = 1024
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB"]
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`
-}
-
-/**
- * Format number with thousand separators
- * @param num - Number to format
- * @param locale - Locale for formatting (default: 'en-US')
- * @returns Formatted number string
- */
-export function formatNumber(num: number, locale: string = 'en-US'): string {
-  return new Intl.NumberFormat(locale).format(num)
-}
-
-
-
-/**
  * Format date to relative time (e.g., "2 hours ago")
  * @param date - Date to format
  * @param locale - Locale for formatting (default: 'en-US')
@@ -181,16 +153,6 @@ export function formatLicenseNotice(input: LicenseNoticeInput): string {
   }
   return sentences.join(' ')
 }
-
-/**
- * Get file extension from filename
- * @param filename - Filename to extract extension from
- * @returns File extension (lowercase, without dot)
- */
-export function getFileExtension(filename: string): string {
-  return filename.slice((filename.lastIndexOf('.') - 1 >>> 0) + 2).toLowerCase()
-}
-
 
 /**
  * Converts rich HTML (as returned by source platforms) into readable plain

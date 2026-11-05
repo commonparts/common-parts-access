@@ -79,7 +79,7 @@ feature/xxx → short-lived feature branches → PR to dev
 
 ### Commit Conventions
 
-All commits follow the **Conventional Commits** standard, enforced locally via `commitlint` + `husky`.
+All commits follow the **Conventional Commits** standard, enforced locally via `commitlint` + `husky`. The commitlint configuration is the `commitlint` key of `package.json`.
 
 ```
 feat(scope): short description
@@ -116,7 +116,8 @@ Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
 3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
-4. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
+4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx` and `components/ui/dropdown-menu.tsx`, kept so the files stay close to upstream, and `design-tokens/themes.ts` (token sources, edited only with approval) (#482)
+5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
 
@@ -134,7 +135,7 @@ Each environment reaches the single Supabase project with the publishable and se
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts` |
-| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion) |
+| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion); the file imports `server-only`, so importing it from a client component fails the build (#482) |
 
 `NEXT_PUBLIC_` variables are inlined at build time: a new or changed value takes effect only after a rebuild, so it must exist in the environment before the build. `SUPABASE_SECRET_KEY` never takes the `NEXT_PUBLIC_` prefix. Both keys are created and rotated in Supabase Dashboard > Settings > API Keys.
 
@@ -153,7 +154,7 @@ This is the full lifecycle of a change, from issue to production.
 4. Agent Dev implements on feature/issue-xxx branch
 5. Agent Dev opens PR toward dev
          ↓
-6. CI runs automatically (tsc + lint + tests)
+6. CI runs automatically (tsc + lint + knip + tests)
 7. Copilot code review runs automatically
 8. Human reads findings, asks Agent Dev to fix blocking issues
 9. Agent Dev pushes fixes — CI and Copilot re-run
@@ -301,7 +302,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Proposes a technical approach before writing any code
 - Implements following all conventions in `CLAUDE.md`
 - Updates the affected `docs/` files in the same PR as the code change
-- Runs self-review checklist (tsc + lint + tests) before committing
+- Runs self-review checklist (tsc + lint + knip + tests) before committing
 - Opens a PR toward `dev` via GitHub MCP
 
 **What it never does:**
@@ -414,7 +415,7 @@ RLS: anyone can insert, users can read their own rows only.
 - Conventional Commits enforced via `commitlint` + `husky`
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
-- GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
+- GitHub Actions CI: type check + lint + unused code check (knip) + Vitest with coverage threshold on every push and PR
 - Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by the human, destructive ones automatically with the release to `main`
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
@@ -527,12 +528,11 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── .github/
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
-│       ├── ci.yml                  # Lint + type check + tests
+│       ├── ci.yml                  # Type check + lint + knip + tests
 │       ├── release.yml             # Tag + GitHub Release on merge to main
 │       └── label-merged-issues.yml # Labels issues referenced by merged PRs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
-│   ├── pre-commit
 │   └── pre-push                    # Block direct push to main/staging
 ├── app/
 │   ├── (auth)/                     # Sign-up, login, password, account deletion
@@ -557,5 +557,5 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   └── migrations/                 # Version-controlled schema changes
 ├── types/
 ├── docs/                           # Technical documentation (index: docs/README.md)
-└── commitlint.config.mjs           # Commit convention config
+└── knip.json                       # Unused code check configuration and its exceptions
 ```

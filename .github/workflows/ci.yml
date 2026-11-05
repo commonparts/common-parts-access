@@ -30,5 +30,8 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Unused code and dependencies
+        run: npm run knip
+
       - name: Test with coverage
         run: npm run test:coverage
