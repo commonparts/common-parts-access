@@ -57,7 +57,6 @@ Issues are triaged automatically and reviewed by the core team.
 
 ## What Common Parts does not accept
 
-- Pull requests modifying the application source code
 - Issues requesting features (use the in-app feedback widget instead)
 - Original part submissions under NC or ND licenses
 - Models whose license forbids sharing them, including proprietary licenses
