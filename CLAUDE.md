@@ -171,7 +171,7 @@ Run through this before every commit:
 - [ ] No `console.log` left in production code (use `console.error` for real errors only)
 - [ ] No `any` types introduced
 - [ ] Every new request input is parsed with a Zod schema; no cast on a query result without a comment saying why
-- [ ] `types/supabase.ts` updated in the same PR as any migration
+- [ ] Additive migration applied and `types/supabase.ts` regenerated from production in the same PR
 - [ ] No new dependency installed without asking
 - [ ] Commit message follows Conventional Commits and references the issue number
 - [ ] The `docs/` files affected by the change are updated in the same PR, or none are affected (see Documentation below)
@@ -527,7 +527,7 @@ className="disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-b
 | `feedback` | User feedback — entry point of the agent pipeline |
 
 All tables have RLS enabled. Always check policies before inserting or selecting.
-Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`, and `types/supabase.ts` changes in the same PR: to what `npm run db:types` will produce once the migration is applied, which the human checks after applying it (see Generated types in `docs/DEV_STRATEGY.md`). The human applies additive ones when their PR lands on `dev`; destructive ones (removing a table, column, constraint or function that code has used) are applied automatically when a release is merged into `main`, and always ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`). The same applies to a migration that adds a constraint or trigger the release in production would violate. Such a migration is never left for later: when you open the PR of release N, open at once its follow-up — an issue, and a **draft** PR toward `dev` labelled `status:next-release` whose description starts with `Waits for #N in production`. There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
+Never add a new table without asking first. Schema changes are written as SQL files in `supabase/migrations/`. You apply an additive one (new table, column, function, policy) with the Supabase MCP `apply_migration` before the PR is merged, then name the file after the version it was applied as, record `APPLIED to production on <date> as version <version>` in its header, and regenerate `types/supabase.ts` from production in the same PR (see Generated types in `docs/DEV_STRATEGY.md`). Destructive ones (removing a table, column, constraint or function that code has used) are applied automatically when a release is merged into `main`, and always ship in a later release than the code change that stops using what they remove (see `docs/DEV_STRATEGY.md`). The same applies to a migration that adds a constraint or trigger the release in production would violate. Such a migration is never left for later: when you open the PR of release N, open at once its follow-up — an issue, and a **draft** PR toward `dev` labelled `status:next-release` whose description starts with `Waits for #N in production`. There is a single Supabase database (production) behind every environment. The full schema is described in `docs/DATA_MODEL.md`.
 
 ---
 
@@ -555,7 +555,7 @@ If you are unsure about:
 - **Architecture** — ask before implementing
 - **Design** — check `docs/DESIGN_SYSTEM.md` and existing components first, then ask
 - **Scope** — confirm whether related issues should be fixed in the same PR or separately
-- **Database** — never run migrations without explicit instruction; write the migration file and let the human apply it
+- **Database** — apply only the additive migration of the PR you are working on, before it is merged (see Supabase schema). Never apply a destructive migration, and never run any other schema change without explicit instruction
 
 When in doubt, propose and wait for confirmation. A wrong implementation costs more than a short question.
 

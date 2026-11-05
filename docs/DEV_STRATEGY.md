@@ -364,7 +364,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
 
-- **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
+- **Additive migrations** (new tables, columns, functions, policies) are applied by Agent Dev with the Supabase MCP (`apply_migration`) before the feature PR is merged into `dev`, so the PR can carry the types generated from the applied schema (#483). The migration file is then named after the version it was applied as, and its header records `APPLIED to production on <date> as version <version>`: the repository and the database's migration history agree, and the release does not apply it a second time. Promotions carry no step for them.
 - **Destructive migrations** remove a table, column, constraint or function that application code has used. They are applied automatically when a release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
 
 The integration applies a release's migrations while Railway is still deploying it, so the release in production keeps running for a few minutes against the new schema. A destructive migration is therefore never released together with the code change that stops using what it removes (#416):
@@ -392,7 +392,7 @@ A migration that creates a table in `public` enables RLS, adds its policies and 
 
 `types/supabase.ts` is generated from the production schema by `npm run db:types` (the Supabase CLI, authenticated with `supabase login` or `SUPABASE_ACCESS_TOKEN`), or by the Supabase MCP `generate_typescript_types` (#483). It changes only with the schema. Every Supabase client is created with its `Database` type, so query results are inferred from the select string and a renamed or dropped column fails `tsc`. `types/database.ts` derives the row types from it (`Tables<'parts'>`) and only adds what the generator cannot express: the values of a text column restricted by a CHECK constraint (typed `string`) and the shapes of jsonb columns (typed `Json`), applied to a selected row by `narrowPartRow()` (`lib/supabase/rows.ts`).
 
-`types/supabase.ts` changes in the same PR as the migration that changes the schema. Since the database is production, an additive migration is applied only when its PR lands on `dev`: the PR therefore updates `types/supabase.ts` to what the generator will produce once the migration is applied, and `npm run db:types` run after applying it must leave the file unchanged. A diff means the file and the schema drifted.
+`types/supabase.ts` changes in the same PR as the migration that changes the schema. An additive migration is applied before its PR is merged (see above), so the PR regenerates the file from production once the migration is applied, and the code of the PR is type-checked against the schema it runs on (#483). A destructive migration is applied only with the release to `main`, after the code stops using what it removes: the follow-up PR that carries it removes the object from `types/supabase.ts`, and `npm run db:types` run once the release is in production must leave the file unchanged.
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
@@ -424,7 +424,7 @@ RLS: anyone can insert, users can read their own rows only.
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
 - GitHub Actions CI: type check + lint + unused code check (knip) + Vitest with coverage threshold on every push and PR
-- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by the human, destructive ones automatically with the release to `main`
+- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by Agent Dev before the PR is merged, destructive ones automatically with the release to `main`
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 

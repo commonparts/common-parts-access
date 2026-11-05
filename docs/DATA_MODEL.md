@@ -2,9 +2,9 @@
 
 Current schema of the Common Parts Access database (Supabase, PostgreSQL), as of v1.2.0 (October 2026). For how it got here, see [DATA_MODEL_EVOLUTION.md](./DATA_MODEL_EVOLUTION.md) (historical).
 
-There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied by the human, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled, and the Data API reaches a table only through explicit grants (see [Data API grants](#data-api-grants)).
+There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied before their PR is merged into `dev`, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled, and the Data API reaches a table only through explicit grants (see [Data API grants](#data-api-grants)).
 
-The TypeScript types of this schema are generated into `types/supabase.ts` (`npm run db:types`) and change in the same PR as the migration that changes the schema; see [Generated types](./DEV_STRATEGY.md#generated-types) (#483). The text columns restricted by a CHECK constraint and the jsonb columns are typed loosely by the generator; their domains are in `types/database.ts`, and the jsonb shapes are the Zod schemas of `lib/schemas/part-fields.ts`.
+The TypeScript types of this schema are generated into `types/supabase.ts` (`npm run db:types`) and are regenerated in the same PR as the migration that changes the schema; see [Generated types](./DEV_STRATEGY.md#generated-types) (#483). The text columns restricted by a CHECK constraint and the jsonb columns are typed loosely by the generator; their domains are in `types/database.ts`, and the jsonb shapes are the Zod schemas of `lib/schemas/part-fields.ts`.
 
 ---
 
