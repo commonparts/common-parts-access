@@ -113,5 +113,5 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 - `supabase/migrations/00000000000000_initial_schema.sql` - Database trigger (`handle_new_user`)
 - `lib/supabase/queries/auth.client.ts` - Updated signUp function
 - `lib/supabase/queries/users.ts` - User profile queries
-- `types/users.ts` - TypeScript interfaces
+- `types/supabase.ts` - Generated row types (`user_profiles`), see [Generated types](./DEV_STRATEGY.md#generated-types)
 - `components/auth/sign-up-form.tsx` - Username input field

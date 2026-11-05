@@ -116,7 +116,7 @@ Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
 3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
-4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx` and `components/ui/dropdown-menu.tsx`, kept so the files stay close to upstream, and `design-tokens/themes.ts` (token sources, edited only with approval) (#482)
+4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx` and `components/ui/dropdown-menu.tsx`, kept so the files stay close to upstream, `design-tokens/themes.ts` (token sources, edited only with approval) (#482), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
 5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
@@ -133,13 +133,15 @@ Each environment reaches the single Supabase project with the publishable and se
 
 | Variable | Key | Read by |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts` |
-| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion); the file imports `server-only`, so importing it from a client component fails the build (#482) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client, through `lib/public-env.ts` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`, through `lib/public-env.ts` |
+| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion), through `lib/env.ts`; the file imports `server-only`, so importing it from a client component fails the build (#482) |
 
 `NEXT_PUBLIC_` variables are inlined at build time: a new or changed value takes effect only after a rebuild, so it must exist in the environment before the build. `SUPABASE_SECRET_KEY` never takes the `NEXT_PUBLIC_` prefix. Both keys are created and rotated in Supabase Dashboard > Settings > API Keys.
 
 `THINGIVERSE_APP_TOKEN` is optional and server-only: set in an environment, it enables the Thingiverse pre-fill and image import of the publish flow (#431, see [CURATION_TOOL.md](CURATION_TOOL.md#pre-fill-from-the-source-url)). It is read at request time, so a change takes effect without a rebuild.
+
+Environment variables are read through two validated modules, never through `process.env` directly (#483). `lib/public-env.ts` validates the two public Supabase variables with a Zod schema; it reads each by name, so Next.js still inlines them in client bundles. `lib/env.ts` validates the server variables (`SUPABASE_SECRET_KEY`, `CURATOR_USER_IDS`, `THINGIVERSE_APP_TOKEN`, all optional) and the public ones; `serverEnv(name)` returns one variable and throws an error naming it when it is malformed. `instrumentation.ts` validates the whole schema when the server starts, so a deployment with a missing or malformed variable fails at boot with the list of variables to fix. The session middleware is the exception: when the public variables are not set, it lets requests through unauthenticated. `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_ENABLE_SOCIAL_FEATURES` are build-time public settings with a default, parsed where they are used (`lib/utils/constants.ts`, `lib/utils/feature-flags.ts`).
 
 ---
 
@@ -386,6 +388,12 @@ The integration applies the migration files missing from the database's migratio
 
 A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
+### Generated types
+
+`types/supabase.ts` is generated from the production schema by `npm run db:types` (the Supabase CLI, authenticated with `supabase login` or `SUPABASE_ACCESS_TOKEN`), or by the Supabase MCP `generate_typescript_types` (#483). It changes only with the schema. Every Supabase client is created with its `Database` type, so query results are inferred from the select string and a renamed or dropped column fails `tsc`. `types/database.ts` derives the row types from it (`Tables<'parts'>`) and only adds what the generator cannot express: the values of a text column restricted by a CHECK constraint (typed `string`) and the shapes of jsonb columns (typed `Json`), applied to a selected row by `narrowPartRow()` (`lib/supabase/rows.ts`).
+
+`types/supabase.ts` changes in the same PR as the migration that changes the schema. Since the database is production, an additive migration is applied only when its PR lands on `dev`: the PR therefore updates `types/supabase.ts` to what the generator will produce once the migration is applied, and `npm run db:types` run after applying it must leave the file unchanged. A diff means the file and the schema drifted.
+
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
 **`feedback`** — user-submitted feedback, entry point of the pipeline
@@ -534,6 +542,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
 │   └── pre-push                    # Block direct push to main/staging
+├── instrumentation.ts              # Validates the server environment at startup
 ├── app/
 │   ├── (auth)/                     # Sign-up, login, password, account deletion
 │   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
@@ -547,7 +556,10 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── design-tokens/                  # Token sources (edit only with approval)
 ├── hooks/
 ├── lib/
+│   ├── api/parse.ts                # Request body and query parsing with Zod, 400 on invalid input
+│   ├── env.ts / public-env.ts      # Validated environment variables
 │   ├── curation/ publish/ upload/  # Publish-flow logic per track
+│   ├── schemas/                    # Zod schemas of the API inputs, one file per domain
 │   ├── storage/                    # Upload and download helpers
 │   ├── supabase/queries/           # All Supabase queries, one file per domain
 │   └── utils/                      # Validators, formatters, SEO, feature flags, …
@@ -555,7 +567,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── config.toml                 # Edge Function declaration, read by the CLI and the GitHub integration
 │   ├── functions/triage-feedback/  # Agent Triage edge function
 │   └── migrations/                 # Version-controlled schema changes
-├── types/
+├── types/                          # supabase.ts (generated), database.ts (row aliases), view models
 ├── docs/                           # Technical documentation (index: docs/README.md)
 └── knip.json                       # Unused code check configuration and its exceptions
 ```

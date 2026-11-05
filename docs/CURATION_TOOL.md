@@ -75,7 +75,7 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 - **Text fields:** short description, instructions, category (drill-down). The license is recorded on the Origin step.
 - **Entity assignment:** brand autocomplete (read-only list — brands are curated directly in the DB, not created here) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 - **Demand context:** `components/publish/demand-panel.tsx` shows open `part_requests` counts per selected product via `GET /api/curation/demand` (the aggregate-only `fetch_part_request_counts` RPC — never row-level data). Read-only; steers curation by captured demand (Flow P3 §4.3.5).
-- **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` (same serializer the public upload flow uses) and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
+- **Print metadata:** material, color, dimensions (L/W/H + unit), print settings (layer height, infill, supports), and print-time/material-usage estimates. Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` (same serializer the public upload flow uses) and validated server-side by the shared Zod schemas of `lib/schemas/part-fields.ts` (#483).
 
 ### 4. Non-blocking flags & files
 
@@ -211,7 +211,9 @@ lib/curation/
 lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
 lib/supabase/queries/publish.ts            draft -> published transition of both gates (service role)
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
-lib/utils/part-metadata.ts                 Shared metadata parsers + serializer (also used by upload)
+lib/utils/part-metadata.ts                 Shared metadata serializer and column limits (also used by upload)
+lib/schemas/curation.ts                    Zod schemas of the curation request bodies and queries
+lib/schemas/part-fields.ts                 Zod schemas of the fields shared with upload
 lib/utils/licenses.ts                       isHostableLicense (NC/ND exclusion), shared by tool + gates
 lib/utils/images.ts                         sortImageUrls + mergeImageUrls (thumbnail selection)
 app/api/curation/**                         Endpoints above (incl. prefill, drafts/[id]/import-images)
