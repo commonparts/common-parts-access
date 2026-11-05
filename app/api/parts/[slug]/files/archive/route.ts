@@ -2,10 +2,18 @@ import { NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { createClient } from '@/lib/supabase/server'
 import { STORAGE_BUCKETS } from '@/constants/app'
-import { extractModelStoragePath, toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
+import { toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
+
+// The archive holds the part's model files only. The upload flow caps them at
+// PART_UPLOAD_LIMITS.maxModelFiles per part, but its count check and its insert
+// are not atomic, so concurrent registrations can exceed that cap. The read is
+// bounded by a ceiling well above it, and a part over the ceiling gets an
+// explicit error rather than an archive that silently omits files.
+const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles * 10
 
 // GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
 // Anonymous: no account required, only an anonymous download row is recorded (issue #250).
@@ -30,9 +38,11 @@ export async function GET(
 
     const { data: files, error: filesError } = await supabase
       .from('part_files')
-      .select('id, original_filename, filename, upload_path, file_url')
+      .select('id, original_filename, filename, upload_path')
       .eq('part_id', part.id)
+      .eq('file_category', 'model')
       .order('created_at', { ascending: true })
+      .limit(MAX_ARCHIVE_FILES + 1)
 
     if (filesError) {
       console.error('Failed to fetch model files:', filesError)
@@ -43,14 +53,22 @@ export async function GET(
       return NextResponse.json({ error: 'No files available for download' }, { status: 404 })
     }
 
+    if (files.length > MAX_ARCHIVE_FILES) {
+      console.error('Archive refused: part has more model files than the archive ceiling', part.id)
+      return NextResponse.json(
+        { error: `This part has more than ${MAX_ARCHIVE_FILES} files: download them one by one` },
+        { status: 422 },
+      )
+    }
+
     const zip = new JSZip()
     const folderName = toZipSafeName(part.name || slug, slug)
     const folder = zip.folder(folderName) ?? zip
     let addedFiles = 0
 
     for (const file of files) {
-      const storagePath = extractModelStoragePath(file.upload_path) ||
-        extractModelStoragePath(file.file_url)
+      // upload_path is the file's path in the model-files bucket (#56).
+      const storagePath = file.upload_path?.replace(/^\/+/, '')
 
       if (!storagePath) {
         console.warn('Skipping file without storage path', file.id)

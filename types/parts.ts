@@ -205,6 +205,5 @@ export interface PartPageFile {
 	original_filename: string;
 	file_type: string;
 	file_size: number;
-	file_url: string;
 	file_category: string;
 }

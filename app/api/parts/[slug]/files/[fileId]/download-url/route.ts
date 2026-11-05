@@ -1,28 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { STORAGE_BUCKETS } from '@/constants/app'
-import { extractModelStoragePath } from '@/lib/storage/path-utils'
+import { partFileBucket } from '@/lib/storage/path-utils'
+import { resolveStorageUrl } from '@/lib/storage/url'
+import { isValidUuid } from '@/lib/utils/validation'
+
+const MAX_SLUG_LENGTH = 200
 
 /**
- * Constructs a public storage URL for a file in Supabase Storage
- * @param storagePath - The path within the bucket (e.g., "user-id/part-id/file.stl")
- * @returns The full public URL
+ * GET /api/parts/[slug]/files/[fileId]/download-url — the public URL of one
+ * file of a published part.
+ *
+ * The URL is built from the file's bucket (derived from its category) and its
+ * `upload_path`, the storage path stored on the row (#56). Anonymous: RLS on
+ * `parts` and `part_files` exposes the files of published parts to everyone.
  */
-function getPublicStorageUrl(storagePath: string): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKETS.MODEL_FILES}/${storagePath}`
-}
-
-// GET /api/parts/[slug]/files/[fileId]/download-url - Get a download URL for a file
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ slug: string; fileId: string }> }
 ) {
   try {
     const { slug, fileId } = await params
+    if (!slug || slug.length > MAX_SLUG_LENGTH) {
+      return NextResponse.json({ error: 'Invalid part slug' }, { status: 400 })
+    }
+    if (!isValidUuid(fileId)) {
+      return NextResponse.json({ error: 'Invalid file id' }, { status: 400 })
+    }
+
     const supabase = await createClient()
-    
-    // Find the part by slug
+
     const { data: part, error: partError } = await supabase
       .from('parts')
       .select('id')
@@ -31,50 +37,33 @@ export async function GET(
       .single()
 
     if (partError || !part) {
-      return NextResponse.json(
-        { error: 'Part not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
     }
 
-    // Get the file details
     const { data: file, error: fileError } = await supabase
       .from('part_files')
-      .select('*')
+      .select('original_filename, file_category, upload_path')
       .eq('id', fileId)
       .eq('part_id', part.id)
       .single()
 
     if (fileError || !file) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'File not found' }, { status: 404 })
     }
 
-    // Extract the storage path from the stored URL
-    // Try upload_path first (more likely to have full path), then fallback to file_url
-    const storagePath = extractModelStoragePath(file.upload_path) || 
-               extractModelStoragePath(file.file_url) || 
-               file.filename
-
-    // Construct public URL for the file
-    const publicUrl = getPublicStorageUrl(storagePath)
+    const bucket = partFileBucket(file.file_category)
+    const storagePath = file.upload_path?.replace(/^\/+/, '')
+    if (!bucket || !storagePath) {
+      console.error('Download URL: file has no resolvable storage location', fileId)
+      return NextResponse.json({ error: 'This file is not available for download' }, { status: 404 })
+    }
 
     return NextResponse.json({
-      downloadUrl: publicUrl,
+      downloadUrl: resolveStorageUrl(`${bucket}/${storagePath}`),
       filename: file.original_filename,
-      expiresIn: 3600
     })
-
   } catch (error) {
     console.error('Error generating download URL:', error)
-    return NextResponse.json(
-      { 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

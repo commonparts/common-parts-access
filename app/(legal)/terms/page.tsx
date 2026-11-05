@@ -1,5 +1,6 @@
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
+import { DATA_LICENSE, TERMS_LICENSES_SECTION_ID } from '@/lib/utils/licenses'
 
 export const metadata = {
   title: 'Terms of Use',
@@ -107,7 +108,9 @@ export default function TermsPage() {
               responsibility for the content you publish.
             </p>
 
-            <h3 className="text-h4">4.2 Licences for published content</h3>
+            <h3 id={TERMS_LICENSES_SECTION_ID} className="scroll-mt-3xl text-h4">
+              4.2 Licences for published content
+            </h3>
             <p className="text-text-secondary">When publishing a file on Common Parts Access, you must select one of the following licences:</p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>Creative Commons Zero 1.0 Universal (CC0 1.0) - public domain dedication</li>
@@ -124,10 +127,17 @@ export default function TermsPage() {
               Common Parts does not acquire any transfer of intellectual property rights over your content.
             </p>
             <p className="text-text-secondary">
-              Data created on Common Parts Access, including the products a part is compatible with and the structured
-              fields contributors write here, is published under the Creative Commons Zero (CC0) licence. Content
-              taken from the original publication of a referenced part, such as its description, instructions, and
-              images, remains under the licence chosen by its author at the source and is credited to them.
+              Data created on Common Parts Access, including the products and product references a part is compatible
+              with, the structured fields contributors write here, and aggregated print reports, is published under
+              the{' '}
+              <a href={DATA_LICENSE.url} className="underline">
+                {DATA_LICENSE.name} licence ({DATA_LICENSE.shortName})
+              </a>
+              , with attribution to &ldquo;{DATA_LICENSE.attribution}&rdquo;. By contributing such data, you agree to
+              its publication under this licence. Content taken from the
+              original publication of a referenced part, such as its description, instructions, and images, remains
+              under the licence chosen by its author at the source and is credited to them. Part files remain under
+              the licence chosen by their author.
             </p>
 
             <h3 className="text-h4">4.3 Licence granted to Common Parts</h3>

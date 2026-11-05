@@ -1,48 +1,49 @@
-const MODEL_FILES_SEGMENT = '/model-files/'
+import { STORAGE_BUCKETS } from '@/constants/app'
+
 const URL_REGEX = /^https?:\/\//i
 const CLEAN_SEGMENT_REGEX = /[\0-\x1F<>:"|?*\\]/g
 const DUPLICATE_DOTS_REGEX = /\.\.+/g
 
 /**
- * Extracts the storage path (relative to a given bucket) from a Supabase
- * public object URL. Strips query params (e.g. signed URL tokens).
- * Returns null when the URL does not contain the expected bucket segment.
+ * Storage bucket of each `part_files.file_category`. The bucket is not stored
+ * on the row: `upload_path` is relative to the bucket of its category.
  */
-export function extractBucketStoragePath(
-  url: string | null | undefined,
-  bucketName: string
-): string | null {
-  if (!url) return null
-  const marker = `/storage/v1/object/public/${bucketName}/`
-  const idx = url.indexOf(marker)
-  if (idx === -1) return null
-  return url.slice(idx + marker.length).split('?')[0] || null
+export const PART_FILE_CATEGORY_BUCKETS: Readonly<Record<string, string>> = {
+  model: STORAGE_BUCKETS.MODEL_FILES,
+  image: STORAGE_BUCKETS.MODEL_THUMBNAILS,
 }
 
 /**
- * Attempts to extract a storage path relative to the model-files bucket.
- * Accepts absolute URLs, signed URLs, or already-relative paths.
+ * Returns the storage bucket that holds a part file of the given category,
+ * or null for a category no upload path writes.
  */
-export function extractModelStoragePath(input?: string | null): string | null {
-  if (!input) {
-    return null
-  }
+export function partFileBucket(category: string | null | undefined): string | null {
+  if (!category) return null
+  return Object.prototype.hasOwnProperty.call(PART_FILE_CATEGORY_BUCKETS, category)
+    ? PART_FILE_CATEGORY_BUCKETS[category]
+    : null
+}
 
-  const value = input.trim()
-  if (!value) {
-    return null
+/**
+ * Extracts the storage path (relative to a given bucket) from a stored
+ * storage reference. Accepts a Supabase public object URL (query params such
+ * as signed URL tokens are stripped) or a relative reference of the form
+ * `bucket/path` (#56). Returns null when the reference does not point into
+ * the given bucket.
+ */
+export function extractBucketStoragePath(
+  reference: string | null | undefined,
+  bucketName: string
+): string | null {
+  if (!reference) return null
+  if (!URL_REGEX.test(reference)) {
+    const prefix = `${bucketName}/`
+    return reference.startsWith(prefix) ? reference.slice(prefix.length) || null : null
   }
-
-  if (value.includes(MODEL_FILES_SEGMENT)) {
-    const match = value.match(/\/model-files\/(.+?)(\?|$)/)
-    return match ? match[1] : null
-  }
-
-  if (URL_REGEX.test(value)) {
-    return null
-  }
-
-  return value.replace(/^\/+/, '')
+  const marker = `/storage/v1/object/public/${bucketName}/`
+  const idx = reference.indexOf(marker)
+  if (idx === -1) return null
+  return reference.slice(idx + marker.length).split('?')[0] || null
 }
 
 /**
