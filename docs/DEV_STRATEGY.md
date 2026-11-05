@@ -117,7 +117,7 @@ Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
 3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
-4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx` and `components/ui/dropdown-menu.tsx`, kept so the files stay close to upstream, `design-tokens/themes.ts` (token sources, edited only with approval) (#482), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
+4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx`, `components/ui/command.tsx`, `components/ui/dropdown-menu.tsx` and `components/ui/popover.tsx`, kept so the files stay close to upstream (#482, #484), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
 5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
@@ -312,7 +312,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Merges a PR unless the human asks for that merge
 - Pushes to `main` or `staging`
 - Installs dependencies without asking
-- Modifies `design-tokens/`, `middleware.ts`, or core Supabase client files
+- Modifies the design tokens (`@theme` block of `app/globals.css`), `middleware.ts`, or core Supabase client files
 
 ---
 
@@ -559,11 +559,11 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── (legal)/                    # Privacy, terms, legal notice
 │   ├── (public)/                   # Browse, brands, categories, product, parts, search
 │   ├── api/                        # API routes: downloads, redirects, binary responses, webhooks, external callers
+│   ├── globals.css                 # Design tokens (@theme) and global styles (edit tokens only with approval)
 │   ├── layout.tsx                  # FeedbackButton mounted here
 │   ├── robots.ts / sitemap.ts      # Crawler entry points
 ├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
 ├── constants/
-├── design-tokens/                  # Token sources (edit only with approval)
 ├── hooks/
 ├── lib/
 │   ├── actions/                    # Server Actions for mutations from our own UI, one file per domain

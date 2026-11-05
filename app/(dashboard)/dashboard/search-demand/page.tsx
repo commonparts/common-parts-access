@@ -114,7 +114,7 @@ export default async function SearchDemandPage({
                       <Link
                         href={`/search?q=${encodeURIComponent(miss.raw_query)}`}
                         prefetch={false}
-                        className="text-action-primary hover:text-action-primaryHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                        className="text-action-primary hover:text-action-primaryHover focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                       >
                         {miss.raw_query}
                       </Link>
@@ -165,7 +165,7 @@ export default async function SearchDemandPage({
                     <td className={`${CELL} text-text-primary`}>
                       <Link
                         href={`/product/${reference.product_slug}`}
-                        className="text-action-primary hover:text-action-primaryHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                        className="text-action-primary hover:text-action-primaryHover focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                       >
                         {[reference.brand_name, reference.product_name].filter(Boolean).join(" ")}
                       </Link>

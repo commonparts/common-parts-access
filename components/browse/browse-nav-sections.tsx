@@ -15,7 +15,7 @@ function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
   return (
     <Link
       href={`/brands/${brand.slug}`}
-      className="flex items-center justify-between gap-xs break-inside-avoid rounded-md py-xs pr-xs transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+      className="flex items-center justify-between gap-xs break-inside-avoid rounded-md py-xs pr-xs transition-colors hover:text-text-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus"
     >
       <span className="truncate font-medium text-text-primary">{brand.name}</span>
       <Badge tone="accent" className="shrink-0">

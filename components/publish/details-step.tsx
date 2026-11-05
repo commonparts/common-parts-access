@@ -4,7 +4,7 @@ import * as React from 'react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DropdownInput } from '@/components/ui/dropdown-input'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -139,7 +139,7 @@ export function DetailsStep({
                     <button
                       type="button"
                       onClick={() => form.removeTag(tag)}
-                      className="ml-2xs rounded-full hover:text-status-errorText focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+                      className="ml-2xs rounded-full hover:text-status-errorText focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
                       aria-label={`Remove ${tag}`}
                     >
                       ×
@@ -223,8 +223,7 @@ export function DetailsStep({
               </div>
               <div className="space-y-2xs">
                 <Label htmlFor={`${idPrefix}-dim-unit`}>Unit</Label>
-                <DropdownInput
-                  as="select"
+                <NativeSelect
                   id={`${idPrefix}-dim-unit`}
                   value={formData.dimensionsUnit}
                   onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsUnit: e.target.value }))}
@@ -232,7 +231,7 @@ export function DetailsStep({
                   <option value="mm">mm</option>
                   <option value="cm">cm</option>
                   <option value="in">in</option>
-                </DropdownInput>
+                </NativeSelect>
               </div>
             </div>
           </fieldset>
@@ -269,8 +268,7 @@ export function DetailsStep({
               </div>
               <div className="space-y-2xs">
                 <Label htmlFor={`${idPrefix}-supports`}>Supports</Label>
-                <DropdownInput
-                  as="select"
+                <NativeSelect
                   id={`${idPrefix}-supports`}
                   value={formData.supports}
                   onChange={(e) => setFormData((prev) => ({ ...prev, supports: e.target.value }))}
@@ -279,7 +277,7 @@ export function DetailsStep({
                   <option value="none">None</option>
                   <option value="buildplate_only">Build plate only</option>
                   <option value="everywhere">Everywhere</option>
-                </DropdownInput>
+                </NativeSelect>
               </div>
             </div>
           </fieldset>

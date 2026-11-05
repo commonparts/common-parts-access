@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
  * and a soft danger badge share geometry but nothing else.
  */
 const badgeVariants = cva(
-  "inline-flex max-w-full items-center whitespace-nowrap border align-middle font-medium leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
+  "inline-flex max-w-full items-center whitespace-nowrap border align-middle font-medium leading-snug transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface [&_svg]:shrink-0 [&_svg]:stroke-[1.5]",
   {
     variants: {
       /** Surface treatment — colours are resolved per tone below. */
