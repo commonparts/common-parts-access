@@ -1,3 +1,9 @@
+import type { z } from 'zod';
+import type {
+  curationChecklistSchema,
+  partDimensionsSchema,
+  partPrintSettingsSchema,
+} from '@/lib/schemas/part-fields';
 import type { Database, Tables } from '@/types/supabase';
 
 // ============================================================================
@@ -40,43 +46,21 @@ export type PartOriginType = 'original' | 'curated' | 'manufacturer';
 export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 export type PartFileHostingType = 'hosted' | 'link_out';
 
-export const DIMENSION_UNITS = ['mm', 'cm', 'in'] as const;
-
-// The jsonb shapes are type aliases, not interfaces: an alias is assignable to
-// the generated `Json` type, an interface (no index signature) is not.
+// The jsonb shapes are the output types of the schemas that validate them on
+// the way in (lib/schemas/part-fields.ts), so the two cannot drift.
 
 /** Shape of parts.dimensions (jsonb). */
-export type PartDimensions = {
-  length?: number;
-  width?: number;
-  height?: number;
-  unit?: (typeof DIMENSION_UNITS)[number];
-};
-
-export const SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const;
+type PartDimensions = z.output<typeof partDimensionsSchema>;
 
 /** Shape of parts.print_settings (jsonb). */
-export type PartPrintSettings = {
-  layer_height?: number; // mm, non-negative
-  infill?: number;       // 0–100 %
-  supports?: (typeof SUPPORT_TYPES)[number];
-};
+type PartPrintSettings = z.output<typeof partPrintSettingsSchema>;
 
-// The six blocking criteria of curation checklist v1 (Flow P3 §4.3.3).
-// Stored on parts.curation_checklist as a partial {criterion: boolean} map;
-// all six must be true for a curated part to be publishable.
-export const CURATION_CRITERION_KEYS = [
-  'eligibility',
-  'product_target',
-  'license',
-  'file',
-  'attribution',
-  'duplicate',
-] as const;
-export type CurationCriterionKey = (typeof CURATION_CRITERION_KEYS)[number];
-
-/** Shape of parts.curation_checklist (jsonb). */
-export type CurationChecklist = Partial<Record<CurationCriterionKey, boolean>>;
+/**
+ * Shape of parts.curation_checklist (jsonb): the six blocking criteria of
+ * curation checklist v1 (Flow P3 §4.3.3), each optional.
+ */
+export type CurationChecklist = z.output<typeof curationChecklistSchema>;
+export type CurationCriterionKey = keyof CurationChecklist;
 
 /**
  * Domain types of the parts columns the generator types loosely. Applied to a

@@ -1,5 +1,4 @@
 import type { VisitorLocale } from './locale'
-import { isValidUuid } from './validation'
 
 const PRODUCT_REFERENCE_TYPES = ['manufacturer_ref', 'commercial_name', 'ean'] as const
 export type ProductReferenceType = (typeof PRODUCT_REFERENCE_TYPES)[number]
@@ -88,39 +87,4 @@ export function inferReferenceType(value: string): ProductReferenceType {
     if (BARCODE_DIGIT_COUNTS.has(digits)) return 'ean'
   }
   return /\d/.test(value) ? 'manufacturer_ref' : 'commercial_name'
-}
-
-/** A validated "this reference belongs to that product" suggestion. */
-export interface ReferenceAttachment {
-  productId: string
-  value: string
-}
-
-export type ReferenceAttachmentValidation =
-  | { ok: true; value: ReferenceAttachment }
-  | { ok: false; error: string }
-
-/**
- * Validates the body of POST /api/product-references. Does not throw; the
- * route maps `ok: false` to a 400. A value made only of separators is left to
- * the database, whose normalization rule rejects it.
- */
-export function validateReferenceAttachment(body: unknown): ReferenceAttachmentValidation {
-  if (!body || typeof body !== 'object') {
-    return { ok: false, error: 'Invalid reference: body must be a JSON object' }
-  }
-  const { productId, value } = body as Record<string, unknown>
-
-  if (typeof productId !== 'string' || !isValidUuid(productId)) {
-    return { ok: false, error: 'Invalid reference: a valid productId is required' }
-  }
-  const trimmed = typeof value === 'string' ? value.trim() : ''
-  if (!/[\p{L}\p{N}]/u.test(trimmed)) {
-    return { ok: false, error: 'Invalid reference: the value needs at least one letter or digit' }
-  }
-  if (trimmed.length > MAX_REFERENCE_LENGTH) {
-    return { ok: false, error: `Invalid reference: at most ${MAX_REFERENCE_LENGTH} characters` }
-  }
-
-  return { ok: true, value: { productId, value: trimmed } }
 }

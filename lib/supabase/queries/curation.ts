@@ -3,13 +3,8 @@ import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { narrowPartRow } from '@/lib/supabase/rows'
-import type {
-  CurationChecklist,
-  CurationCriterionKey,
-  Part,
-  PartDimensions,
-  PartPrintSettings,
-} from '@/types/database'
+import type { PartDraftColumns } from '@/lib/schemas/drafts'
+import type { CurationChecklist, CurationCriterionKey, Part } from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
 // user_id must stay in this list: the draft routes' ownership check compares
@@ -195,23 +190,13 @@ export async function createCurationDraft(
  * Column-shaped patch for a curated draft; only defined keys are written.
  * `status` is absent: a draft is published by the publish gate only (#403).
  */
-export interface CurationDraftPatch {
-  name?: string
-  description?: string | null
-  instructions?: string | null
+export type CurationDraftPatch = PartDraftColumns & {
   category_id?: string | null
   license_id?: string
-  tags?: string[]
   source_platform?: string | null
   original_author?: string
   original_author_url?: string | null
   file_hosting_type?: typeof CURATED_FILE_HOSTING_TYPE
-  material?: string | null
-  color?: string | null
-  dimensions?: PartDimensions | null
-  print_settings?: PartPrintSettings | null
-  estimated_print_time?: number | null
-  estimated_material_usage?: number | null
   curation_checklist?: CurationChecklist
   needs_verification?: boolean
   needs_print_settings?: boolean

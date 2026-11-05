@@ -7,10 +7,6 @@ export const SOURCE_CLICK_CONTEXTS = ['part_page', 'card'] as const
 
 export type SourceClickContext = (typeof SOURCE_CLICK_CONTEXTS)[number]
 
-export function isSourceClickContext(value: unknown): value is SourceClickContext {
-  return typeof value === 'string' && (SOURCE_CLICK_CONTEXTS as readonly string[]).includes(value)
-}
-
 export function sourceClickEndpoint(slug: string): string {
   return `/api/parts/${encodeURIComponent(slug)}/source-click`
 }

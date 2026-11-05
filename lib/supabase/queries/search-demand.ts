@@ -1,6 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
-import { inferReferenceType, type ReferenceAttachment } from '@/lib/utils/product-references'
+import type { ReferenceAttachment } from '@/lib/schemas/search'
+import { inferReferenceType } from '@/lib/utils/product-references'
 import type { VisitorLocale } from '@/lib/utils/locale'
 import {
   PRODUCT_CANDIDATES_LIMIT,

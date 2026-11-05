@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { recordPartDownload } from '@/lib/supabase/queries/part-metrics'
 import { isPartNotFoundError } from '@/lib/utils/errors'
-import { isValidUuid } from '@/lib/utils/validation'
+import { parseJsonBody } from '@/lib/api/parse'
+import { downloadSchema } from '@/lib/schemas/parts'
 
 export const runtime = 'nodejs'
 
@@ -11,31 +12,12 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400 }
-    )
-  }
+  const body = await parseJsonBody(request, downloadSchema, 'Invalid JSON body')
+  if (!body.ok) return body.response
 
   try {
-    const fileId =
-      typeof body === 'object' && body !== null && 'fileId' in body
-        ? (body as { fileId: unknown }).fileId
-        : null
-
-    if (typeof fileId !== 'string' || !isValidUuid(fileId)) {
-      return NextResponse.json(
-        { error: 'Invalid fileId: expected a UUID' },
-        { status: 400 }
-      )
-    }
-
     const { slug } = await params
-    const download = await recordPartDownload({ slug, fileId })
+    const download = await recordPartDownload({ slug, fileId: body.data.fileId })
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
+import type { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import type { createProductSchema } from '@/lib/schemas/products'
 import { normalizeEntityName } from '@/lib/utils/validation'
 import type { Product } from '@/types/database'
 import type { TablesInsert } from '@/types/supabase'
@@ -24,15 +26,8 @@ export interface FetchProductsParams {
   ids?: string[]
 }
 
-export interface CreateProductInput {
-  name: string
-  brandId: string
-  categoryId: string
-  description?: string
-  releaseYear?: number | null
-  imageUrl?: string
-  discontinued?: boolean
-}
+/** A validated POST /api/products body. */
+type CreateProductInput = z.output<typeof createProductSchema>
 
 export async function fetchProducts(params: FetchProductsParams = {}): Promise<ProductSummary[]> {
   const supabase = await createClient()

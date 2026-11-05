@@ -6,7 +6,8 @@ import {
   submitPrintReport,
   type PrintReportError,
 } from '@/lib/supabase/queries/print-reports'
-import { validatePrintReport } from '@/lib/utils/print-reports'
+import { parseJsonBody } from '@/lib/api/parse'
+import { printReportSchema } from '@/lib/schemas/print-reports'
 import { getReporterHash } from '@/lib/utils/reporter-session'
 
 export const runtime = 'nodejs'
@@ -25,17 +26,8 @@ const SUBMISSION_ERROR_RESPONSES: Record<PrintReportError, { error: string; stat
  * result. Responds with the pair's fresh counters and evidence level.
  */
 export async function POST(request: NextRequest) {
-  let payload: unknown
-  try {
-    payload = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid report: body must be JSON' }, { status: 400 })
-  }
-
-  const validation = validatePrintReport(payload)
-  if (!validation.ok) {
-    return NextResponse.json({ error: validation.error }, { status: 400 })
-  }
+  const body = await parseJsonBody(request, printReportSchema, 'Invalid report: body must be JSON')
+  if (!body.ok) return body.response
 
   try {
     const supabase = await createClient()
@@ -49,7 +41,7 @@ export async function POST(request: NextRequest) {
     const userId = user?.id ?? null
     const reporterHash = await getReporterHash(userId)
 
-    const stats = await submitPrintReport({ ...validation.value, reporterHash, userId })
+    const stats = await submitPrintReport({ ...body.data, reporterHash, userId })
     return NextResponse.json({ stats }, { status: 201 })
   } catch (error) {
     if (error instanceof PrintReportSubmissionError) {

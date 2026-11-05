@@ -7,24 +7,13 @@ import {
   updateCurationDraft,
   type CurationDraftPatch,
 } from '@/lib/supabase/queries/curation'
-import { sanitizeChecklist, CURATION_FLAGS } from '@/lib/curation/checklist'
-import { CURATED_FILE_HOSTING_TYPE, parseCuratedHostingType } from '@/lib/curation/hosting'
+import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platforms'
-import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import {
-  COLOR_MAX_LENGTH,
-  MATERIAL_MAX_LENGTH,
-  parseDimensions,
-  parseNonNegativeFloat,
-  parseNonNegativeInt,
-  parsePrintSettings,
-} from '@/lib/utils/part-metadata'
-import { isValidHttpUrl, isValidUuid, trimmedString } from '@/lib/utils/validation'
-
-const SOURCE_URL_MAX_LENGTH = 2048
-const AUTHOR_MAX_LENGTH = 200
-const JUSTIFICATION_MAX_LENGTH = 1000
+import { parseJsonBody } from '@/lib/api/parse'
+import { toPartDraftColumns } from '@/lib/schemas/drafts'
+import { updateCurationDraftSchema } from '@/lib/schemas/curation'
+import { isValidUuid } from '@/lib/utils/validation'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -69,239 +58,69 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Only drafts can be edited by the curation tool' }, { status: 409 })
     }
 
-    const body = await request.json().catch(() => null)
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
-    const payload = body as Record<string, unknown>
+    const body = await parseJsonBody(request, updateCurationDraftSchema)
+    if (!body.ok) return body.response
+    const {
+      categoryId,
+      licenseId,
+      sourcePlatform,
+      fileHostingType,
+      originalAuthor,
+      originalAuthorUrl,
+      checklist,
+      legalReviewJustification,
+      needs_verification,
+      needs_print_settings,
+      needs_photo,
+      needs_instructions,
+      needs_category,
+      needs_legal_review,
+      productIds,
+      ...fields
+    } = body.data
+
     const supabase = await createClient()
-    const patch: CurationDraftPatch = {}
-
-    if (payload.title !== undefined) {
-      const name = trimmedString(payload.title)
-      if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
-        return NextResponse.json(
-          { error: `Title must be between ${VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH} characters` },
-          { status: 400 },
-        )
-      }
-      patch.name = name
+    const patch: CurationDraftPatch = {
+      ...toPartDraftColumns(fields),
+      ...(sourcePlatform !== undefined && { source_platform: sourcePlatform }),
+      ...(originalAuthor !== undefined && { original_author: originalAuthor }),
+      ...(originalAuthorUrl !== undefined && { original_author_url: originalAuthorUrl }),
+      ...(checklist !== undefined && { curation_checklist: checklist }),
+      ...(needs_verification !== undefined && { needs_verification }),
+      ...(needs_print_settings !== undefined && { needs_print_settings }),
+      ...(needs_photo !== undefined && { needs_photo }),
+      ...(needs_instructions !== undefined && { needs_instructions }),
+      ...(needs_category !== undefined && { needs_category }),
+      ...(needs_legal_review !== undefined && { needs_legal_review }),
+      ...(legalReviewJustification !== undefined && { legal_review_justification: legalReviewJustification }),
     }
 
-    if (payload.description !== undefined) {
-      const description = trimmedString(payload.description)
-      if (description.length > VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH) {
-        return NextResponse.json({ error: `Description must be at most ${VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH} characters` }, { status: 400 })
-      }
-      patch.description = description || null
-    }
-
-    if (payload.instructions !== undefined) {
-      const instructions = trimmedString(payload.instructions)
-      if (instructions.length > VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH) {
-        return NextResponse.json({ error: `Instructions must be at most ${VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH} characters` }, { status: 400 })
-      }
-      patch.instructions = instructions || null
-    }
-
-    if (payload.categoryId !== undefined) {
-      const categoryId = trimmedString(payload.categoryId)
+    if (categoryId !== undefined) {
       if (categoryId) {
-        if (!isValidUuid(categoryId)) {
-          return NextResponse.json({ error: 'Invalid category' }, { status: 400 })
-        }
         const { data: category, error } = await supabase.from('categories').select('id').eq('id', categoryId).maybeSingle()
         if (error || !category) return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
       }
-      patch.category_id = categoryId || null
+      patch.category_id = categoryId
     }
 
-    if (payload.licenseId !== undefined) {
-      // The license chosen at the source (#374). A curated part cannot be
-      // saved without it (curated_requires_source), so it cannot be cleared.
-      const licenseId = trimmedString(payload.licenseId)
-      if (!isValidUuid(licenseId)) {
-        return NextResponse.json({ error: 'The license at the source is required for a part published elsewhere' }, { status: 400 })
-      }
+    if (licenseId !== undefined) {
       const license = await getLicenseById(licenseId)
       if (!license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
       patch.license_id = licenseId
     }
 
-    if (payload.sourcePlatform !== undefined) {
-      // Shape only here — platform existence is validated once in the
-      // cross-field invariant below, which knows the resulting hosting type.
-      patch.source_platform = trimmedString(payload.sourcePlatform) || null
-    }
-
-    if (payload.fileHostingType !== undefined) {
-      // A part published elsewhere is always referenced (#396): only link_out
-      // is accepted, which also moves a draft created before the rule to it.
-      const hostingType = parseCuratedHostingType(payload.fileHostingType)
-      if (!hostingType.ok) {
-        return NextResponse.json({ error: hostingType.error }, { status: 400 })
-      }
-      // Files already registered in storage contradict link-out (the whole
-      // point is NOT hosting them).
+    if (fileHostingType !== undefined) {
+      // A part published elsewhere is always referenced (#396): the schema
+      // only lets link_out through, which also moves a draft created before
+      // the rule to it. Files already registered in storage contradict
+      // link-out (the whole point is NOT hosting them).
       if (draft.model_file_count > 0) {
         return NextResponse.json(
           { error: 'Model files are already uploaded — a part published elsewhere must not host files; remove them first' },
           { status: 409 },
         )
       }
-      patch.file_hosting_type = hostingType.value
-    }
-
-    if (payload.originalAuthor !== undefined) {
-      const originalAuthor = trimmedString(payload.originalAuthor)
-      if (!originalAuthor || originalAuthor.length > AUTHOR_MAX_LENGTH) {
-        return NextResponse.json({ error: `Original author is required (max ${AUTHOR_MAX_LENGTH} characters)` }, { status: 400 })
-      }
-      patch.original_author = originalAuthor
-    }
-
-    if (payload.originalAuthorUrl !== undefined) {
-      const originalAuthorUrl = trimmedString(payload.originalAuthorUrl)
-      if (originalAuthorUrl && (originalAuthorUrl.length > SOURCE_URL_MAX_LENGTH || !isValidHttpUrl(originalAuthorUrl))) {
-        return NextResponse.json({ error: 'Original author URL must be a valid http(s) URL' }, { status: 400 })
-      }
-      patch.original_author_url = originalAuthorUrl || null
-    }
-
-    if (payload.tags !== undefined) {
-      if (!Array.isArray(payload.tags)) {
-        return NextResponse.json({ error: 'Tags must be an array' }, { status: 400 })
-      }
-      const tags = payload.tags.filter((t): t is string => typeof t === 'string').map((t) => t.trim()).filter(Boolean)
-      if (tags.length > VALIDATION_LIMITS.PART.TAGS_MAX_COUNT) {
-        return NextResponse.json({ error: `Too many tags (max ${VALIDATION_LIMITS.PART.TAGS_MAX_COUNT})` }, { status: 400 })
-      }
-      for (const tag of tags) {
-        if (tag.length < VALIDATION_LIMITS.PART.TAG_MIN_LENGTH || tag.length > VALIDATION_LIMITS.PART.TAG_MAX_LENGTH) {
-          return NextResponse.json(
-            { error: `Tags must be between ${VALIDATION_LIMITS.PART.TAG_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TAG_MAX_LENGTH} characters` },
-            { status: 400 },
-          )
-        }
-      }
-      patch.tags = tags
-    }
-
-    // Physical / print metadata — applies to any part (hosted or link-out).
-    // Sent the same way the upload form serializes it: dimensions and
-    // print_settings as JSON strings, estimates as numeric strings. Each field
-    // must be a string when present; an empty string clears the column. A
-    // non-string is rejected (not coerced) so a malformed payload never
-    // silently wipes stored data on a partial autosave.
-    if (payload.material !== undefined) {
-      if (typeof payload.material !== 'string') {
-        return NextResponse.json({ error: 'Material must be a string' }, { status: 400 })
-      }
-      const material = payload.material.trim()
-      if (material.length > MATERIAL_MAX_LENGTH) {
-        return NextResponse.json({ error: `Material is too long (max ${MATERIAL_MAX_LENGTH} characters)` }, { status: 400 })
-      }
-      patch.material = material || null
-    }
-
-    if (payload.color !== undefined) {
-      if (typeof payload.color !== 'string') {
-        return NextResponse.json({ error: 'Color must be a string' }, { status: 400 })
-      }
-      const color = payload.color.trim()
-      if (color.length > COLOR_MAX_LENGTH) {
-        return NextResponse.json({ error: `Color is too long (max ${COLOR_MAX_LENGTH} characters)` }, { status: 400 })
-      }
-      patch.color = color || null
-    }
-
-    if (payload.dimensions !== undefined) {
-      if (typeof payload.dimensions !== 'string') {
-        return NextResponse.json({ error: 'dimensions must be a JSON string' }, { status: 400 })
-      }
-      const raw = payload.dimensions.trim()
-      if (!raw) {
-        patch.dimensions = null
-      } else {
-        const result = parseDimensions(raw)
-        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-        patch.dimensions = result.data
-      }
-    }
-
-    if (payload.print_settings !== undefined) {
-      if (typeof payload.print_settings !== 'string') {
-        return NextResponse.json({ error: 'print_settings must be a JSON string' }, { status: 400 })
-      }
-      const raw = payload.print_settings.trim()
-      if (!raw) {
-        patch.print_settings = null
-      } else {
-        const result = parsePrintSettings(raw)
-        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-        patch.print_settings = result.data
-      }
-    }
-
-    if (payload.estimated_print_time !== undefined) {
-      if (typeof payload.estimated_print_time !== 'string') {
-        return NextResponse.json({ error: 'estimated_print_time must be a string' }, { status: 400 })
-      }
-      const raw = payload.estimated_print_time.trim()
-      if (!raw) {
-        patch.estimated_print_time = null
-      } else {
-        const result = parseNonNegativeInt(raw, 'estimated_print_time')
-        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-        patch.estimated_print_time = result.data
-      }
-    }
-
-    if (payload.estimated_material_usage !== undefined) {
-      if (typeof payload.estimated_material_usage !== 'string') {
-        return NextResponse.json({ error: 'estimated_material_usage must be a string' }, { status: 400 })
-      }
-      const raw = payload.estimated_material_usage.trim()
-      if (!raw) {
-        patch.estimated_material_usage = null
-      } else {
-        const result = parseNonNegativeFloat(raw, 'estimated_material_usage')
-        if (!result.ok) return NextResponse.json({ error: result.error }, { status: 400 })
-        patch.estimated_material_usage = result.data
-      }
-    }
-
-    if (payload.checklist !== undefined) {
-      const checklist = sanitizeChecklist(payload.checklist)
-      if (!checklist) {
-        return NextResponse.json({ error: 'Checklist must be an object of criterion booleans' }, { status: 400 })
-      }
-      patch.curation_checklist = checklist
-    }
-
-    for (const flag of CURATION_FLAGS) {
-      const raw = payload[flag.column]
-      if (raw !== undefined) {
-        if (typeof raw !== 'boolean') {
-          return NextResponse.json({ error: `${flag.column} must be a boolean` }, { status: 400 })
-        }
-        patch[flag.column] = raw
-      }
-    }
-
-    if (payload.needs_legal_review !== undefined) {
-      if (typeof payload.needs_legal_review !== 'boolean') {
-        return NextResponse.json({ error: 'needs_legal_review must be a boolean' }, { status: 400 })
-      }
-      patch.needs_legal_review = payload.needs_legal_review
-    }
-
-    if (payload.legalReviewJustification !== undefined) {
-      const justification = trimmedString(payload.legalReviewJustification)
-      if (justification.length > JUSTIFICATION_MAX_LENGTH) {
-        return NextResponse.json({ error: `Justification must be at most ${JUSTIFICATION_MAX_LENGTH} characters` }, { status: 400 })
-      }
-      patch.legal_review_justification = justification || null
+      patch.file_hosting_type = fileHostingType
     }
 
     // Cross-field invariant: the resulting state of a link-out draft must name
@@ -335,29 +154,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'A justification is required when flagging for legal review' }, { status: 400 })
     }
 
-    let productIds: string[] | undefined
-    if (payload.productIds !== undefined) {
-      if (!Array.isArray(payload.productIds)) {
-        return NextResponse.json({ error: 'productIds must be an array' }, { status: 400 })
+    if (productIds !== undefined && productIds.length > 0) {
+      const { data: rows, error } = await supabase.from('products').select('id').in('id', productIds)
+      if (error || !rows || rows.length !== productIds.length) {
+        return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
       }
-      const ids = [...new Set(payload.productIds.filter((p): p is string => typeof p === 'string' && isValidUuid(p)))]
-      if (ids.length !== payload.productIds.length) {
-        return NextResponse.json({ error: 'productIds must be unique product UUIDs' }, { status: 400 })
-      }
-      if (ids.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
-        return NextResponse.json({ error: `Too many products (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` }, { status: 400 })
-      }
-      if (ids.length > 0) {
-        const { data: rows, error } = await supabase.from('products').select('id').in('id', ids)
-        if (error || !rows || rows.length !== ids.length) {
-          return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
-        }
-      }
-      productIds = ids
-    }
-
-    if (Object.keys(patch).length === 0 && productIds === undefined) {
-      return NextResponse.json({ error: 'Nothing to update' }, { status: 400 })
     }
 
     await updateCurationDraft(id, user.id, patch, productIds)

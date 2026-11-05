@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { narrowPartRow } from '@/lib/supabase/rows'
-import type { Part, PartDimensions, PartPrintSettings } from '@/types/database'
+import type { PartDraftColumns } from '@/lib/schemas/drafts'
+import type { Part } from '@/types/database'
 
 /**
  * Draft CRUD for the public upload flow (issue #293) — contributors publishing
@@ -165,19 +166,9 @@ export async function createUploadDraft(
  * is enforced by the type, not only by route validation. `status` is absent
  * too: a draft is published by the publish gate only (#403).
  */
-export interface UploadDraftPatch {
-  name?: string
-  description?: string | null
-  instructions?: string | null
+export type UploadDraftPatch = PartDraftColumns & {
   category_id?: string
   license_id?: string
-  tags?: string[]
-  material?: string | null
-  color?: string | null
-  dimensions?: PartDimensions | null
-  print_settings?: PartPrintSettings | null
-  estimated_print_time?: number | null
-  estimated_material_usage?: number | null
 }
 
 /**

@@ -1,9 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import {
-  toPrintReportStats,
-  type PrintReportInput,
-  type PrintReportStats,
-} from '@/lib/utils/print-reports'
+import type { PrintReportInput } from '@/lib/schemas/print-reports'
+import { toPrintReportStats, type PrintReportStats } from '@/lib/utils/print-reports'
 
 /** Domain errors raised by `submit_print_report()`, matched on the message. */
 const PRINT_REPORT_ERRORS = [
