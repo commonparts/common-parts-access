@@ -8,9 +8,12 @@ import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 export const runtime = 'nodejs'
 
-// The archive holds the part's model files only. The upload flow caps them
-// per part, so the cap bounds the read without ever dropping a file.
-const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles
+// The archive holds the part's model files only. The upload flow caps them at
+// PART_UPLOAD_LIMITS.maxModelFiles per part, but its count check and its insert
+// are not atomic, so concurrent registrations can exceed that cap. The read is
+// bounded by a ceiling well above it, and a part over the ceiling gets an
+// explicit error rather than an archive that silently omits files.
+const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles * 10
 
 // GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
 // Anonymous: no account required, only an anonymous download row is recorded (issue #250).
@@ -39,7 +42,7 @@ export async function GET(
       .eq('part_id', part.id)
       .eq('file_category', 'model')
       .order('created_at', { ascending: true })
-      .limit(MAX_ARCHIVE_FILES)
+      .limit(MAX_ARCHIVE_FILES + 1)
 
     if (filesError) {
       console.error('Failed to fetch model files:', filesError)
@@ -48,6 +51,14 @@ export async function GET(
 
     if (!files || files.length === 0) {
       return NextResponse.json({ error: 'No files available for download' }, { status: 404 })
+    }
+
+    if (files.length > MAX_ARCHIVE_FILES) {
+      console.error('Archive refused: part has more model files than the archive ceiling', part.id)
+      return NextResponse.json(
+        { error: `This part has more than ${MAX_ARCHIVE_FILES} files: download them one by one` },
+        { status: 422 },
+      )
     }
 
     const zip = new JSZip()

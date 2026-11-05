@@ -24,7 +24,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 
 **`/api/parts/[slug]/files/archive`** (GET, Node runtime)
 - Anonymous — no authentication required.
-- Streams a ZIP of the part's model files (`file_category = 'model'`), read from the `model-files` bucket by `upload_path`. Images are not included. The read is capped at the per-part model file limit (`PART_UPLOAD_LIMITS.maxModelFiles`).
+- Streams a ZIP of the part's model files (`file_category = 'model'`), read from the `model-files` bucket by `upload_path`. Images are not included. The read is bounded at ten times the per-part model file limit (`PART_UPLOAD_LIMITS.maxModelFiles`); a part above that bound gets a 422 instead of an incomplete archive.
 - Folder name inside the archive (and the downloaded filename) matches the part name; nested folders from `upload_path` are preserved via `buildZipEntryPath()`.
 - Inserts one anonymous `part_downloads` row (`file_id = null`) via `recordPartDownload()`.
 
@@ -64,6 +64,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 ## Error Handling
 - 400: Invalid `fileId` on the logging POST; invalid slug or `fileId` on `download-url`.
 - 404: Part missing/unpublished, no files, or a file with no storage location.
+- 422: Archive requested for a part with more model files than the archive bound.
 - 503/500: Upstream storage or server failures; logged server-side.
 - Tracking failures are logged and non-blocking.
 
