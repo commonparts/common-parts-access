@@ -74,7 +74,11 @@ const registeredFileSchema = z.object(
       .max(MAX_FILENAME_LENGTH, { error: 'Invalid filename' })
       .refine((name) => !PATH_CHARACTERS.test(name), { error: 'Filename contains invalid path characters' }),
     extension: z.string({ error: 'Invalid file extension' }).trim().toLowerCase(),
-    size: z.number({ error: 'Invalid file size' }).nonnegative({ error: 'Invalid file size' }),
+    // Bytes, stored in a bigint column: a whole number.
+    size: z
+      .number({ error: 'Invalid file size' })
+      .int({ error: 'Invalid file size' })
+      .nonnegative({ error: 'Invalid file size' }),
     path: z
       .string({ error: 'Invalid file path' })
       .trim()

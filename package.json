@@ -7,7 +7,7 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "knip": "knip",
-    "db:types": "npx --yes supabase@2.122.0 gen types typescript --project-id pyzttrqnxvirpkuxtjxl --schema public > types/supabase.ts",
+    "db:types": "npx --yes supabase@2.122.0 gen types typescript --project-id pyzttrqnxvirpkuxtjxl --schema public > types/supabase.ts.tmp && node -e \"require('fs').renameSync('types/supabase.ts.tmp', 'types/supabase.ts')\"",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "prepare": "husky"

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { boundedIntParam, optionalUuidParam, uuid } from '@/lib/schemas/common'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { isValidUuid } from '@/lib/utils/validation'
+import { isValidUuid, normalizeEntityName } from '@/lib/utils/validation'
 
 /** Request schemas of `/api/products`. */
 
@@ -10,6 +10,9 @@ const PRODUCT_LIST_MAX_LIMIT = 1000
 const PRODUCT_LIST_DEFAULT_LIMIT = 100
 
 const { PRODUCTS_MAX_COUNT } = VALIDATION_LIMITS.PART
+
+/** Longest product name, mirrored from the CHECK constraint on products.name. */
+const PRODUCT_NAME_MAX_LENGTH = 200
 
 /**
  * GET /api/products — the products of a brand and/or category, or an exact
@@ -53,7 +56,17 @@ export const productListQuerySchema = z.object({
  */
 export const createProductSchema = z.object(
   {
-    name: z.string({ error: 'Name is required' }).trim().min(1, { error: 'Name is required' }),
+    // Checked after the normalization createProduct() stores, so the limit
+    // applies to the name as the database receives it.
+    name: z
+      .string({ error: 'Name is required' })
+      .transform(normalizeEntityName)
+      .pipe(
+        z
+          .string()
+          .min(1, { error: 'Name is required' })
+          .max(PRODUCT_NAME_MAX_LENGTH, { error: `Name must be at most ${PRODUCT_NAME_MAX_LENGTH} characters` }),
+      ),
     brandId: uuid('Brand is required'),
     categoryId: uuid('Category is required'),
     description: z.string({ error: 'Description must be a string' }).optional(),

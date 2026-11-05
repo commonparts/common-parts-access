@@ -5,7 +5,8 @@ import { MAX_REFERENCE_LENGTH } from '@/lib/utils/product-references'
 import { partRequestSchema } from './part-requests'
 import { printReportSchema } from './print-reports'
 import { referenceAttachmentSchema } from './search'
-import { sourceClickSchema } from './parts'
+import { registerFilesSchema, sourceClickSchema } from './parts'
+import { createProductSchema } from './products'
 
 const PART_ID = '11111111-1111-4111-8111-111111111111'
 const PRODUCT_ID = '22222222-2222-4222-8222-222222222222'
@@ -105,5 +106,50 @@ describe('sourceClickSchema', () => {
     expect(validate(sourceClickSchema, { context: 'home' })).toEqual(error)
     expect(validate(sourceClickSchema, { context: 1 })).toEqual(error)
     expect(validate(sourceClickSchema, null)).toEqual(error)
+  })
+})
+
+describe('registerFilesSchema', () => {
+  const file = {
+    originalName: 'hinge.stl',
+    filename: '00-hinge.stl',
+    extension: 'stl',
+    size: 1024,
+    path: 'user/part/files/00-hinge.stl',
+    bucket: 'model-files',
+    category: 'model',
+  }
+  const schema = registerFilesSchema(2)
+
+  it('accepts a well-formed file entry', () => {
+    expect(validate(schema, { files: [file] }).ok).toBe(true)
+  })
+
+  it('refuses a fractional size, which the bigint column cannot store', () => {
+    expect(validate(schema, { files: [{ ...file, size: 1.5 }] })).toEqual({ ok: false, error: 'Invalid file size' })
+  })
+
+  it('refuses an empty list and a list over the limit', () => {
+    expect(validate(schema, { files: [] })).toEqual({ ok: false, error: 'No files provided' })
+    expect(validate(schema, { files: [file, file, file] })).toEqual({ ok: false, error: 'Too many files (max 2)' })
+  })
+})
+
+describe('createProductSchema', () => {
+  const valid = { name: 'Blender  X100', brandId: PRODUCT_ID, categoryId: PART_ID }
+
+  it('normalizes the name as it is stored', () => {
+    expect(validate(createProductSchema, valid)).toMatchObject({ ok: true, data: { name: 'Blender X100' } })
+  })
+
+  it('refuses a name over the 200 characters of products.name', () => {
+    expect(validate(createProductSchema, { ...valid, name: 'a'.repeat(201) })).toEqual({
+      ok: false,
+      error: 'Name must be at most 200 characters',
+    })
+  })
+
+  it('refuses a blank name', () => {
+    expect(validate(createProductSchema, { ...valid, name: '   ' })).toEqual({ ok: false, error: 'Name is required' })
   })
 })
