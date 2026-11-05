@@ -1,3 +1,4 @@
+import { z } from 'zod'
 import type { PartFileHostingType } from '@/types/database'
 
 /**
@@ -14,23 +15,20 @@ export const CURATED_FILE_HOSTING_TYPE = 'link_out' satisfies PartFileHostingTyp
 export const CURATED_HOSTED_ERROR =
   "A part published elsewhere is always referenced: its files stay at the source. Set fileHostingType to 'link_out' or omit it."
 
-export type CuratedHostingTypeResult =
-  | { ok: true; value: typeof CURATED_FILE_HOSTING_TYPE }
-  | { ok: false; error: string }
+const INVALID_HOSTING_TYPE = 'Invalid file hosting type'
 
 /**
- * Parses the optional `fileHostingType` of a curation request body.
- * Absent or empty defaults to `link_out`; `hosted` is refused with an
- * actionable message; any other value is invalid.
+ * Schema of the optional `fileHostingType` of a curation request body. Null
+ * or empty reads as `link_out`; `hosted` is refused with an actionable
+ * message; any other value is invalid. The key itself is optional where the
+ * schema is used: an absent key leaves the column unchanged.
  */
-export function parseCuratedHostingType(raw: unknown): CuratedHostingTypeResult {
-  if (raw === undefined || raw === null) return { ok: true, value: CURATED_FILE_HOSTING_TYPE }
-  if (typeof raw !== 'string') return { ok: false, error: 'Invalid file hosting type' }
-
-  const value = raw.trim()
-  if (value === '' || value === CURATED_FILE_HOSTING_TYPE) {
-    return { ok: true, value: CURATED_FILE_HOSTING_TYPE }
-  }
-  if (value === 'hosted') return { ok: false, error: CURATED_HOSTED_ERROR }
-  return { ok: false, error: 'Invalid file hosting type' }
-}
+export const curatedHostingTypeSchema = z
+  .string({ error: INVALID_HOSTING_TYPE })
+  .trim()
+  .nullable()
+  .transform((value, ctx): typeof CURATED_FILE_HOSTING_TYPE => {
+    if (!value || value === CURATED_FILE_HOSTING_TYPE) return CURATED_FILE_HOSTING_TYPE
+    ctx.addIssue({ code: 'custom', message: value === 'hosted' ? CURATED_HOSTED_ERROR : INVALID_HOSTING_TYPE })
+    return z.NEVER
+  })

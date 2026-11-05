@@ -1,8 +1,14 @@
+import type { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import type { createProductSchema } from '@/lib/schemas/products'
 import { normalizeEntityName } from '@/lib/utils/validation'
 import type { Product } from '@/types/database'
+import type { TablesInsert } from '@/types/supabase'
 
 const PRODUCT_SELECT = 'id, name, slug, brand_id, category_id'
+
+/** The product columns read by PRODUCT_SELECT. */
+export type ProductSummary = Pick<Product, 'id' | 'name' | 'slug' | 'brand_id' | 'category_id'>
 
 export interface FetchProductsParams {
   brandId?: string
@@ -20,17 +26,10 @@ export interface FetchProductsParams {
   ids?: string[]
 }
 
-export interface CreateProductInput {
-  name: string
-  brandId: string
-  categoryId: string
-  description?: string
-  releaseYear?: number | null
-  imageUrl?: string
-  discontinued?: boolean
-}
+/** A validated POST /api/products body. */
+type CreateProductInput = z.output<typeof createProductSchema>
 
-export async function fetchProducts(params: FetchProductsParams = {}): Promise<Product[]> {
+export async function fetchProducts(params: FetchProductsParams = {}): Promise<ProductSummary[]> {
   const supabase = await createClient()
   const limit = params.limit && params.limit > 0 ? params.limit : 100
 
@@ -46,7 +45,7 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
       .limit(limit)
 
     if (error) throw error
-    return (data ?? []) as Product[]
+    return data ?? []
   }
 
   const resolveCategoryIds = async (): Promise<string[] | undefined> => {
@@ -108,7 +107,7 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
     throw error
   }
 
-  return (data ?? []) as Product[]
+  return data ?? []
 }
 
 /**
@@ -164,7 +163,7 @@ const DUPLICATE_SCAN_LIMIT = 1000
  * internal whitespace (created before names were normalized) still match.
  * Covered by the public "Products are publicly readable" RLS policy.
  */
-export async function findProductByNormalizedName(brandId: string, name: string): Promise<Product | null> {
+export async function findProductByNormalizedName(brandId: string, name: string): Promise<ProductSummary | null> {
   const supabase = await createClient()
   const target = normalizeEntityName(name).toLowerCase()
   if (!target) return null
@@ -182,10 +181,10 @@ export async function findProductByNormalizedName(brandId: string, name: string)
   const match = (data ?? []).find(
     (row) => normalizeEntityName(row.name).toLowerCase() === target
   )
-  return (match as Product | undefined) ?? null
+  return match ?? null
 }
 
-export async function createProduct(input: CreateProductInput): Promise<Product> {
+export async function createProduct(input: CreateProductInput): Promise<ProductSummary> {
   const supabase = await createClient()
 
   const name = normalizeEntityName(input.name ?? '')
@@ -201,17 +200,22 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
     throw new Error('Category is required')
   }
 
+  const row: Omit<TablesInsert<'products'>, 'slug'> = {
+    name,
+    brand_id: input.brandId,
+    category_id: input.categoryId,
+    description: input.description?.trim() || null,
+    release_year: input.releaseYear ?? null,
+    image_url: input.imageUrl?.trim() || null,
+    discontinued: Boolean(input.discontinued),
+  }
+
   const { data, error } = await supabase
     .from('products')
-    .insert({
-      name,
-      brand_id: input.brandId,
-      category_id: input.categoryId,
-      description: input.description?.trim() || null,
-      release_year: input.releaseYear ?? null,
-      image_url: input.imageUrl?.trim() || null,
-      discontinued: Boolean(input.discontinued),
-    })
+    // Cast: products.slug is NOT NULL without a default, so the generated
+    // Insert type requires it, but the product_slug_trigger (BEFORE INSERT)
+    // derives it from the name. Sending a slug would only be overwritten.
+    .insert(row as TablesInsert<'products'>)
     .select(PRODUCT_SELECT)
     .single()
 
@@ -220,5 +224,5 @@ export async function createProduct(input: CreateProductInput): Promise<Product>
     throw new Error(error.message || 'Failed to create product')
   }
 
-  return data as Product
+  return data
 }

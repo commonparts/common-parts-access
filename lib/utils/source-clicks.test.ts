@@ -1,19 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { isSourceClickContext, sendSourceClick, sourceClickEndpoint } from './source-clicks'
-
-describe('isSourceClickContext', () => {
-  it('accepts the two recorded contexts', () => {
-    expect(isSourceClickContext('part_page')).toBe(true)
-    expect(isSourceClickContext('card')).toBe(true)
-  })
-
-  it('rejects anything else', () => {
-    expect(isSourceClickContext('home')).toBe(false)
-    expect(isSourceClickContext('')).toBe(false)
-    expect(isSourceClickContext(null)).toBe(false)
-    expect(isSourceClickContext(1)).toBe(false)
-  })
-})
+import { sendSourceClick, sourceClickEndpoint } from './source-clicks'
 
 describe('sourceClickEndpoint', () => {
   it('targets the source-click route of the part', () => {

@@ -1,9 +1,21 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "ignore": ["supabase/functions/**"],
+  "ignore": [
+    "supabase/functions/**"
+  ],
   "ignoreIssues": {
-    "components/ui/card.tsx": ["exports"],
-    "components/ui/dropdown-menu.tsx": ["exports"],
-    "design-tokens/themes.ts": ["exports"]
+    "components/ui/card.tsx": [
+      "exports"
+    ],
+    "components/ui/dropdown-menu.tsx": [
+      "exports"
+    ],
+    "design-tokens/themes.ts": [
+      "exports"
+    ],
+    "types/supabase.ts": [
+      "exports",
+      "types"
+    ]
   }
 }

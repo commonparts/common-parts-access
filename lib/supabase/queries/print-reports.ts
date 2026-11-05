@@ -1,10 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import {
-  toPrintReportStats,
-  type PrintReportInput,
-  type PrintReportStats,
-  type PrintReportStatsRow,
-} from '@/lib/utils/print-reports'
+import type { PrintReportInput } from '@/lib/schemas/print-reports'
+import { toPrintReportStats, type PrintReportStats } from '@/lib/utils/print-reports'
 
 /** Domain errors raised by `submit_print_report()`, matched on the message. */
 const PRINT_REPORT_ERRORS = [
@@ -35,14 +31,18 @@ export async function submitPrintReport(
   const { data, error } = await supabase
     .rpc('submit_print_report', {
       p_reporter_hash: input.reporterHash,
-      p_user_id: input.userId,
+      // Cast: the generator types every argument without a default as
+      // non-null, but p_user_id is null for an anonymous reporter, and the
+      // function stores it as is.
+      p_user_id: input.userId as string,
       p_part_id: input.partId,
       p_product_id: input.productId,
       p_result: input.result,
-      p_comment: input.comment,
-      p_product_reference_id: input.productReferenceId,
+      // Omitted rather than null: both arguments default to null.
+      p_comment: input.comment ?? undefined,
+      p_product_reference_id: input.productReferenceId ?? undefined,
     })
-    .single<PrintReportStatsRow>()
+    .single()
 
   if (error) {
     const code = PRINT_REPORT_ERRORS.find((known) => known === error.message)

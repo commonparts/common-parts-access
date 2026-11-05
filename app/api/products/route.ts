@@ -1,53 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchProducts, createProduct, findProductByNormalizedName } from '@/lib/supabase/queries/products'
-import { isValidUuid, trimmedString } from '@/lib/utils/validation'
-import { VALIDATION_LIMITS } from '@/lib/utils/constants'
+import { parseJsonBody, parseSearchParams } from '@/lib/api/parse'
+import { createProductSchema, productListQuerySchema } from '@/lib/schemas/products'
 import { STORAGE_BUCKETS } from '@/constants/app'
 import { isOwnStorageReference } from '@/lib/storage/path-utils'
 
 // GET /api/products - List products with optional brand/category filters
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const brandId = searchParams.get('brandId') || undefined
-    const categoryId = searchParams.get('categoryId') || undefined
-    const includeDescendants = searchParams.get('includeDescendants') === 'true'
-    const search = searchParams.get('search') || undefined
-    const limit = Number.parseInt(searchParams.get('limit') || '100', 10) || 100
+    // `ids` is an exact lookup, taken whole or refused: see productListQuerySchema.
+    const query = parseSearchParams(request.nextUrl.searchParams, productListQuerySchema)
+    if (!query.ok) return query.response
 
-    // `ids` resolves specific products by id — the publish tools use it to
-    // name the products a draft links to, which can span brands since #315.
-    //
-    // It is an exact lookup, so the list is taken whole or refused: dropping
-    // the malformed entries would report a corrupted link list as a success,
-    // and an empty `ids=` would fall through to the unfiltered catalog. The
-    // cap rejects rather than truncates for the same reason.
-    const idsParam = searchParams.get('ids')
-    let ids: string[] | undefined
-
-    if (idsParam !== null) {
-      const tokens = idsParam.split(',').map((id) => id.trim())
-      if (tokens.length > VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) {
-        return NextResponse.json(
-          { error: `Too many product ids (max ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT})` },
-          { status: 400 },
-        )
-      }
-      if (!tokens.every(isValidUuid)) {
-        return NextResponse.json({ error: 'Invalid product ids' }, { status: 400 })
-      }
-      ids = tokens
-    }
-
-    const products = await fetchProducts({
-      brandId,
-      categoryId,
-      includeDescendants,
-      search,
-      limit,
-      ids,
-    })
+    const products = await fetchProducts(query.data)
     return NextResponse.json({ products })
   } catch (error) {
     console.error('Failed to fetch products', error)
@@ -66,39 +32,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json().catch(() => null)
-    if (!body || typeof body !== 'object') {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
+    const body = await parseJsonBody(request, createProductSchema)
+    if (!body.ok) return body.response
+    const input = body.data
 
-    const name = trimmedString(body.name)
-    const brandId = trimmedString(body.brandId)
-    const categoryId = trimmedString(body.categoryId)
-    const description = typeof body.description === 'string' ? body.description : undefined
     // `imageUrl` is the storage reference of an image the user uploaded to
     // their own folder of the product thumbnails bucket (#56). Anything else
     // (a URL, another user's object) is refused rather than stored.
-    const imageUrl = trimmedString(body.imageUrl) || undefined
-    if (imageUrl && !isOwnStorageReference(imageUrl, STORAGE_BUCKETS.PRODUCT_THUMBNAILS, user.id)) {
+    if (input.imageUrl && !isOwnStorageReference(input.imageUrl, STORAGE_BUCKETS.PRODUCT_THUMBNAILS, user.id)) {
       return NextResponse.json(
         { error: 'Invalid product image: upload the image to your own product image folder first' },
         { status: 400 },
       )
     }
-    const discontinued = Boolean(body.discontinued)
-
-    const releaseYear = body.releaseYear !== undefined && body.releaseYear !== null
-      ? Number.parseInt(String(body.releaseYear), 10)
-      : null
-
-    if (!name) return NextResponse.json({ error: 'Name is required' }, { status: 400 })
-    if (!brandId) return NextResponse.json({ error: 'Brand is required' }, { status: 400 })
-    if (!categoryId) return NextResponse.json({ error: 'Category is required' }, { status: 400 })
 
     // Duplicate guard: a case/spacing variant of an existing product must link
     // to that product, not create a sibling. 409 carries the existing record
     // so the client can select it instead.
-    const existing = await findProductByNormalizedName(brandId, name)
+    const existing = await findProductByNormalizedName(input.brandId, input.name)
     if (existing) {
       return NextResponse.json(
         { error: 'A product with this name already exists for this brand', product: existing },
@@ -106,15 +57,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const product = await createProduct({
-      name,
-      brandId,
-      categoryId,
-      description,
-      releaseYear: Number.isNaN(releaseYear as number) ? null : releaseYear,
-      imageUrl,
-      discontinued,
-    })
+    const product = await createProduct(input)
 
     return NextResponse.json({ product }, { status: 201 })
   } catch (error) {

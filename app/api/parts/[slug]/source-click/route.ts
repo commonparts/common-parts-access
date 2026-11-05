@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { recordPartSourceClick } from '@/lib/supabase/queries/part-metrics'
 import { isPartNotFoundError } from '@/lib/utils/errors'
 import { isValidSlug } from '@/lib/utils/slug'
-import { isSourceClickContext, SOURCE_CLICK_CONTEXTS } from '@/lib/utils/source-clicks'
+import { parseJsonBody } from '@/lib/api/parse'
+import { sourceClickSchema } from '@/lib/schemas/parts'
 
 /**
  * POST /api/parts/[slug]/source-click - Records an anonymous click on the
@@ -21,27 +22,11 @@ export async function POST(
     return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
   }
 
-  let body: unknown
-  try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-  }
-
-  const context =
-    typeof body === 'object' && body !== null && 'context' in body
-      ? (body as { context: unknown }).context
-      : null
-
-  if (!isSourceClickContext(context)) {
-    return NextResponse.json(
-      { error: `Invalid context: expected one of ${SOURCE_CLICK_CONTEXTS.join(', ')}` },
-      { status: 400 }
-    )
-  }
+  const body = await parseJsonBody(request, sourceClickSchema, 'Invalid JSON body')
+  if (!body.ok) return body.response
 
   try {
-    await recordPartSourceClick(slug, context)
+    await recordPartSourceClick(slug, body.data.context)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (isPartNotFoundError(error)) {

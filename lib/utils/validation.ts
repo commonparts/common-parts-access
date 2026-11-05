@@ -14,15 +14,6 @@ export function absoluteAppUrl(path: string): string {
 }
 
 /**
- * Coerces an unknown JSON value to a trimmed string; non-strings become ''.
- * Use on untrusted request bodies so a malformed payload (e.g. {"name": 123})
- * stays on the caller's 400 path instead of throwing on .trim().
- */
-export function trimmedString(value: unknown): string {
-  return typeof value === 'string' ? value.trim() : ''
-}
-
-/**
  * Normalizes an entity name (brand, product) for storage and duplicate
  * comparison: trims and collapses internal whitespace runs to single spaces.
  * Case is preserved for display — case-insensitive matching happens in SQL.

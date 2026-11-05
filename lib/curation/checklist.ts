@@ -58,22 +58,6 @@ export function missingCriteria(checklist: CurationChecklist | null | undefined)
 }
 
 /**
- * Coerces an untrusted value into a clean CurationChecklist: only known
- * criterion keys, only boolean values. Returns null when the input is not an
- * object, so callers can 400 instead of silently storing garbage.
- */
-export function sanitizeChecklist(value: unknown): CurationChecklist | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-  const input = value as Record<string, unknown>
-  const result: CurationChecklist = {}
-  for (const criterion of CURATION_BLOCKING_CRITERIA) {
-    const raw = input[criterion.key]
-    if (typeof raw === 'boolean') result[criterion.key] = raw
-  }
-  return result
-}
-
-/**
  * Non-blocking curation flags (Flow P3 §4.3.6). The UI presents each as a
  * positive confirmation; leaving it unchecked sets the needs_* column.
  * needs_legal_review is deliberately NOT in this list — it is a blocking flag

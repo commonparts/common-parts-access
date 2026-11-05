@@ -45,6 +45,8 @@ export async function fetchBrowseNav(): Promise<BrowseNav> {
   const { data, error } = await supabase.rpc('fetch_browse_nav')
   if (error) throw error
 
+  // Cast: fetch_browse_nav returns jsonb, which the generated types can only
+  // call `Json`; its shape is the RPC's contract, described by BrowseNav.
   const nav = data as BrowseNav | null
   return {
     brands: nav?.brands ?? [],

@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
+import { FILE_TYPES } from '@/constants/app'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
 import { partFileBucket, toStorageReference } from '@/lib/storage/path-utils'
 import { resolveStorageUrls } from '@/lib/storage/url'
+import { parseJsonBody } from '@/lib/api/parse'
+import { registerFilesSchema } from '@/lib/schemas/parts'
 
 export const runtime = 'nodejs'
 
 const MAX_FILES_PER_REQUEST =
   PART_UPLOAD_LIMITS.maxModelFiles + PART_UPLOAD_LIMITS.maxThumbnailFiles
-const MAX_PATH_LENGTH = 500
+const REGISTER_FILES_SCHEMA = registerFilesSchema(MAX_FILES_PER_REQUEST)
 
 const MODEL_EXTENSIONS = new Set(FILE_TYPES.MODEL_FILES.map((ext) => ext.toLowerCase()))
 const IMAGE_EXTENSIONS = new Set(FILE_TYPES.IMAGE_FILES.map((ext) => ext.toLowerCase()))
@@ -70,25 +72,11 @@ export async function POST(
 
     const partId = part.id
 
-    let body: unknown
-    try {
-      body = await request.json()
-    } catch {
-      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
-    }
-    if (typeof body !== 'object' || body === null || Array.isArray(body)) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
-
-    const payload = body as Record<string, unknown>
-    const files = Array.isArray(payload.files) ? payload.files : []
-
-    if (files.length === 0) {
-      return NextResponse.json({ error: 'No files provided' }, { status: 400 })
-    }
-    if (files.length > MAX_FILES_PER_REQUEST) {
-      return NextResponse.json({ error: `Too many files (max ${MAX_FILES_PER_REQUEST})` }, { status: 400 })
-    }
+    // Shape is checked by the schema; the rules that depend on the category,
+    // the owner and the part are checked per file below.
+    const body = await parseJsonBody(request, REGISTER_FILES_SCHEMA, 'Invalid JSON body')
+    if (!body.ok) return body.response
+    const { files } = body.data
 
     // Validate and build each file row
     const fileRows: {
@@ -104,46 +92,9 @@ export async function POST(
     // the part's gallery (parts.images).
     const newImageRefs: string[] = []
 
-    for (const raw of files) {
-      if (typeof raw !== 'object' || raw === null) {
-        return NextResponse.json({ error: 'Invalid file entry' }, { status: 400 })
-      }
-      const entry = raw as Record<string, unknown>
-
-      const originalName = typeof entry.originalName === 'string' ? entry.originalName.trim() : ''
-      const filename = typeof entry.filename === 'string' ? entry.filename.trim() : ''
-      const extension = typeof entry.extension === 'string' ? entry.extension.trim().toLowerCase() : ''
-      const size = typeof entry.size === 'number' && Number.isFinite(entry.size) && entry.size >= 0
-        ? entry.size
-        : -1
-      const path = typeof entry.path === 'string' ? entry.path.trim() : ''
-      const bucket = typeof entry.bucket === 'string' ? entry.bucket.trim() : ''
-      const category = typeof entry.category === 'string' ? entry.category.trim() : ''
-
-      if (!originalName || originalName.length > MAX_FILENAME_LENGTH) {
-        return NextResponse.json({ error: `Invalid original filename: ${originalName.slice(0, 50)}` }, { status: 400 })
-      }
-      if (/[\/\\]|\.\./.test(originalName)) {
-        return NextResponse.json({ error: 'Original filename contains invalid characters' }, { status: 400 })
-      }
-      if (!filename || filename.length > MAX_FILENAME_LENGTH) {
-        return NextResponse.json({ error: `Invalid filename: ${filename.slice(0, 50)}` }, { status: 400 })
-      }
-      if (/[\/\\]|\.\./.test(filename)) {
-        return NextResponse.json({ error: 'Filename contains invalid path characters' }, { status: 400 })
-      }
-      if (size < 0) {
-        return NextResponse.json({ error: `Invalid file size for ${originalName.slice(0, 50)}` }, { status: 400 })
-      }
-      if (!path || path.length > MAX_PATH_LENGTH) {
-        return NextResponse.json({ error: 'Invalid file path' }, { status: 400 })
-      }
-
-      // Validate category and matching bucket before applying category-specific limits
+    for (const { originalName, filename, extension, size, path, bucket, category } of files) {
+      // Validate the bucket of the category before applying category-specific limits
       const expectedBucket = partFileBucket(category)
-      if (!expectedBucket) {
-        return NextResponse.json({ error: `Invalid file category: ${category}` }, { status: 400 })
-      }
       if (bucket !== expectedBucket) {
         return NextResponse.json({ error: `Bucket mismatch for category "${category}"` }, { status: 400 })
       }
@@ -274,10 +225,7 @@ export async function POST(
     }
 
     // Enforce cumulative total size across existing + new files
-    const existingTotalSize = (existingSizeData ?? []).reduce(
-      (sum, f) => sum + (typeof f.file_size === 'number' ? f.file_size : 0),
-      0,
-    )
+    const existingTotalSize = (existingSizeData ?? []).reduce((sum, f) => sum + f.file_size, 0)
     if (existingTotalSize + newBatchSize > PART_UPLOAD_LIMITS.maxTotalSize) {
       return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
     }
@@ -292,9 +240,7 @@ export async function POST(
     // Update the part's gallery when photos were registered
     // The current gallery in canonical order — returned to the client so it
     // can preview registered images without a refetch.
-    const existingImages = Array.isArray(part.images)
-      ? part.images.filter((img): img is string => typeof img === 'string')
-      : []
+    const existingImages = part.images ?? []
     let images = existingImages
     if (newImageRefs.length > 0) {
       images = mergeImageUrls(part.thumbnail_url, part.images, newImageRefs)

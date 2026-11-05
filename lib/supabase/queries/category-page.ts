@@ -69,6 +69,8 @@ export const fetchCategoryPage = cache(
     const { data, error } = await supabase.rpc('fetch_category_page', { p_slug: slug })
     if (error) throw error
 
+    // Cast: fetch_category_page returns jsonb, which the generated types can
+    // only call `Json`; its shape is the RPC's contract, CategoryPageData.
     return data as CategoryPageData | null
   },
 )

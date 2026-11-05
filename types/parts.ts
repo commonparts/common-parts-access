@@ -5,7 +5,6 @@ import type {
 	PartStatus,
 	Product,
 	SourcePlatform,
-	UserProfile,
 } from './database';
 
 type PartCardProductRef = Pick<Product, 'name' | 'slug'>;
@@ -110,39 +109,6 @@ export interface PartListResult {
 		hasPrev: boolean;
 	};
 }
-
-/** Raw row shape returned by the part page SEO metadata query. */
-export type PartSeoRow = Pick<
-	Part,
-	| 'id'
-	| 'name'
-	| 'slug'
-	| 'description'
-	| 'thumbnail_url'
-	| 'created_at'
-	| 'updated_at'
-	| 'tags'
-	| 'original_author'
-	| 'original_author_url'
-> & {
-	// Null when the owning account was deleted (issue #178).
-	user_profiles?:
-		| Pick<UserProfile, 'username' | 'display_name'>
-		| Pick<UserProfile, 'username' | 'display_name'>[]
-		| null;
-	licenses?: Pick<License, 'name' | 'url'> | Pick<License, 'name' | 'url'>[] | null;
-	part_products?: {
-		products: PartSeoProductRow | PartSeoProductRow[] | null;
-	}[];
-};
-
-/** Brand or category of a fitted product, as embedded for SEO. */
-type PartSeoNavRow = { name: string; slug: string };
-
-type PartSeoProductRow = Pick<Product, 'name' | 'slug'> & {
-	brands?: PartSeoNavRow | PartSeoNavRow[] | null;
-	categories?: PartSeoNavRow | PartSeoNavRow[] | null;
-};
 
 /**
  * A product a part fits, reduced to what SEO copy and structured data need:
