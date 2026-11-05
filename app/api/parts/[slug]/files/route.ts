@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { FILE_TYPES, MAX_FILENAME_LENGTH } from '@/constants/app'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { mergeImageUrls } from '@/lib/utils/images'
-import { partFileBucket } from '@/lib/storage/path-utils'
+import { partFileBucket, toStorageReference } from '@/lib/storage/path-utils'
 import { resolveStorageUrls } from '@/lib/storage/url'
 
 export const runtime = 'nodejs'
@@ -25,8 +25,10 @@ const CATEGORY_FOLDER_MAP: Record<string, string> = {
  * them directly to Supabase Storage. Also updates part thumbnail/images.
  *
  * Uses the [slug] route param to look up the part.
- * Stores the storage path of each file (`upload_path`); the gallery URLs are
- * derived server-side from bucket + path — never trusts client URLs.
+ * Stores the storage path of each file (`upload_path`) and adds each photo to
+ * the gallery as a relative `bucket/path` reference built server-side (#56),
+ * never from a client-provided URL. The response resolves the gallery to
+ * public URLs.
  * Never changes the part's status: publishing goes through the publish gate
  * of the part's track only (#403). Refuses model files for a curated part,
  * whose files stay at the source (#396); photos are accepted.
@@ -98,9 +100,9 @@ export async function POST(
       file_category: string
       upload_path: string
     }[] = []
-    // Public URL of each registered image, in registration order, for the
-    // part's gallery (parts.images).
-    const newImageUrls: string[] = []
+    // Storage reference of each registered image, in registration order, for
+    // the part's gallery (parts.images).
+    const newImageRefs: string[] = []
 
     for (const raw of files) {
       if (typeof raw !== 'object' || raw === null) {
@@ -178,10 +180,10 @@ export async function POST(
         return NextResponse.json({ error: 'File path does not match authenticated user, part, and filename' }, { status: 403 })
       }
 
-      // Derive the gallery URL server-side — never trust client-provided URLs
+      // The gallery stores a relative reference derived from the validated
+      // bucket and path — never a client-provided URL
       if (category === 'image') {
-        const { data: publicData } = supabase.storage.from(bucket).getPublicUrl(path)
-        newImageUrls.push(publicData.publicUrl)
+        newImageRefs.push(toStorageReference(bucket, path))
       }
 
       fileRows.push({
@@ -294,8 +296,8 @@ export async function POST(
       ? part.images.filter((img): img is string => typeof img === 'string')
       : []
     let images = existingImages
-    if (newImageUrls.length > 0) {
-      images = mergeImageUrls(part.thumbnail_url, part.images, newImageUrls)
+    if (newImageRefs.length > 0) {
+      images = mergeImageUrls(part.thumbnail_url, part.images, newImageRefs)
       const { error: updateError } = await supabase
         .from('parts')
         .update({ images, thumbnail_url: images[0] })

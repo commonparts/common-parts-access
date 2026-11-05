@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { partFileBucket } from '@/lib/storage/path-utils'
+import { partFileBucket, toStorageReference } from '@/lib/storage/path-utils'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { isValidUuid } from '@/lib/utils/validation'
 
@@ -59,7 +59,7 @@ export async function GET(
     }
 
     return NextResponse.json({
-      downloadUrl: resolveStorageUrl(`${bucket}/${storagePath}`),
+      downloadUrl: resolveStorageUrl(toStorageReference(bucket, storagePath)),
       filename: file.original_filename,
     })
   } catch (error) {

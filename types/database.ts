@@ -146,7 +146,7 @@ export interface Part {
   
   // Files and media
   thumbnail_url?: string | null;
-  images?: string[] | null; // Array of image URLs (text[])
+  images?: string[] | null; // Storage references `bucket/path` (text[]), resolved at the API boundary (#56)
   
   // Status and metrics
   status?: PartStatus;

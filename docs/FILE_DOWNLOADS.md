@@ -48,7 +48,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 **`part_files` table:**
 - `upload_path` — Storage path in the bucket of the file's `file_category` (source of truth)
 - `file_category` — `model` or `image`; selects the bucket
-- `file_url` — Deprecated and nullable (#56): no longer written or read; dropped by a later migration
+- The former `file_url` (full public URL) is dropped by `20261105125752_relative_storage_references.sql` (#56)
 - `filename` — Display-safe name
 - `original_filename` — Uploader-provided name
 
@@ -73,6 +73,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 - `formatLicenseNotice()` (`lib/utils/formatters.ts`) — One-line license/attribution notice shown at download trigger.
 - `partFileBucket(category)` (`lib/storage/path-utils.ts`) — Bucket of a part file category, null for an unknown one.
 - `extractBucketStoragePath(reference, bucket)` (`lib/storage/path-utils.ts`) — Bucket-relative path of a stored reference, a public URL or a relative `bucket/path`.
+- `toStorageReference(bucket, path)` (`lib/storage/path-utils.ts`) — Relative `bucket/path` reference stored in the database.
 - `resolveStorageUrl(reference)` (`lib/storage/url.ts`) — Public URL of a relative `bucket/path` reference; a full URL is returned unchanged.
 - `buildZipEntryPath()` — Normalizes storage paths and preserves nested folders inside the ZIP.
 
