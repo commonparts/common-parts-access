@@ -4,8 +4,7 @@ import localFont from "next/font/local";
 // never downloads fonts: a build host that cannot reach Google Fonts would
 // otherwise fail the build (#486). Latin subset, the one preloaded before.
 // next/font sets --font-plex-sans and --font-plex-mono on <html>
-// (app/layout.tsx); --font-sans in app/globals.css reads --font-plex-sans and
-// is the default font of every page.
+// (app/layout.tsx); the --font-* tokens of app/globals.css read them.
 export const plexSans = localFont({
   src: [
     { path: "../assets/fonts/ibm-plex/ibm-plex-sans-latin-300-normal.woff2", weight: "300", style: "normal" },
