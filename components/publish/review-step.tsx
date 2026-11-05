@@ -1,10 +1,12 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PartDetails } from '@/components/part/part-details'
+import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
 import { PUBLISH_STEP_LABELS, type PublishBlocker, type PublishStepIndex } from '@/lib/publish/steps'
 
 interface ReviewStepProps {
@@ -29,7 +31,8 @@ interface ReviewStepProps {
 
 /**
  * The Review step, shared by both tracks (issue #302): the real part page
- * rendered against the draft, then publish or save for later.
+ * rendered against the draft, the data license notice, then publish or save
+ * for later.
  */
 export function ReviewStep({
   slug,
@@ -89,6 +92,20 @@ export function ReviewStep({
           </CardContent>
         </Card>
       )}
+
+      {/* Data license notice (#476): what the contributor writes here is index
+          data under CC BY-SA 4.0; files and source content keep their own. */}
+      <p className="text-sm text-text-secondary">
+        The data you enter here (compatible products, print settings, structured fields) is published under{' '}
+        <a href={DATA_LICENSE.url} className="underline" target="_blank" rel="noopener noreferrer">
+          {DATA_LICENSE.shortName}
+        </a>
+        . Files, and content taken from the source, keep their author&rsquo;s license. See{' '}
+        <Link href={TERMS_LICENSES_SECTION_HREF} className="underline" target="_blank" rel="noopener noreferrer">
+          section 4.2 of the Terms of use
+        </Link>
+        .
+      </p>
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack} disabled={saving || publishing}>

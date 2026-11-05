@@ -51,7 +51,7 @@ export function FeaturedParts() {
               </svg>
             </div>
             <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
-            <p className="text-body text-text-secondary">{error}</p>
+            <p role="alert" className="text-body text-status-errorText">{error}</p>
           </div>
         </Container>
       </Section>

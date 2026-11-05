@@ -68,7 +68,7 @@ export function Pagination({
   return (
     <div className={cn("flex flex-col items-center gap-4", className)}>
       {showInfo && totalItems && itemsPerPage && (
-        <div className="text-sm text-muted-foreground">
+        <div className="text-sm text-text-secondary">
           Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
           {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
           {totalItems} parts
@@ -96,7 +96,7 @@ export function Pagination({
           {visiblePages.map((page, index) => {
             if (page === '...') {
               return (
-                <span key={`dots-${index}`} className="px-2 py-1 text-muted-foreground">
+                <span key={`dots-${index}`} className="px-2 py-1 text-text-secondary">
                   ...
                 </span>
               )
@@ -144,7 +144,7 @@ export function Pagination({
           </svg>
         </Button>
         
-        <span className="text-sm text-muted-foreground px-2">
+        <span className="text-sm text-text-secondary px-2">
           {currentPage} of {totalPages}
         </span>
         

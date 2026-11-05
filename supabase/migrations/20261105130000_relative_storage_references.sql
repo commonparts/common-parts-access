@@ -20,7 +20,7 @@
 --   2. Drops `part_files.file_url`. The storage location of a file is
 --      `upload_path`, in the bucket of its `file_category`. The column has been
 --      nullable, unread and unwritten since
---      20261105120000_part_files_file_url_nullable.sql.
+--      20261105101644_part_files_file_url_nullable.sql.
 --
 -- Why it is applied when the release is merged into `main`: there is one
 -- database behind every environment. Step 1 needs a release in production that

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
+import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { PartThumbnail } from '@/components/part/part-thumbnail'
@@ -100,11 +101,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
 
   return (
     <>
-      {deleteError && (
-        <p role="alert" className="rounded-lg border border-border-default bg-bg-subtle p-sm text-sm text-text-primary">
-          {deleteError}
-        </p>
-      )}
+      {deleteError && <Alert>{deleteError}</Alert>}
 
       <ul className="divide-y divide-border-subtle rounded-lg border border-border-subtle bg-bg-surface">
         {parts.map((part) => (

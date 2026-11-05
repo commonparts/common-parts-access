@@ -133,7 +133,7 @@ export function SignUpForm({
                   onChange={(e) => setRepeatPassword(e.target.value)}
                 />
               </div>
-              {error && <p className="text-caption text-action-primary">{error}</p>}
+              {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Creating an account..." : "Sign up"}
               </Button>

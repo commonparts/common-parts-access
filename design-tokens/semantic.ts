@@ -11,7 +11,7 @@ export const semanticTokens = {
   color: {
     text: {
       primary: colorPrimitives.black[900], // #1A1A1A
-      secondary: colorPrimitives.black[600], // #777777
+      secondary: colorPrimitives.black[600], // #6B6B6B
       tertiary: colorPrimitives.black[400], // #AAAAAA
       disabled: colorPrimitives.black[300], // #D0D0CE
       inverse: colorPrimitives.surface.white, // #FFFFFF
@@ -29,6 +29,7 @@ export const semanticTokens = {
       // Institutional green backgrounds — used sparingly
       accent: colorPrimitives.green[100], // #EEF2EC
       accentSubtle: colorPrimitives.green[50], // #F4F7F3
+      overlay: colorPrimitives.overlay.light, // white at 70%: modal backdrops
     },
 
     border: {

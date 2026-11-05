@@ -19,7 +19,7 @@ AvatarImage.displayName = 'AvatarImage'
 export type AvatarFallbackProps = React.HTMLAttributes<HTMLSpanElement>
 
 const AvatarFallback = React.forwardRef<HTMLSpanElement, AvatarFallbackProps>(({ className, ...props }, ref) => (
-  <span ref={ref} className={cn('flex h-full w-full items-center justify-center rounded-full bg-muted', className)} {...props} />
+  <span ref={ref} className={cn('flex h-full w-full items-center justify-center rounded-full bg-bg-muted', className)} {...props} />
 ))
 AvatarFallback.displayName = 'AvatarFallback'
 

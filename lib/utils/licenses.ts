@@ -47,3 +47,27 @@ export function isHostableLicenseRow(row: {
     allowsRedistribution: row.allows_redistribution,
   })
 }
+
+/**
+ * License of the index data created on Common Parts Access: products,
+ * product references, part–product compatibilities, the structured fields
+ * contributors write here, and aggregated print reports (#476). Content
+ * taken from a referenced part's source publication and every part file
+ * keep their author's license; they are not covered by this one.
+ */
+export const DATA_LICENSE = {
+  shortName: 'CC BY-SA 4.0',
+  name: 'Creative Commons Attribution-ShareAlike 4.0 International',
+  url: 'https://creativecommons.org/licenses/by-sa/4.0/',
+  attribution: 'Common Parts Access contributors',
+} as const
+
+/** License of the platform source code. */
+export const CODE_LICENSE = {
+  shortName: 'MIT',
+  url: 'https://github.com/commonparts/common-parts-access/blob/main/LICENSE',
+} as const
+
+/** Anchor of section 4.2 of the Terms of use, which states the data license. */
+export const TERMS_LICENSES_SECTION_ID = 'licences-for-published-content'
+export const TERMS_LICENSES_SECTION_HREF = `/terms#${TERMS_LICENSES_SECTION_ID}`

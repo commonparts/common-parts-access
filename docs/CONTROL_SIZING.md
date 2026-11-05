@@ -24,6 +24,7 @@ Use this reference when adding or updating interactive controls so they stay vis
 
 ## Select Elements (plain `<select>`)
 - Match inputs: `rounded-lg border border-border-subtle px-md py-sm text-sm shadow-surface transition-colors`.
+- Clip the selected label with `truncate`: in WebKit on iOS, a label wider than the field otherwise widens the page's scrollable area (#218). `DropdownInput` with `as="select"` applies it.
 
 ## File Uploader
 - Surface: `rounded-lg border border-dashed border-border-subtle bg-bg-surface p-lg text-center shadow-surface transition-colors`.
