@@ -57,12 +57,20 @@ Issues are triaged automatically and reviewed by the core team.
 
 ## What Common Parts does not accept
 
-- Pull requests modifying the application source code
 - Issues requesting features (use the in-app feedback widget instead)
 - Original part submissions under NC or ND licenses
 - Models whose license forbids sharing them, including proprietary licenses
 - Referenced part submissions where the source URL is inaccessible or requires authentication
 - Parts with incomplete or fabricated attribution
+
+---
+
+## License of contributions
+
+- Code contributions are published under the [MIT License](./LICENSE).
+- Data contributions (products, product references, compatibilities between parts and products, structured fields, print reports) are published under the [Creative Commons Attribution-ShareAlike 4.0 International license (CC BY-SA 4.0)](https://creativecommons.org/licenses/by-sa/4.0/), with attribution to "Common Parts Access contributors".
+
+Part files, and content taken from the original publication of a referenced part, keep the license chosen by their author.
 
 ---
 
