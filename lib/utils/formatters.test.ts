@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatRegionName, htmlToPlainText, splitPrintTime } from './formatters'
+import { fileSizeUnit, formatRegionName, htmlToPlainText, splitPrintTime } from './formatters'
 
 describe('splitPrintTime', () => {
   it('splits whole hours, minutes, and mixed durations', () => {
@@ -27,6 +27,22 @@ describe('splitPrintTime', () => {
   it('returns null for non-finite values', () => {
     expect(splitPrintTime(Number.NaN)).toBeNull()
     expect(splitPrintTime(Number.POSITIVE_INFINITY)).toBeNull()
+  })
+})
+
+describe('fileSizeUnit', () => {
+  it('picks the largest decimal unit that keeps the value at 1 or more', () => {
+    expect(fileSizeUnit(512)).toEqual({ value: 512, unit: 'byte' })
+    expect(fileSizeUnit(1000)).toEqual({ value: 1, unit: 'kilobyte' })
+    expect(fileSizeUnit(2_500_000)).toEqual({ value: 2.5, unit: 'megabyte' })
+  })
+
+  it('stays in bytes for an empty file', () => {
+    expect(fileSizeUnit(0)).toEqual({ value: 0, unit: 'byte' })
+  })
+
+  it('caps at terabytes', () => {
+    expect(fileSizeUnit(5e15)).toEqual({ value: 5000, unit: 'terabyte' })
   })
 })
 

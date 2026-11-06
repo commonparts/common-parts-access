@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
+import { fileSizeUnit } from "@/lib/utils/formatters"
 import type { PartPageFile } from "@/types/parts"
 
 interface PartFileListProps {
@@ -18,8 +19,8 @@ interface PartFileListProps {
 
 type FileCategory = "model" | "documentation" | "image" | string
 
-/** Byte multiples Intl.NumberFormat formats as units, smallest first. */
-const FILE_SIZE_UNITS = ["byte", "kilobyte", "megabyte", "gigabyte", "terabyte"] as const
+/** Decimals shown in a file size: "2.47 MB". */
+const FILE_SIZE_FRACTION_DIGITS = 2
 
 const SECTION_ORDER: FileCategory[] = ["model", "documentation", "image"]
 
@@ -63,17 +64,6 @@ const SECTION_CONFIG = {
   },
 } as const
 
-/**
- * A file size as a value in the largest binary multiple that keeps it at 1 or
- * more (2.5 megabytes), for the locale's unit formatter.
- */
-function fileSizeUnit(bytes: number): { value: number; unit: (typeof FILE_SIZE_UNITS)[number] } {
-  const exponent = bytes
-    ? Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), FILE_SIZE_UNITS.length - 1)
-    : 0
-  return { value: bytes / Math.pow(1024, exponent), unit: FILE_SIZE_UNITS[exponent] }
-}
-
 const DownloadIcon = () => (
   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3" />
@@ -111,7 +101,7 @@ const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDow
             {file.file_type.toUpperCase()}
           </Badge>
           <span className="text-xs text-text-secondary transition-colors group-hover:text-text-primary">
-            {format.number(size.value, { style: "unit", unit: size.unit, maximumFractionDigits: 2 })}
+            {format.number(size.value, { style: "unit", unit: size.unit, maximumFractionDigits: FILE_SIZE_FRACTION_DIGITS })}
           </span>
         </div>
       </div>

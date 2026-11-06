@@ -25,6 +25,10 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: t('metaTitle'), description: t('metaDescription') }
 }
 
+/**
+ * The contributor guide. Its copy is the `ContributingPage` messages; sentences
+ * with a link or emphasis are rendered with `t.rich`.
+ */
 export default async function ContributingPage() {
   const t = await getTranslations('ContributingPage')
 

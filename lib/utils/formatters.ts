@@ -20,6 +20,25 @@ export function splitPrintTime(
   return { hours: Math.floor(total / 60), minutes: total % 60 }
 }
 
+/** Decimal multiples of a byte that Intl.NumberFormat formats as units, smallest first. */
+const FILE_SIZE_UNITS = ['byte', 'kilobyte', 'megabyte', 'gigabyte', 'terabyte'] as const
+
+/** The Intl units are decimal: a kilobyte is 1000 bytes. */
+const BYTES_PER_KILOBYTE = 1000
+
+/**
+ * A file size as a value in the largest unit that keeps it at 1 or more, for
+ * next-intl's unit formatter: `format.number(value, { style: 'unit', unit })`.
+ * @example fileSizeUnit(2_500_000) // { value: 2.5, unit: 'megabyte' }
+ */
+export function fileSizeUnit(bytes: number): { value: number; unit: (typeof FILE_SIZE_UNITS)[number] } {
+  const exponent =
+    bytes > 0
+      ? Math.min(Math.floor(Math.log(bytes) / Math.log(BYTES_PER_KILOBYTE)), FILE_SIZE_UNITS.length - 1)
+      : 0
+  return { value: bytes / BYTES_PER_KILOBYTE ** exponent, unit: FILE_SIZE_UNITS[exponent] }
+}
+
 /**
  * Truncate text with ellipsis
  * @param text - Text to truncate
