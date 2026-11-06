@@ -23,8 +23,7 @@ interface SearchBarProps {
   onClear?: () => void
   /**
    * Grouped autocomplete against /api/search (default). Set to false for a
-   * plain filter input that keeps the legacy suggestion dropdown — used by
-   * /browse, whose behavior must stay unchanged.
+   * plain filter input with no dropdown, as on /browse.
    */
   autocomplete?: boolean
 }
@@ -427,31 +426,6 @@ export function SearchBar({
               </span>
             </button>
           )}
-        </div>
-      )}
-
-      {/* Legacy filter-mode dropdown (autocomplete disabled, e.g. /browse). */}
-      {!autocomplete && isExpanded && currentQuery.length > 0 && (
-        <div className="absolute top-full left-0 right-0 z-50 mt-xs rounded-lg border border-border-subtle bg-bg-surface shadow-none">
-          <div className="p-sm">
-            <div className="mb-xs text-caption text-text-secondary">{t("suggestions")}</div>
-            <div className="space-y-xs">
-              {(["suggestionVehicle", "suggestionMechanical"] as const).map((key) => (
-                <button
-                  key={key}
-                  type="button"
-                  className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
-                  onClick={() => {
-                    updateQuery(t(key))
-                    setIsExpanded(true)
-                  }}
-                >
-                  <SearchIcon className="size-sm text-text-secondary" />
-                  {t(key)}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
     </div>

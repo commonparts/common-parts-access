@@ -23,10 +23,7 @@
     "parts": "Parts",
     "brands": "Brands",
     "noResults": "No results for “{query}”.",
-    "seeAll": "See all results for “{query}”",
-    "suggestions": "Suggestions",
-    "suggestionVehicle": "car parts",
-    "suggestionMechanical": "mechanical components"
+    "seeAll": "See all results for “{query}”"
   },
   "LanguageSwitcher": {
     "label": "Language",

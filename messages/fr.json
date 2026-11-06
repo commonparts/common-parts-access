@@ -23,10 +23,7 @@
     "parts": "Pièces",
     "brands": "Marques",
     "noResults": "Aucun résultat pour « {query} ».",
-    "seeAll": "Voir tous les résultats pour « {query} »",
-    "suggestions": "Suggestions",
-    "suggestionVehicle": "pièces auto",
-    "suggestionMechanical": "composants mécaniques"
+    "seeAll": "Voir tous les résultats pour « {query} »"
   },
   "LanguageSwitcher": {
     "label": "Langue",
