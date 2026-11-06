@@ -1,0 +1,29 @@
+{
+  "Metadata": {
+    "title": "Common Parts Access : plateforme ouverte de pièces détachées numériques",
+    "description": "Common Parts Access est une plateforme ouverte pour publier et consulter des pièces détachées numériques, afin de prolonger la vie des objets du quotidien."
+  },
+  "Navbar": {
+    "browse": "Parcourir les pièces",
+    "contribute": "Contribuer",
+    "signIn": "Se connecter",
+    "publish": "Publier une pièce"
+  },
+  "SearchBar": {
+    "placeholder": "Rechercher une marque, un produit ou une référence...",
+    "filterPlaceholder": "Rechercher des pièces...",
+    "submit": "Rechercher",
+    "clear": "Effacer la recherche"
+  },
+  "LanguageSwitcher": {
+    "label": "Langue",
+    "localeName": "{locale, select, en {English} fr {Français} other {{locale}}}"
+  },
+  "NotFound": {
+    "eyebrow": "Erreur 404",
+    "title": "Page introuvable",
+    "description": "La page demandée n'existe pas ou n'est plus disponible.",
+    "home": "Retour à l'accueil",
+    "browse": "Parcourir les pièces"
+  }
+}

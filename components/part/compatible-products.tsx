@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { pluralize } from "@/lib/utils/formatters"
 import { categoryCanonicalPath } from "@/lib/utils/seo"

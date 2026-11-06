@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Menu, X } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ interface MobileMenuProps {
  * Dismisses on Escape key press or outside click.
  */
 export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
+  const t = useTranslations("Navbar");
   const [isOpen, setIsOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const router = useRouter();
@@ -179,7 +180,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                   className="w-full justify-start font-medium"
                   onClick={close}
                 >
-                  <Link href="/login">Sign in</Link>
+                  <Link href="/login">{t("signIn")}</Link>
                 </Button>
               )}
 
@@ -191,7 +192,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                   className="w-full font-medium"
                   onClick={close}
                 >
-                  <Link href="/publish">Publish a part</Link>
+                  <Link href="/publish">{t("publish")}</Link>
                 </Button>
               )}
             </div>

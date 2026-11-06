@@ -1,6 +1,7 @@
 "use client"
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import { useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { pluralize } from "@/lib/utils/formatters"
 import { Button } from "@/components/ui/button"
@@ -14,7 +15,6 @@ import type {
 } from "@/types/search"
 
 interface SearchBarProps {
-  placeholder?: string
   className?: string
   onSearch?: (query: string) => void
   showFilters?: boolean
@@ -94,7 +94,6 @@ function Row({
 }
 
 export function SearchBar({
-  placeholder = "Search parts...",
   className,
   onSearch,
   showFilters = false,
@@ -104,6 +103,7 @@ export function SearchBar({
   defaultValue,
   autocomplete = true,
 }: SearchBarProps) {
+  const t = useTranslations("SearchBar")
   const router = useRouter()
   const [internalQuery, setInternalQuery] = React.useState(value ?? defaultValue ?? "")
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -335,7 +335,7 @@ export function SearchBar({
                 : undefined
             }
             aria-autocomplete={autocomplete ? "list" : undefined}
-            placeholder={placeholder}
+            placeholder={t(autocomplete ? "placeholder" : "filterPlaceholder")}
             value={currentQuery}
             onChange={(e) => updateQuery(e.target.value)}
             onFocus={() => setIsExpanded(true)}
@@ -346,7 +346,7 @@ export function SearchBar({
             <button
               type="button"
               onClick={clearQuery}
-              aria-label="Clear search"
+              aria-label={t("clear")}
               className="absolute inset-y-0 right-xl flex items-center pr-sm"
             >
               <svg className="size-sm text-text-secondary hover:text-text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -356,7 +356,7 @@ export function SearchBar({
           )}
           <div className="absolute inset-y-0 right-0 flex items-center">
             <Button type="submit" className="h-full rounded-l-none">
-              Search
+              {t("submit")}
             </Button>
           </div>
         </div>

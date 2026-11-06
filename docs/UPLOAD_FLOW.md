@@ -6,7 +6,7 @@ The upload flow is the **public** contribution path: a contributor publishes a p
 
 That is the whole scope. A part that references a publication made elsewhere — its files left at the source and linked to, never hosted here (#396) — belongs to the [curation tool](CURATION_TOOL.md). The upload flow has no origin selector, no hosting selector, no source-attribution fields and no verification-status control, and its endpoints **reject** a payload that tries to set any of them.
 
-**Route:** `/publish` (under the `(dashboard)` route group), shared with the elsewhere track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. Any authenticated user may publish. The former `/upload` route is removed, not redirected.
+**Route:** `/publish` (under the `(dashboard)` route group), shared with the elsewhere track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/<locale>/login?redirect=/<locale>/publish`. Any authenticated user may publish. The former `/upload` route is removed, not redirected.
 
 It shares its UX with the curation tool — persistent drafts, a step per concern, a review screen rendering the real part page, and a server-enforced publish gate — because the two flows have the same failure mode: a long form that loses everything when a session breaks.
 

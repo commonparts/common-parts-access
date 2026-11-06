@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { PartGrid } from '@/components/part/part-grid'
-import Link from 'next/link'
+import { Link } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'

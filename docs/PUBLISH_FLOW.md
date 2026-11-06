@@ -111,7 +111,7 @@ Unchanged by the unification, both of them — including HTTP 422 with `blockers
 ## Key files
 
 ```
-app/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms (#431)
+app/[locale]/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms (#431)
 components/publish/
   publish-page.tsx                          Orientation question + merged drafts
   orientation-question.tsx                 The one branching decision

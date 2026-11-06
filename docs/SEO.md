@@ -18,6 +18,10 @@ Most traffic is expected from search engines and direct links, so every public p
 - Canonical URLs come from the `*CanonicalPath()` helpers. Paginated listings never put `page` in the canonical.
 - Since #315 a part has no brand of its own: the brand in its title comes from the first linked product, and a part with no product has none.
 
+## Locale prefix (#498)
+
+Every page URL carries a locale prefix (`/fr/...`, `/en/...`, see [I18N.md](./I18N.md)). The canonical URLs of the page metadata and the sitemap entries are still built without a prefix: they answer a redirect to the visitor's locale until #501 builds canonical URLs, `hreflang` alternates and sitemap entries per locale. Meanwhile the proxy sends a `Link` header with the URL of each page in each locale and `hreflang`. Page titles and descriptions are not translated yet, except the default ones of `app/[locale]/layout.tsx`.
+
 ## Structured data
 
 - **Part pages use `3DModel`, not `Product`.** Parts are free printable files with no offer or price, so `Product` markup would not qualify for rich results and would misrepresent the page. The `BreadcrumbList` alongside it is the supported rich result.
@@ -33,10 +37,10 @@ Most traffic is expected from search engines and direct links, so every public p
 ## HTTP status of unknown pages (#275)
 
 - An unknown slug on a public entity page (`/parts/[slug]`, `/product/[slug]`, `/brands/[brand]`, `/brands/[brand]/[category]`, `/categories/[slug]`) answers HTTP 404 with the not-found page. The page calls `notFound()` when its query returns no row.
-- No `loading.tsx` may sit at the app root or in `app/(public)/`. A loading file is a Suspense boundary: the response starts streaming with status 200 before the page runs, so `notFound()` can only render the not-found UI and search engines see a soft 404. `app/route-boundaries.test.ts` fails if such a file is added.
-- The only loading boundary is `app/(dashboard)/loading.tsx`, on private pages. A client component that reads `useSearchParams()` gets its own `<Suspense>` in the page that renders it (`/login`, `/sign-up`, the `/browse` grid).
+- No `loading.tsx` may sit at the app root, at the locale root (`app/[locale]/`) or in `app/[locale]/(public)/`. A loading file is a Suspense boundary: the response starts streaming with status 200 before the page runs, so `notFound()` can only render the not-found UI and search engines see a soft 404. `app/route-boundaries.test.ts` fails if such a file is added.
+- The only loading boundary is `app/[locale]/(dashboard)/loading.tsx`, on private pages. A client component that reads `useSearchParams()` gets its own `<Suspense>` in the page or layout component that renders it (`/login`, `/sign-up`, the `/browse` grid, the language switcher of the navbar).
 
 ## Key files
 
 - `lib/utils/seo.ts`, `lib/utils/sitemap.ts`, `app/sitemap.ts`, `app/robots.ts`
-- `generateMetadata` in each page under `app/(public)/`
+- `generateMetadata` in each page under `app/[locale]/(public)/`

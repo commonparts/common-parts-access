@@ -63,7 +63,7 @@ Products are created inline in the publish flow's Compatibility step. `POST /api
 
 ## Key files
 
-- `app/(public)/product/[slug]/page.tsx`, `lib/supabase/queries/product-page.ts`
+- `app/[locale]/(public)/product/[slug]/page.tsx`, `lib/supabase/queries/product-page.ts`
 - `components/part/compatible-products.tsx`, `lib/utils/compatible-products.ts`
 - `lib/actions/print-reports.ts`, `lib/supabase/queries/print-reports.ts`, `lib/utils/print-reports.ts`, `lib/utils/reporter-session.ts`, `lib/utils/evidence-level.ts`
 - `app/api/products/route.ts`, `lib/utils/product-references.ts`, `lib/utils/locale.ts`

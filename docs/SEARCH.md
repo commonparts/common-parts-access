@@ -54,7 +54,7 @@ Validation has no admin role: set `product_references.status` to `validated` or 
 ## Key files
 
 - `app/api/search/route.ts`, `app/api/search/candidates/route.ts`, `app/api/product-references/route.ts`
-- `app/(public)/search/page.tsx`, `components/search/`
+- `app/[locale]/(public)/search/page.tsx`, `components/search/`
 - `components/layout/search-bar.tsx`, `hooks/use-search-autocomplete.ts`
 - `lib/supabase/queries/search.ts`, `lib/supabase/queries/search-demand.ts`
 - `lib/auth/permissions.ts` (curator check of the demand dashboard)

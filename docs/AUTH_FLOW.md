@@ -4,9 +4,9 @@
 This document describes how a visitor reaches a protected page, signs in, and returns to the page they asked for. Authentication uses Supabase Auth with email and password; the session is stored in `sb-*` cookies managed by `@supabase/ssr`.
 
 ## Protected routes
-`proxy.ts` runs `updateSession` (`lib/supabase/middleware.ts`) on every request. It refreshes the session with `supabase.auth.getUser()` and protects the routes listed in `PROTECTED_ROUTE_PREFIXES`: `/publish`, `/dashboard`, `/downloads`, `/my-parts`, `/notifications`, `/settings` (each prefix and its sub-paths).
+`proxy.ts` runs `updateSession` (`lib/supabase/middleware.ts`) on every page request, then the locale routing (see [I18N.md](./I18N.md#request-pipeline)). API routes and `/confirm` are outside the proxy matcher; they refresh the session through the server client. `updateSession` refreshes the session with `supabase.auth.getUser()` and protects the routes listed in `PROTECTED_ROUTE_PREFIXES`: `/publish`, `/dashboard`, `/downloads`, `/my-parts`, `/notifications`, `/settings` (each prefix and its sub-paths), under a locale prefix (`/fr/publish`, `/en/settings/profile`). An unprefixed URL is first redirected to its prefixed URL by the locale routing, then checked.
 
-An unauthenticated request to a protected route is redirected to `/login?redirect=<pathname>`. Only the pathname is kept: the original query string is dropped so protected-route parameters do not end up in the login URL, browser history or logs. Refreshed or cleared auth cookies are copied onto the redirect response.
+An unauthenticated request to a protected route is redirected to the login page of the same locale, `/<locale>/login?redirect=<pathname>`, the pathname including its prefix. Only the pathname is kept: the original query string is dropped so protected-route parameters do not end up in the login URL, browser history or logs. Refreshed or cleared auth cookies are copied onto the redirect response.
 
 Other entry points build the same URL from the client, for example a like on a part page that returns `401` (`components/part/part-details.tsx`).
 
@@ -26,17 +26,17 @@ A soft navigation (`router.push`, with or without `router.refresh`) sent users b
 A server-side sign-in handler that sets the cookies and answers with a redirect was considered and not adopted (#112). Supabase Auth rate-limits sign-in requests by client IP address; requests sent from the server would all share the server's address, so a burst of failed attempts would block sign-in for every user. Avoiding this requires forwarding the end-user IP in the `Sb-Forwarded-For` header with a secret API key and enabling IP address forwarding in the Supabase project, which the gain of one document load does not justify.
 
 ## Sign-up and email confirmation
-`components/auth/sign-up-form.tsx` sends the validated `redirect` to Supabase as part of the confirmation link: `/confirm?next=<redirect>`. `app/(auth)/confirm/route.ts` validates `next` again with `isSafeRedirect` on the server, since anyone can request `/confirm` directly, verifies the token and redirects to `next`, or to `/` when it is missing or unsafe.
+`components/auth/sign-up-form.tsx` sends the validated `redirect` to Supabase as part of the confirmation link: `/confirm?next=<redirect>`. `/confirm` carries no locale prefix, so the redirect URLs allowed in the Supabase Auth settings are unchanged; its redirects to `next` or to `/error` are resolved to the visitor's locale by the proxy. `app/(auth)/confirm/route.ts` validates `next` again with `isSafeRedirect` on the server, since anyone can request `/confirm` directly, verifies the token and redirects to `next`, or to `/` when it is missing or unsafe.
 
 ## Manual QA checklist
 Run on a preview or staging deployment after any change to the login form, the proxy, or the redirect helpers.
 
-- [ ] Signed out, open `/publish`: the browser lands on `/login?redirect=%2Fpublish`.
-- [ ] Sign in with valid credentials: the browser lands on `/publish`, signed in, with no second visit to `/login`.
-- [ ] On `/publish` after sign-in, press back: the browser does not return to the login form.
+- [ ] Signed out, open `/en/publish`: the browser lands on `/en/login?redirect=%2Fen%2Fpublish`. Repeat with `/fr/publish`.
+- [ ] Sign in with valid credentials: the browser lands on `/en/publish`, signed in, with no second visit to `/login`.
+- [ ] On `/en/publish` after sign-in, press back: the browser does not return to the login form.
 - [ ] The navbar shows the profile menu, not "Sign in", right after the redirect.
 - [ ] Repeat with `/dashboard` and `/my-parts`.
-- [ ] Open `/login` directly and sign in: the browser lands on `/`.
+- [ ] Open `/en/login` directly and sign in: the browser lands on `/`, which redirects to `/en`.
 - [ ] Sign in with a wrong password: an error is shown, the form is usable again, the URL is unchanged.
 - [ ] Open `/login?redirect=//evil.com`, `/login?redirect=https://evil.com` and `/login?redirect=/%5c%5cevil.com`, then sign in: the browser lands on `/` each time.
 - [ ] From `/login?redirect=%2Fpublish`, follow "Sign up": the sign-up URL keeps `redirect=%2Fpublish`.
