@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { routing } from '@/i18n/routing'
 import { isValidHttpUrl, isValidUuid } from '@/lib/utils/validation'
 
 /**
@@ -6,6 +7,15 @@ import { isValidHttpUrl, isValidUuid } from '@/lib/utils/validation'
  * the API answers when the value is invalid, so a 400 names the field in the
  * words the interface already uses.
  */
+
+/**
+ * The interface locale of the page calling a read whose response it displays
+ * (#502): API routes are not localized, so the page names its locale.
+ */
+export const locale = z.enum(routing.locales).default(routing.defaultLocale)
+
+/** GET routes whose only parameter is the locale of the calling page. */
+export const localeQuerySchema = z.object({ locale })
 
 /** Longest URL the API stores (source URL, author URL, page URL). */
 export const URL_MAX_LENGTH = 2048

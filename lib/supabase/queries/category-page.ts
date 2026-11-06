@@ -1,4 +1,5 @@
 import { cache } from 'react'
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 
 // Row shapes returned by the fetch_category_page RPC (migration
@@ -57,7 +58,8 @@ export interface CategoryPageData {
  * via the fetch_category_page RPC: the category with subtree totals, the
  * ancestor chain from the materialized path, the direct children and the
  * covering brands that hold a listed product (issues #312, #321 — the
- * page's own category is returned even at zero so its URL keeps rendering).
+ * page's own category is returned even at zero so its URL keeps rendering),
+ * category names in the active locale (#502).
  * Returns null for an unknown slug (the route 404s). Wrapped in React
  * cache() so generateMetadata and the page component share a single query
  * per request. The RPC is SECURITY INVOKER; reads are covered by the public
@@ -66,7 +68,10 @@ export interface CategoryPageData {
 export const fetchCategoryPage = cache(
   async (slug: string): Promise<CategoryPageData | null> => {
     const supabase = await createClient()
-    const { data, error } = await supabase.rpc('fetch_category_page', { p_slug: slug })
+    const { data, error } = await supabase.rpc('fetch_category_page', {
+      p_slug: slug,
+      p_locale: await getLocale(),
+    })
     if (error) throw error
 
     // Cast: fetch_category_page returns jsonb, which the generated types can

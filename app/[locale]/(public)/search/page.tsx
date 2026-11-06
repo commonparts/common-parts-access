@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { getTranslations } from "next-intl/server"
+import { getLocale, getTranslations } from "next-intl/server"
 import { headers } from "next/headers"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
@@ -47,7 +47,7 @@ export default async function SearchPage({
   // Fetch the full result groups (capped) once, server-side; the client view
   // handles type filtering without another round-trip.
   const results = query
-    ? await searchAll(query, SEARCH_MAX_LIMIT)
+    ? await searchAll(query, await getLocale(), SEARCH_MAX_LIMIT)
     : { products: [], parts: [], brands: [] }
 
   // Part hits are rendered as the standard part card (issue #380): hydrated

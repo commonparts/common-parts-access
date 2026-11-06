@@ -64,6 +64,7 @@ export type Database = {
           id: string
           level: number | null
           name: string
+          name_fr: string | null
           parent_id: string | null
           path: string | null
           slug: string
@@ -75,6 +76,7 @@ export type Database = {
           id?: string
           level?: number | null
           name: string
+          name_fr?: string | null
           parent_id?: string | null
           path?: string | null
           slug: string
@@ -86,6 +88,7 @@ export type Database = {
           id?: string
           level?: number | null
           name?: string
+          name_fr?: string | null
           parent_id?: string | null
           path?: string | null
           slug?: string
@@ -1075,9 +1078,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      fetch_brand_nav: { Args: { p_brand_id: string }; Returns: Json }
-      fetch_browse_nav: { Args: never; Returns: Json }
-      fetch_category_page: { Args: { p_slug: string }; Returns: Json }
+      fetch_brand_nav: {
+        Args: { p_brand_id: string; p_locale?: string }
+        Returns: Json
+      }
+      fetch_browse_nav: { Args: { p_locale?: string }; Returns: Json }
+      fetch_category_page: {
+        Args: { p_locale?: string; p_slug: string }
+        Returns: Json
+      }
       fetch_part_request_counts: {
         Args: { p_product_id: string }
         Returns: {
@@ -1115,6 +1124,10 @@ export type Database = {
       }
       fold_search_text: { Args: { value: string }; Returns: string }
       generate_slug: { Args: { input: string }; Returns: string }
+      localized_name: {
+        Args: { p_locale: string; p_name: string; p_name_fr: string }
+        Returns: string
+      }
       normalize_product_reference: { Args: { value: string }; Returns: string }
       part_product_evidence_level: {
         Args: { negative_reports: number; positive_reports: number }
@@ -1137,7 +1150,7 @@ export type Database = {
         Returns: number
       }
       search_all: {
-        Args: { result_limit?: number; search_query: string }
+        Args: { p_locale?: string; result_limit?: number; search_query: string }
         Returns: Json
       }
       search_product_candidates: {

@@ -1,5 +1,6 @@
 "use client"
 
+import { useLocale } from "next-intl"
 import * as React from "react"
 import {
   emptySearchResults,
@@ -30,6 +31,7 @@ export function useSearchAutocomplete(query: string, enabled: boolean): UseSearc
   const [results, setResults] = React.useState<SearchResults>(emptySearchResults)
   const [isLoading, setIsLoading] = React.useState(false)
   const [error, setError] = React.useState(false)
+  const locale = useLocale()
 
   React.useEffect(() => {
     const trimmed = query.trim()
@@ -47,7 +49,7 @@ export function useSearchAutocomplete(query: string, enabled: boolean): UseSearc
     setError(false)
 
     const timer = setTimeout(() => {
-      fetch(`/api/search?q=${encodeURIComponent(trimmed)}&limit=${SEARCH_DEFAULT_LIMIT}`, {
+      fetch(`/api/search?q=${encodeURIComponent(trimmed)}&locale=${locale}&limit=${SEARCH_DEFAULT_LIMIT}`, {
         signal: controller.signal,
       })
         .then(async (res) => {
@@ -77,7 +79,7 @@ export function useSearchAutocomplete(query: string, enabled: boolean): UseSearc
       controller.abort()
       clearTimeout(timer)
     }
-  }, [query, enabled])
+  }, [query, enabled, locale])
 
   return { results, isLoading, error }
 }

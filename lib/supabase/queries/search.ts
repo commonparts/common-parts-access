@@ -1,3 +1,4 @@
+import type { Locale } from 'next-intl'
 import { createClient } from '@/lib/supabase/server'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import {
@@ -19,9 +20,14 @@ import {
  *
  * @param query    Raw user query; whitespace-only yields an empty payload and
  *                 it is truncated to SEARCH_MAX_QUERY_LENGTH before the DB call.
+ * @param locale   Language of the product categories returned (#502).
  * @param limit    Max results per group; clamped to [1, SEARCH_MAX_LIMIT].
  */
-export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LIMIT): Promise<SearchResults> {
+export async function searchAll(
+  query: string,
+  locale: Locale,
+  limit: number = SEARCH_DEFAULT_LIMIT,
+): Promise<SearchResults> {
   const trimmed = (query?.trim() ?? '').slice(0, SEARCH_MAX_QUERY_LENGTH)
   if (!trimmed) {
     return emptySearchResults()
@@ -35,6 +41,7 @@ export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LI
   const { data, error } = await supabase.rpc('search_all', {
     search_query: trimmed,
     result_limit: safeLimit,
+    p_locale: locale,
   })
 
   if (error) {

@@ -5,6 +5,9 @@ import { distinctBrands } from '@/lib/utils/catalog'
 import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { localizeCategory } from '@/lib/utils/locale'
+import { parseSearchParams } from '@/lib/api/parse'
+import { localeQuerySchema } from '@/lib/schemas/common'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { resolveStorageUrl, resolveStorageUrls } from '@/lib/storage/url'
@@ -51,12 +54,14 @@ function toProductBrandPayload(brand: BrandRow): ProductBrandPayload {
   return { name: brand.name, slug: brand.slug, verified: brand.verified ?? false }
 }
 
-// GET /api/parts/[slug]/details - Get detailed part information by slug
+// GET /api/parts/[slug]/details?locale= - Get detailed part information by slug
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
   try {
+    const query = parseSearchParams(request.nextUrl.searchParams, localeQuerySchema)
+    if (!query.ok) return query.response
     const supabase = await createClient()
     const { slug } = await params
 
@@ -167,7 +172,7 @@ export async function GET(
               slug,
               verified
             ),
-            categories(name, slug),
+            categories(name, name_fr, slug),
             product_references(id, value, type)
           )
         `)
@@ -266,14 +271,13 @@ export async function GET(
         } : null,
         products: compatibleProducts.map((p) => {
           const pBrand = firstEmbedded(p.brands)
-          const pCategory = firstEmbedded(p.categories)
           return {
             id: p.id,
             name: p.name,
             slug: p.slug,
             brand: pBrand ? toProductBrandPayload(pBrand) : null,
             // The category belongs to the product, not to the part (#372).
-            category: pCategory ? { name: pCategory.name, slug: pCategory.slug } : null,
+            category: localizeCategory(firstEmbedded(p.categories), query.data.locale),
             reportStats: p.reportStats,
             references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value })),
           }

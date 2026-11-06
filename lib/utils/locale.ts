@@ -1,3 +1,24 @@
+import type { Locale } from 'next-intl'
+import type { Category } from '@/types/database'
+
+type CategoryNames = Pick<Category, 'name' | 'name_fr'>
+
+/**
+ * A category as `locale` names it (#502): its French name on a French page
+ * when one is set, its English name otherwise. Same rule as the database
+ * function `localized_name()`, which the navigation and search RPCs apply.
+ */
+export function localizeCategory<T extends CategoryNames>(category: T, locale: Locale): Omit<T, 'name_fr'>
+export function localizeCategory<T extends CategoryNames>(category: T | null, locale: Locale): Omit<T, 'name_fr'> | null
+export function localizeCategory<T extends CategoryNames>(
+  category: T | null,
+  locale: Locale,
+): Omit<T, 'name_fr'> | null {
+  if (!category) return null
+  const { name_fr: nameFr, ...rest } = category
+  return { ...rest, name: (locale === 'fr' && nameFr) || category.name }
+}
+
 /** A visitor's language and region, as far as the request tells us. */
 export interface VisitorLocale {
   /** Lowercase primary language subtag of the top preference ("fr"), or null. */
