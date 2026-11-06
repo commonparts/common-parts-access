@@ -10,9 +10,11 @@ import { isValidHttpUrl, isValidUuid } from '@/lib/utils/validation'
 
 /**
  * The interface locale of the page calling a read whose response it displays
- * (#502): API routes are not localized, so the page names its locale.
+ * (#502): API routes are not localized, so the page names its locale. A
+ * request that names none gets English, the source, as before #502 and like
+ * the database functions.
  */
-export const locale = z.enum(routing.locales).default(routing.defaultLocale)
+export const locale = z.enum(routing.locales).default('en')
 
 /** GET routes whose only parameter is the locale of the calling page. */
 export const localeQuerySchema = z.object({ locale })
