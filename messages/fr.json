@@ -7,8 +7,13 @@
     "browse": "Parcourir les pièces",
     "contribute": "Contribuer",
     "signIn": "Se connecter",
-    "publish": "Publier une pièce",
-    "searchPlaceholder": "Rechercher une marque, un produit ou une référence..."
+    "publish": "Publier une pièce"
+  },
+  "SearchBar": {
+    "placeholder": "Rechercher une marque, un produit ou une référence...",
+    "filterPlaceholder": "Rechercher des pièces...",
+    "submit": "Rechercher",
+    "clear": "Effacer la recherche"
   },
   "LanguageSwitcher": {
     "label": "Langue",

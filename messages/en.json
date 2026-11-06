@@ -7,8 +7,13 @@
     "browse": "Browse parts",
     "contribute": "Contribute",
     "signIn": "Sign in",
-    "publish": "Publish a part",
-    "searchPlaceholder": "Search a brand, product or reference..."
+    "publish": "Publish a part"
+  },
+  "SearchBar": {
+    "placeholder": "Search a brand, product or reference...",
+    "filterPlaceholder": "Search parts...",
+    "submit": "Search",
+    "clear": "Clear search"
   },
   "LanguageSwitcher": {
     "label": "Language",

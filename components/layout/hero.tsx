@@ -21,7 +21,7 @@ export const Hero: React.FC = () => {
           </div>
 
           <div>
-            <SearchBar placeholder="Search a brand, product or reference..." className="w-full max-w-xl"/>
+            <SearchBar className="w-full max-w-xl"/>
           </div>
         </div>
       </Container>

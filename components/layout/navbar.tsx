@@ -27,10 +27,7 @@ export default async function Navbar() {
 
         {/* Primary search — grouped autocomplete; hidden on mobile */}
         <div className="hidden flex-1 justify-center px-lg md:flex">
-          <SearchBar
-            placeholder={t("searchPlaceholder")}
-            className="w-full max-w-xl"
-          />
+          <SearchBar className="w-full max-w-xl" />
         </div>
 
         {/* Desktop nav — hidden on mobile */}
