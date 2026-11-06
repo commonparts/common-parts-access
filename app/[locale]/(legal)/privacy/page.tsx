@@ -167,8 +167,8 @@ export default function PrivacyPage() {
           <section className="space-y-sm">
             <h2 className="text-h3">5. Cookies</h2>
             <p className="text-text-secondary">
-              Common Parts Access uses cookies strictly for authentication, session management and abuse protection
-              on print reports. No advertising, tracking, or analytics cookies are used.
+              Common Parts Access uses cookies strictly for authentication, session management, abuse protection
+              on print reports and the interface language. No advertising, tracking, or analytics cookies are used.
             </p>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
               <li>Cookie name: Supabase authentication token cookie (sb-*-auth-token pattern)</li>
@@ -185,6 +185,14 @@ export default function PrivacyPage() {
               <li>Type: Strictly necessary for the print report feature you request.</li>
               <li>Provider: Common Parts Access (first party).</li>
               <li>Duration: 12 months.</li>
+            </ul>
+            <ul className="list-disc space-y-xs pl-md text-text-secondary">
+              <li>Cookie name: NEXT_LOCALE</li>
+              <li>Purpose: Holds the interface language you last used (&quot;en&quot; or &quot;fr&quot;), so a link without a
+                language in its address opens in that language. It holds no identifier.</li>
+              <li>Type: Strictly necessary to display the service in the language you chose.</li>
+              <li>Provider: Common Parts Access (first party).</li>
+              <li>Duration: Session (deleted when you close your browser).</li>
             </ul>
             <p className="text-text-secondary">
               You may delete cookies at any time through your browser settings. Doing so will log you out of your
