@@ -62,7 +62,7 @@ export default async function Navbar() {
           </Button>
         </div>
 
-        <div className="flex items-center gap-xs md:ml-sm">
+        <div className="flex items-center gap-3xs md:ml-sm">
           <Suspense>
             <LanguageSwitcher />
           </Suspense>
