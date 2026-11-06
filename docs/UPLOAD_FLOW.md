@@ -48,7 +48,7 @@ Registered images are shown as a thumbnail grid in canonical order, the first ta
 
 ### 3. Details
 
-Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` — the same serializer curation uses — and parsed server-side by the shared `parseDimensions`/`parsePrintSettings`/`parseNonNegative*` helpers.
+Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` — the same serializer curation uses — and validated server-side by the shared Zod schemas of `lib/schemas/part-fields.ts` (#483).
 
 ### 4. Compatibility
 
@@ -82,7 +82,7 @@ The review step also mirrors the file, brand and product conditions locally so a
 
 ## Flow narrowing
 
-`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them is a **400**, checked before any database work.
+`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them is a **400** naming the field, checked by the request schemas of `lib/schemas/upload.ts` before any other check and any database work (#483).
 
 Two decisions worth keeping explicit:
 
@@ -91,7 +91,7 @@ Two decisions worth keeping explicit:
 
 The narrowing is also expressed in the types — `UploadDraftPatch` has no key for any of these columns — so a route cannot set one even by mistake. `createUploadDraft` sets `origin_type = 'original'`, `file_hosting_type = 'hosted'` and `verification_status = 'unverified'` explicitly rather than relying on column defaults, because the premise of the flow is that these three are not the contributor's to choose. The database holds the same line for any caller using the public API keys: a part is inserted as an unverified draft, and `status`, `verification_status` and `origin_type` cannot be changed afterwards (#422, see [DATA_MODEL.md](DATA_MODEL.md)).
 
-Covered by `lib/upload/payload.test.ts`.
+Covered by `lib/upload/payload.test.ts` and `lib/schemas/drafts.test.ts`.
 
 ## Persistent drafts
 

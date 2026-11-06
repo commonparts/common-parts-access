@@ -79,7 +79,7 @@ feature/xxx → short-lived feature branches → PR to dev
 
 ### Commit Conventions
 
-All commits follow the **Conventional Commits** standard, enforced locally via `commitlint` + `husky`.
+All commits follow the **Conventional Commits** standard, enforced locally via `commitlint` + `husky`. The commitlint configuration is the `commitlint` key of `package.json`.
 
 ```
 feat(scope): short description
@@ -105,6 +105,7 @@ Husky hooks:
 - CI must pass before merge is possible
 - Copilot code review runs automatically on every PR
 - All blocking Copilot findings must be resolved before merge
+- The description reports the net change in hand-written lines, excluding generated files, tests and docs; a positive net change is justified (#491)
 
 ### CI Pipeline (GitHub Actions)
 
@@ -116,7 +117,8 @@ Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
 3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
-4. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
+4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx`, `components/ui/command.tsx`, `components/ui/dropdown-menu.tsx` and `components/ui/popover.tsx`, kept so the files stay close to upstream (#482, #484), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
+5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
 ### Railway Environments
 
@@ -132,13 +134,15 @@ Each environment reaches the single Supabase project with the publishable and se
 
 | Variable | Key | Read by |
 |---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts` |
-| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion) |
+| `NEXT_PUBLIC_SUPABASE_URL` | Project URL | Every Supabase client, through `lib/public-env.ts` |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Publishable key (`sb_publishable_...`), RLS applies | `lib/supabase/client.ts`, `lib/supabase/server.ts`, `lib/supabase/middleware.ts`, through `lib/public-env.ts` |
+| `SUPABASE_SECRET_KEY` | Secret key (`sb_secret_...`), bypasses RLS, server-only | `lib/supabase/admin.ts` (search-miss logging, print reports, publishing, account deletion), through `lib/env.ts`; the file imports `server-only`, so importing it from a client component fails the build (#482) |
 
 `NEXT_PUBLIC_` variables are inlined at build time: a new or changed value takes effect only after a rebuild, so it must exist in the environment before the build. `SUPABASE_SECRET_KEY` never takes the `NEXT_PUBLIC_` prefix. Both keys are created and rotated in Supabase Dashboard > Settings > API Keys.
 
 `THINGIVERSE_APP_TOKEN` is optional and server-only: set in an environment, it enables the Thingiverse pre-fill and image import of the publish flow (#431, see [CURATION_TOOL.md](CURATION_TOOL.md#pre-fill-from-the-source-url)). It is read at request time, so a change takes effect without a rebuild.
+
+Environment variables are read through two validated modules, never through `process.env` directly (#483). `lib/public-env.ts` validates the two public Supabase variables with a Zod schema; it reads each by name, so Next.js still inlines them in client bundles. `lib/env.ts` validates the server variables (`SUPABASE_SECRET_KEY`, `CURATOR_USER_IDS`, `THINGIVERSE_APP_TOKEN`, all optional) and the public ones; `serverEnv(name)` returns one variable and throws an error naming it when it is malformed. `instrumentation.ts` validates the whole schema when the server starts, so a deployment with a missing or malformed variable fails at boot with the list of variables to fix. The session middleware is the exception: when the public variables are not set, it lets requests through unauthenticated. `NEXT_PUBLIC_APP_URL` and `NEXT_PUBLIC_ENABLE_SOCIAL_FEATURES` are build-time public settings with a default, parsed where they are used (`lib/utils/constants.ts`, `lib/utils/feature-flags.ts`).
 
 ---
 
@@ -153,7 +157,7 @@ This is the full lifecycle of a change, from issue to production.
 4. Agent Dev implements on feature/issue-xxx branch
 5. Agent Dev opens PR toward dev
          ↓
-6. CI runs automatically (tsc + lint + tests)
+6. CI runs automatically (tsc + lint + knip + tests)
 7. Copilot code review runs automatically
 8. Human reads findings, asks Agent Dev to fix blocking issues
 9. Agent Dev pushes fixes — CI and Copilot re-run
@@ -301,14 +305,14 @@ Labels are the shared language between humans and agents. All issues must carry 
 - Proposes a technical approach before writing any code
 - Implements following all conventions in `CLAUDE.md`
 - Updates the affected `docs/` files in the same PR as the code change
-- Runs self-review checklist (tsc + lint + tests) before committing
+- Runs self-review checklist (tsc + lint + knip + tests) before committing
 - Opens a PR toward `dev` via GitHub MCP
 
 **What it never does:**
 - Merges a PR unless the human asks for that merge
 - Pushes to `main` or `staging`
 - Installs dependencies without asking
-- Modifies `design-tokens/`, `middleware.ts`, or core Supabase client files
+- Modifies the design tokens (`@theme` block of `app/globals.css`), `middleware.ts`, or core Supabase client files
 
 ---
 
@@ -361,7 +365,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 There is a single Supabase database: production. Development, staging, PR environments and production all run against it, because persistent branch databases require a paid Supabase plan. Schema changes are version-controlled as SQL files in `supabase/migrations/`, and applied at one of two moments (#408):
 
-- **Additive migrations** (new tables, columns, functions, policies) are applied by the human when the feature PR lands on `dev`. Promotions carry no step for them.
+- **Additive migrations** (new tables, columns, functions, policies) are applied by Agent Dev with the Supabase MCP (`apply_migration`) before the feature PR is merged into `dev`, so the PR can carry the types generated from the applied schema (#483). The migration file is then named after the version it was applied as, and its header records `APPLIED to production on <date> as version <version>`: the repository and the database's migration history agree, and the release does not apply it a second time. Promotions carry no step for them.
 - **Destructive migrations** remove a table, column, constraint or function that application code has used. They are applied automatically when a release is merged into `main`, by the Supabase GitHub integration, and their header says so (#373, #405). The release PR toward `main` names them.
 
 The integration applies a release's migrations while Railway is still deploying it, so the release in production keeps running for a few minutes against the new schema. A destructive migration is therefore never released together with the code change that stops using what it removes (#416):
@@ -384,6 +388,12 @@ Applying a destructive migration on `dev` is never an option: the release in pro
 The integration applies the migration files missing from the database's migration history, in timestamp order. A destructive migration therefore carries a timestamp later than every migration already applied: when an additive migration is applied after a destructive one was written, the destructive file is renamed with a later timestamp before the release (#412).
 
 A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
+
+### Generated types
+
+`types/supabase.ts` is generated from the production schema by `npm run db:types` (the Supabase CLI, authenticated with `supabase login` or `SUPABASE_ACCESS_TOKEN`), or by the Supabase MCP `generate_typescript_types` (#483). It changes only with the schema. Every Supabase client is created with its `Database` type, so query results are inferred from the select string and a renamed or dropped column fails `tsc`. `types/database.ts` derives the row types from it (`Tables<'parts'>`) and only adds what the generator cannot express: the values of a text column restricted by a CHECK constraint (typed `string`) and the shapes of jsonb columns (typed `Json`), applied to a selected row by `narrowPartRow()` (`lib/supabase/rows.ts`).
+
+`types/supabase.ts` changes in the same PR as the migration that changes the schema. An additive migration is applied before its PR is merged (see above), so the PR regenerates the file from production once the migration is applied, and the code of the PR is type-checked against the schema it runs on (#483). A destructive migration is applied only with the release to `main`, after the code stops using what it removes: the follow-up PR that carries it removes the object from `types/supabase.ts`, and `npm run db:types` run once the release is in production must leave the file unchanged.
 
 The full schema is described in [DATA_MODEL.md](./DATA_MODEL.md). The table below covers the pipeline entry point only.
 
@@ -414,8 +424,8 @@ RLS: anyone can insert, users can read their own rows only.
 - Conventional Commits enforced via `commitlint` + `husky`
 - `pre-push` hook blocking direct pushes to `main` and `staging`
 - Branch structure: `main`, `staging`, `dev`
-- GitHub Actions CI: type check + lint + Vitest with coverage threshold on every push and PR
-- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by the human, destructive ones automatically with the release to `main`
+- GitHub Actions CI: type check + lint + unused code check (knip) + Vitest with coverage threshold on every push and PR
+- Schema changes version-controlled in `supabase/migrations/`, applied to the single production database: additive ones by Agent Dev before the PR is merged, destructive ones automatically with the release to `main`
 - `supabase/` excluded from tsc (Deno runtime)
 - GitHub label taxonomy (13 labels across type, priority, agent)
 
@@ -512,6 +522,15 @@ Native to GitHub, agentic architecture since March 2026, configurable via a sing
 **Why squash merges into `dev` and merge commits for promotions?**
 Each feature lands on `dev` as one squashed commit, so history stays readable and release notes list one line per change. Promotions (`dev` → `staging` → `main`) use merge commits: a squash would leave `staging` and `main` without `dev`'s history, and every later promotion would conflict.
 
+**Why Server Actions for UI mutations? (#491)**
+Most mutation routes were each called from a single place in our own UI, and each needed a route file, a client `fetch` call, JSON parsing and a second declaration of the request and response types. A Server Action replaces this with a typed function call, and Next.js checks the request origin for it by default. The rule:
+- Mutations triggered from our own UI are Server Actions in `lib/actions/[domain].ts`. Each one validates its input with a Zod schema and verifies the user with `auth.getUser()` before anything else, like a route: an action is a public endpoint. It returns `{ ok: true, data }` or `{ ok: false, error }`.
+- Reads are fetched in Server Components and passed as props. A GET route is kept only when a client component must read after an interaction (autocomplete, debounced pre-fill or duplicate check) or when a client outside the app calls it. Actions are POST requests, run one at a time per client and are not cacheable, so reads never use them.
+- API routes remain for downloads, redirects, binary responses, webhooks and anything called from outside the app.
+- Data access stays in `lib/supabase/queries/`; actions call query functions.
+
+Print reports and part requests were migrated first (#491). The other mutation routes migrate when a change touches them, not as a standalone rewrite.
+
 **Why 0 required approvals on PRs?**
 Solo project. The goal of PR protection is forcing CI + Copilot review to run. The human reviews and merges manually anyway.
 
@@ -527,27 +546,31 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── .github/
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
-│       ├── ci.yml                  # Lint + type check + tests
+│       ├── ci.yml                  # Type check + lint + knip + tests
 │       ├── release.yml             # Tag + GitHub Release on merge to main
 │       └── label-merged-issues.yml # Labels issues referenced by merged PRs
 ├── .husky/
 │   ├── commit-msg                  # Commitlint hook
-│   ├── pre-commit
 │   └── pre-push                    # Block direct push to main/staging
+├── instrumentation.ts              # Validates the server environment at startup
 ├── app/
 │   ├── (auth)/                     # Sign-up, login, password, account deletion
 │   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
 │   ├── (legal)/                    # Privacy, terms, legal notice
 │   ├── (public)/                   # Browse, brands, categories, product, parts, search
-│   ├── api/                        # API routes (no Server Actions)
+│   ├── api/                        # API routes: downloads, redirects, binary responses, webhooks, external callers
+│   ├── globals.css                 # Design tokens (@theme) and global styles (edit tokens only with approval)
 │   ├── layout.tsx                  # FeedbackButton mounted here
 │   ├── robots.ts / sitemap.ts      # Crawler entry points
 ├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
 ├── constants/
-├── design-tokens/                  # Token sources (edit only with approval)
 ├── hooks/
 ├── lib/
+│   ├── actions/                    # Server Actions for mutations from our own UI, one file per domain
+│   ├── api/parse.ts                # Input validation with Zod: Result type for actions, 400 for routes
+│   ├── env.ts / public-env.ts      # Validated environment variables
 │   ├── curation/ publish/ upload/  # Publish-flow logic per track
+│   ├── schemas/                    # Zod schemas of the API inputs, one file per domain
 │   ├── storage/                    # Upload and download helpers
 │   ├── supabase/queries/           # All Supabase queries, one file per domain
 │   └── utils/                      # Validators, formatters, SEO, feature flags, …
@@ -555,7 +578,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── config.toml                 # Edge Function declaration, read by the CLI and the GitHub integration
 │   ├── functions/triage-feedback/  # Agent Triage edge function
 │   └── migrations/                 # Version-controlled schema changes
-├── types/
+├── types/                          # supabase.ts (generated), database.ts (row aliases), view models
 ├── docs/                           # Technical documentation (index: docs/README.md)
-└── commitlint.config.mjs           # Commit convention config
+└── knip.json                       # Unused code check configuration and its exceptions
 ```

@@ -3,11 +3,12 @@
 Use this as a quick-reference for building or updating UI. It captures the current tokens, sizing, and component expectations so new work stays consistent.
 
 ## Foundations
-- **Typography**: Use the configured font tokens (`font-body`, `font-heading`, `font-mono`). Default body text at `text-sm`; headings leverage the predefined `text-heading-*` scales. Keep tracking/weight consistent with existing sections (e.g., hero and cards). The fonts are IBM Plex Sans (300, 400, 500, 600) and IBM Plex Mono (400, 500), Latin subset, committed under `assets/fonts/ibm-plex/` with their SIL Open Font License and loaded by `next/font/local` in `app/fonts.ts`, so the build downloads no font (#486). A new weight needs its file added there first.
-- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values. Tailwind generates classes only for the token families of `tailwind.config.ts` (`text`, `bg`, `border`, `action`, `institutional`, `status`): shadcn/ui palette names such as `text-muted-foreground`, `bg-muted` or `text-primary` produce no CSS. The tokens are CSS variables, so an opacity modifier on a token colour (`bg-bg-surface/70`) produces no CSS either.
+- **Tokens**: The design tokens are declared once, as CSS variables in the `@theme` block of `app/globals.css`, and Tailwind v4 generates the utilities from them (#484): `--color-*`, `--spacing-*`, `--radius-*`, `--shadow-*`, `--font-*`, `--text-*` (font sizes), `--font-weight-*`, `--leading-*`, `--tracking-*`, `--transition-duration-*`, `--ease-*` and `--max-width-*`. A token is added as a variable in that block; the project has no `tailwind.config.ts`. `max-w-xs` to `max-w-5xl` keep their Tailwind widths (20rem to 64rem) through `--max-width-*`, since the spacing tokens of the same names would otherwise apply. The dark palette is declared under a `.dark` selector in the same file and is not applied: no page sets that class.
+- **Typography**: Use the configured font tokens (`font-body`, `font-heading`, `font-mono`). Default body text at `text-sm`; headings leverage the predefined `text-heading-*` scales. Keep tracking/weight consistent with existing sections (e.g., hero and cards). The fonts are IBM Plex Sans (300, 400, 500, 600) and IBM Plex Mono (400, 500), Latin subset, committed under `assets/fonts/ibm-plex/` with their SIL Open Font License and loaded by `next/font/local` in `app/fonts.ts`, so the build downloads no font (#486). A new weight needs its file added there first. `next/font` exposes the families as `--font-plex-sans` and `--font-plex-mono`; `--font-sans`, `--font-body` and `--font-heading` read the first, `--font-mono` the second, so text with or without a font utility renders in the loaded IBM Plex files (#484).
+- **Color tokens**: Prefer semantic classes (e.g., `bg-bg-surface`, `bg-bg-subtle`, `text-text-primary`, `text-text-secondary`, `border-border-subtle`, `border-border-focus`, action colors `bg-action-primary`, `hover:bg-action-primaryHover`). Do not hard-code hex values. Tailwind generates classes only for the colour families declared in `app/globals.css` (`text`, `bg`, `border`, `action`, `institutional`, `status`) and its default palette: shadcn/ui palette names such as `text-muted-foreground`, `bg-muted` or `text-primary` produce no CSS. An opacity modifier on a token colour (`bg-action-primary/10`) mixes the colour with transparency. An element with `border` and no border colour class takes `border-border-default`.
   - Secondary text uses `text-text-secondary`, which keeps at least 4.5:1 contrast on every background token in both themes (#464); loading skeletons and placeholders use `bg-bg-muted`; inset panels use `bg-bg-subtle`.
   - Decorative accent icons (section headings) use `text-institutional-malachite`.
-  - Modal backdrops and translucent caption bars use `bg-bg-overlay` (the surface colour at 70% opacity), combined with `backdrop-blur-sm` behind a modal (#464).
+  - Modal backdrops and translucent caption bars use `bg-bg-overlay` (the surface colour at 70% opacity), combined with `backdrop-blur-xs` behind a modal (#464).
 - **Spacing scale**: Rely on tokenized spacing utilities: `px-md py-sm` for controls, `gap-sm`/`space-y-sm` for small stacks, `gap-md`/`space-y-md` for medium groupings, `p-lg`/`p-xl` for larger containers. Avoid raw numbers.
 - **Radii**: Default radius is `rounded-lg` for controls and cards. Only increase radius when a specific pattern (e.g., pills) calls for it.
 - **Shadows**: Use semantic shadows: `shadow-surface` for inputs/cards, `shadow-overlay` for popovers/dropdowns, `shadow-raised` for primary CTAs. Avoid ad-hoc shadow definitions.
@@ -19,8 +20,8 @@ Refer to [CONTROL_SIZING.md](./CONTROL_SIZING.md) for the detailed control recip
 - **Standard control size**: `px-md py-sm`, `text-sm`, `rounded-lg` across buttons, inputs, selects, combobox rows, and navbar/hero actions.
 - **Buttons**: Use default size unless explicitly using the `icon` variant. Keep contextual colors only (e.g., action primary in hero, outline in filters). Avoid `size="sm"`/`"lg"` for general layout consistency.
 - **Inputs/Textareas**: Inputs follow the standard control recipe. Textareas mirror input styling; adjust only vertical padding/rows if needed.
-- **Selects**: Plain `<select>` elements should match input styling (`px-md py-sm text-sm rounded-lg border-border-subtle bg-bg-surface`).
-- **Combobox**: Input inherits Input styling; dropdown rows (options/empty/create) use `px-md py-sm text-sm` with `shadow-overlay` surface.
+- **Selects**: Use `NativeSelect` (`components/ui/native-select.tsx`), the shadcn native select: a plain `<select>` with input styling and a chevron, which takes the attributes of a `select` (#484).
+- **Combobox**: `components/ui/combobox.tsx` is built on the shadcn `Command` (cmdk) and `Popover` (Radix) components (#484). The field is an `Input`; it filters the options by substring as the user types, and the list opens 16px below it. The first row is highlighted when the list opens; the arrow keys move the highlight, Enter picks the highlighted row, Escape closes the list. Rows (options, empty state, create row) use `px-md py-2xs text-sm font-medium`, separated by `border-border-subtle`, on a `rounded-lg` surface without shadow.
 - **File uploader**: Surface uses `p-lg`, `rounded-lg`, `border-dashed border-border-subtle`, `bg-bg-surface`, `shadow-surface`. Drag-over uses action tint; disabled reduces opacity and blocks pointer events.
 
 ## Badges
@@ -62,7 +63,7 @@ A short inline error line, such as the message under a form, uses `text-sm text-
 - **Navbar**: Buttons (auth / "Publish a part" / logout) use default size; maintain `gap-sm` for the cluster. Preserve backdrop blur and `border-border-subtle`.
 - **Hero**: Holds only the global search bar (see below); see [HERO_SECTION.md](./HERO_SECTION.md).
 - **Search bar**: Input + button share control height; button is default size with `rounded-l-none` when attached to the input.
-- **Stacks and gaps**: Use `gap-sm` for tight clusters (icons with labels, inline button groups) and `gap-md` for primary layout sections. For vertical rhythm in forms, prefer `space-y-sm` or `space-y-md`.
+- **Stacks and gaps**: Use `gap-sm` for tight clusters (icons with labels, inline button groups) and `gap-md` for primary layout sections. For vertical rhythm in forms, prefer `space-y-sm` or `space-y-md`. `space-y-*` keeps its Tailwind v3 behaviour, a top margin on each visible child after the first, through an override in `app/globals.css` (#484): the Tailwind v4 rule puts a bottom margin on each child but the last, which has no effect after an inline label and leaves a gap before a hidden last child. `space-x-*` follows Tailwind v4.
 
 ## Do/Don’t Checklist
 - Do use semantic tokens for color, spacing, radius, shadows—avoid ad-hoc values.
@@ -73,5 +74,5 @@ A short inline error line, such as the message under a form, uses `text-sm text-
 
 ## Useful References
 - Control sizing recipe: [CONTROL_SIZING.md](./CONTROL_SIZING.md)
-- Tokens: see `design-tokens/` sources and Tailwind semantic classes used throughout components.
+- Tokens: the `@theme` block of `app/globals.css`.
 - Patterns: navbar, search bar, and the publish flow steps (`components/publish/`) demonstrate current canonical control usage.

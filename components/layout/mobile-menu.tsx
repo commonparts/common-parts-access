@@ -102,7 +102,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                always relative to the viewport, not an ancestor's layout box. */}
           <div
             id="mobile-nav-panel"
-            className="fixed left-0 top-16 z-50 max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-sm"
+            className="fixed left-0 top-16 z-50 max-h-[calc(100dvh-4rem)] w-full overflow-y-auto border-b border-border-default bg-bg-surface px-md py-sm shadow-xs"
           >
             <div className="flex flex-col gap-xs">
               {menuLinks.map((item) => (

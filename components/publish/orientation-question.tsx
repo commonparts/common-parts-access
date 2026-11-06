@@ -36,7 +36,7 @@ export function OrientationQuestion({ onChoose, className }: OrientationQuestion
               className={cn(
                 'flex flex-col gap-2xs rounded-lg border border-border-default bg-bg-surface p-md text-left',
                 'hover:bg-bg-hover',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus',
+                'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface focus-visible:border-border-focus',
               )}
             >
               <span className="flex flex-wrap items-center gap-2xs">

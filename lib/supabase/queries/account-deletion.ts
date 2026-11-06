@@ -1,5 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
-
+import type { createAdminClient } from '@/lib/supabase/admin'
 import type { AccountDeletionSteps, StorageFolder } from '@/lib/account/deletion'
 
 /** Objects listed per Storage `list()` page (the API maximum is 1000). */
@@ -12,7 +11,7 @@ const STORAGE_LIST_PAGE_SIZE = 1000
  * only), or read objects it no longer owns. Service role bypasses RLS, so
  * every query below filters on the user explicitly.
  */
-export function createAccountDeletionSteps(admin: SupabaseClient): AccountDeletionSteps {
+export function createAccountDeletionSteps(admin: ReturnType<typeof createAdminClient>): AccountDeletionSteps {
   return {
     async listUnpublishedPartIds(userId, limit) {
       // Covered by idx_parts_user.

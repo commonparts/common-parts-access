@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Brand } from '@/types/database'
 
-export async function fetchBrands(): Promise<Brand[]> {
+/** The brand columns listed by fetchBrands. */
+export type BrandSummary = Pick<Brand, 'id' | 'name' | 'slug' | 'verified'>
+
+export async function fetchBrands(): Promise<BrandSummary[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('brands')
@@ -12,5 +15,5 @@ export async function fetchBrands(): Promise<Brand[]> {
     throw error
   }
 
-  return (data ?? []) as Brand[]
+  return data ?? []
 }

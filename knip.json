@@ -1,0 +1,24 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": [
+    "supabase/functions/**"
+  ],
+  "ignoreIssues": {
+    "components/ui/card.tsx": [
+      "exports"
+    ],
+    "components/ui/command.tsx": [
+      "exports"
+    ],
+    "components/ui/dropdown-menu.tsx": [
+      "exports"
+    ],
+    "components/ui/popover.tsx": [
+      "exports"
+    ],
+    "types/supabase.ts": [
+      "exports",
+      "types"
+    ]
+  }
+}

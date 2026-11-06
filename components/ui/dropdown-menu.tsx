@@ -27,7 +27,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
   <DropdownMenuPrimitive.SubTrigger
     ref={ref}
     className={cn(
-      "flex cursor-pointer select-none items-center gap-sm rounded-md px-sm py-2xs text-sm text-text-primary outline-none transition-colors hover:bg-bg-hover focus:bg-bg-hover data-[state=open]:bg-bg-hover [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+      "flex cursor-pointer select-none items-center gap-sm rounded-md px-sm py-2xs text-sm text-text-primary outline-hidden transition-colors hover:bg-bg-hover focus:bg-bg-hover data-[state=open]:bg-bg-hover [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
       inset && "pl-xl",
       className,
     )}
@@ -47,7 +47,7 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-50 overflow-hidden rounded-lg border border-border-subtle bg-bg-surface p-xs text-text-primary shadow-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+      "z-50 overflow-hidden rounded-lg border border-border-subtle bg-bg-surface p-xs text-text-primary shadow-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
       className,
     )}
     {...props}
@@ -65,8 +65,8 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-50 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overflow-x-hidden rounded-lg border border-border-subtle bg-bg-surface p-3xs text-text-primary shadow-none",
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-[--radix-dropdown-menu-content-transform-origin]",
+        "z-50 max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto overflow-x-hidden rounded-lg border border-border-subtle bg-bg-surface p-3xs text-text-primary shadow-none",
+        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 origin-(--radix-dropdown-menu-content-transform-origin)",
         className,
       )}
       {...props}
@@ -84,7 +84,7 @@ const DropdownMenuItem = React.forwardRef<
   <DropdownMenuPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center gap-sm rounded-md px-sm py-2xs text-sm text-text-primary outline-none transition-colors hover:bg-bg-hover focus:bg-bg-hover data-[disabled]:pointer-events-none data-[disabled]:text-text-disabled data-[disabled]:bg-bg-disabled [&>svg]:size-4 [&>svg]:shrink-0",
+      "relative flex cursor-pointer select-none items-center gap-sm rounded-md px-sm py-2xs text-sm text-text-primary outline-hidden transition-colors hover:bg-bg-hover focus:bg-bg-hover data-disabled:pointer-events-none data-disabled:text-text-disabled data-disabled:bg-bg-disabled [&>svg]:size-4 [&>svg]:shrink-0",
       inset && "pl-xl",
       className,
     )}
@@ -100,7 +100,7 @@ const DropdownMenuCheckboxItem = React.forwardRef<
   <DropdownMenuPrimitive.CheckboxItem
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-md py-2xs pl-xl pr-sm text-sm text-text-primary outline-none transition-colors hover:bg-bg-hover focus:bg-bg-hover data-[disabled]:pointer-events-none data-[disabled]:text-text-disabled data-[disabled]:bg-bg-disabled",
+      "relative flex cursor-pointer select-none items-center rounded-md py-2xs pl-xl pr-sm text-sm text-text-primary outline-hidden transition-colors hover:bg-bg-hover focus:bg-bg-hover data-disabled:pointer-events-none data-disabled:text-text-disabled data-disabled:bg-bg-disabled",
       className,
     )}
     checked={checked}
@@ -124,7 +124,7 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-pointer select-none items-center rounded-md py-2xs pl-xl pr-sm text-sm text-text-primary outline-none transition-colors hover:bg-bg-hover focus:bg-bg-hover data-[disabled]:pointer-events-none data-[disabled]:text-text-disabled data-[disabled]:bg-bg-disabled",
+      "relative flex cursor-pointer select-none items-center rounded-md py-2xs pl-xl pr-sm text-sm text-text-primary outline-hidden transition-colors hover:bg-bg-hover focus:bg-bg-hover data-disabled:pointer-events-none data-disabled:text-text-disabled data-disabled:bg-bg-disabled",
       className,
     )}
     {...props}

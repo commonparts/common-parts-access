@@ -20,7 +20,7 @@ const PRODUCT_PARTS_PAGE_SIZE = 20
 // of manufacturer references at most; this only guards against runaway data.
 const MAX_PRODUCT_REFERENCES = 200
 
-export interface ProductPageProduct {
+interface ProductPageProduct {
   id: string
   name: string
   slug: string
@@ -50,18 +50,6 @@ export interface ProductPartsPage {
   /** The page actually returned: 1 when the requested page was out of range. */
   page: number
   totalPages: number
-}
-
-interface ProductRow {
-  id: string
-  name: string
-  slug: string
-  release_year: number | null
-  discontinued: boolean | null
-  image_url: string | null
-  brands: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
-  categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
-  product_references: ProductReference[] | null
 }
 
 /**
@@ -94,7 +82,7 @@ export const fetchProductPageBySlug = cache(
     if (error) throw error
     if (!data) return null
 
-    const row = data as ProductRow
+    const row = data
     const product: ProductPageProduct = {
       id: row.id,
       name: row.name,
@@ -106,7 +94,11 @@ export const fetchProductPageBySlug = cache(
       category: firstEmbedded(row.categories),
     }
 
-    return { product, references: row.product_references ?? [] }
+    // Cast: product_references.type has a CHECK constraint allowing exactly
+    // the ProductReferenceType values; the generated type of a text column is
+    // `string`.
+    const references = (row.product_references ?? []) as ProductReference[]
+    return { product, references }
   },
 )
 

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DropdownInput } from "@/components/ui/dropdown-input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { FileUploader } from "@/components/ui/file-uploader"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -46,7 +46,7 @@ export function CreateProductModal({
   // including the sticky navbar once it is "stuck" on its own compositing
   // layer (which a page-nested backdrop-filter cannot sample).
   return createPortal(
-    <div className="fixed inset-0 z-[60] overflow-y-auto bg-bg-overlay px-sm py-sm backdrop-blur-sm">
+    <div className="fixed inset-0 z-60 overflow-y-auto bg-bg-overlay px-sm py-sm backdrop-blur-xs">
       <div className="flex min-h-full w-full items-start justify-center">
         <div className="w-full max-w-3xl">
           <Card
@@ -87,8 +87,7 @@ export function CreateProductModal({
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="create-brand">Brand *</Label>
-                  <DropdownInput
-                    as="select"
+                  <NativeSelect
                     id="create-brand"
                     value={data.brandId}
                     onChange={(e) => onChange("brandId", e.target.value)}
@@ -98,13 +97,12 @@ export function CreateProductModal({
                     {brands.map((brand) => (
                       <option key={brand.id} value={brand.id}>{brand.name}</option>
                     ))}
-                  </DropdownInput>
+                  </NativeSelect>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="create-category">Category *</Label>
-                  <DropdownInput
-                    as="select"
+                  <NativeSelect
                     id="create-category"
                     value={data.categoryId}
                     onChange={(e) => onChange("categoryId", e.target.value)}
@@ -114,7 +112,7 @@ export function CreateProductModal({
                     {categories.map((category) => (
                       <option key={category.id} value={category.id}>{category.label}</option>
                     ))}
-                  </DropdownInput>
+                  </NativeSelect>
                 </div>
               </div>
 

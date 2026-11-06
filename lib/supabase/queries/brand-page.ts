@@ -5,7 +5,7 @@ import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 
 /** Page size shared by the /brands/[brand] and /brands/[brand]/[category] listings. */
-export const NAV_LISTING_PAGE_SIZE = 24
+const NAV_LISTING_PAGE_SIZE = 24
 
 export interface BrandPageBrand {
   id: string
@@ -23,7 +23,7 @@ export interface BrandPageProduct {
   category: { id: string; name: string; slug: string } | null
 }
 
-export interface BrandCoveredCategory {
+interface BrandCoveredCategory {
   id: string
   name: string
   slug: string
@@ -59,7 +59,7 @@ export const fetchBrandBySlug = cache(async (slug: string): Promise<BrandPageBra
     .maybeSingle()
 
   if (error) throw error
-  return (data as BrandPageBrand | null) ?? null
+  return data
 })
 
 /**
@@ -78,6 +78,8 @@ export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> =>
   const { data, error } = await supabase.rpc('fetch_brand_nav', { p_brand_id: brandId })
   if (error) throw error
 
+  // Cast: fetch_brand_nav returns jsonb, which the generated types can only
+  // call `Json`; its shape is the RPC's contract, described by BrandNav.
   const nav = data as BrandNav | null
   return {
     parts_count: nav?.parts_count ?? 0,
@@ -85,15 +87,6 @@ export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> =>
     categories: nav?.categories ?? [],
   }
 })
-
-interface ProductRow {
-  id: string
-  name: string
-  slug: string
-  image_url: string | null
-  parts_count: number | null
-  categories: { id: string; name: string; slug: string } | { id: string; name: string; slug: string }[] | null
-}
 
 /**
  * Fetches one page of a brand's products with their category and denormalized
@@ -128,7 +121,7 @@ export const fetchBrandProductsPage = cache(
 
     const total = count ?? 0
     return {
-      products: ((data ?? []) as ProductRow[]).map((row) => ({
+      products: (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,
         slug: row.slug,
@@ -192,7 +185,7 @@ export const fetchBrandCategoryListing = cache(
     const total = count ?? 0
     return {
       category,
-      products: ((data ?? []) as Omit<ProductRow, 'categories'>[]).map((row) => ({
+      products: (data ?? []).map((row) => ({
         id: row.id,
         name: row.name,
         slug: row.slug,

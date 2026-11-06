@@ -1,8 +1,12 @@
 "use client";
 
 import * as React from "react";
+import { Command as CommandPrimitive } from "cmdk";
+
+import { Command, CommandItem, CommandList } from "./command";
 import { Input } from "./input";
 import { Label } from "./label";
+import { Popover, PopoverAnchor, PopoverContent } from "./popover";
 import { cn } from "@/lib/utils";
 
 export interface ComboboxOption {
@@ -29,6 +33,17 @@ interface ComboboxProps<T extends ComboboxOption> {
   emptyMessage?: string;
 }
 
+const ROW_CLASS =
+  "rounded-none border-border-subtle px-md py-2xs font-medium transition-colors";
+// cmdk identifies rows by value; options use their id, which is never this.
+const CREATE_VALUE = "create-option";
+
+/**
+ * Text field that filters `options` as the user types and offers the matches
+ * in a list below it, plus an optional row creating the typed value.
+ * cmdk provides the keyboard navigation and the combobox ARIA roles; the
+ * Popover places the list. Filtering stays a substring match on the name.
+ */
 export function Combobox<T extends ComboboxOption>({
   id,
   label,
@@ -47,105 +62,17 @@ export function Combobox<T extends ComboboxOption>({
   emptyMessage = "No options found",
   inputClassName,
 }: ComboboxProps<T>) {
-  const [selectedIndex, setSelectedIndex] = React.useState(-1);
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-
+  const inputRef = React.useRef<HTMLInputElement>(null);
   const trimmedSearch = searchTerm.trim();
-
-  // Filter options based on search term
   const filteredOptions = options.filter((option) =>
     option.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
   const hasExactMatch = filteredOptions.some(
     (option) => option.name.toLowerCase() === trimmedSearch.toLowerCase()
   );
   const showCreate = allowCreate && !!trimmedSearch && !hasExactMatch;
-  const totalRows = filteredOptions.length + (showCreate ? 1 : 0);
 
-  // Handle click outside to close dropdown
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onOpenChange(false);
-        setSelectedIndex(-1);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
-      };
-    }
-  }, [isOpen, onOpenChange]);
-
-  // Handle keyboard navigation
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (!isOpen || totalRows === 0) {
-      if (e.key === "ArrowDown" && !isOpen) {
-        onOpenChange(true);
-        setSelectedIndex(totalRows > 0 ? 0 : -1);
-      }
-      return;
-    }
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev < totalRows - 1 ? prev + 1 : 0
-        );
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        setSelectedIndex((prev) =>
-          prev > 0 ? prev - 1 : totalRows - 1
-        );
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (selectedIndex >= 0 && selectedIndex < filteredOptions.length) {
-          handleSelect(filteredOptions[selectedIndex]);
-        } else if (showCreate && selectedIndex === filteredOptions.length) {
-          handleCreate();
-        }
-        break;
-      case "Escape":
-        e.preventDefault();
-        onOpenChange(false);
-        setSelectedIndex(-1);
-        break;
-    }
-  };
-
-  // Handle option selection
-  const handleSelect = (option: T) => {
-    onSelect(option);
-    onOpenChange(false);
-    setSelectedIndex(-1);
-  };
-
-  const handleCreate = () => {
-    if (onCreate && trimmedSearch) {
-      onCreate(trimmedSearch);
-      onOpenChange(false);
-      setSelectedIndex(-1);
-    }
-  };
-
-  // Handle input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onSearchChange(newValue);
-    onOpenChange(true);
-    setSelectedIndex(-1);
-  };
-
-  // Handle input focus
-  const handleFocus = () => {
-    onOpenChange(true);
-  };
+  const close = () => onOpenChange(false);
 
   return (
     <div className={cn("w-full min-w-0 space-y-sm", className)}>
@@ -154,58 +81,87 @@ export function Combobox<T extends ComboboxOption>({
           {label}
         </Label>
       )}
-      <div className="relative w-full min-w-0" ref={dropdownRef}>
-        <Input
-          id={id}
-          type="text"
-          value={searchTerm}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onFocus={handleFocus}
-          placeholder={placeholder}
-          disabled={disabled}
-          className={cn("w-full py-2xs", inputClassName)}
-        />
-        {isOpen && (
-          <div className="absolute top-full left-0 right-0 z-50 mt-sm max-h-64 overflow-y-auto rounded-lg border border-border-subtle bg-bg-surface shadow-none">
-            {filteredOptions.length > 0 ? (
-              filteredOptions.map((option, index) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => handleSelect(option)}
-                  className={cn(
-                    "w-full cursor-pointer border-b border-border-subtle px-md py-2xs text-left text-sm text-text-primary transition-colors last:border-b-0",
-                    index === selectedIndex
-                      ? "bg-action-primary/10"
-                      : "hover:bg-bg-hover",
-                  )}
+      <Command
+        shouldFilter={false}
+        vimBindings={false}
+        className="overflow-visible rounded-none"
+      >
+        <Popover open={isOpen} onOpenChange={onOpenChange}>
+          <PopoverAnchor asChild>
+            <CommandPrimitive.Input
+              asChild
+              value={searchTerm}
+              onValueChange={(value) => {
+                onSearchChange(value);
+                onOpenChange(true);
+              }}
+            >
+              {/* cmdk finds its input by the id it generates; `id` replaces that
+                  id, so the marker that makes cmdk refocus it on each highlight
+                  change is dropped, and the field is named by its own label. */}
+              <Input
+                ref={inputRef}
+                id={id}
+                cmdk-input={undefined}
+                aria-labelledby={undefined}
+                aria-expanded={isOpen}
+                type="text"
+                placeholder={placeholder}
+                disabled={disabled}
+                onFocus={() => onOpenChange(true)}
+                onKeyDown={(e) => {
+                  if (e.key === "ArrowDown" && !isOpen) onOpenChange(true);
+                  // Home and End move the caret in the text, not the highlight.
+                  if (e.key === "Home" || e.key === "End") e.stopPropagation();
+                }}
+                className={cn("w-full py-2xs", inputClassName)}
+              />
+            </CommandPrimitive.Input>
+          </PopoverAnchor>
+          <PopoverContent
+            align="start"
+            sideOffset={16}
+            onOpenAutoFocus={(e) => e.preventDefault()}
+            // The input anchors the list: clicking it must not close the list.
+            onInteractOutside={(e) => {
+              if (inputRef.current?.contains(e.target as Node)) e.preventDefault();
+            }}
+            className="w-(--radix-popover-trigger-width) overflow-hidden p-0 shadow-none"
+          >
+            <CommandList className="max-h-64">
+              {filteredOptions.length > 0 ? (
+                filteredOptions.map((option) => (
+                  <CommandItem
+                    key={option.id}
+                    value={option.id}
+                    onSelect={() => {
+                      onSelect(option);
+                      close();
+                    }}
+                    className={cn(ROW_CLASS, "border-b last:border-b-0")}
+                  >
+                    {option.name}
+                  </CommandItem>
+                ))
+              ) : (
+                <div className="px-md py-2xs text-sm text-text-secondary">{emptyMessage}</div>
+              )}
+              {showCreate && (
+                <CommandItem
+                  value={CREATE_VALUE}
+                  onSelect={() => {
+                    onCreate?.(trimmedSearch);
+                    close();
+                  }}
+                  className={cn(ROW_CLASS, "border-t")}
                 >
-                  <div className="font-medium">{option.name}</div>
-                </button>
-              ))
-            ) : (
-              <div className="px-md py-2xs text-sm text-text-secondary">
-                {emptyMessage}
-              </div>
-            )}
-            {showCreate && (
-              <button
-                type="button"
-                onClick={handleCreate}
-                className={cn(
-                  "w-full cursor-pointer border-t border-border-subtle px-md py-2xs text-left text-sm text-text-primary transition-colors",
-                  selectedIndex === filteredOptions.length
-                    ? "bg-action-primary/10"
-                    : "hover:bg-bg-hover",
-                )}
-              >
-                <div className="font-medium">{createLabel ? createLabel(trimmedSearch) : `Create product: ${trimmedSearch}`}</div>
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+                  {createLabel ? createLabel(trimmedSearch) : `Create product: ${trimmedSearch}`}
+                </CommandItem>
+              )}
+            </CommandList>
+          </PopoverContent>
+        </Popover>
+      </Command>
     </div>
   );
 }

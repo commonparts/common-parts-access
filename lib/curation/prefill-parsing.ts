@@ -184,7 +184,7 @@ export interface ThingiverseFields {
  * License" links an unversioned BSD page, "All Rights Reserved" is not an
  * open license.
  */
-export const THINGIVERSE_LICENSE_TO_SPDX: Record<string, string> = {
+const THINGIVERSE_LICENSE_TO_SPDX: Record<string, string> = {
   'Creative Commons - Attribution': 'CC-BY-4.0',
   'Creative Commons - Attribution - Share Alike': 'CC-BY-SA-4.0',
   'Creative Commons - Attribution - No Derivatives': 'CC-BY-ND-4.0',

@@ -3,7 +3,7 @@ import { extendTailwindMerge } from "tailwind-merge"
 
 /**
  * tailwind-merge only knows Tailwind's stock scales, so the token scales this
- * project defines in tailwind.config.ts have to be declared here. Without them
+ * project defines in app/globals.css have to be declared here. Without them
  * a token class is treated as an unrelated (or, worse, colliding) utility:
  * `text-micro text-text-inverse` used to collapse to the colour alone, because
  * `micro` was not recognised as a font size, and `px-md` could not override
@@ -12,7 +12,7 @@ import { extendTailwindMerge } from "tailwind-merge"
 const twMerge = extendTailwindMerge({
   extend: {
     theme: {
-      // fontSize keys from tailwind.config.ts
+      // --text-* keys from app/globals.css
       text: [
         "micro",
         "caption",
@@ -39,8 +39,9 @@ const twMerge = extendTailwindMerge({
         "4xl",
         "5xl",
       ],
-      // borderRadius keys beyond the stock ones
+      // radius and shadow keys beyond the stock ones
       radius: ["pill"],
+      shadow: ["surface", "raised", "overlay", "modal"],
     },
   },
   override: {
@@ -66,52 +67,3 @@ export * from './utils/slug'
 export * from './utils/validation'
 export * from './utils/formatters'
 export * from './utils/constants'
-
-// Performance utilities (keeping these in main file for now)
-
-/**
- * Debounce function calls
- * @param func - Function to debounce
- * @param wait - Wait time in milliseconds
- * @returns Debounced function
- */
-export function debounce<TArgs extends unknown[]>(
-  func: (...args: TArgs) => void,
-  wait: number
-): (...args: TArgs) => void {
-  let timeout: ReturnType<typeof setTimeout> | undefined
-  return (...args: TArgs) => {
-    if (timeout !== undefined) {
-      clearTimeout(timeout)
-    }
-    timeout = setTimeout(() => func(...args), wait)
-  }
-}
-
-/**
- * Throttle function calls
- * @param func - Function to throttle
- * @param limit - Time limit in milliseconds
- * @returns Throttled function
- */
-export function throttle<TArgs extends unknown[]>(
-  func: (...args: TArgs) => void,
-  limit: number
-): (...args: TArgs) => void {
-  let inThrottle = false
-  return (...args: TArgs) => {
-    if (!inThrottle) {
-      func(...args)
-      inThrottle = true
-      setTimeout(() => inThrottle = false, limit)
-    }
-  }
-}
-
-
-
-
-
-
-
-

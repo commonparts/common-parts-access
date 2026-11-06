@@ -25,7 +25,7 @@ const THUMBNAIL_HOVER_CLASS = "transition-transform duration-200 group-hover:sca
 const THUMBNAIL_SIZES = "(max-width: 640px) 100vw, (max-width: 1024px) 75vw, 50vw"
 
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 
 // tailwind-merge does not know this project's typography scale, so it reads a
 // size token (text-micro) and a color token (text-text-secondary) as the same

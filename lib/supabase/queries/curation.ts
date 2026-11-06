@@ -2,13 +2,9 @@ import { createClient } from '@/lib/supabase/server'
 import { ensureUniquePartSlug } from '@/lib/supabase/queries/part'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import type {
-  CurationChecklist,
-  CurationCriterionKey,
-  Part,
-  PartDimensions,
-  PartPrintSettings,
-} from '@/types/database'
+import { narrowPartRow } from '@/lib/supabase/rows'
+import type { PartDraftColumns } from '@/lib/schemas/drafts'
+import type { CurationChecklist, CurationCriterionKey, Part } from '@/types/database'
 
 // Full field set the curation tool reads back into a resumed session.
 // user_id must stay in this list: the draft routes' ownership check compares
@@ -33,12 +29,7 @@ const DRAFTS_LIST_LIMIT = 50
 // would drop links on resume and re-insert existing ones on save.
 const PRODUCT_LINKS_LIMIT = VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
-export interface SourceUrlMatch {
-  id: string
-  name: string
-  slug: string
-  status: string
-}
+export type SourceUrlMatch = Pick<Part, 'id' | 'name' | 'slug' | 'status'>
 
 /**
  * Finds a part with the given source_url — the duplicate check behind the
@@ -57,17 +48,13 @@ export async function findPartBySourceUrl(sourceUrl: string): Promise<SourceUrlM
     .maybeSingle()
 
   if (error) throw error
-  return (data as SourceUrlMatch | null) ?? null
+  return data ? narrowPartRow(data) : null
 }
 
-export interface CurationDraftListItem {
-  id: string
-  name: string
-  slug: string
-  source_url: string | null
-  curation_checklist: CurationChecklist
-  updated_at: string | null
-}
+export type CurationDraftListItem = Pick<
+  Part,
+  'id' | 'name' | 'slug' | 'source_url' | 'curation_checklist' | 'updated_at'
+>
 
 /**
  * Lists the caller's curated drafts, most recently touched first, so an
@@ -86,13 +73,22 @@ export async function listCurationDrafts(userId: string): Promise<CurationDraftL
     .limit(DRAFTS_LIST_LIMIT)
 
   if (error) throw error
-  return (data ?? []) as CurationDraftListItem[]
+  return (data ?? []).map(narrowPartRow)
 }
 
-export interface CurationDraft extends Partial<Part> {
-  id: string
-  name: string
-  slug: string
+/** The parts columns read by CURATION_DRAFT_SELECT. */
+type CurationDraftColumns =
+  | 'id' | 'name' | 'slug' | 'user_id' | 'description' | 'instructions' | 'status' | 'origin_type'
+  | 'category_id' | 'license_id' | 'tags' | 'thumbnail_url' | 'images'
+  | 'source_url' | 'source_platform' | 'original_author' | 'original_author_url'
+  | 'verification_status' | 'file_hosting_type'
+  | 'material' | 'color' | 'dimensions' | 'print_settings'
+  | 'estimated_print_time' | 'estimated_material_usage'
+  | 'needs_verification' | 'needs_print_settings' | 'needs_photo' | 'needs_instructions'
+  | 'needs_category' | 'needs_legal_review' | 'legal_review_justification'
+  | 'curation_checklist' | 'created_at' | 'updated_at'
+
+export type CurationDraft = Pick<Part, CurationDraftColumns> & {
   product_ids: string[]
   model_file_count: number
   image_file_count: number
@@ -126,8 +122,8 @@ export async function getCurationDraft(id: string): Promise<CurationDraft | null
 
   const fileRows = files ?? []
   return {
-    ...(part as unknown as Part),
-    product_ids: (links ?? []).map((l) => l.product_id as string),
+    ...narrowPartRow(part),
+    product_ids: (links ?? []).map((l) => l.product_id),
     model_file_count: fileRows.filter((f) => f.file_category === 'model').length,
     image_file_count: fileRows.filter((f) => f.file_category === 'image').length,
   }
@@ -187,30 +183,20 @@ export async function createCurationDraft(
     .single()
 
   if (error) throw error
-  return data as { id: string; slug: string }
+  return data
 }
 
 /**
  * Column-shaped patch for a curated draft; only defined keys are written.
  * `status` is absent: a draft is published by the publish gate only (#403).
  */
-export interface CurationDraftPatch {
-  name?: string
-  description?: string | null
-  instructions?: string | null
+export type CurationDraftPatch = PartDraftColumns & {
   category_id?: string | null
   license_id?: string
-  tags?: string[]
   source_platform?: string | null
   original_author?: string
   original_author_url?: string | null
   file_hosting_type?: typeof CURATED_FILE_HOSTING_TYPE
-  material?: string | null
-  color?: string | null
-  dimensions?: PartDimensions | null
-  print_settings?: PartPrintSettings | null
-  estimated_print_time?: number | null
-  estimated_material_usage?: number | null
   curation_checklist?: CurationChecklist
   needs_verification?: boolean
   needs_print_settings?: boolean
@@ -255,7 +241,7 @@ export async function updateCurationDraft(
 
     if (readError) throw readError
 
-    const current = new Set((existing ?? []).map((l) => l.product_id as string))
+    const current = new Set((existing ?? []).map((l) => l.product_id))
     const target = new Set(productIds)
     const toAdd = productIds.filter((pid) => !current.has(pid))
     const toRemove = [...current].filter((pid) => !target.has(pid))

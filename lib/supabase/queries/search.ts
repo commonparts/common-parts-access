@@ -44,6 +44,8 @@ export async function searchAll(query: string, limit: number = SEARCH_DEFAULT_LI
 
   // The RPC always returns a jsonb object with the three keys; fall back
   // defensively so callers never have to null-check the groups.
+  // Cast: search_all returns jsonb, which the generated types can only call
+  // `Json`; its shape is the RPC's contract, described by SearchResults.
   const results = (data ?? {}) as Partial<SearchResults>
   // The RPC returns stored storage references; they resolve to public URLs
   // here, before any caller renders them (#56).
@@ -103,6 +105,6 @@ export async function findExactBrandMatch(query: string): Promise<BrandSuggestio
     return null
   }
 
-  const match = data?.[0] as { name: string; slug: string } | undefined
+  const match = data?.[0]
   return match ? { name: match.name, slug: match.slug } : null
 }

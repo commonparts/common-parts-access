@@ -21,9 +21,9 @@ import { EvidenceLevelBadge } from "./evidence-level-badge"
 import { PrintReportControls, type PrintReportReference } from "./print-report-controls"
 
 const FOCUS_RING =
-  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+  "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
 
-export interface CompatibleProduct {
+interface CompatibleProduct {
   id: string
   name: string
   slug: string
@@ -214,7 +214,7 @@ const CompatibleProductRow = React.memo(function CompatibleProductRow({
       <div className="flex flex-wrap items-center gap-x-xs gap-y-2xs">
         <Link
           href={`/product/${product.slug}`}
-          className={cn("min-w-0 flex-1 break-words text-sm font-medium text-text-primary hover:underline", FOCUS_RING)}
+          className={cn("min-w-0 flex-1 wrap-break-word text-sm font-medium text-text-primary hover:underline", FOCUS_RING)}
         >
           {product.name}
         </Link>

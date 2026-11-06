@@ -8,7 +8,7 @@ import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { DropdownInput } from '@/components/ui/dropdown-input'
+import { NativeSelect } from '@/components/ui/native-select'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Stepper } from '@/components/ui/stepper'
@@ -771,8 +771,7 @@ export function ElsewhereTrack({
                       <Badge variant="outline">Pre-filled</Badge>
                     )}
                   </div>
-                  <DropdownInput
-                    as="select"
+                  <NativeSelect
                     id="elsewhere-platform"
                     value={formData.sourcePlatform}
                     onChange={(e) =>
@@ -786,7 +785,7 @@ export function ElsewhereTrack({
                         {platform.name}
                       </option>
                     ))}
-                  </DropdownInput>
+                  </NativeSelect>
                 </div>
               </div>
 
@@ -794,8 +793,7 @@ export function ElsewhereTrack({
                 <Label>Category</Label>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   {form.categoryLevels.map((level, idx) => (
-                    <DropdownInput
-                      as="select"
+                    <NativeSelect
                       key={level.parentId ?? `root-${idx}`}
                       value={form.categoryPath[idx] ?? ''}
                       onChange={(e) => form.handleCategorySelect(idx, e.target.value)}
@@ -813,7 +811,7 @@ export function ElsewhereTrack({
                           {cat.name}
                         </option>
                       ))}
-                    </DropdownInput>
+                    </NativeSelect>
                   ))}
                 </div>
                 {renderFlagsForStep(PUBLISH_STEPS.ORIGIN)}
@@ -878,8 +876,7 @@ export function ElsewhereTrack({
                     <Badge variant="outline">Pre-filled</Badge>
                   )}
                 </div>
-                <DropdownInput
-                  as="select"
+                <NativeSelect
                   id="elsewhere-license"
                   value={formData.licenseId}
                   onChange={(e) => setFormData((prev) => ({ ...prev, licenseId: e.target.value }))}
@@ -893,7 +890,7 @@ export function ElsewhereTrack({
                       {license.shortName} — {license.name}
                     </option>
                   ))}
-                </DropdownInput>
+                </NativeSelect>
                 <p className="text-sm text-text-secondary">
                   The part keeps the license its designer chose. It is referenced at its source, so
                   NC and ND licenses are allowed.
