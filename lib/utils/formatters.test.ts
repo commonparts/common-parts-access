@@ -1,61 +1,43 @@
 import { describe, expect, it } from 'vitest'
-import { formatPrintLine, formatPrintTime, htmlToPlainText, pluralize } from './formatters'
+import { formatRegionName, htmlToPlainText, splitPrintTime } from './formatters'
 
-describe('formatPrintTime', () => {
-  it('formats whole hours, minutes, and mixed durations', () => {
-    expect(formatPrintTime(45)).toBe('45m')
-    expect(formatPrintTime(60)).toBe('1h')
-    expect(formatPrintTime(150)).toBe('2h 30m')
+describe('splitPrintTime', () => {
+  it('splits whole hours, minutes, and mixed durations', () => {
+    expect(splitPrintTime(45)).toEqual({ hours: 0, minutes: 45 })
+    expect(splitPrintTime(60)).toEqual({ hours: 1, minutes: 0 })
+    expect(splitPrintTime(150)).toEqual({ hours: 2, minutes: 30 })
   })
 
-  it('rounds fractional minutes without rolling up to "1h 60m"', () => {
-    expect(formatPrintTime(119.6)).toBe('2h')
-    expect(formatPrintTime(59.4)).toBe('59m')
+  it('rounds fractional minutes without rolling up to 1 h 60 min', () => {
+    expect(splitPrintTime(119.6)).toEqual({ hours: 2, minutes: 0 })
+    expect(splitPrintTime(59.4)).toEqual({ hours: 0, minutes: 59 })
   })
 
   it('returns null for missing or non-positive values', () => {
-    expect(formatPrintTime(null)).toBeNull()
-    expect(formatPrintTime(undefined)).toBeNull()
-    expect(formatPrintTime(0)).toBeNull()
-    expect(formatPrintTime(-5)).toBeNull()
+    expect(splitPrintTime(null)).toBeNull()
+    expect(splitPrintTime(undefined)).toBeNull()
+    expect(splitPrintTime(0)).toBeNull()
+    expect(splitPrintTime(-5)).toBeNull()
   })
 
-  it('returns null instead of "0m" for values that round to zero', () => {
-    expect(formatPrintTime(0.4)).toBeNull()
+  it('returns null instead of zero minutes for values that round to zero', () => {
+    expect(splitPrintTime(0.4)).toBeNull()
   })
 
   it('returns null for non-finite values', () => {
-    expect(formatPrintTime(Number.NaN)).toBeNull()
-    expect(formatPrintTime(Number.POSITIVE_INFINITY)).toBeNull()
+    expect(splitPrintTime(Number.NaN)).toBeNull()
+    expect(splitPrintTime(Number.POSITIVE_INFINITY)).toBeNull()
   })
 })
 
-describe('formatPrintLine', () => {
-  it('joins the material and the print time', () => {
-    expect(formatPrintLine('PETG', 150)).toBe('PETG · 2h 30m')
+describe('formatRegionName', () => {
+  it('names the region in the given locale', () => {
+    expect(formatRegionName('DE', 'en')).toBe('Germany')
+    expect(formatRegionName('DE', 'fr')).toBe('Allemagne')
   })
 
-  it('keeps whichever part is known', () => {
-    expect(formatPrintLine('PLA', null)).toBe('PLA')
-    expect(formatPrintLine(null, 45)).toBe('45m')
-    expect(formatPrintLine('  ', 60)).toBe('1h')
-  })
-
-  it('returns null when both are missing', () => {
-    expect(formatPrintLine(null, null)).toBeNull()
-    expect(formatPrintLine(undefined, 0)).toBeNull()
-    expect(formatPrintLine('', undefined)).toBeNull()
-  })
-})
-
-describe('pluralize', () => {
-  it('keeps the singular noun for a count of 1', () => {
-    expect(pluralize(1, 'part')).toBe('1 part')
-  })
-
-  it('pluralizes for other counts, including zero', () => {
-    expect(pluralize(0, 'part')).toBe('0 parts')
-    expect(pluralize(2, 'brand')).toBe('2 brands')
+  it('falls back to the code when it is not a region', () => {
+    expect(formatRegionName('not-a-region', 'en')).toBe('not-a-region')
   })
 })
 

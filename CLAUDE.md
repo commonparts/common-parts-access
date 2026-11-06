@@ -543,6 +543,7 @@ Read `docs/I18N.md` before adding a page, a link or an interface string.
 - Import `Link`, `redirect`, `useRouter` and `usePathname` from `@/i18n/navigation`, never from `next/link` or `next/navigation`, for every internal path.
 - Put new interface strings in `messages/en.json` and `messages/fr.json` in the same PR, namespaced by page or component; read them with `getTranslations` (server) or `useTranslations` (client).
 - Read the active locale with next-intl's `getLocale()` / `useLocale()`; do not wrap them.
+- Format dates, relative times and numbers with next-intl's `useFormatter()` / `getFormatter()`, and counts in a sentence with an ICU plural; never with a hand-written formatter or a hard-coded locale.
 
 ### Server vs client components
 

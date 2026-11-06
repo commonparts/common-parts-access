@@ -1,12 +1,12 @@
 'use client'
 
+import { useFormatter } from 'next-intl'
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { PartThumbnail } from '@/components/part/part-thumbnail'
-import { formatDate } from '@/lib/utils/formatters'
 import type { MyPartListItem } from '@/types/parts'
 
 /** Rendered width of the square row thumbnail (the `2xl` spacing token, 64px). */
@@ -24,6 +24,7 @@ interface MyPartsListProps {
  * Deletion is confirmed via a modal dialog before the API call is made.
  */
 export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsListProps) {
+  const format = useFormatter()
   const [parts, setParts] = useState<MyPartListItem[]>(initialParts)
   const [pendingDelete, setPendingDelete] = useState<MyPartListItem | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -120,7 +121,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
               <div className="min-w-0 space-y-xs">
                 <p className="truncate text-sm font-medium text-text-primary">{part.name}</p>
                 <p className="text-xs text-text-secondary">
-                  {part.createdAt ? `Uploaded ${formatDate(part.createdAt, 'medium')}` : 'Upload date unknown'}
+                  {part.createdAt ? `Uploaded ${format.dateTime(new Date(part.createdAt), { dateStyle: 'medium' })}` : 'Upload date unknown'}
                 </p>
               </div>
             </div>

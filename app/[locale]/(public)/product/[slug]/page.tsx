@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
@@ -20,9 +21,9 @@ import { parsePageParam } from "@/lib/utils/validation"
 import {
   buildBreadcrumbJsonLd,
   buildProductBreadcrumbTrail,
-  buildProductSeoDescription,
-  buildProductSeoTitle,
   productCanonicalPath,
+  productFullName,
+  seoDescription,
   serializeJsonLd,
   toBreadcrumbLinks,
 } from "@/lib/utils/seo"
@@ -40,18 +41,21 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const data = await fetchProductPageBySlug(slug)
-  if (!data) return { title: "Product not found" }
+  const [data, t] = await Promise.all([fetchProductPageBySlug(slug), getTranslations("Seo")])
+  if (!data) return { title: t("productNotFoundTitle") }
 
   const { product } = data
   const displayName = await resolveDisplayName(product.name, data.references)
-  const brandName = product.brand?.name ?? null
-  const title = buildProductSeoTitle(brandName, displayName)
-  const description = buildProductSeoDescription({
-    brandName,
-    productName: displayName,
-    categoryName: product.category?.name ?? null,
-  })
+  // The brand folded into the product name for query matching: "Bosch MUM5".
+  const fullName = productFullName(product.brand?.name ?? null, displayName)
+  const title = t("productTitle", { product: fullName })
+  // No count: the page covers parts and open requests alike, and an empty
+  // product invites a request rather than showing "0 parts" in a snippet.
+  const description = seoDescription(
+    product.category
+      ? t("productDescriptionCategory", { product: fullName, category: product.category.name, app: APP_NAME })
+      : t("productDescription", { product: fullName, app: APP_NAME }),
+  )
   const canonicalPath = productCanonicalPath(product.slug)
 
   // Relative URLs resolve against metadataBase (set in the root layout).
@@ -70,12 +74,6 @@ export async function generateMetadata({
   }
 }
 
-// "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
-function formatProductionYears(releaseYear: number | null, discontinued: boolean): string | null {
-  if (!releaseYear) return discontinued ? "Discontinued" : null
-  return discontinued ? `${releaseYear} · Discontinued` : `Since ${releaseYear}`
-}
-
 export default async function ProductPage({
   params,
   searchParams,
@@ -88,7 +86,10 @@ export default async function ProductPage({
   if (!data) notFound()
 
   const { product, references } = data
-  const displayName = await resolveDisplayName(product.name, references)
+  const [displayName, t] = await Promise.all([
+    resolveDisplayName(product.name, references),
+    getTranslations("ProductPage"),
+  ])
 
   // One page of parts, cut in the database (#373). An invalid or out-of-range
   // ?page= falls back to page 1.
@@ -104,7 +105,12 @@ export default async function ProductPage({
   // when the product already has parts.
   const requestCounts = hasParts ? [] : await fetchPartRequestCounts(product.id)
 
-  const productionYears = formatProductionYears(product.release_year, product.discontinued)
+  // "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
+  const productionYears = product.release_year
+    ? t(product.discontinued ? "releasedDiscontinued" : "since", { year: product.release_year })
+    : product.discontinued
+      ? t("discontinued")
+      : null
 
   // Brand › Category › Product (Flow P2), shared with part pages.
   const breadcrumbTrail = buildProductBreadcrumbTrail({ ...product, name: displayName })
@@ -169,12 +175,10 @@ export default async function ProductPage({
             {/* Request capture — always available below the grid */}
             <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">
               <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-                Missing a part for this product?
+                {t("missingTitle")}
               </h2>
-              <p className="text-body text-text-secondary">
-                Tell us what you need — requests with the most demand get sourced first.
-              </p>
-              <RequestPartForm productId={product.id} submitLabel="Request a part" />
+              <p className="text-body text-text-secondary">{t("missingDescription")}</p>
+              <RequestPartForm productId={product.id} submitLabel={t("requestPart")} />
             </div>
           </>
         ) : (
@@ -185,37 +189,35 @@ export default async function ProductPage({
   )
 }
 
-function EmptyState({
+async function EmptyState({
   productId,
   counts,
 }: {
   productId: string
   counts: Awaited<ReturnType<typeof fetchPartRequestCounts>>
 }) {
+  const t = await getTranslations("ProductPage")
   return (
     <div className="space-y-lg">
       <div className="space-y-sm">
         <div className="flex flex-wrap items-center gap-md">
           <h2 className="font-heading text-heading-md font-semibold text-text-primary">
-            No parts here yet
+            {t("emptyTitle")}
           </h2>
           <DemandBadge counts={counts} />
         </div>
-        <p className="max-w-container-md text-body text-text-secondary">
-          This product is indexed and ready — the catalog grows with demand. Request the part you
-          need, or contribute a part if you have one.
-        </p>
+        <p className="max-w-container-md text-body text-text-secondary">{t("emptyDescription")}</p>
       </div>
 
       <div className="max-w-container-md">
-        <RequestPartForm productId={productId} submitLabel="Request a part" />
+        <RequestPartForm productId={productId} submitLabel={t("requestPart")} />
       </div>
 
       <div className="flex flex-wrap items-center gap-sm">
         <Button asChild variant="outline">
           {/* The product is picked on the Compatibility step, not carried in
               the URL — the old ?product= param was never read (#260). */}
-          <Link href="/publish">Publish a part</Link>
+          <Link href="/publish">{t("publish")}</Link>
         </Button>
       </div>
 

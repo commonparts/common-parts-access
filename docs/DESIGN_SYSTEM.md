@@ -54,7 +54,7 @@ A short inline error line, such as the message under a form, uses `text-sm text-
   2. **Header row**: the brand eyebrow on the left, the context badge on the right when there is one.
   3. **Name**.
   4. **Fit line**: "Fits {product}, {product} +N more", in `text-text-secondary` with the product names in `text-text-primary`.
-  5. **Print line**: `{material} · {print time}` in `text-caption text-text-secondary` (`formatPrintLine()`); each part shows when known, and the line is omitted when both are missing.
+  5. **Print line**: `{material} · {print time}` in `text-caption text-text-secondary` (`PartCard.printTime` message, from `splitPrintTime()`); each part shows when known, and the line is omitted when both are missing.
   6. **Provenance line**, pinned to the bottom of the card body so it aligns across a grid row: an outbound-link icon, the source platform name in `text-text-primary font-medium`, then ` · {licence short name}` in `text-text-secondary`, all at `text-caption`. When the part has a valid `source_url`, the icon and the platform name link to the part's page on that platform, in a new tab (`rel="noopener noreferrer"`); otherwise they are plain text. A part without a source platform shows its licence alone, without the icon; a part with neither has no provenance line. Platform logos are not shown, as a logo is a third-party trademark.
 
   The context badge, passed through the `badge` prop, is the only badge on a card: the evidence level of the part for the product (`EvidenceLevelBadge`) on a product page, nothing elsewhere. Every card is built from one select and one mapper (`PART_CARD_SELECT` and `mapPartRowToCard()` in `lib/supabase/queries/part.ts`).

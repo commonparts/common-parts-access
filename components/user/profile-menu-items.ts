@@ -6,7 +6,8 @@ export type UserProfileMenuAction = "logout" | "deleteAccount";
 interface UserProfileMenuLinkItem {
   key: string;
   type: "link";
-  label: string;
+  /** Key of the label in the `UserMenu` messages. */
+  label: "myParts" | "publish";
   href: string;
   icon: LucideIcon;
 }
@@ -14,7 +15,8 @@ interface UserProfileMenuLinkItem {
 interface UserProfileMenuActionItem {
   key: string;
   type: "action";
-  label: string;
+  /** Key of the label in the `UserMenu` messages. */
+  label: "logout" | "deleteAccount";
   action: UserProfileMenuAction;
   icon: LucideIcon;
   destructive?: boolean;
@@ -34,14 +36,14 @@ export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
   {
     key: "my-parts",
     type: "link",
-    label: "My parts",
+    label: "myParts",
     href: "/my-parts",
     icon: LayoutDashboard,
   },
   {
     key: "publish-part",
     type: "link",
-    label: "Publish a part",
+    label: "publish",
     href: "/publish",
     icon: UploadCloud,
   },
@@ -52,7 +54,7 @@ export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
   {
     key: "logout",
     type: "action",
-    label: "Logout",
+    label: "logout",
     action: "logout",
     icon: LogOut,
   },
@@ -63,7 +65,7 @@ export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
   {
     key: "delete-account",
     type: "action",
-    label: "Delete account",
+    label: "deleteAccount",
     action: "deleteAccount",
     icon: Trash2,
     destructive: true,

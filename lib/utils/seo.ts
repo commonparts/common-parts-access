@@ -1,10 +1,11 @@
 /**
- * SEO utilities: metadata copy and schema.org structured data builders.
- * Part pages are standalone entry points (docs/user-flows.md P-4) — titles and
- * descriptions must carry the brand and product name for query matching.
+ * SEO utilities: canonical paths, schema.org structured data builders and the
+ * labels the metadata copy is built from. The copy itself is the `Seo`
+ * messages, in the page's locale. Part pages are standalone entry points
+ * (docs/user-flows.md P-4) — titles and descriptions must carry the brand and
+ * product name for query matching.
  */
 
-import { APP_NAME } from '@/lib/utils/constants'
 import { truncateText } from '@/lib/utils/formatters'
 import { absoluteAppUrl, isValidHttpUrl } from '@/lib/utils/validation'
 import { resolveStorageUrl } from '@/lib/storage/url'
@@ -12,6 +13,11 @@ import type { PartSeoData, PartSeoProductFit } from '@/types/parts'
 
 /** Search snippets are cut around 155-160 characters; stay within that budget. */
 const SEO_DESCRIPTION_MAX_LENGTH = 160
+
+/** Cuts a meta description to the search snippet budget. */
+export function seoDescription(text: string): string {
+  return truncateText(text, SEO_DESCRIPTION_MAX_LENGTH)
+}
 
 /** Canonical path for a part page (public route is /parts — issue #258). */
 export function partCanonicalPath(slug: string): string {
@@ -28,35 +34,14 @@ export function productCanonicalPath(slug: string): string {
  * product, and null when the part links to none. Since #315 a part has no
  * brand of its own to fall back on: a part with no product has no brand.
  */
-function primaryFitLabel(part: PartSeoData): string | null {
+export function partFitLabel(part: Pick<PartSeoData, 'products'>): string | null {
   const fit = part.products[0]
   return fit ? productFullName(fit.brand?.name ?? null, fit.name) : null
 }
 
 /** "Bosch MUM5" — the brand folded into the product name for query matching. */
-function productFullName(brandName: string | null, productName: string): string {
+export function productFullName(brandName: string | null, productName: string): string {
   return [brandName, productName].filter(Boolean).join(' ')
-}
-
-/** Page title carrying the part name plus the brand/product it fits. */
-export function buildPartSeoTitle(part: PartSeoData): string {
-  const fit = primaryFitLabel(part)
-  return fit ? `${part.name} — spare part for ${fit}` : `${part.name} — spare part`
-}
-
-/**
- * Meta description leading with the brand and product name (issue #252:
- * query matching), followed by the part's own description when available.
- */
-export function buildPartSeoDescription(part: PartSeoData): string {
-  const fit = primaryFitLabel(part)
-  const lead = fit
-    ? `Printable spare part for ${fit}: ${part.name}.`
-    : `Printable spare part: ${part.name}.`
-  const body =
-    part.description?.trim() ||
-    `Download the 3D model file with license and attribution details on ${APP_NAME}.`
-  return truncateText(`${lead} ${body}`, SEO_DESCRIPTION_MAX_LENGTH)
 }
 
 /**
@@ -70,9 +55,15 @@ export function buildPartSeoDescription(part: PartSeoData): string {
  *
  * Attribution follows P-2: the creator is the original author for curated
  * parts, falling back to the uploader; the license links to the effective
- * (source-first) license text.
+ * (source-first) license text. `description` is the page's meta description
+ * and `rootTrail` the breadcrumb root of a part fitting no product, both in
+ * the page's locale.
  */
-export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
+export function buildPartJsonLd(
+  part: PartSeoData,
+  description: string,
+  rootTrail: BreadcrumbJsonLdItem[],
+): Record<string, unknown> {
   const pagePath = partCanonicalPath(part.slug)
   const url = absoluteAppUrl(pagePath)
   const image = resolveStorageUrl(part.thumbnailUrl)
@@ -86,7 +77,7 @@ export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
     '@id': `${url}#part`,
     name: part.name,
     url,
-    description: buildPartSeoDescription(part),
+    description,
   }
   if (image) partEntity.image = image
   if (part.licenseUrl) partEntity.license = part.licenseUrl
@@ -121,7 +112,7 @@ export function buildPartJsonLd(part: PartSeoData): Record<string, unknown> {
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [partEntity, buildBreadcrumbList(pagePath, buildPartBreadcrumbTrail(part))],
+    '@graph': [partEntity, buildBreadcrumbList(pagePath, buildPartBreadcrumbTrail(part, rootTrail))],
   }
 }
 
@@ -149,84 +140,9 @@ export function brandCategoryCanonicalPath(brandSlug: string, categorySlug: stri
   return `${brandCanonicalPath(brandSlug)}/${categorySlug}`
 }
 
-/** Page title for a brand page: "Bosch spare parts". */
-export function buildBrandSeoTitle(brandName: string): string {
-  return `${brandName} spare parts`
-}
-
-/**
- * Meta description for a brand page, leading with the brand name and the
- * as-is parts count (Flow P2: counts are never hidden or inflated).
- */
-export function buildBrandSeoDescription(input: {
-  brandName: string
-  partsCount: number
-  brandDescription?: string | null
-}): string {
-  const lead =
-    input.partsCount > 0
-      ? `${input.partsCount} printable spare ${input.partsCount === 1 ? 'part' : 'parts'} for ${input.brandName} products.`
-      : `Printable spare parts for ${input.brandName} products.`
-  const body =
-    input.brandDescription?.trim() ||
-    `Browse by category and download with license and attribution details on ${APP_NAME}.`
-  return truncateText(`${lead} ${body}`, SEO_DESCRIPTION_MAX_LENGTH)
-}
-
-/** Page title for a brand-scoped category listing: "Bosch Dishwashers spare parts". */
-export function buildBrandCategorySeoTitle(brandName: string, categoryName: string): string {
-  return `${brandName} ${categoryName} spare parts`
-}
-
-/** Meta description for a brand-scoped category listing. */
-export function buildBrandCategorySeoDescription(input: {
-  brandName: string
-  categoryName: string
-  productCount: number
-}): string {
-  const lead =
-    input.productCount > 0
-      ? `Printable spare parts for ${input.productCount} ${input.brandName} ${
-          input.productCount === 1 ? 'product' : 'products'
-        } in ${input.categoryName}.`
-      : `Printable spare parts for ${input.brandName} products in ${input.categoryName}.`
-  return truncateText(
-    `${lead} Download with license and attribution details on ${APP_NAME}.`,
-    SEO_DESCRIPTION_MAX_LENGTH,
-  )
-}
-
 /** Canonical path for a category drill-down page (issue #276). */
 export function categoryCanonicalPath(categorySlug: string): string {
   return `/categories/${categorySlug}`
-}
-
-/** Page title for a category page: "Vacuum Cleaner spare parts". */
-export function buildCategorySeoTitle(categoryName: string): string {
-  return `${categoryName} spare parts`
-}
-
-/**
- * Meta description for a category page. Leads with the subtree-aggregated
- * counts when parts exist; zero-part categories get generic copy instead of
- * a "0 parts" search snippet — same rule as buildBrandSeoDescription. The
- * show-zeros rule (Flow P2) governs on-page counts, not SERP copy.
- */
-export function buildCategorySeoDescription(input: {
-  categoryName: string
-  partsCount: number
-  productCount: number
-}): string {
-  const lead =
-    input.partsCount > 0
-      ? `${input.partsCount} printable spare ${input.partsCount === 1 ? 'part' : 'parts'} across ${
-          input.productCount
-        } ${input.productCount === 1 ? 'product' : 'products'} in ${input.categoryName}.`
-      : `Printable spare parts for ${input.categoryName} products.`
-  return truncateText(
-    `${lead} Browse by subcategory and brand on ${APP_NAME}.`,
-    SEO_DESCRIPTION_MAX_LENGTH,
-  )
 }
 
 export interface BreadcrumbJsonLdItem {
@@ -302,42 +218,26 @@ export function buildProductBreadcrumbTrail(
 }
 
 /**
- * Part page trail: the primary fitted product's trail followed by the part.
- * A part fitting no product has no brand or category to show and falls back
- * to Home › Browse.
+ * Home › Browse, the root of the navigation pages' trails, with the labels
+ * of the page's locale.
  */
-export function buildPartBreadcrumbTrail(part: PartSeoData): BreadcrumbJsonLdItem[] {
-  const fit = part.products[0]
-  const lead: BreadcrumbJsonLdItem[] = fit
-    ? buildProductBreadcrumbTrail(fit)
-    : [
-        { name: 'Home', path: '/' },
-        { name: 'Browse', path: '/browse' },
-      ]
-  return [...lead, { name: part.name, path: partCanonicalPath(part.slug) }]
-}
-
-/** Page title for a product page: "Bosch MUM5 spare parts". */
-export function buildProductSeoTitle(brandName: string | null, productName: string): string {
-  return `${productFullName(brandName, productName)} spare parts`
+export function rootBreadcrumbTrail(labels: { home: string; browse: string }): BreadcrumbJsonLdItem[] {
+  return [
+    { name: labels.home, path: '/' },
+    { name: labels.browse, path: '/browse' },
+  ]
 }
 
 /**
- * Meta description for a product page, leading with the brand and product
- * name. No count: the page covers parts and open requests alike, and an
- * empty product invites a request rather than showing "0 parts" in a SERP.
+ * Part page trail: the primary fitted product's trail followed by the part.
+ * A part fitting no product has no brand or category to show and falls back
+ * to `rootTrail` (Home › Browse).
  */
-export function buildProductSeoDescription(input: {
-  brandName: string | null
-  productName: string
-  categoryName: string | null
-}): string {
-  const fullName = productFullName(input.brandName, input.productName)
-  const lead = input.categoryName
-    ? `Printable spare parts for the ${fullName} (${input.categoryName}).`
-    : `Printable spare parts for the ${fullName}.`
-  return truncateText(
-    `${lead} Download with license and attribution details, or request a missing part on ${APP_NAME}.`,
-    SEO_DESCRIPTION_MAX_LENGTH,
-  )
+export function buildPartBreadcrumbTrail(
+  part: PartSeoData,
+  rootTrail: BreadcrumbJsonLdItem[],
+): BreadcrumbJsonLdItem[] {
+  const fit = part.products[0]
+  const lead = fit ? buildProductBreadcrumbTrail(fit) : rootTrail
+  return [...lead, { name: part.name, path: partCanonicalPath(part.slug) }]
 }

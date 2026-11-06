@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 
 import { Container } from '@/components/layout/container'
@@ -12,23 +13,24 @@ import { APP_NAME } from '@/lib/utils/constants'
 // so it cannot be statically rendered at build time.
 export const dynamic = 'force-dynamic'
 
-const PAGE_TITLE = 'Browse parts'
-const PAGE_DESCRIPTION =
-  'Explore printable spare parts by category and brand, or filter the full parts catalog.'
-
-export const metadata: Metadata = {
-  title: PAGE_TITLE,
-  description: PAGE_DESCRIPTION,
-  alternates: {
-    canonical: '/browse',
-  },
-  openGraph: {
-    title: PAGE_TITLE,
-    description: PAGE_DESCRIPTION,
-    url: '/browse',
-    siteName: APP_NAME,
-    type: 'website',
-  },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('BrowsePage')
+  const title = t('title')
+  const description = t('metaDescription')
+  return {
+    title,
+    description,
+    alternates: {
+      canonical: '/browse',
+    },
+    openGraph: {
+      title,
+      description,
+      url: '/browse',
+      siteName: APP_NAME,
+      type: 'website',
+    },
+  }
 }
 
 /**
@@ -62,16 +64,15 @@ export default async function BrowsePage() {
     }
   }
 
+  const t = await getTranslations('BrowsePage')
   return (
     <Section>
       <Container size="xl" className="space-y-xl">
         <div className="space-y-xs">
           <h1 className="text-heading-md font-heading font-semibold text-text-primary">
-            {PAGE_TITLE}
+            {t('title')}
           </h1>
-          <p className="text-body text-text-secondary">
-            Discover and download parts and replacement components
-          </p>
+          <p className="text-body text-text-secondary">{t('intro')}</p>
         </div>
 
         <BrowseNavSections nav={nav} />
@@ -81,7 +82,7 @@ export default async function BrowsePage() {
             id="browse-all-parts"
             className="font-heading text-heading-sm font-semibold text-text-primary"
           >
-            All parts
+            {t('allParts')}
           </h2>
           <Suspense>
             <BrowsePartsGrid />

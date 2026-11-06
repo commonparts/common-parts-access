@@ -5,41 +5,16 @@ import type { PartFileHostingType, PartOriginType } from '@/types/database'
  *
  * Storage is unchanged: `origin_type` and `file_hosting_type` keep their
  * values, their columns and their query scoping. This module is the single
- * place that maps that pair onto the words a visitor reads, so the part page,
+ * place that maps that pair onto the kind a visitor reads, so the part page,
  * the publish tool and the drafts list can never describe the same record
- * differently.
+ * differently. The badge and description of each kind are the `Publication`
+ * messages.
  *
  * The words *curation*, *curated*, *link-out* and *hosting type* deliberately
- * do not appear in any string here — they are storage terms, not UI terms.
+ * do not appear in those messages — they are storage terms, not UI terms.
  */
 
 type PublicationKind = 'original' | 'hosted' | 'referenced'
-
-export interface PublicationLabel {
-  kind: PublicationKind
-  /** Badge text on the part page and the drafts list. */
-  badge: string
-  /** One sentence explaining what the badge means, for helper copy. */
-  description: string
-}
-
-const PUBLICATION_LABELS: Record<PublicationKind, PublicationLabel> = {
-  original: {
-    kind: 'original',
-    badge: 'Original',
-    description: 'Designed by the contributor and published here for the first time.',
-  },
-  hosted: {
-    kind: 'hosted',
-    badge: 'Hosted',
-    description: 'Published elsewhere first — the files are hosted on Common Parts.',
-  },
-  referenced: {
-    kind: 'referenced',
-    badge: 'Referenced',
-    description: 'Published elsewhere — the files stay at the source and Common Parts links to them.',
-  },
-}
 
 /**
  * Describes how a part entered the registry, from the stored origin and
@@ -54,7 +29,7 @@ const PUBLICATION_LABELS: Record<PublicationKind, PublicationLabel> = {
 export function describePublication(
   originType: PartOriginType,
   fileHostingType: PartFileHostingType | null | undefined,
-): PublicationLabel {
-  if (originType !== 'curated') return PUBLICATION_LABELS.original
-  return fileHostingType === 'link_out' ? PUBLICATION_LABELS.referenced : PUBLICATION_LABELS.hosted
+): PublicationKind {
+  if (originType !== 'curated') return 'original'
+  return fileHostingType === 'link_out' ? 'referenced' : 'hosted'
 }

@@ -3,7 +3,6 @@ import * as React from "react"
 import { useTranslations } from "next-intl"
 import { useRouter } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-import { pluralize } from "@/lib/utils/formatters"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
@@ -17,7 +16,6 @@ import type {
 interface SearchBarProps {
   className?: string
   onSearch?: (query: string) => void
-  showFilters?: boolean
   value?: string
   /** Uncontrolled initial query (e.g. pre-filling the input on /search). */
   defaultValue?: string
@@ -96,7 +94,6 @@ function Row({
 export function SearchBar({
   className,
   onSearch,
-  showFilters = false,
   value,
   onChange,
   onClear,
@@ -104,6 +101,7 @@ export function SearchBar({
   autocomplete = true,
 }: SearchBarProps) {
   const t = useTranslations("SearchBar")
+  const counts = useTranslations("Counts")
   const router = useRouter()
   const [internalQuery, setInternalQuery] = React.useState(value ?? defaultValue ?? "")
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -266,7 +264,7 @@ export function SearchBar({
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-text-primary">{product.name}</div>
         <div className="truncate text-caption text-text-secondary">
-          {[product.reference, product.category, pluralize(product.parts_count, "part")]
+          {[product.reference, product.category, counts("parts", { count: product.parts_count })]
             .filter(Boolean)
             .join(" · ")}
         </div>
@@ -286,7 +284,7 @@ export function SearchBar({
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-text-primary">{part.name}</div>
         <div className="truncate text-caption text-text-secondary">
-          {part.product_name ?? "Generic part"}
+          {part.product_name ?? t("genericPart")}
         </div>
       </div>
     </Row>
@@ -308,7 +306,7 @@ export function SearchBar({
       <div className="min-w-0 flex-1">
         <div className="truncate text-sm font-medium text-text-primary">{brand.name}</div>
         <div className="truncate text-caption text-text-secondary">
-          {pluralize(brand.product_count, "product")}
+          {counts("products", { count: brand.product_count })}
         </div>
       </div>
     </Row>
@@ -375,36 +373,36 @@ export function SearchBar({
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z" />
               </svg>
-              Searching…
+              {t("searching")}
             </div>
           ) : error ? (
             <div role="alert" className="px-md py-md text-sm text-status-errorText">
-              Something went wrong. Try again.
+              {t("error")}
             </div>
           ) : hasResults ? (
             <>
               {results.products.length > 0 && (
                 <div>
-                  <SectionLabel>Products</SectionLabel>
+                  <SectionLabel>{t("products")}</SectionLabel>
                   {results.products.map(renderProductRow)}
                 </div>
               )}
               {results.parts.length > 0 && (
                 <div>
-                  <SectionLabel>Parts</SectionLabel>
+                  <SectionLabel>{t("parts")}</SectionLabel>
                   {results.parts.map(renderPartRow)}
                 </div>
               )}
               {results.brands.length > 0 && (
                 <div>
-                  <SectionLabel>Brands</SectionLabel>
+                  <SectionLabel>{t("brands")}</SectionLabel>
                   {results.brands.map(renderBrandRow)}
                 </div>
               )}
             </>
           ) : (
             <div className="px-md py-md text-sm text-text-secondary">
-              No results for &ldquo;{trimmedQuery}&rdquo;.
+              {t("noResults", { query: trimmedQuery })}
             </div>
           )}
 
@@ -425,7 +423,7 @@ export function SearchBar({
             >
               <SearchIcon className="size-sm text-text-secondary" />
               <span className="truncate text-text-primary">
-                See all results for &ldquo;{trimmedQuery}&rdquo;
+                {t("seeAll", { query: trimmedQuery })}
               </span>
             </button>
           )}
@@ -436,49 +434,24 @@ export function SearchBar({
       {!autocomplete && isExpanded && currentQuery.length > 0 && (
         <div className="absolute top-full left-0 right-0 z-50 mt-xs rounded-lg border border-border-subtle bg-bg-surface shadow-none">
           <div className="p-sm">
-            <div className="mb-xs text-caption text-text-secondary">Suggestions</div>
+            <div className="mb-xs text-caption text-text-secondary">{t("suggestions")}</div>
             <div className="space-y-xs">
-              <button
-                type="button"
-                className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
-                onClick={() => {
-                  updateQuery("car parts")
-                  setIsExpanded(true)
-                }}
-              >
-                <SearchIcon className="size-sm text-text-secondary" />
-                car parts
-              </button>
-              <button
-                type="button"
-                className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
-                onClick={() => {
-                  updateQuery("mechanical components")
-                  setIsExpanded(true)
-                }}
-              >
-                <SearchIcon className="size-sm text-text-secondary" />
-                mechanical components
-              </button>
+              {(["suggestionVehicle", "suggestionMechanical"] as const).map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  className="flex w-full items-center gap-sm rounded text-left px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover"
+                  onClick={() => {
+                    updateQuery(t(key))
+                    setIsExpanded(true)
+                  }}
+                >
+                  <SearchIcon className="size-sm text-text-secondary" />
+                  {t(key)}
+                </button>
+              ))}
             </div>
           </div>
-
-          {showFilters && (
-            <div className="border-t border-border-subtle px-sm py-xs">
-              <div className="mb-xs text-caption text-text-secondary">Quick Filters</div>
-              <div className="flex flex-wrap gap-xs">
-                <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
-                  Automotive
-                </button>
-                <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
-                  Mechanical
-                </button>
-                <button className="rounded bg-bg-subtle px-md py-sm text-sm text-text-primary transition-colors hover:bg-bg-hover">
-                  Electronics
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

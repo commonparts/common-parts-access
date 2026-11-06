@@ -28,6 +28,7 @@ interface MobileMenuProps {
  */
 export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
   const t = useTranslations("Navbar");
+  const userMenu = useTranslations("UserMenu");
   const [isOpen, setIsOpen] = useState(false);
   const [signOutError, setSignOutError] = useState<string | null>(null);
   const router = useRouter();
@@ -40,7 +41,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error) {
-      setSignOutError("Sign out failed. Please try again.");
+      setSignOutError(userMenu("signOutFailed"));
       return;
     }
     close();
@@ -75,7 +76,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
       <Button
         variant="ghost"
         size="icon"
-        aria-label={isOpen ? "Close menu" : "Open menu"}
+        aria-label={isOpen ? t("closeMenu") : t("openMenu")}
         aria-expanded={isOpen}
         aria-controls="mobile-nav-panel"
         onClick={() => {
@@ -146,7 +147,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                         >
                           <Link href={item.href} className="flex w-full items-center gap-md">
                             <Icon className="h-4 w-4" />
-                            <span>{item.label}</span>
+                            <span>{userMenu(item.label)}</span>
                           </Link>
                         </Button>
                       );
@@ -163,7 +164,7 @@ export function MobileMenu({ menuLinks, isLoggedIn }: MobileMenuProps) {
                         }}
                       >
                         <Icon className="h-4 w-4" />
-                        <span>{item.label}</span>
+                        <span>{userMenu(item.label)}</span>
                       </Button>
                     );
                   })}

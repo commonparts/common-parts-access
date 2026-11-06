@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getTranslations } from "next-intl/server"
 import { headers } from "next/headers"
 import { Section } from "@/components/layout/section"
 import { Container } from "@/components/layout/container"
@@ -13,9 +14,9 @@ import { isSearchType, SEARCH_MAX_LIMIT, SEARCH_MAX_QUERY_LENGTH, type ProductCa
 
 // Result pages are query variants, not entry points (issue #257): kept out of
 // the index and the sitemap, while their links stay followable.
-export const metadata: Metadata = {
-  title: "Search",
-  robots: { index: false, follow: true },
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("SearchPage")
+  return { title: t("title"), robots: { index: false, follow: true } }
 }
 
 // Read q as the first value whether the param arrives as a string or string[].
@@ -82,6 +83,7 @@ export default async function SearchPage({
     ])
   }
 
+  const t = await getTranslations("SearchPage")
   return (
     <Section>
       <Container size="xl" className="space-y-xl">
@@ -98,9 +100,7 @@ export default async function SearchPage({
             candidates={candidates}
           />
         ) : (
-          <p className="text-body text-text-secondary">
-            Search for a product, part, or brand to see results.
-          </p>
+          <p className="text-body text-text-secondary">{t("prompt")}</p>
         )}
       </Container>
     </Section>

@@ -1,6 +1,6 @@
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { Badge } from "@/components/ui/badge"
-import { pluralize } from "@/lib/utils/formatters"
 
 // Structural shape so any caller with a product row can render the card —
 // SearchProductResult satisfies it, and the /brands pages map their rows to it.
@@ -17,6 +17,7 @@ export interface ProductCardData {
 // Horizontal product card: image, name, category, parts-count badge. Links to
 // the product page. Used on /search results and the /brands navigation pages.
 export function ProductResultCard({ product }: { product: ProductCardData }) {
+  const counts = useTranslations("Counts")
   return (
     <Link
       href={`/product/${product.slug}`}
@@ -47,7 +48,7 @@ export function ProductResultCard({ product }: { product: ProductCardData }) {
         )}
       </div>
       <Badge variant="soft" className="shrink-0">
-        {pluralize(product.parts_count, "part")}
+        {counts("parts", { count: product.parts_count })}
       </Badge>
     </Link>
   )

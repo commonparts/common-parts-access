@@ -20,7 +20,7 @@ Most traffic is expected from search engines and direct links, so every public p
 
 ## Locale prefix (#498)
 
-Every page URL carries a locale prefix (`/fr/...`, `/en/...`, see [I18N.md](./I18N.md)). The canonical URLs of the page metadata and the sitemap entries are still built without a prefix: they answer a redirect to the visitor's locale until #501 builds canonical URLs, `hreflang` alternates and sitemap entries per locale. Meanwhile the proxy sends a `Link` header with the URL of each page in each locale and `hreflang`. Page titles and descriptions are not translated yet, except the default ones of `app/[locale]/layout.tsx`.
+Every page URL carries a locale prefix (`/fr/...`, `/en/...`, see [I18N.md](./I18N.md)). The canonical URLs of the page metadata and the sitemap entries are still built without a prefix: they answer a redirect to the visitor's locale until #501 builds canonical URLs, `hreflang` alternates and sitemap entries per locale. Meanwhile the proxy sends a `Link` header with the URL of each page in each locale and `hreflang`. Page titles and descriptions are in the page's locale (#499): the copy is the `Seo` messages and the messages of each page, the brand, product and category names stay as stored. The examples in the table above are the English copy.
 
 ## Structured data
 

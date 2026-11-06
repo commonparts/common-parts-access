@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { useFormatter, useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -17,14 +18,15 @@ interface PartFileListProps {
 
 type FileCategory = "model" | "documentation" | "image" | string
 
-const FILE_SIZE_UNITS = ["Bytes", "KB", "MB", "GB", "TB"] as const
+/** Byte multiples Intl.NumberFormat formats as units, smallest first. */
+const FILE_SIZE_UNITS = ["byte", "kilobyte", "megabyte", "gigabyte", "terabyte"] as const
 
 const SECTION_ORDER: FileCategory[] = ["model", "documentation", "image"]
 
 const SECTION_CONFIG = {
   // Keyed by the stored file_category, so this stays "model" (the 3D files).
   model: {
-    label: "PART FILES",
+    label: "model",
     iconWrapperClass: "bg-bg-accent text-text-link",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +35,7 @@ const SECTION_CONFIG = {
     ),
   },
   documentation: {
-    label: "DOCUMENTATION",
+    label: "documentation",
     iconWrapperClass: "bg-bg-subtle text-text-primary",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -42,7 +44,7 @@ const SECTION_CONFIG = {
     ),
   },
   image: {
-    label: "IMAGES",
+    label: "image",
     iconWrapperClass: "bg-green-100 text-green-600 dark:bg-green-900/20 dark:text-green-400",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,7 +53,7 @@ const SECTION_CONFIG = {
     ),
   },
   default: {
-    label: "FILES",
+    label: "other",
     iconWrapperClass: "bg-bg-muted text-text-secondary",
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -61,11 +63,15 @@ const SECTION_CONFIG = {
   },
 } as const
 
-const formatFileSize = (bytes: number) => {
-  if (!bytes) return "0 Bytes"
-  const exponent = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), FILE_SIZE_UNITS.length - 1)
-  const value = bytes / Math.pow(1024, exponent)
-  return `${Math.round(value * 100) / 100} ${FILE_SIZE_UNITS[exponent]}`
+/**
+ * A file size as a value in the largest binary multiple that keeps it at 1 or
+ * more (2.5 megabytes), for the locale's unit formatter.
+ */
+function fileSizeUnit(bytes: number): { value: number; unit: (typeof FILE_SIZE_UNITS)[number] } {
+  const exponent = bytes
+    ? Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), FILE_SIZE_UNITS.length - 1)
+    : 0
+  return { value: bytes / Math.pow(1024, exponent), unit: FILE_SIZE_UNITS[exponent] }
 }
 
 const DownloadIcon = () => (
@@ -88,31 +94,39 @@ interface FileRowProps {
   onDownload: (file: PartPageFile) => void
 }
 
-const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDownload }: FileRowProps) => (
-  <div className="group flex items-center gap-sm rounded-lg border border-border-subtle p-sm transition-colors hover:bg-bg-hover">
-    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded", iconWrapperClass)}>
-      {icon}
-    </div>
-    <div className="min-w-0 flex-1">
-      <p className="truncate text-sm font-semibold text-text-primary">{file.original_filename}</p>
-      <div className="mt-1 flex items-center gap-2">
-        <Badge variant="outline" className="uppercase">
-          {file.file_type.toUpperCase()}
-        </Badge>
-        <span className="text-xs text-text-secondary transition-colors group-hover:text-text-primary">{formatFileSize(file.file_size)}</span>
+const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDownload }: FileRowProps) => {
+  const t = useTranslations("PartFileList")
+  const format = useFormatter()
+  const size = fileSizeUnit(file.file_size)
+
+  return (
+    <div className="group flex items-center gap-sm rounded-lg border border-border-subtle p-sm transition-colors hover:bg-bg-hover">
+      <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded", iconWrapperClass)}>
+        {icon}
       </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-sm font-semibold text-text-primary">{file.original_filename}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <Badge variant="outline" className="uppercase">
+            {file.file_type.toUpperCase()}
+          </Badge>
+          <span className="text-xs text-text-secondary transition-colors group-hover:text-text-primary">
+            {format.number(size.value, { style: "unit", unit: size.unit, maximumFractionDigits: 2 })}
+          </span>
+        </div>
+      </div>
+      <Button
+        variant="ghost"
+        className="opacity-0 transition-opacity group-hover:opacity-100"
+        onClick={() => onDownload(file)}
+        disabled={isDownloading}
+        aria-label={t("download", { name: file.original_filename })}
+      >
+        {isDownloading ? <SpinnerIcon /> : <DownloadIcon />}
+      </Button>
     </div>
-    <Button
-      variant="ghost"
-      className="opacity-0 transition-opacity group-hover:opacity-100"
-      onClick={() => onDownload(file)}
-      disabled={isDownloading}
-      aria-label={`Download ${file.original_filename}`}
-    >
-      {isDownloading ? <SpinnerIcon /> : <DownloadIcon />}
-    </Button>
-  </div>
-))
+  )
+})
 
 FileRow.displayName = "FileRow"
 
@@ -122,6 +136,7 @@ export function PartFileList({
   className = "",
   onFileDownload 
 }: PartFileListProps) {
+  const t = useTranslations("PartFileList")
   const [downloadingFiles, setDownloadingFiles] = React.useState<Set<string>>(new Set())
 
   const handleDownload = React.useCallback(
@@ -183,12 +198,12 @@ export function PartFileList({
           <svg className="mx-auto mb-2 h-12 w-12 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
           </svg>
-          <p className="text-sm text-text-secondary">No files available</p>
+          <p className="text-sm text-text-secondary">{t("empty")}</p>
         </div>
       ) : (
         sections.map((section) => (
           <div key={section.category}>
-            <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-secondary">{section.label}</h4>
+            <h4 className="mb-2 text-sm font-semibold uppercase tracking-wide text-text-secondary">{t(`sections.${section.label}`)}</h4>
             <div className="space-y-xs">
               {section.files.map((file) => (
                 <FileRow
@@ -215,7 +230,7 @@ export function PartFileList({
             <svg className="h-5 w-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
-            Download files
+            {t("title")}
           </CardTitle>
         </CardHeader>
         <CardContent>{content}</CardContent>

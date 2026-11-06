@@ -7,13 +7,26 @@
     "browse": "Browse parts",
     "contribute": "Contribute",
     "signIn": "Sign in",
-    "publish": "Publish a part"
+    "publish": "Publish a part",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   },
   "SearchBar": {
     "placeholder": "Search a brand, product or reference...",
     "filterPlaceholder": "Search parts...",
     "submit": "Search",
-    "clear": "Clear search"
+    "clear": "Clear search",
+    "genericPart": "Generic part",
+    "searching": "Searching…",
+    "error": "Something went wrong. Try again.",
+    "products": "Products",
+    "parts": "Parts",
+    "brands": "Brands",
+    "noResults": "No results for “{query}”.",
+    "seeAll": "See all results for “{query}”",
+    "suggestions": "Suggestions",
+    "suggestionVehicle": "car parts",
+    "suggestionMechanical": "mechanical components"
   },
   "LanguageSwitcher": {
     "label": "Language",
@@ -25,5 +38,505 @@
     "description": "The page you requested does not exist or is no longer available.",
     "home": "Return home",
     "browse": "Browse parts"
+  },
+  "Counts": {
+    "parts": "{count, plural, one {# part} other {# parts}}",
+    "products": "{count, plural, one {# product} other {# products}}",
+    "brands": "{count, plural, one {# brand} other {# brands}}",
+    "subcategories": "{count, plural, one {# subcategory} other {# subcategories}}",
+    "printableAcrossProducts": "{parts, plural, one {# printable spare part} other {# printable spare parts}} across {products, plural, one {# product} other {# products}}",
+    "productsInCategory": "{count, plural, one {# product} other {# products}} in this category"
+  },
+  "Breadcrumbs": {
+    "label": "Breadcrumb",
+    "home": "Home",
+    "browse": "Browse"
+  },
+  "Pagination": {
+    "label": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageOf": "Page {page} of {totalPages}",
+    "compactPageOf": "{page} of {totalPages}"
+  },
+  "Seo": {
+    "partTitle": "{part} — spare part",
+    "partTitleFit": "{part} — spare part for {fit}",
+    "partDescription": "Printable spare part: {part}. {body}",
+    "partDescriptionFit": "Printable spare part for {fit}: {part}. {body}",
+    "partDescriptionBody": "Download the 3D model file with license and attribution details on {app}.",
+    "partNotFoundTitle": "Part not found",
+    "partNotFoundDescription": "The requested part could not be found.",
+    "partFallbackTitle": "{app} — Parts",
+    "partFallbackDescription": "Browse and download verified parts and repair components.",
+    "brandTitle": "{brand} spare parts",
+    "brandDescription": "{count, plural, =0 {Printable spare parts for {brand} products.} one {# printable spare part for {brand} products.} other {# printable spare parts for {brand} products.}} {body}",
+    "brandDescriptionBody": "Browse by category and download with license and attribution details on {app}.",
+    "brandNotFoundTitle": "Brand not found",
+    "brandNotFoundDescription": "The requested brand could not be found.",
+    "brandFallbackTitle": "{app} — Brands",
+    "brandFallbackDescription": "Browse printable spare parts by brand.",
+    "brandCategoryTitle": "{brand} {category} spare parts",
+    "brandCategoryDescription": "{count, plural, =0 {Printable spare parts for {brand} products in {category}.} one {Printable spare parts for # {brand} product in {category}.} other {Printable spare parts for # {brand} products in {category}.}} Download with license and attribution details on {app}.",
+    "brandCategoryFallbackDescription": "Browse printable spare parts by brand and category.",
+    "categoryTitle": "{category} spare parts",
+    "categoryDescription": "{parts, plural, =0 {Printable spare parts for {category} products.} one {# printable spare part across {products, plural, one {# product} other {# products}} in {category}.} other {# printable spare parts across {products, plural, one {# product} other {# products}} in {category}.}} Browse by subcategory and brand on {app}.",
+    "categoryNotFoundTitle": "Category not found",
+    "categoryNotFoundDescription": "The requested category could not be found.",
+    "categoryFallbackTitle": "{app} — Categories",
+    "categoryFallbackDescription": "Browse printable spare parts by category.",
+    "productTitle": "{product} spare parts",
+    "productDescription": "Printable spare parts for the {product}. Download with license and attribution details, or request a missing part on {app}.",
+    "productDescriptionCategory": "Printable spare parts for the {product} ({category}). Download with license and attribution details, or request a missing part on {app}.",
+    "productNotFoundTitle": "Product not found"
+  },
+  "Hero": {
+    "title": "Repair starts with access to the right part.",
+    "description": "Common Parts Access is an open platform for publishing and accessing digital spare parts, built to keep everyday objects in use."
+  },
+  "Footer": {
+    "tagline": "Infrastructure for digital spare parts. An open, public registry of replacement parts.",
+    "platform": "Platform",
+    "resources": "Resources",
+    "links": {
+      "browse": "Browse parts",
+      "publish": "Publish a part",
+      "commonParts": "Common Parts",
+      "github": "GitHub",
+      "contribute": "Contribute",
+      "contact": "Contact",
+      "privacy": "Privacy policy",
+      "terms": "Terms of use",
+      "legalNotice": "Legal notice"
+    },
+    "official": "Common Parts Access is an official interface of the Common Parts Infrastructure.",
+    "licenses": "Code under <code>{codeLicense}</code>. Data under <data>{dataLicense}</data>."
+  },
+  "UserMenu": {
+    "open": "Open profile menu",
+    "myParts": "My parts",
+    "publish": "Publish a part",
+    "logout": "Logout",
+    "deleteAccount": "Delete account",
+    "signOutFailed": "Sign out failed. Please try again."
+  },
+  "ErrorPage": {
+    "eyebrow": "Error",
+    "title": "Something went wrong",
+    "description": "This page could not be loaded. Try again, or return to the home page.",
+    "retry": "Try again",
+    "home": "Return home"
+  },
+  "Feedback": {
+    "title": "Send feedback",
+    "close": "Close feedback panel",
+    "types": {
+      "bug": {
+        "label": "Bug",
+        "description": "Something is broken"
+      },
+      "improvement": {
+        "label": "Improvement",
+        "description": "A feature or enhancement"
+      },
+      "question": {
+        "label": "Question",
+        "description": "I need clarification"
+      },
+      "other": {
+        "label": "Other",
+        "description": "Anything else"
+      }
+    },
+    "titleLabel": "Title",
+    "titlePlaceholder": "Short title",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Describe the issue or idea...",
+    "failed": "Something went wrong. Please try again.",
+    "sending": "Sending...",
+    "submit": "Submit feedback",
+    "done": "Feedback received. Thank you."
+  },
+  "BrowsePage": {
+    "title": "Browse parts",
+    "metaDescription": "Explore printable spare parts by category and brand, or filter the full parts catalog.",
+    "intro": "Discover and download parts and replacement components",
+    "allParts": "All parts"
+  },
+  "BrowseNav": {
+    "byCategory": "Browse by category",
+    "byBrand": "Browse by brand"
+  },
+  "BrowsePartsGrid": {
+    "errorTitle": "Unable to load parts",
+    "errorDescription": "The parts could not be loaded. Check your connection and try again.",
+    "retry": "Try again"
+  },
+  "SortOptions": {
+    "label": "Sort by:",
+    "current": "Sort: {sort}",
+    "newest": {
+      "label": "Newest first",
+      "description": "Recently uploaded"
+    },
+    "likes": {
+      "label": "Most liked",
+      "description": "Community favorites"
+    },
+    "views": {
+      "label": "Most viewed",
+      "description": "Trending parts"
+    }
+  },
+  "PartGrid": {
+    "emptyTitle": "No parts found",
+    "emptyDescription": "Try adjusting your search or filters"
+  },
+  "FeaturedParts": {
+    "title": "Recently added parts",
+    "viewMore": "View more parts",
+    "errorTitle": "Unable to load parts",
+    "errorDescription": "The parts could not be loaded. Check your connection and reload the page."
+  },
+  "PartCard": {
+    "moreBrands": "{count, plural, one {# more brand} other {# more brands}}",
+    "fits": "Fits <products></products>{overflow, plural, =0 {} other { +# more}}",
+    "source": "Source: ",
+    "newTab": " (opens in a new tab)",
+    "license": "License: ",
+    "printTime": "{hours, plural, =0 {{minutes}m} other {{minutes, plural, =0 {{hours}h} other {{hours}h {minutes}m}}}}"
+  },
+  "EvidenceLevel": {
+    "descriptionPrefix": ": {description}",
+    "declared": {
+      "label": "Declared",
+      "description": "Fit claimed by the source or a curator, not yet confirmed by a print report"
+    },
+    "confirmed": {
+      "label": "Confirmed",
+      "description": "At least one print report confirms this fit"
+    },
+    "disputed": {
+      "label": "Disputed",
+      "description": "More print reports reject this fit than confirm it"
+    }
+  },
+  "Publication": {
+    "original": {
+      "badge": "Original",
+      "description": "Designed by the contributor and published here for the first time."
+    },
+    "hosted": {
+      "badge": "Hosted",
+      "description": "Published elsewhere first — the files are hosted on Common Parts."
+    },
+    "referenced": {
+      "badge": "Referenced",
+      "description": "Published elsewhere — the files stay at the source and Common Parts links to them."
+    }
+  },
+  "PartPage": {
+    "browseMore": "Browse more parts"
+  },
+  "PartDetails": {
+    "errorTitle": "Unable to load part",
+    "error": {
+      "notFound": "Part not found",
+      "failed": "The part could not be loaded. Check your connection and reload the page."
+    },
+    "imageAlt": "{name} {index}",
+    "publicationDescription": " — {description}",
+    "originalDesign": "Original design by <credit>{author}</credit>",
+    "originalDesignOn": "Original design by <credit>{author}</credit> on {platform}",
+    "partName": "Part: {name}",
+    "likes": "<strong>{count}</strong> likes",
+    "viewOn": "View on {platform}",
+    "viewOnSource": "View on the original source",
+    "viewOriginal": "View original post",
+    "download": "Download",
+    "preparingDownload": "Preparing download...",
+    "downloadFailed": "Download failed. Please try again.",
+    "downloadFailedReason": "Download failed: {reason}",
+    "like": "Like",
+    "liked": "Liked",
+    "likeFailed": "Unable to update like. Please try again.",
+    "licenseNotice": {
+      "license": "Licensed under {license}.",
+      "byAuthor": "Licensed under {license}, by {author}.",
+      "attribution": "Attribution to the author is required when sharing.",
+      "shareAlike": "Derivatives must be shared under the same license (ShareAlike)."
+    },
+    "createdBy": "Created by",
+    "verifiedMaker": "Verified maker",
+    "instructions": "Instructions",
+    "details": "Part details",
+    "partNumber": "Part number",
+    "material": "Material",
+    "color": "Color",
+    "dimensions": "Dimensions",
+    "dimension": {
+      "length": "Length:",
+      "width": "Width:",
+      "height": "Height:",
+      "diameter": "Diameter:",
+      "thickness": "Thickness:"
+    },
+    "added": "Added",
+    "uploaded": "Uploaded",
+    "printSettings": "Print settings",
+    "printTime": "Print time",
+    "materialUsage": "Material usage",
+    "recommendedSettings": "Recommended settings",
+    "attribution": "Attribution & license",
+    "originalAuthor": "Original author",
+    "source": "Source",
+    "license": "License",
+    "verification": "Verification",
+    "verificationStatus": {
+      "unverified": "⊘ Unverified",
+      "authorTested": "✓ Author-tested",
+      "communityValidated": "✓✓ Community-validated"
+    },
+    "notes": "Additional notes"
+  },
+  "PartFileList": {
+    "title": "Download files",
+    "empty": "No files available",
+    "download": "Download {name}",
+    "sections": {
+      "model": "Part files",
+      "documentation": "Documentation",
+      "image": "Images",
+      "other": "Files"
+    }
+  },
+  "CompatibleProducts": {
+    "title": "Compatible with",
+    "filterLabel": "Find your product",
+    "filterPlaceholder": "Product, brand or reference",
+    "matchCount": "{matches} of {total, plural, one {# product} other {# products}}",
+    "verified": "✓ Verified",
+    "otherProducts": "Other products",
+    "noMatch": "No compatible product matches “{query}”.",
+    "showFewer": "Show fewer products",
+    "showAll": "Show all {count} products",
+    "report": "Report a print",
+    "hideReport": "Hide print report",
+    "reportProduct": " on {product}"
+  },
+  "PrintReport": {
+    "groupLabel": "Report whether this part works on {product}",
+    "results": {
+      "works": "Works",
+      "works_with_adjustments": "Works with adjustments",
+      "does_not_work": "Doesn't work"
+    },
+    "reportCount": "{count, plural, one {# report} other {# reports}}",
+    "recorded": "Report recorded. Thank you.",
+    "detailsSaved": "Details saved. Thank you.",
+    "failed": "Report failed: check your connection and try again",
+    "addDetails": "Add a comment or reference",
+    "commentLabel": "Comment (optional)",
+    "commentPlaceholder": "Material, settings, what you adjusted",
+    "referenceLabel": "Your product reference (optional)",
+    "referenceNone": "Not specified",
+    "save": "Save details",
+    "cancel": "Cancel"
+  },
+  "ProductPage": {
+    "since": "Since {year}",
+    "releasedDiscontinued": "{year} · Discontinued",
+    "discontinued": "Discontinued",
+    "parts": "Parts",
+    "missingTitle": "Missing a part for this product?",
+    "missingDescription": "Tell us what you need — requests with the most demand get sourced first.",
+    "requestPart": "Request a part",
+    "emptyTitle": "No parts here yet",
+    "emptyDescription": "This product is indexed and ready — the catalog grows with demand. Request the part you need, or contribute a part if you have one.",
+    "publish": "Publish a part"
+  },
+  "ProductReferences": {
+    "manufacturer_ref": "Model references",
+    "commercial_name": "Also sold as",
+    "ean": "Barcodes",
+    "withRegion": "{value} ({region})"
+  },
+  "RequestedParts": {
+    "demand": "{count} people requested a part for this product",
+    "title": "Requested parts",
+    "requests": "{count, plural, one {# request} other {# requests}}"
+  },
+  "RequestPartForm": {
+    "label": "Describe the part you need",
+    "placeholder": "Describe the part you need (brand, model, which part)…",
+    "submit": "Request this part",
+    "sending": "Sending…",
+    "tooShort": "Please add a short description (at least {min} characters) so we know what to source.",
+    "failed": "Something went wrong sending your request. Please try again.",
+    "done": "Thanks — your request is logged. Parts with the most demand get prioritized for the catalog."
+  },
+  "SearchPage": {
+    "title": "Search",
+    "prompt": "Search for a product, part, or brand to see results."
+  },
+  "SearchResults": {
+    "matchingTitle": "Matching products",
+    "matchingDescription": "No part is published for these products yet. Open one to request a part or see what others asked for.",
+    "closeTitle": "Close matches",
+    "closeDescription": "These results only partly match “{query}”.",
+    "unserved": {
+      "no_results": {
+        "title": "No parts indexed for “{query}” yet",
+        "intro": "The catalog grows with demand. Tell us what you need and requests with the most demand get sourced first."
+      },
+      "approximate": {
+        "title": "No exact match for “{query}”",
+        "intro": "The results below only partly match your search. Tell us what you need and requests with the most demand get sourced first."
+      },
+      "no_parts": {
+        "title": "No parts published for “{query}” yet",
+        "intro": "These products are in the catalog, but nobody has published a part for them yet. Tell us what you need and requests with the most demand get sourced first."
+      }
+    },
+    "attachTitle": "Is “{query}” printed on your device?",
+    "attachDescription": "Tell us which product it belongs to and it becomes searchable once checked.",
+    "requestTitle": "Request the part",
+    "publish": "Publish a part",
+    "viewBrand": "View {brand}",
+    "filterLabel": "Filter results by type",
+    "types": {
+      "all": "All",
+      "products": "Products",
+      "parts": "Parts",
+      "brands": "Brands"
+    },
+    "seeAll": "See all {items}",
+    "empty": {
+      "products": "No products match “{query}”.",
+      "parts": "No parts match “{query}”.",
+      "brands": "No brands match “{query}”."
+    }
+  },
+  "AttachReference": {
+    "done": "Thanks. We check each suggestion before “{reference}” is added to search.",
+    "searchLabel": "Search for the product by brand or name",
+    "searchPlaceholder": "Search by brand or product name…",
+    "productLabel": "Product this reference belongs to",
+    "searching": "Searching…",
+    "noMatch": "No product matches that search.",
+    "prompt": "Search for the brand or name of your device.",
+    "failed": "Something went wrong sending your suggestion. Please try again.",
+    "sending": "Sending…",
+    "submit": "Suggest this product"
+  },
+  "BrandPage": {
+    "empty": "No parts currently available for {brand}. The catalog grows with demand.",
+    "categories": "Categories",
+    "products": "Products"
+  },
+  "BrandCategoryPage": {
+    "title": "{brand} — {category}",
+    "empty": "No parts currently available for {brand} in {category}. The catalog grows with demand.",
+    "viewAll": "View all {brand} products"
+  },
+  "CategoryPage": {
+    "inlined": "Everything in {category} currently sits under <link>{child}</link>.",
+    "empty": "No parts currently available in {category}. The catalog grows with demand.",
+    "backTo": "Back to {name}",
+    "backToBrowse": "Back to browse",
+    "subcategories": "Subcategories",
+    "brands": "Brands"
+  },
+  "ContributingPage": {
+    "metaTitle": "Contributing a part",
+    "metaDescription": "How to contribute a part to the Common Parts Index",
+    "title": "Contributing a part to the Common Parts Index",
+    "intro": "The Common Parts Index is a public catalog of spare part models — reviewed, structured, and maintained to help people repair the objects they own. Anyone can contribute. Parts published on Common Parts for the first time are hosted here; parts already published elsewhere are referenced, with a link to the original platform. This guide explains what we accept, how to submit, and what happens after.",
+    "accept": {
+      "title": "What we accept",
+      "intro": "A part is eligible for the Index if it meets the following conditions.",
+      "repair": {
+        "title": "It contributes to repairability.",
+        "body": "The part must serve a functional purpose in keeping an object in use — whether it replaces a broken component, reinforces a known weak point, or improves a design flaw that causes recurring failures. Purely decorative or cosmetic parts are not eligible. Aftermarket upgrades that genuinely improve longevity are welcome."
+      },
+      "product": {
+        "title": "It targets a real, identifiable product.",
+        "body": "The part must be associated with at least one commercial product — a known brand and a specific model or product range. Generic parts with no defined product target are not eligible for now. A part can be compatible with multiple products."
+      },
+      "license": {
+        "title": "It has a known license and identifiable author.",
+        "body": "The original model must be published under a known license and attributed to an identifiable author — a name or pseudonym with a link to the original publication. Anonymous republications without a traceable source are not accepted.",
+        "hosted": "For <strong>hosted parts</strong> — parts published on Common Parts for the first time, whose files are stored and served directly by Common Parts — the license must be open: CC0, CC BY, CC BY-SA, MIT, or GPL. If you are the original author and the model has no license, you can declare one at submission.",
+        "referenced": "For <strong>referenced parts</strong> — parts already published elsewhere, whose files stay on the original platform and which we link to — the Creative Commons licenses are accepted, including NC and ND, as are the other licenses listed by the platform. Licenses that forbid sharing the model, including proprietary licenses, are not accepted."
+      },
+      "file": {
+        "title": "The file is usable.",
+        "body": "We accept STL, OBJ, STP, and STEP formats. The file must be openable and geometrically sound — not corrupted, not arbitrarily scaled. For referenced parts, the file must be accessible at the source URL at the time of submission."
+      }
+    },
+    "reject": {
+      "title": "What we do not accept",
+      "decorative": "Decorative or cosmetic parts with no repair function",
+      "tools": "Repair tools (a tool that helps you repair something is not a spare part)",
+      "noProduct": "Parts with no identifiable product target",
+      "forbiddenLicense": "Models whose license forbids sharing them, including proprietary licenses",
+      "ncNd": "Models under CC NC or CC ND licenses <strong>hosted directly on Common Parts</strong> — these licenses are incompatible with file redistribution. A part under these licenses that is already published elsewhere may still be added as a referenced part.",
+      "broken": "Files that cannot be opened or are manifestly broken",
+      "duplicate": "Verbatim republications of an already-indexed model from the same source with no added value",
+      "variants": "Multiple versions of the same part for the same product are welcome — different materials, different print settings, alternative designs. Variety is useful."
+    },
+    "verification": {
+      "title": "Verification status",
+      "intro": "Every part in the Index carries a verification status reflecting the level of evidence available. The status is set by the registry as evidence accumulates — it is not something a contributor declares. Newly uploaded parts start unverified.",
+      "status": "Status",
+      "meaning": "What it means",
+      "unverified": {
+        "label": "Unverified",
+        "meaning": "The file exists and meets our criteria, but no print confirmation is available yet"
+      },
+      "authorTested": {
+        "label": "Author-tested",
+        "meaning": "The original author confirmed the part was printed and fits"
+      },
+      "communityValidated": {
+        "label": "Community-validated",
+        "meaning": "One or more independent users confirmed a successful print and fit"
+      }
+    },
+    "submit": {
+      "title": "How to submit",
+      "intro": "One question decides how a part is published: where does it come from? Not who designed it — where it is already available. A part you designed but published on your own site or repository comes from elsewhere, and you are still credited as its original author.",
+      "original": {
+        "title": "If you designed it and are publishing it here for the first time",
+        "body": "This is what <publish>Publish a part</publish> is for: your own design, with the files hosted here and kept downloadable. Your progress is saved at every step, so you can stop and come back.",
+        "steps": {
+          "identify": "Name the part, place it in a category, and choose the license you publish under",
+          "files": "Upload the model files and photos of the printed part",
+          "details": "Add the description, instructions and print settings",
+          "products": "Link the products it fits — a spare part is found by the device it repairs",
+          "review": "Review the page as it will appear, then publish"
+        },
+        "license": "Because Common Parts hosts and redistributes the files, the license must allow commercial use and modification. Licenses with NC or ND restrictions cannot be published this way — see below.",
+        "badge": "A part published this way carries the <strong>Original</strong> badge."
+      },
+      "elsewhere": {
+        "title": "If it is already published elsewhere",
+        "body": "Parts from Printables, Thingiverse, GitHub or anywhere else follow a second path, so that attribution to the original author and the terms of their license are handled properly. A part published elsewhere is always referenced: its files stay at the original publication and Common Parts links to them, under any of the licenses accepted for referenced parts. The part carries the <strong>Referenced</strong> badge.",
+        "start": "Start from the same place, with the URL where the part is published. Common Parts checks it against what is already indexed, fills in what it can from the source, and asks you to confirm the attribution and the license before anything goes live."
+      }
+    },
+    "after": {
+      "title": "After submission",
+      "checks": "A part goes live as soon as it clears the publication checks: a license Common Parts may publish it under, the files it needs, and at least one product it fits. A part from elsewhere additionally requires its attribution and eligibility to be confirmed. If something is missing, the review step names it and the part stays a draft until you complete it — the checks run again on our servers, so nothing skips them.",
+      "attribution": "We do not modify your model or its metadata without contacting you. Attribution is permanent and public."
+    },
+    "dataLicense": {
+      "title": "License of the data you contribute",
+      "body": "The data you add to the Index (compatible products, product references, print settings, structured fields and print reports) is published under the <license>{licenseName} license ({shortName})</license>, with attribution to “{attribution}”. Part files, and the description, instructions and images taken from the original publication of a referenced part, keep the license chosen by their author. See <terms>section 4.2 of the Terms of use</terms>."
+    },
+    "questions": {
+      "title": "Questions",
+      "body": "If you are unsure whether a part qualifies, or if you want to contribute in bulk (for example, as a Repair Café importing a set of validated models), contact us at <mail>{email}</mail>."
+    }
   }
 }

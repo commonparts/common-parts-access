@@ -1,8 +1,9 @@
+import { useTranslations } from 'next-intl'
+
 import { Link } from '@/i18n/navigation'
 
 import { Badge } from '@/components/ui/badge'
 import { CategoryTile } from '@/components/browse/category-tile'
-import { pluralize } from '@/lib/utils/formatters'
 import { categoryCanonicalPath } from '@/lib/utils/seo'
 import type { BrowseNav, BrowseNavBrand } from '@/lib/supabase/queries/browse-nav'
 
@@ -12,6 +13,7 @@ import type { BrowseNav, BrowseNavBrand } from '@/lib/supabase/queries/browse-na
  * part request — reach the index (issues #312, #321).
  */
 function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
+  const counts = useTranslations('Counts')
   return (
     <Link
       href={`/brands/${brand.slug}`}
@@ -19,7 +21,7 @@ function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
     >
       <span className="truncate font-medium text-text-primary">{brand.name}</span>
       <Badge tone="accent" className="shrink-0">
-        {pluralize(brand.parts_count, 'part')}
+        {counts('parts', { count: brand.parts_count })}
       </Badge>
     </Link>
   )
@@ -35,6 +37,7 @@ function BrandIndexLink({ brand }: { brand: BrowseNavBrand }) {
  * client-side filter state.
  */
 export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
+  const t = useTranslations('BrowseNav')
   const hasRoots = nav.roots.length > 0
   const hasBrands = nav.brands.length > 0
 
@@ -48,7 +51,7 @@ export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
             id="browse-by-category"
             className="font-heading text-heading-sm font-semibold text-text-primary"
           >
-            Browse by category
+            {t('byCategory')}
           </h2>
           <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 lg:grid-cols-3">
             {nav.roots.map((root) => (
@@ -71,7 +74,7 @@ export function BrowseNavSections({ nav }: { nav: BrowseNav }) {
             id="browse-by-brand"
             className="font-heading text-heading-sm font-semibold text-text-primary"
           >
-            Browse by brand
+            {t('byBrand')}
           </h2>
           <div className="columns-2 gap-md text-body sm:columns-3 lg:columns-4">
             {nav.brands.map((brand) => (

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { notFound } from 'next/navigation'
 
@@ -13,14 +14,14 @@ import {
   type CategoryPageData,
 } from '@/lib/supabase/queries/category-page'
 import { APP_NAME } from '@/lib/utils/constants'
-import { pluralize } from '@/lib/utils/formatters'
 import {
   brandCategoryCanonicalPath,
   buildBreadcrumbJsonLd,
-  buildCategorySeoDescription,
-  buildCategorySeoTitle,
   categoryCanonicalPath,
+  rootBreadcrumbTrail,
+  seoDescription,
   serializeJsonLd,
+  toBreadcrumbLinks,
 } from '@/lib/utils/seo'
 
 // This page uses cookies() via the Supabase server client,
@@ -36,22 +37,25 @@ interface CategoryPageProps {
 }
 
 export async function generateMetadata({ params }: CategoryPageProps): Promise<Metadata> {
+  const t = await getTranslations('Seo')
   try {
     const { slug } = await params
     const data = await fetchCategoryPage(slug)
     if (!data) {
-      return {
-        title: 'Category not found',
-        description: 'The requested category could not be found.',
-      }
+      return { title: t('categoryNotFoundTitle'), description: t('categoryNotFoundDescription') }
     }
 
-    const title = buildCategorySeoTitle(data.category.name)
-    const description = buildCategorySeoDescription({
-      categoryName: data.category.name,
-      partsCount: data.category.parts_count,
-      productCount: data.category.product_count,
-    })
+    const title = t('categoryTitle', { category: data.category.name })
+    // Zero-part categories get generic copy rather than "0 parts" in a
+    // snippet; the show-zeros rule (Flow P2) governs on-page counts only.
+    const description = seoDescription(
+      t('categoryDescription', {
+        category: data.category.name,
+        parts: data.category.parts_count,
+        products: data.category.product_count,
+        app: APP_NAME,
+      }),
+    )
     const canonicalPath = categoryCanonicalPath(data.category.slug)
 
     // Relative URLs resolve against metadataBase (set in the root layout).
@@ -72,20 +76,10 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
   } catch (error) {
     console.error('Error generating category page metadata:', error)
     return {
-      title: `${APP_NAME} — Categories`,
-      description: 'Browse printable spare parts by category.',
+      title: t('categoryFallbackTitle', { app: APP_NAME }),
+      description: t('categoryFallbackDescription'),
     }
   }
-}
-
-/**
- * Sub-hint for a child tile: how it drills further ("2 subcategories"), so a
- * visitor can tell a branch from a leaf before clicking. pluralize() cannot
- * inflect -y/-ies, hence the manual form.
- */
-function childDrillHint(childrenCount: number): string | null {
-  if (childrenCount === 0) return null
-  return `${childrenCount} ${childrenCount === 1 ? 'subcategory' : 'subcategories'}`
 }
 
 /**
@@ -121,17 +115,21 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     effective = child
   }
 
-  const canonicalPath = categoryCanonicalPath(data.category.slug)
-  const crumbAncestors = data.ancestors.map((ancestor) => ({
-    name: ancestor.name,
-    path: categoryCanonicalPath(ancestor.slug),
-  }))
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, [
-    { name: 'Home', path: '/' },
-    { name: 'Browse', path: '/browse' },
-    ...crumbAncestors,
-    { name: data.category.name },
+  const [t, counts, crumbs] = await Promise.all([
+    getTranslations('CategoryPage'),
+    getTranslations('Counts'),
+    getTranslations('Breadcrumbs'),
   ])
+  const canonicalPath = categoryCanonicalPath(data.category.slug)
+  const breadcrumbTrail = [
+    ...rootBreadcrumbTrail({ home: crumbs('home'), browse: crumbs('browse') }),
+    ...data.ancestors.map((ancestor) => ({
+      name: ancestor.name,
+      path: categoryCanonicalPath(ancestor.slug),
+    })),
+    { name: data.category.name },
+  ]
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
 
   // The "no parts" notice must never contradict the counts in the header:
   // if inconsistent data ever yields parts without navigable children or
@@ -143,7 +141,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
   // Upward escape for empty nodes: the nearest ancestor, or the hub.
   const parent = data.ancestors[data.ancestors.length - 1]
   const upwardHref = parent ? categoryCanonicalPath(parent.slug) : '/browse'
-  const upwardLabel = parent ? `Back to ${parent.name}` : 'Back to browse'
+  const upwardLabel = parent ? t('backTo', { name: parent.name }) : t('backToBrowse')
 
   return (
     <Section>
@@ -152,46 +150,41 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <Container size="lg" className="space-y-xl">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Browse', href: '/browse' },
-            ...crumbAncestors.map((ancestor) => ({
-              label: ancestor.name,
-              href: ancestor.path,
-            })),
-            { label: data.category.name },
-          ]}
-        />
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         <div className="space-y-xs">
           <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
             {data.category.name}
           </h1>
           <p className="text-body text-text-secondary">
-            {pluralize(data.category.parts_count, 'printable spare part')} across{' '}
-            {pluralize(data.category.product_count, 'product')}
+            {counts('printableAcrossProducts', {
+              parts: data.category.parts_count,
+              products: data.category.product_count,
+            })}
           </p>
         </div>
 
         {inlinedFrom && (
           <p className="text-body text-text-secondary">
-            Everything in {data.category.name} currently sits under{' '}
-            <Link
-              href={categoryCanonicalPath(inlinedFrom.slug)}
-              className="font-medium text-text-primary underline underline-offset-2 transition-colors hover:text-text-secondary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus"
-            >
-              {inlinedFrom.name}
-            </Link>
-            .
+            {t.rich('inlined', {
+              category: data.category.name,
+              child: inlinedFrom.name,
+              link: (chunks) => (
+                <Link
+                  href={categoryCanonicalPath(inlinedFrom.slug)}
+                  className="font-medium text-text-primary underline underline-offset-2 transition-colors hover:text-text-secondary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
           </p>
         )}
 
         {isEmpty && (
           <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">
             <p className="text-body text-text-secondary">
-              No parts currently available in {data.category.name}. The catalog grows
-              with demand.
+              {t('empty', { category: data.category.name })}
             </p>
             <Button asChild variant="outline">
               <Link href={upwardHref}>{upwardLabel}</Link>
@@ -205,7 +198,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               id="category-children"
               className="font-heading text-heading-sm font-semibold text-text-primary"
             >
-              Subcategories
+              {t('subcategories')}
             </h2>
             <div className="grid grid-cols-1 gap-sm sm:grid-cols-2 lg:grid-cols-3">
               {effective.children.map((child) => (
@@ -215,7 +208,13 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   href={categoryCanonicalPath(child.slug)}
                   partsCount={child.parts_count}
                   productCount={child.product_count}
-                  hint={childDrillHint(child.children_count)}
+                  // How the child drills further, so a visitor can tell a
+                  // branch from a leaf before clicking.
+                  hint={
+                    child.children_count > 0
+                      ? counts('subcategories', { count: child.children_count })
+                      : null
+                  }
                 />
               ))}
             </div>
@@ -228,7 +227,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
               id="category-brands"
               className="font-heading text-heading-sm font-semibold text-text-primary"
             >
-              Brands
+              {t('brands')}
             </h2>
             <ul className="flex flex-wrap gap-sm">
               {effective.brands.map((brand) => (
@@ -236,7 +235,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
                   <NavChip
                     href={brandCategoryCanonicalPath(brand.slug, effective.category.slug)}
                     label={brand.name}
-                    caption={pluralize(brand.parts_count, 'part')}
+                    caption={counts('parts', { count: brand.parts_count })}
                   />
                 </li>
               ))}

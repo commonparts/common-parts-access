@@ -1,245 +1,178 @@
+import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
+import type { ReactNode } from 'react'
+
 import { Link } from '@/i18n/navigation'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
 
-export const metadata = {
-  title: 'Contributing a part',
-  description: 'How to contribute a part to the Common Parts Index',
+const CONTACT_EMAIL = 'contact@commonparts.org'
+
+const CELL_CLASS = 'border border-border-default px-sm py-xs'
+const HEADER_CELL_CLASS = `${CELL_CLASS} text-left text-body font-medium text-text-primary`
+const STATUS_CELL_CLASS = `${CELL_CLASS} align-top text-body font-medium text-text-primary`
+const MEANING_CELL_CLASS = `${CELL_CLASS} text-text-secondary`
+
+/** The verification statuses of the table, in the order a part climbs them. */
+const VERIFICATION_STATUSES = ['unverified', 'authorTested', 'communityValidated'] as const
+
+/** Emphasis inside the rich messages of this page. */
+const strong = (chunks: ReactNode) => <strong className="font-medium text-text-primary">{chunks}</strong>
+
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('ContributingPage')
+  return { title: t('metaTitle'), description: t('metaDescription') }
 }
 
-export default function ContributingPage() {
+export default async function ContributingPage() {
+  const t = await getTranslations('ContributingPage')
+
   return (
     <Section>
       <Container size="md">
         <div className="space-y-lg">
           <div>
-            <h1 className="text-h1">Contributing a part to the Common Parts Index</h1>
-            <p className="mt-md text-text-secondary">
-              The Common Parts Index is a public catalog of spare part models — reviewed, structured, and maintained
-              to help people repair the objects they own. Anyone can contribute. Parts published on Common Parts for
-              the first time are hosted here; parts already published elsewhere are referenced, with a link to the
-              original platform. This guide explains what we accept, how to submit, and what happens after.
-            </p>
+            <h1 className="text-h1">{t('title')}</h1>
+            <p className="mt-md text-text-secondary">{t('intro')}</p>
           </div>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">What we accept</h2>
-            <p className="text-text-secondary">A part is eligible for the Index if it meets the following conditions.</p>
+            <h2 className="text-h3">{t('accept.title')}</h2>
+            <p className="text-text-secondary">{t('accept.intro')}</p>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">It contributes to repairability.</h3>
-              <p className="text-text-secondary">
-                The part must serve a functional purpose in keeping an object in use — whether it replaces a broken
-                component, reinforces a known weak point, or improves a design flaw that causes recurring failures.
-                Purely decorative or cosmetic parts are not eligible. Aftermarket upgrades that genuinely improve
-                longevity are welcome.
-              </p>
+              <h3 className="text-h4">{t('accept.repair.title')}</h3>
+              <p className="text-text-secondary">{t('accept.repair.body')}</p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">It targets a real, identifiable product.</h3>
-              <p className="text-text-secondary">
-                The part must be associated with at least one commercial product — a known brand and a specific model
-                or product range. Generic parts with no defined product target are not eligible for now. A part can be
-                compatible with multiple products.
-              </p>
+              <h3 className="text-h4">{t('accept.product.title')}</h3>
+              <p className="text-text-secondary">{t('accept.product.body')}</p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">It has a known license and identifiable author.</h3>
-              <p className="text-text-secondary">
-                The original model must be published under a known license and attributed to an identifiable author
-                — a name or pseudonym with a link to the original publication. Anonymous republications without a
-                traceable source are not accepted.
-              </p>
-              <p className="text-text-secondary">
-                For <strong className="font-medium text-text-primary">hosted parts</strong> — parts published on
-                Common Parts for the first time, whose files are stored and served directly by Common Parts — the
-                license must be open: CC0, CC BY, CC BY-SA, MIT, or GPL. If you are the original author and the model
-                has no license, you can declare one at submission.
-              </p>
-              <p className="text-text-secondary">
-                For <strong className="font-medium text-text-primary">referenced parts</strong> — parts already
-                published elsewhere, whose files stay on the original platform and which we link to — the Creative
-                Commons licenses are accepted, including NC and ND, as are the other licenses listed by the platform.
-                Licenses that forbid sharing the model, including proprietary licenses, are not accepted.
-              </p>
+              <h3 className="text-h4">{t('accept.license.title')}</h3>
+              <p className="text-text-secondary">{t('accept.license.body')}</p>
+              <p className="text-text-secondary">{t.rich('accept.license.hosted', { strong })}</p>
+              <p className="text-text-secondary">{t.rich('accept.license.referenced', { strong })}</p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">The file is usable.</h3>
-              <p className="text-text-secondary">
-                We accept STL, OBJ, STP, and STEP formats. The file must be openable and geometrically sound — not
-                corrupted, not arbitrarily scaled. For referenced parts, the file must be accessible at the source
-                URL at the time of submission.
-              </p>
+              <h3 className="text-h4">{t('accept.file.title')}</h3>
+              <p className="text-text-secondary">{t('accept.file.body')}</p>
             </div>
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">What we do not accept</h2>
+            <h2 className="text-h3">{t('reject.title')}</h2>
             <ul className="list-disc space-y-xs pl-md text-text-secondary">
-              <li>Decorative or cosmetic parts with no repair function</li>
-              <li>Repair tools (a tool that helps you repair something is not a spare part)</li>
-              <li>Parts with no identifiable product target</li>
-              <li>Models whose license forbids sharing them, including proprietary licenses</li>
-              <li>
-                Models under CC NC or CC ND licenses <strong className="font-medium text-text-primary">hosted directly on Common Parts</strong> —
-                these licenses are incompatible with file redistribution. A part under these licenses that is already
-                published elsewhere may still be added as a referenced part.
-              </li>
-              <li>Files that cannot be opened or are manifestly broken</li>
-              <li>Verbatim republications of an already-indexed model from the same source with no added value</li>
+              <li>{t('reject.decorative')}</li>
+              <li>{t('reject.tools')}</li>
+              <li>{t('reject.noProduct')}</li>
+              <li>{t('reject.forbiddenLicense')}</li>
+              <li>{t.rich('reject.ncNd', { strong })}</li>
+              <li>{t('reject.broken')}</li>
+              <li>{t('reject.duplicate')}</li>
             </ul>
-            <p className="text-text-secondary">
-              Multiple versions of the same part for the same product are welcome — different materials, different
-              print settings, alternative designs. Variety is useful.
-            </p>
+            <p className="text-text-secondary">{t('reject.variants')}</p>
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">Verification status</h2>
-            <p className="text-text-secondary">
-              Every part in the Index carries a verification status reflecting the level of evidence available.
-              The status is set by the registry as evidence accumulates — it is not something a contributor
-              declares. Newly uploaded parts start unverified.
-            </p>
+            <h2 className="text-h3">{t('verification.title')}</h2>
+            <p className="text-text-secondary">{t('verification.intro')}</p>
 
             <div className="overflow-x-auto">
               <table className="w-full min-w-[520px] border-collapse border border-border-default">
                 <thead>
                   <tr className="bg-bg-subtle">
-                    <th className="border border-border-default px-sm py-xs text-left text-body font-medium text-text-primary">
-                      Status
-                    </th>
-                    <th className="border border-border-default px-sm py-xs text-left text-body font-medium text-text-primary">
-                      What it means
-                    </th>
+                    <th className={HEADER_CELL_CLASS}>{t('verification.status')}</th>
+                    <th className={HEADER_CELL_CLASS}>{t('verification.meaning')}</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="border border-border-default px-sm py-xs align-top text-body font-medium text-text-primary">
-                      Unverified
-                    </td>
-                    <td className="border border-border-default px-sm py-xs text-text-secondary">
-                      The file exists and meets our criteria, but no print confirmation is available yet
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-border-default px-sm py-xs align-top text-body font-medium text-text-primary">
-                      Author-tested
-                    </td>
-                    <td className="border border-border-default px-sm py-xs text-text-secondary">
-                      The original author confirmed the part was printed and fits
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="border border-border-default px-sm py-xs align-top text-body font-medium text-text-primary">
-                      Community-validated
-                    </td>
-                    <td className="border border-border-default px-sm py-xs text-text-secondary">
-                      One or more independent users confirmed a successful print and fit
-                    </td>
-                  </tr>
+                  {VERIFICATION_STATUSES.map((status) => (
+                    <tr key={status}>
+                      <td className={STATUS_CELL_CLASS}>{t(`verification.${status}.label`)}</td>
+                      <td className={MEANING_CELL_CLASS}>{t(`verification.${status}.meaning`)}</td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">How to submit</h2>
-            <p className="text-text-secondary">
-              One question decides how a part is published: where does it come from? Not who designed it — where it
-              is already available. A part you designed but published on your own site or repository comes from
-              elsewhere, and you are still credited as its original author.
-            </p>
+            <h2 className="text-h3">{t('submit.title')}</h2>
+            <p className="text-text-secondary">{t('submit.intro')}</p>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If you designed it and are publishing it here for the first time</h3>
+              <h3 className="text-h4">{t('submit.original.title')}</h3>
               <p className="text-text-secondary">
-                This is what{' '}
-                <Link href="/publish" className="underline" target="_blank" rel="noopener noreferrer">
-                  Publish a part
-                </Link>{' '}
-                is for: your own design, with the files hosted here and kept downloadable. Your progress is saved at
-                every step, so you can stop and come back.
+                {t.rich('submit.original.body', {
+                  publish: (chunks) => (
+                    <Link href="/publish" className="underline" target="_blank" rel="noopener noreferrer">
+                      {chunks}
+                    </Link>
+                  ),
+                })}
               </p>
               <ol className="list-decimal space-y-xs pl-md text-text-secondary">
-                <li>Name the part, place it in a category, and choose the license you publish under</li>
-                <li>Upload the model files and photos of the printed part</li>
-                <li>Add the description, instructions and print settings</li>
-                <li>Link the products it fits — a spare part is found by the device it repairs</li>
-                <li>Review the page as it will appear, then publish</li>
+                <li>{t('submit.original.steps.identify')}</li>
+                <li>{t('submit.original.steps.files')}</li>
+                <li>{t('submit.original.steps.details')}</li>
+                <li>{t('submit.original.steps.products')}</li>
+                <li>{t('submit.original.steps.review')}</li>
               </ol>
-              <p className="text-text-secondary">
-                Because Common Parts hosts and redistributes the files, the license must allow commercial use and
-                modification. Licenses with NC or ND restrictions cannot be published this way — see below.
-              </p>
-              <p className="text-text-secondary">
-                A part published this way carries the <strong className="font-medium text-text-primary">Original</strong> badge.
-              </p>
+              <p className="text-text-secondary">{t('submit.original.license')}</p>
+              <p className="text-text-secondary">{t.rich('submit.original.badge', { strong })}</p>
             </div>
 
             <div className="space-y-xs">
-              <h3 className="text-h4">If it is already published elsewhere</h3>
-              <p className="text-text-secondary">
-                Parts from Printables, Thingiverse, GitHub or anywhere else follow a second path, so that attribution
-                to the original author and the terms of their license are handled properly. A part published elsewhere
-                is always referenced: its files stay at the original publication and Common Parts links to them,
-                under any of the licenses accepted for referenced parts. The part carries the{' '}
-                <strong className="font-medium text-text-primary">Referenced</strong> badge.
-              </p>
-              <p className="text-text-secondary">
-                Start from the same place, with the URL where the part is published. Common Parts
-                checks it against what is already indexed, fills in what it can from the source, and
-                asks you to confirm the attribution and the license before anything goes live.
-              </p>
+              <h3 className="text-h4">{t('submit.elsewhere.title')}</h3>
+              <p className="text-text-secondary">{t.rich('submit.elsewhere.body', { strong })}</p>
+              <p className="text-text-secondary">{t('submit.elsewhere.start')}</p>
             </div>
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">After submission</h2>
+            <h2 className="text-h3">{t('after.title')}</h2>
+            <p className="text-text-secondary">{t('after.checks')}</p>
+            <p className="text-text-secondary">{t('after.attribution')}</p>
+          </section>
+
+          <section className="space-y-sm">
+            <h2 className="text-h3">{t('dataLicense.title')}</h2>
             <p className="text-text-secondary">
-              A part goes live as soon as it clears the publication checks: a license Common Parts may
-              publish it under, the files it needs, and at least one product it fits. A part from
-              elsewhere additionally requires its attribution and eligibility to be confirmed. If
-              something is missing, the review step names it and the part stays a draft until you
-              complete it — the checks run again on our servers, so nothing skips them.
-            </p>
-            <p className="text-text-secondary">
-              We do not modify your model or its metadata without contacting you. Attribution is permanent and public.
+              {t.rich('dataLicense.body', {
+                licenseName: DATA_LICENSE.name,
+                shortName: DATA_LICENSE.shortName,
+                attribution: DATA_LICENSE.attribution,
+                license: (chunks) => (
+                  <a href={DATA_LICENSE.url} className="underline">
+                    {chunks}
+                  </a>
+                ),
+                terms: (chunks) => (
+                  <Link href={TERMS_LICENSES_SECTION_HREF} className="underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           </section>
 
           <section className="space-y-sm">
-            <h2 className="text-h3">License of the data you contribute</h2>
+            <h2 className="text-h3">{t('questions.title')}</h2>
             <p className="text-text-secondary">
-              The data you add to the Index (compatible products, product references, print settings, structured
-              fields and print reports) is published under the{' '}
-              <a href={DATA_LICENSE.url} className="underline">
-                {DATA_LICENSE.name} license ({DATA_LICENSE.shortName})
-              </a>
-              , with attribution to &ldquo;{DATA_LICENSE.attribution}&rdquo;. Part files, and the description,
-              instructions and images taken from the original publication of a referenced part, keep the license
-              chosen by their author. See{' '}
-              <Link href={TERMS_LICENSES_SECTION_HREF} className="underline">
-                section 4.2 of the Terms of use
-              </Link>
-              .
-            </p>
-          </section>
-
-          <section className="space-y-sm">
-            <h2 className="text-h3">Questions</h2>
-            <p className="text-text-secondary">
-              If you are unsure whether a part qualifies, or if you want to contribute in bulk (for example, as a
-              Repair Café importing a set of validated models), contact us at{' '}
-              <Link href="mailto:contact@commonparts.org" className="underline">
-                contact@commonparts.org
-              </Link>
-              .
+              {t.rich('questions.body', {
+                email: CONTACT_EMAIL,
+                mail: (chunks) => (
+                  <Link href={`mailto:${CONTACT_EMAIL}`} className="underline">
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           </section>
         </div>
