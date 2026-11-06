@@ -4,14 +4,14 @@ import { parseSearchParams } from '@/lib/api/parse'
 import { searchQuerySchema } from '@/lib/schemas/search'
 import { emptySearchResults } from '@/types/search'
 
-// GET /api/search?q=&limit= — grouped multi-entity search (products, parts,
+// GET /api/search?q=&locale=&limit= — grouped multi-entity search (products, parts,
 // brands) with typo tolerance. Public endpoint; only published parts surface,
 // every product is searchable and listed products rank first (issue #321).
 export async function GET(request: NextRequest) {
   try {
     const query = parseSearchParams(request.nextUrl.searchParams, searchQuerySchema)
     if (!query.ok) return query.response
-    const { q, limit } = query.data
+    const { q, locale, limit } = query.data
 
     // Whitespace-only queries return an empty payload with 200 — the RPC is
     // never touched (see searchAll), but short-circuit here too.
@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(emptySearchResults())
     }
 
-    const results = await searchAll(q, limit)
+    const results = await searchAll(q, locale, limit)
     return NextResponse.json(results)
   } catch (error) {
     console.error('Failed to run search:', error)

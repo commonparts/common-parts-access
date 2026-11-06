@@ -1,3 +1,4 @@
+import { useLocale } from "next-intl"
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { VALIDATION_LIMITS } from "@/lib/utils/constants"
@@ -123,6 +124,7 @@ interface UsePartUploadFormStateOptions {
 export function usePartUploadFormState({
   preselectFirstLicense = true,
 }: UsePartUploadFormStateOptions = {}) {
+  const locale = useLocale()
   const [formData, setFormData] = React.useState<PartFormData>({
     title: "",
     description: "",
@@ -247,7 +249,7 @@ export function usePartUploadFormState({
       setLoadingMeta(true)
       try {
         const [catRes, brandRes, licenseRes, platformRes] = await Promise.all([
-          fetch("/api/categories"),
+          fetch(`/api/categories?locale=${locale}`),
           fetch("/api/brands"),
           fetch("/api/licenses"),
           fetch("/api/source-platforms"),
@@ -300,7 +302,7 @@ export function usePartUploadFormState({
       cancelled = true
     }
     // Constant for the lifetime of a form, so the metadata loads once.
-  }, [preselectFirstLicense])
+  }, [preselectFirstLicense, locale])
 
   React.useEffect(() => {
     let cancelled = false

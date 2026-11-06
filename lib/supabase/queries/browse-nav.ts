@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server'
 import { createClient } from '@/lib/supabase/server'
 
 // Row shapes returned by the fetch_browse_nav RPC (migration 20260716181406,
@@ -36,13 +37,13 @@ export interface BrowseNav {
  * Fetches the /browse hub navigation data in one round-trip: the brands and
  * the level-0 category roots that hold a listed product, with
  * subtree-aggregated counts — the entry tiles of the hierarchical drill-down
- * (issue #276). Other entities are not surfaced (issues #312, #321); their
+ * (issue #276), category names in the active locale (#502). Other entities are not surfaced (issues #312, #321); their
  * pages stay reachable by direct URL. Reads are covered by the public read
  * RLS policies (the RPC is SECURITY INVOKER).
  */
 export async function fetchBrowseNav(): Promise<BrowseNav> {
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('fetch_browse_nav')
+  const { data, error } = await supabase.rpc('fetch_browse_nav', { p_locale: await getLocale() })
   if (error) throw error
 
   // Cast: fetch_browse_nav returns jsonb, which the generated types can only

@@ -1,6 +1,8 @@
+import { getLocale } from 'next-intl/server'
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { localizeCategory } from '@/lib/utils/locale'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 
@@ -75,7 +77,10 @@ export const fetchBrandBySlug = cache(async (slug: string): Promise<BrandPageBra
  */
 export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> => {
   const supabase = await createClient()
-  const { data, error } = await supabase.rpc('fetch_brand_nav', { p_brand_id: brandId })
+  const { data, error } = await supabase.rpc('fetch_brand_nav', {
+    p_brand_id: brandId,
+    p_locale: await getLocale(),
+  })
   if (error) throw error
 
   // Cast: fetch_brand_nav returns jsonb, which the generated types can only
@@ -101,13 +106,13 @@ export const fetchBrandNav = cache(async (brandId: string): Promise<BrandNav> =>
  */
 export const fetchBrandProductsPage = cache(
   async (brandId: string, rawPage: number): Promise<ProductListingPage<BrandPageProduct>> => {
-    const supabase = await createClient()
+    const [supabase, locale] = await Promise.all([createClient(), getLocale()])
 
     const { page, result } = await fetchPageOrFirst(rawPage, (target) => {
       const { from, to } = pageRange(target, NAV_LISTING_PAGE_SIZE)
       return supabase
         .from('products')
-        .select('id, name, slug, image_url, parts_count, categories(id, name, slug)', {
+        .select('id, name, slug, image_url, parts_count, categories(id, name, name_fr, slug)', {
           count: 'exact',
         })
         .eq('brand_id', brandId)
@@ -127,7 +132,7 @@ export const fetchBrandProductsPage = cache(
         slug: row.slug,
         image_url: resolveStorageUrl(row.image_url),
         parts_count: row.parts_count ?? 0,
-        category: firstEmbedded(row.categories),
+        category: localizeCategory(firstEmbedded(row.categories), locale),
       })),
       total,
       page,
@@ -156,15 +161,16 @@ export const fetchBrandCategoryListing = cache(
     categorySlug: string,
     rawPage: number,
   ): Promise<BrandCategoryListing | null> => {
-    const supabase = await createClient()
+    const [supabase, locale] = await Promise.all([createClient(), getLocale()])
 
-    const { data: category, error: categoryError } = await supabase
+    const { data: categoryRow, error: categoryError } = await supabase
       .from('categories')
-      .select('id, name, slug')
+      .select('id, name, name_fr, slug')
       .eq('slug', categorySlug)
       .maybeSingle()
 
     if (categoryError) throw categoryError
+    const category = localizeCategory(categoryRow, locale)
     if (!category) return null
 
     const { page, result } = await fetchPageOrFirst(rawPage, (target) => {

@@ -1,15 +1,17 @@
 import { z } from 'zod'
-import { uuid } from '@/lib/schemas/common'
+import { locale, uuid } from '@/lib/schemas/common'
 import { MAX_REFERENCE_LENGTH } from '@/lib/utils/product-references'
 
 /** Request schemas of the search endpoints. */
 
 /**
  * GET /api/search — `q` is any text (searchAll() trims and truncates it);
- * `limit` is an integer, clamped by searchAll() to the allowed range.
+ * `limit` is an integer, clamped by searchAll() to the allowed range;
+ * `locale` names the category of each product hit.
  */
 export const searchQuerySchema = z.object({
   q: z.string().default(''),
+  locale,
   limit: z
     .string()
     .regex(/^-?\d+$/, { error: 'limit must be an integer' })

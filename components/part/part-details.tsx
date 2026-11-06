@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
-import { useFormatter, useTranslations } from "next-intl"
+import { useFormatter, useLocale, useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
@@ -151,6 +151,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
   const card = useTranslations('PartCard')
   const publicationLabels = useTranslations('Publication')
   const format = useFormatter()
+  const locale = useLocale()
   const [part, setPart] = useState<PartData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<PartLoadError | null>(null)
@@ -224,7 +225,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         setLoading(true)
         setError(null)
         
-        const response = await fetch(`/api/parts/${slug}/details`)
+        const response = await fetch(`/api/parts/${slug}/details?locale=${locale}`)
         
         if (!response.ok) {
           if (response.status === 404) {
@@ -250,7 +251,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     if (slug) {
       fetchPart()
     }
-  }, [slug])
+  }, [slug, locale])
 
   useEffect(() => {
     if (!part || viewTrackedRef.current) return
