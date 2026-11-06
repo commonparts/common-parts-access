@@ -1,0 +1,225 @@
+import type { Metadata } from "next"
+import { Link } from "@/i18n/navigation"
+import { headers } from "next/headers"
+import { notFound } from "next/navigation"
+import { Section } from "@/components/layout/section"
+import { Container } from "@/components/layout/container"
+import { Breadcrumbs } from "@/components/layout/breadcrumbs"
+import { Button } from "@/components/ui/button"
+import { PaginationLinks } from "@/components/browse/pagination-links"
+import { ProductPartsGrid } from "@/components/product/product-parts-grid"
+import { DemandBadge, RequestedPartsList } from "@/components/product/requested-parts-demand"
+import { ProductReferences } from "@/components/product/product-references"
+import { RequestPartForm } from "@/components/part-requests/request-part-form"
+import { fetchProductPageBySlug, fetchProductPageParts } from "@/lib/supabase/queries/product-page"
+import { fetchPartRequestCounts } from "@/lib/supabase/queries/part-requests"
+import { APP_NAME } from "@/lib/utils/constants"
+import { parseAcceptLanguage } from "@/lib/utils/locale"
+import { pickRegionalName, type ProductReference } from "@/lib/utils/product-references"
+import { parsePageParam } from "@/lib/utils/validation"
+import {
+  buildBreadcrumbJsonLd,
+  buildProductBreadcrumbTrail,
+  buildProductSeoDescription,
+  buildProductSeoTitle,
+  productCanonicalPath,
+  serializeJsonLd,
+  toBreadcrumbLinks,
+} from "@/lib/utils/seo"
+
+// The name a visitor knows the product by: the commercial name of their region
+// (read from Accept-Language) when one is recorded, else products.name.
+async function resolveDisplayName(name: string, references: ProductReference[]): Promise<string> {
+  const locale = parseAcceptLanguage((await headers()).get("accept-language"))
+  return pickRegionalName(references, locale) ?? name
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}): Promise<Metadata> {
+  const { slug } = await params
+  const data = await fetchProductPageBySlug(slug)
+  if (!data) return { title: "Product not found" }
+
+  const { product } = data
+  const displayName = await resolveDisplayName(product.name, data.references)
+  const brandName = product.brand?.name ?? null
+  const title = buildProductSeoTitle(brandName, displayName)
+  const description = buildProductSeoDescription({
+    brandName,
+    productName: displayName,
+    categoryName: product.category?.name ?? null,
+  })
+  const canonicalPath = productCanonicalPath(product.slug)
+
+  // Relative URLs resolve against metadataBase (set in the root layout).
+  return {
+    title,
+    description,
+    alternates: { canonical: canonicalPath },
+    openGraph: {
+      title,
+      description,
+      url: canonicalPath,
+      siteName: APP_NAME,
+      type: "website",
+      images: product.image_url ? [{ url: product.image_url, alt: displayName }] : undefined,
+    },
+  }
+}
+
+// "Since 2015" / "2015 · Discontinued" / "Discontinued" — omitted when unknown.
+function formatProductionYears(releaseYear: number | null, discontinued: boolean): string | null {
+  if (!releaseYear) return discontinued ? "Discontinued" : null
+  return discontinued ? `${releaseYear} · Discontinued` : `Since ${releaseYear}`
+}
+
+export default async function ProductPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ page?: string }>
+}) {
+  const [{ slug }, { page: rawPage }] = await Promise.all([params, searchParams])
+  const data = await fetchProductPageBySlug(slug)
+  if (!data) notFound()
+
+  const { product, references } = data
+  const displayName = await resolveDisplayName(product.name, references)
+
+  // One page of parts, cut in the database (#373). An invalid or out-of-range
+  // ?page= falls back to page 1.
+  const listing = await fetchProductPageParts({
+    productId: product.id,
+    page: parsePageParam(rawPage),
+  })
+  // The empty state depends on the product having no part at all, not on the
+  // length of the current page.
+  const hasParts = listing.total > 0
+
+  // Request counts are only rendered in the empty state — skip the RPC entirely
+  // when the product already has parts.
+  const requestCounts = hasParts ? [] : await fetchPartRequestCounts(product.id)
+
+  const productionYears = formatProductionYears(product.release_year, product.discontinued)
+
+  // Brand › Category › Product (Flow P2), shared with part pages.
+  const breadcrumbTrail = buildProductBreadcrumbTrail({ ...product, name: displayName })
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(productCanonicalPath(product.slug), breadcrumbTrail)
+
+  return (
+    <Section>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
+      />
+      <Container size="lg" className="space-y-xl">
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
+
+        {/* Identification header */}
+        <div className="grid grid-cols-1 gap-lg md:grid-cols-[minmax(0,16rem)_1fr]">
+          <div className="relative aspect-square overflow-hidden rounded-lg border border-border-subtle bg-bg-subtle">
+            {product.image_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={product.image_url} alt={displayName} className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-text-disabled">
+                <svg aria-hidden="true" className="size-2xl" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-md">
+            <div className="space-y-xs">
+              {product.category && (
+                <p className="text-caption font-medium uppercase tracking-wide text-text-secondary">
+                  {product.category.name}
+                </p>
+              )}
+              <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
+                {displayName}
+              </h1>
+              {productionYears && (
+                <div className="flex flex-wrap items-center gap-md text-body text-text-secondary">
+                  <span>{productionYears}</span>
+                </div>
+              )}
+            </div>
+            <ProductReferences references={references} displayedName={displayName} />
+          </div>
+        </div>
+
+        {hasParts ? (
+          <>
+            <div className="space-y-md">
+              <ProductPartsGrid parts={listing.parts} />
+              {/* Page 1 stays the bare canonical URL. */}
+              <PaginationLinks
+                basePath={productCanonicalPath(product.slug)}
+                page={listing.page}
+                totalPages={listing.totalPages}
+              />
+            </div>
+
+            {/* Request capture — always available below the grid */}
+            <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">
+              <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
+                Missing a part for this product?
+              </h2>
+              <p className="text-body text-text-secondary">
+                Tell us what you need — requests with the most demand get sourced first.
+              </p>
+              <RequestPartForm productId={product.id} submitLabel="Request a part" />
+            </div>
+          </>
+        ) : (
+          <EmptyState productId={product.id} counts={requestCounts} />
+        )}
+      </Container>
+    </Section>
+  )
+}
+
+function EmptyState({
+  productId,
+  counts,
+}: {
+  productId: string
+  counts: Awaited<ReturnType<typeof fetchPartRequestCounts>>
+}) {
+  return (
+    <div className="space-y-lg">
+      <div className="space-y-sm">
+        <div className="flex flex-wrap items-center gap-md">
+          <h2 className="font-heading text-heading-md font-semibold text-text-primary">
+            No parts here yet
+          </h2>
+          <DemandBadge counts={counts} />
+        </div>
+        <p className="max-w-container-md text-body text-text-secondary">
+          This product is indexed and ready — the catalog grows with demand. Request the part you
+          need, or contribute a part if you have one.
+        </p>
+      </div>
+
+      <div className="max-w-container-md">
+        <RequestPartForm productId={productId} submitLabel="Request a part" />
+      </div>
+
+      <div className="flex flex-wrap items-center gap-sm">
+        <Button asChild variant="outline">
+          {/* The product is picked on the Compatibility step, not carried in
+              the URL — the old ?product= param was never read (#260). */}
+          <Link href="/publish">Publish a part</Link>
+        </Button>
+      </div>
+
+      <RequestedPartsList counts={counts} />
+    </div>
+  )
+}

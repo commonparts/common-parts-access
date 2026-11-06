@@ -1,0 +1,24 @@
+{
+  "Metadata": {
+    "title": "Common Parts Access — Open platform for digital spare parts",
+    "description": "Common Parts Access is an open platform for publishing and accessing digital spare parts, helping extend the life of everyday objects."
+  },
+  "Navbar": {
+    "browse": "Browse parts",
+    "contribute": "Contribute",
+    "signIn": "Sign in",
+    "publish": "Publish a part",
+    "searchPlaceholder": "Search a brand, product or reference..."
+  },
+  "LanguageSwitcher": {
+    "label": "Language",
+    "localeName": "{locale, select, en {English} fr {Français} other {{locale}}}"
+  },
+  "NotFound": {
+    "eyebrow": "Error 404",
+    "title": "Page not found",
+    "description": "The page you requested does not exist or is no longer available.",
+    "home": "Return home",
+    "browse": "Browse parts"
+  }
+}

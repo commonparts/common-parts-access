@@ -15,11 +15,12 @@ function findLoadingFiles(dir: string): string[] {
 // response headers are sent, so notFound() thrown by a page under it can no
 // longer change the status and unknown slugs answer 200 (a soft 404, #275).
 describe('loading boundaries above public pages', () => {
-  it('has no loading.tsx at the app root', () => {
+  it('has no loading.tsx at the app or locale root', () => {
     expect(existsSync(path.join(APP_DIR, 'loading.tsx'))).toBe(false)
+    expect(existsSync(path.join(APP_DIR, '[locale]', 'loading.tsx'))).toBe(false)
   })
 
   it('has no loading.tsx in the public route group', () => {
-    expect(findLoadingFiles(path.join(APP_DIR, '(public)'))).toEqual([])
+    expect(findLoadingFiles(path.join(APP_DIR, '[locale]', '(public)'))).toEqual([])
   })
 })

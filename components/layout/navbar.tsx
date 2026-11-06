@@ -1,19 +1,23 @@
+import { Suspense } from "react";
+import { getTranslations } from "next-intl/server";
 import { UserProfileMenu } from "@/components/user/user-avatar";
 import { getCurrentUser } from "@/lib/supabase/queries/auth.server";
 import { Logo } from "@/components/layout/logo";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { SearchBar } from "@/components/layout/search-bar";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 
 export default async function Navbar() {
   const {
     data: { user },
   } = await getCurrentUser();
+  const t = await getTranslations("Navbar");
 
   const menuLinks = [
-    { label: "Browse parts", href: "/browse" },
-    { label: "Contribute", href: "/contributing" },
+    { label: t("browse"), href: "/browse" },
+    { label: t("contribute"), href: "/contributing" },
   ];
 
   return (
@@ -24,7 +28,7 @@ export default async function Navbar() {
         {/* Primary search — grouped autocomplete; hidden on mobile */}
         <div className="hidden flex-1 justify-center px-lg md:flex">
           <SearchBar
-            placeholder="Search a brand, product or reference..."
+            placeholder={t("searchPlaceholder")}
             className="w-full max-w-xl"
           />
         </div>
@@ -48,18 +52,23 @@ export default async function Navbar() {
           ) : (
             <div className="flex items-center gap-xs">
               <Button asChild variant="ghost" size="sm" className="font-medium">
-                <Link href="/login">Sign in</Link>
+                <Link href="/login">{t("signIn")}</Link>
               </Button>
             </div>
           )}
 
           <Button asChild variant="default" size="sm" className="font-medium">
-            <Link href="/publish">Publish a part</Link>
+            <Link href="/publish">{t("publish")}</Link>
           </Button>
         </div>
 
-        {/* Mobile nav — hamburger menu, hidden on md+ */}
-        <MobileMenu menuLinks={menuLinks} isLoggedIn={!!user} />
+        <div className="flex items-center gap-xs md:ml-sm">
+          <Suspense>
+            <LanguageSwitcher />
+          </Suspense>
+          {/* Mobile nav — hamburger menu, hidden on md+ */}
+          <MobileMenu menuLinks={menuLinks} isLoggedIn={!!user} />
+        </div>
       </div>
     </nav>
   );

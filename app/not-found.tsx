@@ -1,21 +1,16 @@
-import Link from 'next/link'
+"use client";
 
-import { StatusPage } from '@/components/layout/status-page'
-import { Button } from '@/components/ui/button'
+import NextError from "next/error";
 
+// Unmatched requests outside the localized pages (an unknown /api/... path,
+// a missing file) never reach app/[locale]/layout.tsx, so this page renders
+// its own document.
 export default function NotFound() {
   return (
-    <StatusPage
-      eyebrow="Error 404"
-      title="Page not found"
-      description="The page you requested does not exist or is no longer available."
-    >
-      <Button asChild>
-        <Link href="/">Return home</Link>
-      </Button>
-      <Button asChild variant="outline">
-        <Link href="/browse">Browse parts</Link>
-      </Button>
-    </StatusPage>
-  )
+    <html lang="en">
+      <body>
+        <NextError statusCode={404} />
+      </body>
+    </html>
+  );
 }

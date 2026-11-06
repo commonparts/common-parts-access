@@ -67,4 +67,4 @@ limit 50;
 ```
 
 ## Privacy
-The privacy policy (`app/(legal)/privacy/page.tsx`, section 3.3) lists source clicks with views and downloads as counted anonymously.
+The privacy policy (`app/[locale]/(legal)/privacy/page.tsx`, section 3.3) lists source clicks with views and downloads as counted anonymously.

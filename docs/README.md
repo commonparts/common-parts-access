@@ -30,6 +30,7 @@ Last reviewed: v1.2.0 (October 2026).
 | [SOURCE_CLICKS.md](./SOURCE_CLICKS.md) | Reference | Anonymous clicks from referenced parts to their source |
 | [PART_LIKES.md](./PART_LIKES.md) | Reference | Likes (hidden behind the social features flag) |
 | [SEO.md](./SEO.md) | Reference | Metadata, structured data, sitemap, robots |
+| [I18N.md](./I18N.md) | Reference | Locales and URL prefixes, locale negotiation, language switcher, message files and the extraction pattern |
 | [USER_PROFILE_SETUP.md](./USER_PROFILE_SETUP.md) | Reference | Profile creation trigger at sign-up |
 | [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md) | Policy | Intended deletion and retention policy, with its implementation status |
 

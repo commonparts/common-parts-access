@@ -3,7 +3,7 @@
 import * as React from "react"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 import { isValidHttpUrl } from "@/lib/utils/validation"

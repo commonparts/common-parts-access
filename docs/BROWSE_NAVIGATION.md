@@ -36,7 +36,7 @@ Navigation shows only what has something to offer (#312, #321):
 
 ## Key files
 
-- `app/(public)/browse/page.tsx`, `app/(public)/categories/[slug]/page.tsx`, `app/(public)/brands/[brand]/page.tsx`, `app/(public)/brands/[brand]/[category]/page.tsx`
+- `app/[locale]/(public)/browse/page.tsx`, `app/[locale]/(public)/categories/[slug]/page.tsx`, `app/[locale]/(public)/brands/[brand]/page.tsx`, `app/[locale]/(public)/brands/[brand]/[category]/page.tsx`
 - `components/browse/`
 - `lib/supabase/queries/browse-nav.ts`, `category-page.ts`, `brand-page.ts`
 - `lib/utils/pagination.ts`: page ranges and the out-of-range fallback shared by every paginated listing

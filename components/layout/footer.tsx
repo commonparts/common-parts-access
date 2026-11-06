@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Logo } from "@/components/layout/logo";
 import { CODE_LICENSE, DATA_LICENSE } from "@/lib/utils/licenses";
 

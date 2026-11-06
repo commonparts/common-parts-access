@@ -10,6 +10,9 @@ export default defineConfig({
     passWithNoTests: true,
     include: ['**/*.{test,spec}.{ts,tsx}'],
     exclude: ['node_modules/**', 'supabase/**', '.next/**'],
+    // next-intl imports `next/server` without an extension, which Node's ESM
+    // resolver rejects; inlined, it is resolved by Vite like app code.
+    server: { deps: { inline: ['next-intl'] } },
     coverage: {
       provider: 'v8',
       include: ['app/**', 'components/**', 'lib/**', 'hooks/**'],
