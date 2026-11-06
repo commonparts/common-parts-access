@@ -1,11 +1,11 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { PartGrid } from "@/components/part/part-grid"
-import { pluralize } from "@/lib/utils/formatters"
 import { ProductResultCard } from "@/components/search/product-result-card"
 import { BrandResultCard } from "@/components/search/brand-result-card"
 import { RequestPartForm } from "@/components/part-requests/request-part-form"
@@ -24,12 +24,6 @@ import {
 
 // How many items each section previews in the "All" view before "See all".
 const PREVIEW_COUNT = 4
-
-const TYPE_LABEL: Record<Exclude<SearchType, "all">, string> = {
-  products: "Products",
-  parts: "Parts",
-  brands: "Brands",
-}
 
 interface SearchResultsViewProps {
   results: SearchResults
@@ -60,6 +54,7 @@ export function SearchResultsView({
   brandSuggestion,
   candidates,
 }: SearchResultsViewProps) {
+  const t = useTranslations("SearchResults")
   if (outcome === "served") {
     return (
       <ResultGroups
@@ -96,11 +91,9 @@ export function SearchResultsView({
         <section className="space-y-md">
           <div className="space-y-xs">
             <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-              Matching products
+              {t("matchingTitle")}
             </h2>
-            <p className="text-body text-text-secondary">
-              No part is published for these products yet. Open one to request a part or see what others asked for.
-            </p>
+            <p className="text-body text-text-secondary">{t("matchingDescription")}</p>
           </div>
           <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
             {matchingProducts.map((product) => (
@@ -114,11 +107,9 @@ export function SearchResultsView({
         <section className="space-y-md">
           <div className="space-y-xs">
             <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-              Close matches
+              {t("closeTitle")}
             </h2>
-            <p className="text-body text-text-secondary">
-              These results only partly match &ldquo;{query}&rdquo;.
-            </p>
+            <p className="text-body text-text-secondary">{t("closeDescription", { query })}</p>
           </div>
           <ResultGroups
             products={closeMatches.products}
@@ -132,29 +123,6 @@ export function SearchResultsView({
       )}
     </div>
   )
-}
-
-// Heading (around the quoted query) and introduction of the zero-result
-// block, per unserved outcome.
-const UNSERVED_COPY: Record<SearchMissOutcome, { titleStart: string; titleEnd: string; intro: string }> = {
-  no_results: {
-    titleStart: "No parts indexed for",
-    titleEnd: " yet",
-    intro:
-      "The catalog grows with demand. Tell us what you need and requests with the most demand get sourced first.",
-  },
-  approximate: {
-    titleStart: "No exact match for",
-    titleEnd: "",
-    intro:
-      "The results below only partly match your search. Tell us what you need and requests with the most demand get sourced first.",
-  },
-  no_parts: {
-    titleStart: "No parts published for",
-    titleEnd: " yet",
-    intro:
-      "These products are in the catalog, but nobody has published a part for them yet. Tell us what you need and requests with the most demand get sourced first.",
-  },
 }
 
 interface UnservedBlockProps {
@@ -177,15 +145,16 @@ function UnservedBlock({
   candidates,
   requestProductId,
 }: UnservedBlockProps) {
-  const copy = UNSERVED_COPY[outcome]
+  // The heading and introduction of the block depend on the outcome.
+  const t = useTranslations("SearchResults")
 
   return (
     <div className="max-w-container-md space-y-lg">
       <div className="space-y-sm">
         <h1 className="font-heading text-heading-md font-semibold text-text-primary">
-          {copy.titleStart} &ldquo;{query}&rdquo;{copy.titleEnd}
+          {t(`unserved.${outcome}.title`, { query })}
         </h1>
-        <p className="text-body text-text-secondary">{copy.intro}</p>
+        <p className="text-body text-text-secondary">{t(`unserved.${outcome}.intro`)}</p>
       </div>
 
       {/* A query that fully names a product is its name, not an unknown
@@ -193,30 +162,28 @@ function UnservedBlock({
       {outcome !== "no_parts" && (
         <section className="space-y-sm">
           <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-            Is &ldquo;{query}&rdquo; printed on your device?
+            {t("attachTitle", { query })}
           </h2>
-          <p className="text-body text-text-secondary">
-            Tell us which product it belongs to and it becomes searchable once checked.
-          </p>
+          <p className="text-body text-text-secondary">{t("attachDescription")}</p>
           <AttachReference reference={query} initialCandidates={candidates} />
         </section>
       )}
 
       <section className="space-y-sm">
         <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-          Request the part
+          {t("requestTitle")}
         </h2>
         <RequestPartForm productId={requestProductId} rawQuery={query} defaultDescription={query} />
       </section>
 
       <div className="flex flex-wrap items-center gap-sm">
         <Button asChild variant="outline">
-          <Link href="/publish">Publish a part</Link>
+          <Link href="/publish">{t("publish")}</Link>
         </Button>
         {brandSuggestion && (
           <Button asChild variant="ghost">
             <Link href={`/brands/${brandSuggestion.slug}`}>
-              View {brandSuggestion.name}
+              {t("viewBrand", { brand: brandSuggestion.name })}
             </Link>
           </Button>
         )}
@@ -248,14 +215,16 @@ function ResultGroups({
   initialType,
   headingLevel,
 }: ResultGroupsProps) {
+  const t = useTranslations("SearchResults")
+  const counts = useTranslations("Counts")
   const [activeType, setActiveType] = React.useState<SearchType>(initialType)
 
-  const counts = {
+  const totals = {
     products: products.length,
     parts: partCards.length,
     brands: brands.length,
   }
-  const total = counts.products + counts.parts + counts.brands
+  const total = totals.products + totals.parts + totals.brands
 
   // Update the active type and mirror it into the URL shallowly (no server
   // refetch, no scroll jump) so the filtered view stays shareable.
@@ -263,13 +232,14 @@ function ResultGroups({
     setActiveType(type)
     const params = new URLSearchParams({ q: query })
     if (type !== "all") params.set("type", type)
-    window.history.replaceState(null, "", `/search?${params.toString()}`)
+    // The current path keeps the locale prefix of the page.
+    window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`)
   }
 
   const summary = [
-    counts.products > 0 && pluralize(counts.products, "product"),
-    counts.parts > 0 && pluralize(counts.parts, "part"),
-    counts.brands > 0 && pluralize(counts.brands, "brand"),
+    totals.products > 0 && counts("products", { count: totals.products }),
+    totals.parts > 0 && counts("parts", { count: totals.parts }),
+    totals.brands > 0 && counts("brands", { count: totals.brands }),
   ]
     .filter(Boolean)
     .join(" · ")
@@ -278,7 +248,7 @@ function ResultGroups({
   // always render its section — even with zero hits — so the page reflects the
   // active filter instead of looking blank.
   const showSection = (type: Exclude<SearchType, "all">) =>
-    activeType === type || (activeType === "all" && counts[type] > 0)
+    activeType === type || (activeType === "all" && totals[type] > 0)
 
   return (
     <div className="space-y-lg">
@@ -288,10 +258,9 @@ function ResultGroups({
 
       {/* Type filter toggles — plain buttons with aria-pressed, not a tab
           widget (there are no tab panels / roving focus to back that up). */}
-      <div className="flex flex-wrap gap-sm" role="group" aria-label="Filter results by type">
+      <div className="flex flex-wrap gap-sm" role="group" aria-label={t("filterLabel")}>
         {SEARCH_TYPES.map((type) => {
-          const label = type === "all" ? "All" : TYPE_LABEL[type]
-          const count = type === "all" ? total : counts[type]
+          const count = type === "all" ? total : totals[type]
           const isActive = activeType === type
           return (
             <button
@@ -306,7 +275,7 @@ function ResultGroups({
                   : "border-border-subtle bg-bg-subtle text-text-primary hover:bg-bg-hover",
               )}
             >
-              {label}
+              {t(`types.${type}`)}
               <span className="ml-xs text-text-secondary">{count}</span>
             </button>
           )
@@ -315,14 +284,14 @@ function ResultGroups({
 
       {showSection("products") && (
         <ResultSection
-          title="Products"
+          title={t("types.products")}
           headingLevel={headingLevel}
-          count={counts.products}
+          count={totals.products}
           previewing={activeType === "all"}
           onSeeAll={() => selectType("products")}
-          seeAllLabel={`See all ${pluralize(counts.products, "product")}`}
+          seeAllLabel={t("seeAll", { items: counts("products", { count: totals.products }) })}
         >
-          {counts.products > 0 ? (
+          {totals.products > 0 ? (
             <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
               {(activeType === "all"
                 ? products.slice(0, PREVIEW_COUNT)
@@ -332,42 +301,42 @@ function ResultGroups({
               ))}
             </div>
           ) : (
-            <SectionEmpty label="products" query={query} />
+            <SectionEmpty>{t("empty.products", { query })}</SectionEmpty>
           )}
         </ResultSection>
       )}
 
       {showSection("parts") && (
         <ResultSection
-          title="Parts"
+          title={t("types.parts")}
           headingLevel={headingLevel}
-          count={counts.parts}
+          count={totals.parts}
           previewing={activeType === "all"}
           onSeeAll={() => selectType("parts")}
-          seeAllLabel={`See all ${pluralize(counts.parts, "part")}`}
+          seeAllLabel={t("seeAll", { items: counts("parts", { count: totals.parts }) })}
         >
-          {counts.parts > 0 ? (
+          {totals.parts > 0 ? (
             // Same grid as /browse and the home page — search results are the
             // same parts and must not be sized or spaced differently.
             <PartGrid
               parts={activeType === "all" ? partCards.slice(0, PREVIEW_COUNT) : partCards}
             />
           ) : (
-            <SectionEmpty label="parts" query={query} />
+            <SectionEmpty>{t("empty.parts", { query })}</SectionEmpty>
           )}
         </ResultSection>
       )}
 
       {showSection("brands") && (
         <ResultSection
-          title="Brands"
+          title={t("types.brands")}
           headingLevel={headingLevel}
-          count={counts.brands}
+          count={totals.brands}
           previewing={activeType === "all"}
           onSeeAll={() => selectType("brands")}
-          seeAllLabel={`See all ${pluralize(counts.brands, "brand")}`}
+          seeAllLabel={t("seeAll", { items: counts("brands", { count: totals.brands }) })}
         >
-          {counts.brands > 0 ? (
+          {totals.brands > 0 ? (
             <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
               {(activeType === "all"
                 ? brands.slice(0, PREVIEW_COUNT)
@@ -377,7 +346,7 @@ function ResultGroups({
               ))}
             </div>
           ) : (
-            <SectionEmpty label="brands" query={query} />
+            <SectionEmpty>{t("empty.brands", { query })}</SectionEmpty>
           )}
         </ResultSection>
       )}
@@ -385,12 +354,8 @@ function ResultGroups({
   )
 }
 
-function SectionEmpty({ label, query }: { label: string; query: string }) {
-  return (
-    <p className="text-body text-text-secondary">
-      No {label} match &ldquo;{query}&rdquo;.
-    </p>
-  )
+function SectionEmpty({ children }: { children: React.ReactNode }) {
+  return <p className="text-body text-text-secondary">{children}</p>
 }
 
 interface ResultSectionProps {

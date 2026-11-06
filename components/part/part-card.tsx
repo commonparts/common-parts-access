@@ -1,9 +1,10 @@
 import * as React from "react"
 import { Link } from "@/i18n/navigation"
 import { ExternalLink } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Card } from "@/components/ui/card"
-import { formatPrintLine } from "@/lib/utils/formatters"
+import { splitPrintTime } from "@/lib/utils/formatters"
 import { PartThumbnail } from "./part-thumbnail"
 import { SourceLink } from "./source-link"
 import type { PartCardBrand, PartCardData, PartCardProductFit } from "@/types/parts"
@@ -70,6 +71,7 @@ const CARD_BRAND_PREVIEW_COUNT = 2
  * each is a place the visitor could have reached this card from.
  */
 function BrandLine({ brands }: { brands: PartCardBrand[] }) {
+  const t = useTranslations("PartCard")
   const shown = brands.slice(0, CARD_BRAND_PREVIEW_COUNT)
   const overflow = brands.length - shown.length
 
@@ -86,7 +88,7 @@ function BrandLine({ brands }: { brands: PartCardBrand[] }) {
       {overflow > 0 && (
         <span className="shrink-0 text-text-tertiary">
           +{overflow}
-          <span className="sr-only"> more brands</span>
+          <span className="sr-only">{t("moreBrands", { count: overflow })}</span>
         </span>
       )}
     </p>
@@ -104,23 +106,26 @@ function ProductFitLine({
   products: PartCardProductFit[]
   total: number
 }) {
+  const t = useTranslations("PartCard")
   const overflow = Math.max(0, total - products.length)
 
   return (
     <p className={FIT_LINE_CLASS}>
-      Fits{" "}
-      {products.map((product, index) => (
-        <React.Fragment key={product.slug}>
-          {index > 0 && ", "}
-          <Link
-            href={`/product/${product.slug}`}
-            className={cn("text-text-primary hover:underline", FOCUS_RING)}
-          >
-            {product.name}
-          </Link>
-        </React.Fragment>
-      ))}
-      {overflow > 0 && <> +{overflow} more</>}
+      {t.rich("fits", {
+        overflow,
+        products: () =>
+          products.map((product, index) => (
+            <React.Fragment key={product.slug}>
+              {index > 0 && ", "}
+              <Link
+                href={`/product/${product.slug}`}
+                className={cn("text-text-primary hover:underline", FOCUS_RING)}
+              >
+                {product.name}
+              </Link>
+            </React.Fragment>
+          )),
+      })}
     </p>
   )
 }
@@ -145,13 +150,14 @@ function ProvenanceLine({
   sourceUrl: string | null
   license: string | null
 }) {
+  const t = useTranslations("PartCard")
   const platform = platformName && (
     <>
       <ExternalLink aria-hidden="true" className="size-xs shrink-0" />
       <span className="truncate">
-        <span className="sr-only">Source: </span>
+        <span className="sr-only">{t("source")}</span>
         {platformName}
-        {sourceUrl && <span className="sr-only"> (opens in a new tab)</span>}
+        {sourceUrl && <span className="sr-only">{t("newTab")}</span>}
       </span>
     </>
   )
@@ -174,7 +180,7 @@ function ProvenanceLine({
       {platform && license && <span aria-hidden="true">·</span>}
       {license && (
         <span className="shrink-0">
-          <span className="sr-only">License: </span>
+          <span className="sr-only">{t("license")}</span>
           {license}
         </span>
       )}
@@ -189,8 +195,13 @@ function ProvenanceLine({
  * `badge` changes with the context.
  */
 export function PartCard({ part, className, badge }: PartCardProps) {
+  const t = useTranslations("PartCard")
   const partHref = `/parts/${part.slug}`
-  const printLine = formatPrintLine(part.material, part.estimatedPrintTime)
+  // "{material} · {print time}", each kept only when known (issue #380).
+  const printTime = splitPrintTime(part.estimatedPrintTime)
+  const printLine = [part.material?.trim(), printTime && t("printTime", printTime)]
+    .filter(Boolean)
+    .join(" · ")
   const hasProvenance = Boolean(part.sourcePlatformName || part.license)
   const hasHeader = part.brands.length > 0 || Boolean(badge)
 

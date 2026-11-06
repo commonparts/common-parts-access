@@ -1,7 +1,9 @@
 'use client'
 
-import { Link } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { useEffect } from 'react'
+
+import { Link } from '@/i18n/navigation'
 
 import { StatusPage } from '@/components/layout/status-page'
 import { Button } from '@/components/ui/button'
@@ -13,19 +15,16 @@ export default function Error({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const t = useTranslations('ErrorPage')
   useEffect(() => {
     console.error(error)
   }, [error])
 
   return (
-    <StatusPage
-      eyebrow="Error"
-      title="Something went wrong"
-      description="This page could not be loaded. Try again, or return to the home page."
-    >
-      <Button onClick={() => reset()}>Try again</Button>
+    <StatusPage eyebrow={t('eyebrow')} title={t('title')} description={t('description')}>
+      <Button onClick={() => reset()}>{t('retry')}</Button>
       <Button asChild variant="outline">
-        <Link href="/">Return home</Link>
+        <Link href="/">{t('home')}</Link>
       </Button>
     </StatusPage>
   )

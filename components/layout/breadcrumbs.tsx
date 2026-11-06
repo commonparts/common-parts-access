@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 
@@ -13,8 +14,9 @@ interface BreadcrumbsProps {
 }
 
 export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
+  const t = useTranslations("Breadcrumbs")
   return (
-    <nav aria-label="Breadcrumb" className={cn("flex", className)}>
+    <nav aria-label={t("label")} className={cn("flex", className)}>
       {/* Wraps whole crumbs onto a new line on narrow screens instead of
           squeezing each label into a column (4-level part trails, #257). */}
       <ol className="flex flex-wrap items-center gap-x-sm gap-y-xs">

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { notFound } from 'next/navigation'
 
@@ -13,15 +14,15 @@ import {
   fetchBrandCategoryListing,
 } from '@/lib/supabase/queries/brand-page'
 import { APP_NAME } from '@/lib/utils/constants'
-import { pluralize } from '@/lib/utils/formatters'
 import { parsePageParam } from '@/lib/utils/validation'
 import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
-  buildBrandCategorySeoDescription,
-  buildBrandCategorySeoTitle,
   buildBreadcrumbJsonLd,
+  rootBreadcrumbTrail,
+  seoDescription,
   serializeJsonLd,
+  toBreadcrumbLinks,
 } from '@/lib/utils/seo'
 
 // This page uses cookies() via the Supabase server client,
@@ -37,15 +38,13 @@ export async function generateMetadata({
   params,
   searchParams,
 }: BrandCategoryPageProps): Promise<Metadata> {
+  const t = await getTranslations('Seo')
   try {
     const [{ brand: brandSlug, category: categorySlug }, { page: rawPage }] =
       await Promise.all([params, searchParams])
     const brand = await fetchBrandBySlug(brandSlug)
     if (!brand) {
-      return {
-        title: 'Brand not found',
-        description: 'The requested brand could not be found.',
-      }
+      return { title: t('brandNotFoundTitle'), description: t('brandNotFoundDescription') }
     }
 
     const listing = await fetchBrandCategoryListing(
@@ -54,18 +53,14 @@ export async function generateMetadata({
       parsePageParam(rawPage),
     )
     if (!listing) {
-      return {
-        title: 'Category not found',
-        description: 'The requested category could not be found.',
-      }
+      return { title: t('categoryNotFoundTitle'), description: t('categoryNotFoundDescription') }
     }
 
-    const title = buildBrandCategorySeoTitle(brand.name, listing.category.name)
-    const description = buildBrandCategorySeoDescription({
-      brandName: brand.name,
-      categoryName: listing.category.name,
-      productCount: listing.total,
-    })
+    const names = { brand: brand.name, category: listing.category.name }
+    const title = t('brandCategoryTitle', names)
+    const description = seoDescription(
+      t('brandCategoryDescription', { ...names, count: listing.total, app: APP_NAME }),
+    )
     // The canonical never carries the page param — paginated views are
     // variants of the same listing.
     const canonicalPath = brandCategoryCanonicalPath(brand.slug, listing.category.slug)
@@ -88,8 +83,8 @@ export async function generateMetadata({
   } catch (error) {
     console.error('Error generating brand category page metadata:', error)
     return {
-      title: `${APP_NAME} — Brands`,
-      description: 'Browse printable spare parts by brand and category.',
+      title: t('brandFallbackTitle', { app: APP_NAME }),
+      description: t('brandCategoryFallbackDescription'),
     }
   }
 }
@@ -120,13 +115,18 @@ export default async function BrandCategoryPage({
 
   const { category, products, total, page, totalPages } = listing
 
+  const [t, counts, crumbs] = await Promise.all([
+    getTranslations('BrandCategoryPage'),
+    getTranslations('Counts'),
+    getTranslations('Breadcrumbs'),
+  ])
   const canonicalPath = brandCategoryCanonicalPath(brand.slug, category.slug)
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, [
-    { name: 'Home', path: '/' },
-    { name: 'Browse', path: '/browse' },
+  const breadcrumbTrail = [
+    ...rootBreadcrumbTrail({ home: crumbs('home'), browse: crumbs('browse') }),
     { name: brand.name, path: brandCanonicalPath(brand.slug) },
     { name: category.name },
-  ])
+  ]
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
 
   return (
     <Section>
@@ -135,22 +135,13 @@ export default async function BrandCategoryPage({
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <Container size="lg" className="space-y-xl">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Browse', href: '/browse' },
-            { label: brand.name, href: brandCanonicalPath(brand.slug) },
-            { label: category.name },
-          ]}
-        />
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         <div className="space-y-xs">
           <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
-            {brand.name} — {category.name}
+            {t('title', { brand: brand.name, category: category.name })}
           </h1>
-          <p className="text-body text-text-secondary">
-            {pluralize(total, 'product')} in this category
-          </p>
+          <p className="text-body text-text-secondary">{counts('productsInCategory', { count: total })}</p>
         </div>
 
         {products.length > 0 ? (
@@ -173,11 +164,10 @@ export default async function BrandCategoryPage({
         ) : (
           <div className="space-y-sm rounded-lg border border-border-subtle bg-bg-subtle p-lg">
             <p className="text-body text-text-secondary">
-              No parts currently available for {brand.name} in {category.name}. The
-              catalog grows with demand.
+              {t('empty', { brand: brand.name, category: category.name })}
             </p>
             <Button asChild variant="outline">
-              <Link href={brandCanonicalPath(brand.slug)}>View all {brand.name} products</Link>
+              <Link href={brandCanonicalPath(brand.slug)}>{t('viewAll', { brand: brand.name })}</Link>
             </Button>
           </div>
         )}

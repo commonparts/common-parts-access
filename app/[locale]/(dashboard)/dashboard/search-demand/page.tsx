@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { getFormatter, getLocale } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { notFound } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
@@ -9,7 +10,7 @@ import {
 } from "@/lib/supabase/queries/search-demand"
 import { createClient } from "@/lib/supabase/server"
 import { isCurator } from "@/lib/auth/permissions"
-import { formatDate, formatRegionName } from "@/lib/utils/formatters"
+import { formatRegionName } from "@/lib/utils/formatters"
 import { isSearchMissOutcome, SEARCH_MISS_OUTCOMES, type SearchMissOutcome } from "@/types/search"
 
 export const metadata: Metadata = {
@@ -53,6 +54,8 @@ export default async function SearchDemandPage({
   const outcomeParam = (await searchParams).outcome
   const outcome = typeof outcomeParam === "string" && isSearchMissOutcome(outcomeParam) ? outcomeParam : null
 
+  const [format, locale] = await Promise.all([getFormatter(), getLocale()])
+  const formatDate = (date: string) => format.dateTime(new Date(date), { dateStyle: "medium" })
   const [misses, pending] = await Promise.all([
     fetchTopSearchMisses(MISSES_WINDOW_DAYS, MISSES_LIMIT, outcome),
     fetchPendingProductReferences(PENDING_LIMIT),
@@ -172,7 +175,7 @@ export default async function SearchDemandPage({
                     </td>
                     <td className={`${CELL} text-text-secondary`}>{reference.type}</td>
                     <td className={`${CELL} text-text-secondary`}>
-                      {reference.region ? formatRegionName(reference.region) : "—"}
+                      {reference.region ? formatRegionName(reference.region, locale) : "—"}
                     </td>
                     <td className={`${CELL} text-text-secondary`}>{formatDate(reference.created_at)}</td>
                   </tr>

@@ -1,9 +1,9 @@
 'use client'
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
-import { pluralize } from "@/lib/utils/formatters"
 import { categoryCanonicalPath } from "@/lib/utils/seo"
 import {
   COLLAPSED_COMPATIBLE_PRODUCTS_COUNT,
@@ -66,6 +66,8 @@ export function CompatibleProducts({
   onReportStatsChange,
   className,
 }: CompatibleProductsProps) {
+  const t = useTranslations("CompatibleProducts")
+  const counts = useTranslations("Counts")
   const [query, setQuery] = React.useState("")
   const [showAll, setShowAll] = React.useState(false)
   const filterId = React.useId()
@@ -90,25 +92,27 @@ export function CompatibleProducts({
           <svg className="size-md text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
           </svg>
-          Compatible with
-          <span className="text-sm font-regular text-text-secondary">{pluralize(products.length, "product")}</span>
+          {t("title")}
+          <span className="text-sm font-regular text-text-secondary">
+            {counts("products", { count: products.length })}
+          </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-md">
         {collapsible && (
           <div className="max-w-md space-y-2xs">
-            <Label htmlFor={filterId}>Find your product</Label>
+            <Label htmlFor={filterId}>{t("filterLabel")}</Label>
             <Input
               id={filterId}
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Product, brand or reference"
+              placeholder={t("filterPlaceholder")}
               aria-controls={listId}
               autoComplete="off"
             />
             <p role="status" className="text-caption text-text-secondary">
-              {filtering ? `${matchCount} of ${pluralize(products.length, "product")}` : ""}
+              {filtering ? t("matchCount", { matches: matchCount, total: products.length }) : ""}
             </p>
           </div>
         )}
@@ -126,10 +130,10 @@ export function CompatibleProducts({
                     <Link href={`/brands/${group.brand.slug}`} className={cn("hover:underline", FOCUS_RING)}>
                       {group.brand.name}
                     </Link>
-                    {group.brand.verified && <Badge variant="soft">✓ Verified</Badge>}
+                    {group.brand.verified && <Badge variant="soft">{t("verified")}</Badge>}
                   </>
                 ) : (
-                  "Other products"
+                  t("otherProducts")
                 )}
               </h3>
               <ul className="grid grid-cols-1 gap-xs sm:grid-cols-2 xl:grid-cols-3">
@@ -149,7 +153,7 @@ export function CompatibleProducts({
 
           {filtering && matchCount === 0 && (
             <p className="text-sm text-text-secondary">
-              No compatible product matches “{query.trim()}”.
+              {t("noMatch", { query: query.trim() })}
             </p>
           )}
         </div>
@@ -163,7 +167,7 @@ export function CompatibleProducts({
             aria-controls={listId}
             onClick={() => setShowAll((open) => !open)}
           >
-            {showAll ? "Show fewer products" : `Show all ${products.length} products`}
+            {showAll ? t("showFewer") : t("showAll", { count: products.length })}
           </Button>
         )}
       </CardContent>
@@ -195,6 +199,7 @@ const CompatibleProductRow = React.memo(function CompatibleProductRow({
   hidden,
   onReportStatsChange,
 }: CompatibleProductRowProps) {
+  const t = useTranslations("CompatibleProducts")
   const [reportOpen, setReportOpen] = React.useState(false)
   const [reportMounted, setReportMounted] = React.useState(false)
   const controlsId = React.useId()
@@ -241,8 +246,8 @@ const CompatibleProductRow = React.memo(function CompatibleProductRow({
               aria-controls={controlsId}
               onClick={toggleReport}
             >
-              {reportOpen ? "Hide print report" : "Report a print"}
-              <span className="sr-only"> on {product.name}</span>
+              {t(reportOpen ? "hideReport" : "report")}
+              <span className="sr-only">{t("reportProduct", { product: product.name })}</span>
             </Button>
           )}
         </div>

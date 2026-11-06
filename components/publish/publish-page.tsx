@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
+import { useFormatter, useNow } from 'next-intl'
 import { Trash2 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Alert } from '@/components/ui/alert'
@@ -14,7 +15,6 @@ import { OrientationQuestion } from '@/components/publish/orientation-question'
 import { OriginalTrack } from '@/components/publish/original-track'
 import { mergeDraftLists, type PublishDraft } from '@/lib/publish/drafts'
 import { publishTrackDefinition, type PublishTrack } from '@/lib/publish/tracks'
-import { formatRelativeTime } from '@/lib/utils/formatters'
 
 /** Rendered width of a draft thumbnail: the `2xl` spacing token (64px). */
 const DRAFT_THUMBNAIL_SIZES = '64px'
@@ -42,6 +42,8 @@ interface PublishPageProps {
  * see the other's rows.
  */
 export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
+  const format = useFormatter()
+  const now = useNow()
   const [session, setSession] = React.useState<Session>({ mode: 'idle' })
   const [drafts, setDrafts] = React.useState<PublishDraft[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -162,7 +164,7 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
                         )}
                         <p className="min-w-0 truncate text-sm text-text-secondary">
                           {draft.updatedAt
-                            ? `Last edited ${formatRelativeTime(draft.updatedAt)}`
+                            ? `Last edited ${format.relativeTime(new Date(draft.updatedAt), now)}`
                             : (draft.sourceUrl ?? 'Draft')}
                         </p>
                       </div>

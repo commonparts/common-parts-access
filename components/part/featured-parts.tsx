@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 import { PartGrid } from '@/components/part/part-grid'
 import { Link } from '@/i18n/navigation'
@@ -14,9 +15,10 @@ interface FeaturedPartsResponse {
 }
 
 export function FeaturedParts() {
+  const t = useTranslations('FeaturedParts')
   const [parts, setParts] = useState<PartCardData[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
 
   useEffect(() => {
     async function fetchFeaturedParts() {
@@ -31,7 +33,7 @@ export function FeaturedParts() {
         setParts(data.parts)
       } catch (err) {
         console.error('Error fetching featured parts:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load parts')
+        setError(true)
       } finally {
         setLoading(false)
       }
@@ -50,8 +52,8 @@ export function FeaturedParts() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
-            <p role="alert" className="text-body text-status-errorText">{error}</p>
+            <h3 className="mb-xs text-heading-sm font-semibold text-text-primary">{t('errorTitle')}</h3>
+            <p role="alert" className="text-body text-status-errorText">{t('errorDescription')}</p>
           </div>
         </Container>
       </Section>
@@ -61,16 +63,14 @@ export function FeaturedParts() {
   return (
     <Section>
       <Container size="xl" className="space-y-lg">
-        <h2 className="text-heading-md font-heading font-semibold text-text-primary">Recently added parts</h2>
+        <h2 className="text-heading-md font-heading font-semibold text-text-primary">{t('title')}</h2>
 
         <PartGrid parts={parts} loading={loading} className="mb-lg" />
 
         {!loading && parts.length > 0 && (
           <div className="text-center">
             <Button asChild variant="outline">
-              <Link href="/browse">
-                View more parts
-              </Link>
+              <Link href="/browse">{t('viewMore')}</Link>
             </Button>
           </div>
         )}

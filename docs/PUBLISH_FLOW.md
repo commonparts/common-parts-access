@@ -14,7 +14,7 @@ The reason for keeping the engines apart is inherited from `UPLOAD_FLOW.md` (Flo
 
 ## Vocabulary
 
-Database values, column names, API routes and code paths **do not change**. Only user-facing copy does. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`), so the part page, the tools and the drafts list cannot describe the same record differently.
+Database values, column names, API routes and code paths **do not change**. Only user-facing copy does. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`, which returns the kind), and the badge and description of each kind are the `Publication` messages, so the part page, the tools and the drafts list cannot describe the same record differently.
 
 | Storage (unchanged) | UI term | Part-page badge |
 |---|---|---|

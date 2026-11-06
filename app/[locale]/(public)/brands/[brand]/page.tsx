@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
@@ -13,15 +14,15 @@ import {
   fetchBrandProductsPage,
 } from '@/lib/supabase/queries/brand-page'
 import { APP_NAME } from '@/lib/utils/constants'
-import { pluralize } from '@/lib/utils/formatters'
 import { parsePageParam } from '@/lib/utils/validation'
 import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
-  buildBrandSeoDescription,
-  buildBrandSeoTitle,
   buildBreadcrumbJsonLd,
+  rootBreadcrumbTrail,
+  seoDescription,
   serializeJsonLd,
+  toBreadcrumbLinks,
 } from '@/lib/utils/seo'
 
 // This page uses cookies() via the Supabase server client,
@@ -34,25 +35,26 @@ interface BrandPageProps {
 }
 
 export async function generateMetadata({ params }: BrandPageProps): Promise<Metadata> {
+  const t = await getTranslations('Seo')
   try {
     const { brand: brandSlug } = await params
     const brand = await fetchBrandBySlug(brandSlug)
 
     if (!brand) {
-      return {
-        title: 'Brand not found',
-        description: 'The requested brand could not be found.',
-      }
+      return { title: t('brandNotFoundTitle'), description: t('brandNotFoundDescription') }
     }
 
     const nav = await fetchBrandNav(brand.id)
 
-    const title = buildBrandSeoTitle(brand.name)
-    const description = buildBrandSeoDescription({
-      brandName: brand.name,
-      partsCount: nav.parts_count,
-      brandDescription: brand.description,
-    })
+    const title = t('brandTitle', { brand: brand.name })
+    // Zero-part brands get generic copy rather than "0 parts" in a snippet.
+    const description = seoDescription(
+      t('brandDescription', {
+        brand: brand.name,
+        count: nav.parts_count,
+        body: brand.description?.trim() || t('brandDescriptionBody', { app: APP_NAME }),
+      }),
+    )
     // The canonical never carries the page param — paginated views are
     // variants of the same listing.
     const canonicalPath = brandCanonicalPath(brand.slug)
@@ -74,10 +76,7 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     }
   } catch (error) {
     console.error('Error generating brand page metadata:', error)
-    return {
-      title: `${APP_NAME} — Brands`,
-      description: 'Browse printable spare parts by brand.',
-    }
+    return { title: t('brandFallbackTitle', { app: APP_NAME }), description: t('brandFallbackDescription') }
   }
 }
 
@@ -100,12 +99,17 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
     fetchBrandProductsPage(brand.id, parsePageParam(rawPage)),
   ])
 
-  const canonicalPath = brandCanonicalPath(brand.slug)
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, [
-    { name: 'Home', path: '/' },
-    { name: 'Browse', path: '/browse' },
-    { name: brand.name },
+  const [t, counts, crumbs] = await Promise.all([
+    getTranslations('BrandPage'),
+    getTranslations('Counts'),
+    getTranslations('Breadcrumbs'),
   ])
+  const canonicalPath = brandCanonicalPath(brand.slug)
+  const breadcrumbTrail = [
+    ...rootBreadcrumbTrail({ home: crumbs('home'), browse: crumbs('browse') }),
+    { name: brand.name },
+  ]
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
 
   return (
     <Section>
@@ -114,21 +118,14 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
         dangerouslySetInnerHTML={{ __html: serializeJsonLd(breadcrumbJsonLd) }}
       />
       <Container size="lg" className="space-y-xl">
-        <Breadcrumbs
-          items={[
-            { label: 'Home', href: '/' },
-            { label: 'Browse', href: '/browse' },
-            { label: brand.name },
-          ]}
-        />
+        <Breadcrumbs items={toBreadcrumbLinks(breadcrumbTrail)} />
 
         <div className="space-y-xs">
           <h1 className="font-heading text-heading-lg font-semibold text-text-primary">
             {brand.name}
           </h1>
           <p className="text-body text-text-secondary">
-            {pluralize(nav.parts_count, 'printable spare part')} across{' '}
-            {pluralize(nav.product_count, 'product')}
+            {counts('printableAcrossProducts', { parts: nav.parts_count, products: nav.product_count })}
           </p>
           {brand.description && (
             <p className="text-body text-text-secondary">{brand.description}</p>
@@ -137,7 +134,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
 
         {nav.parts_count === 0 && (
           <p className="rounded-lg border border-border-subtle bg-bg-subtle p-md text-body text-text-secondary">
-            No parts currently available for {brand.name}. The catalog grows with demand.
+            {t('empty', { brand: brand.name })}
           </p>
         )}
 
@@ -147,7 +144,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
               id="brand-categories"
               className="font-heading text-heading-sm font-semibold text-text-primary"
             >
-              Categories
+              {t('categories')}
             </h2>
             <ul className="flex flex-wrap gap-sm">
               {nav.categories.map((category) => (
@@ -155,7 +152,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
                   <NavChip
                     href={brandCategoryCanonicalPath(brand.slug, category.slug)}
                     label={category.name}
-                    caption={pluralize(category.parts_count, 'part')}
+                    caption={counts('parts', { count: category.parts_count })}
                   />
                 </li>
               ))}
@@ -169,7 +166,7 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
               id="brand-products"
               className="font-heading text-heading-sm font-semibold text-text-primary"
             >
-              Products
+              {t('products')}
             </h2>
             <div className="grid grid-cols-1 gap-sm sm:grid-cols-2">
               {listing.products.map((product) => (

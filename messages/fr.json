@@ -7,13 +7,23 @@
     "browse": "Parcourir les pièces",
     "contribute": "Contribuer",
     "signIn": "Se connecter",
-    "publish": "Publier une pièce"
+    "publish": "Publier une pièce",
+    "openMenu": "Ouvrir le menu",
+    "closeMenu": "Fermer le menu"
   },
   "SearchBar": {
     "placeholder": "Rechercher une marque, un produit ou une référence...",
     "filterPlaceholder": "Rechercher des pièces...",
     "submit": "Rechercher",
-    "clear": "Effacer la recherche"
+    "clear": "Effacer la recherche",
+    "genericPart": "Pièce générique",
+    "searching": "Recherche…",
+    "error": "Une erreur est survenue. Réessayez.",
+    "products": "Produits",
+    "parts": "Pièces",
+    "brands": "Marques",
+    "noResults": "Aucun résultat pour « {query} ».",
+    "seeAll": "Voir tous les résultats pour « {query} »"
   },
   "LanguageSwitcher": {
     "label": "Langue",
@@ -25,5 +35,505 @@
     "description": "La page demandée n'existe pas ou n'est plus disponible.",
     "home": "Retour à l'accueil",
     "browse": "Parcourir les pièces"
+  },
+  "Counts": {
+    "parts": "{count, plural, one {# pièce} other {# pièces}}",
+    "products": "{count, plural, one {# produit} other {# produits}}",
+    "brands": "{count, plural, one {# marque} other {# marques}}",
+    "subcategories": "{count, plural, one {# sous-catégorie} other {# sous-catégories}}",
+    "printableAcrossProducts": "{parts, plural, one {# pièce détachée imprimable} other {# pièces détachées imprimables}} pour {products, plural, one {# produit} other {# produits}}",
+    "productsInCategory": "{count, plural, one {# produit} other {# produits}} dans cette catégorie"
+  },
+  "Breadcrumbs": {
+    "label": "Fil d'Ariane",
+    "home": "Accueil",
+    "browse": "Parcourir"
+  },
+  "Pagination": {
+    "label": "Pagination",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "pageOf": "Page {page} sur {totalPages}",
+    "compactPageOf": "{page} sur {totalPages}"
+  },
+  "Seo": {
+    "partTitle": "{part} : pièce détachée",
+    "partTitleFit": "{part} : pièce détachée pour {fit}",
+    "partDescription": "Pièce détachée imprimable : {part}. {body}",
+    "partDescriptionFit": "Pièce détachée imprimable pour {fit} : {part}. {body}",
+    "partDescriptionBody": "Téléchargez le modèle 3D avec sa licence et son attribution sur {app}.",
+    "partNotFoundTitle": "Pièce introuvable",
+    "partNotFoundDescription": "La pièce demandée est introuvable.",
+    "partFallbackTitle": "{app} : pièces",
+    "partFallbackDescription": "Parcourez et téléchargez des pièces vérifiées et des composants de réparation.",
+    "brandTitle": "Pièces détachées {brand}",
+    "brandDescription": "{count, plural, =0 {Pièces détachées imprimables pour les produits {brand}.} one {# pièce détachée imprimable pour les produits {brand}.} other {# pièces détachées imprimables pour les produits {brand}.}} {body}",
+    "brandDescriptionBody": "Parcourez par catégorie et téléchargez avec licence et attribution sur {app}.",
+    "brandNotFoundTitle": "Marque introuvable",
+    "brandNotFoundDescription": "La marque demandée est introuvable.",
+    "brandFallbackTitle": "{app} : marques",
+    "brandFallbackDescription": "Parcourez les pièces détachées imprimables par marque.",
+    "brandCategoryTitle": "Pièces détachées {brand} {category}",
+    "brandCategoryDescription": "{count, plural, =0 {Pièces détachées imprimables pour les produits {brand} de la catégorie {category}.} one {Pièces détachées imprimables pour # produit {brand} de la catégorie {category}.} other {Pièces détachées imprimables pour # produits {brand} de la catégorie {category}.}} Téléchargez avec licence et attribution sur {app}.",
+    "brandCategoryFallbackDescription": "Parcourez les pièces détachées imprimables par marque et par catégorie.",
+    "categoryTitle": "Pièces détachées {category}",
+    "categoryDescription": "{parts, plural, =0 {Pièces détachées imprimables pour les produits de la catégorie {category}.} one {# pièce détachée imprimable pour {products, plural, one {# produit} other {# produits}} de la catégorie {category}.} other {# pièces détachées imprimables pour {products, plural, one {# produit} other {# produits}} de la catégorie {category}.}} Parcourez par sous-catégorie et par marque sur {app}.",
+    "categoryNotFoundTitle": "Catégorie introuvable",
+    "categoryNotFoundDescription": "La catégorie demandée est introuvable.",
+    "categoryFallbackTitle": "{app} : catégories",
+    "categoryFallbackDescription": "Parcourez les pièces détachées imprimables par catégorie.",
+    "productTitle": "Pièces détachées {product}",
+    "productDescription": "Pièces détachées imprimables pour {product}. Téléchargez avec licence et attribution, ou demandez une pièce manquante sur {app}.",
+    "productDescriptionCategory": "Pièces détachées imprimables pour {product} ({category}). Téléchargez avec licence et attribution, ou demandez une pièce manquante sur {app}.",
+    "productNotFoundTitle": "Produit introuvable"
+  },
+  "Hero": {
+    "title": "La réparation commence par l'accès à la bonne pièce.",
+    "description": "Common Parts Access est une plateforme ouverte pour publier et consulter des pièces détachées numériques, conçue pour garder les objets du quotidien en usage."
+  },
+  "Footer": {
+    "tagline": "Une infrastructure pour les pièces détachées numériques. Un registre ouvert et public de pièces de rechange.",
+    "platform": "Plateforme",
+    "resources": "Ressources",
+    "links": {
+      "browse": "Parcourir les pièces",
+      "publish": "Publier une pièce",
+      "commonParts": "Common Parts",
+      "github": "GitHub",
+      "contribute": "Contribuer",
+      "contact": "Contact",
+      "privacy": "Politique de confidentialité",
+      "terms": "Conditions d'utilisation",
+      "legalNotice": "Mentions légales"
+    },
+    "official": "Common Parts Access est une interface officielle de l'infrastructure Common Parts.",
+    "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>."
+  },
+  "UserMenu": {
+    "open": "Ouvrir le menu du profil",
+    "myParts": "Mes pièces",
+    "publish": "Publier une pièce",
+    "logout": "Se déconnecter",
+    "deleteAccount": "Supprimer le compte",
+    "signOutFailed": "La déconnexion a échoué. Veuillez réessayer."
+  },
+  "ErrorPage": {
+    "eyebrow": "Erreur",
+    "title": "Une erreur est survenue",
+    "description": "Cette page n'a pas pu être chargée. Réessayez, ou revenez à l'accueil.",
+    "retry": "Réessayer",
+    "home": "Retour à l'accueil"
+  },
+  "Feedback": {
+    "title": "Envoyer un retour",
+    "close": "Fermer le panneau de retour",
+    "types": {
+      "bug": {
+        "label": "Bug",
+        "description": "Quelque chose ne fonctionne pas"
+      },
+      "improvement": {
+        "label": "Amélioration",
+        "description": "Une fonctionnalité ou une évolution"
+      },
+      "question": {
+        "label": "Question",
+        "description": "J'ai besoin d'une précision"
+      },
+      "other": {
+        "label": "Autre",
+        "description": "Tout le reste"
+      }
+    },
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Titre court",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Décrivez le problème ou l'idée...",
+    "failed": "Une erreur est survenue. Veuillez réessayer.",
+    "sending": "Envoi...",
+    "submit": "Envoyer le retour",
+    "done": "Retour reçu. Merci."
+  },
+  "BrowsePage": {
+    "title": "Parcourir les pièces",
+    "metaDescription": "Explorez les pièces détachées imprimables par catégorie et par marque, ou filtrez l'ensemble du catalogue.",
+    "intro": "Découvrez et téléchargez des pièces et des composants de remplacement",
+    "allParts": "Toutes les pièces"
+  },
+  "BrowseNav": {
+    "byCategory": "Parcourir par catégorie",
+    "byBrand": "Parcourir par marque"
+  },
+  "BrowsePartsGrid": {
+    "errorTitle": "Impossible de charger les pièces",
+    "errorDescription": "Les pièces n'ont pas pu être chargées. Vérifiez votre connexion et réessayez.",
+    "retry": "Réessayer"
+  },
+  "SortOptions": {
+    "label": "Trier par :",
+    "current": "Tri : {sort}",
+    "newest": {
+      "label": "Plus récentes",
+      "description": "Ajoutées récemment"
+    },
+    "likes": {
+      "label": "Plus aimées",
+      "description": "Les favorites de la communauté"
+    },
+    "views": {
+      "label": "Plus vues",
+      "description": "Pièces populaires"
+    }
+  },
+  "PartGrid": {
+    "emptyTitle": "Aucune pièce trouvée",
+    "emptyDescription": "Essayez de modifier votre recherche ou vos filtres"
+  },
+  "FeaturedParts": {
+    "title": "Pièces ajoutées récemment",
+    "viewMore": "Voir plus de pièces",
+    "errorTitle": "Impossible de charger les pièces",
+    "errorDescription": "Les pièces n'ont pas pu être chargées. Vérifiez votre connexion et rechargez la page."
+  },
+  "PartCard": {
+    "moreBrands": "{count, plural, one {# autre marque} other {# autres marques}}",
+    "fits": "Compatible avec <products></products>{overflow, plural, =0 {} one { et # autre} other { et # autres}}",
+    "source": "Source : ",
+    "newTab": " (s'ouvre dans un nouvel onglet)",
+    "license": "Licence : ",
+    "printTime": "{hours, plural, =0 {{minutes} min} other {{minutes, plural, =0 {{hours} h} other {{hours} h {minutes}}}}}"
+  },
+  "EvidenceLevel": {
+    "descriptionPrefix": " : {description}",
+    "declared": {
+      "label": "Déclarée",
+      "description": "Compatibilité indiquée par la source ou un curateur, pas encore confirmée par un retour d'impression"
+    },
+    "confirmed": {
+      "label": "Confirmée",
+      "description": "Au moins un retour d'impression confirme cette compatibilité"
+    },
+    "disputed": {
+      "label": "Contestée",
+      "description": "Plus de retours d'impression rejettent cette compatibilité qu'ils ne la confirment"
+    }
+  },
+  "Publication": {
+    "original": {
+      "badge": "Originale",
+      "description": "Conçue par le contributeur et publiée ici pour la première fois."
+    },
+    "hosted": {
+      "badge": "Hébergée",
+      "description": "Publiée ailleurs d'abord, ses fichiers sont hébergés sur Common Parts."
+    },
+    "referenced": {
+      "badge": "Référencée",
+      "description": "Publiée ailleurs, ses fichiers restent à la source et Common Parts y renvoie."
+    }
+  },
+  "PartPage": {
+    "browseMore": "Parcourir d'autres pièces"
+  },
+  "PartDetails": {
+    "errorTitle": "Impossible de charger la pièce",
+    "error": {
+      "notFound": "Pièce introuvable",
+      "failed": "La pièce n'a pas pu être chargée. Vérifiez votre connexion et rechargez la page."
+    },
+    "imageAlt": "{name} {index}",
+    "publicationDescription": " : {description}",
+    "originalDesign": "Conçue à l'origine par <credit>{author}</credit>",
+    "originalDesignOn": "Conçue à l'origine par <credit>{author}</credit> sur {platform}",
+    "partName": "Pièce : {name}",
+    "likes": "<strong>{count}</strong> j'aime",
+    "viewOn": "Voir sur {platform}",
+    "viewOnSource": "Voir sur la source originale",
+    "viewOriginal": "Voir la publication originale",
+    "download": "Télécharger",
+    "preparingDownload": "Préparation du téléchargement...",
+    "downloadFailed": "Le téléchargement a échoué. Veuillez réessayer.",
+    "downloadFailedReason": "Le téléchargement a échoué : {reason}",
+    "like": "J'aime",
+    "liked": "Aimée",
+    "likeFailed": "Impossible de mettre à jour le j'aime. Veuillez réessayer.",
+    "licenseNotice": {
+      "license": "Sous licence {license}.",
+      "byAuthor": "Sous licence {license}, par {author}.",
+      "attribution": "L'attribution à l'auteur est obligatoire en cas de partage.",
+      "shareAlike": "Les œuvres dérivées doivent être partagées sous la même licence (ShareAlike)."
+    },
+    "createdBy": "Créée par",
+    "verifiedMaker": "Maker vérifié",
+    "instructions": "Instructions",
+    "details": "Détails de la pièce",
+    "partNumber": "Numéro de pièce",
+    "material": "Matériau",
+    "color": "Couleur",
+    "dimensions": "Dimensions",
+    "dimension": {
+      "length": "Longueur :",
+      "width": "Largeur :",
+      "height": "Hauteur :",
+      "diameter": "Diamètre :",
+      "thickness": "Épaisseur :"
+    },
+    "added": "Ajoutée",
+    "uploaded": "Mise en ligne",
+    "printSettings": "Paramètres d'impression",
+    "printTime": "Durée d'impression",
+    "materialUsage": "Matière utilisée",
+    "recommendedSettings": "Paramètres recommandés",
+    "attribution": "Attribution et licence",
+    "originalAuthor": "Auteur original",
+    "source": "Source",
+    "license": "Licence",
+    "verification": "Vérification",
+    "verificationStatus": {
+      "unverified": "⊘ Non vérifiée",
+      "authorTested": "✓ Testée par l'auteur",
+      "communityValidated": "✓✓ Validée par la communauté"
+    },
+    "notes": "Notes complémentaires"
+  },
+  "PartFileList": {
+    "title": "Télécharger les fichiers",
+    "empty": "Aucun fichier disponible",
+    "download": "Télécharger {name}",
+    "sections": {
+      "model": "Fichiers de la pièce",
+      "documentation": "Documentation",
+      "image": "Images",
+      "other": "Fichiers"
+    }
+  },
+  "CompatibleProducts": {
+    "title": "Compatible avec",
+    "filterLabel": "Trouver votre produit",
+    "filterPlaceholder": "Produit, marque ou référence",
+    "matchCount": "{matches} sur {total, plural, one {# produit} other {# produits}}",
+    "verified": "✓ Vérifiée",
+    "otherProducts": "Autres produits",
+    "noMatch": "Aucun produit compatible ne correspond à « {query} ».",
+    "showFewer": "Afficher moins de produits",
+    "showAll": "Afficher les {count} produits",
+    "report": "Signaler une impression",
+    "hideReport": "Masquer le retour d'impression",
+    "reportProduct": " sur {product}"
+  },
+  "PrintReport": {
+    "groupLabel": "Indiquer si cette pièce fonctionne sur {product}",
+    "results": {
+      "works": "Fonctionne",
+      "works_with_adjustments": "Fonctionne avec des ajustements",
+      "does_not_work": "Ne fonctionne pas"
+    },
+    "reportCount": "{count, plural, one {# retour} other {# retours}}",
+    "recorded": "Retour enregistré. Merci.",
+    "detailsSaved": "Détails enregistrés. Merci.",
+    "failed": "L'envoi a échoué : vérifiez votre connexion et réessayez",
+    "addDetails": "Ajouter un commentaire ou une référence",
+    "commentLabel": "Commentaire (facultatif)",
+    "commentPlaceholder": "Matériau, paramètres, ce que vous avez ajusté",
+    "referenceLabel": "Référence de votre produit (facultatif)",
+    "referenceNone": "Non précisée",
+    "save": "Enregistrer les détails",
+    "cancel": "Annuler"
+  },
+  "ProductPage": {
+    "since": "Depuis {year}",
+    "releasedDiscontinued": "{year} · Arrêté",
+    "discontinued": "Arrêté",
+    "parts": "Pièces",
+    "missingTitle": "Il manque une pièce pour ce produit ?",
+    "missingDescription": "Dites-nous ce qu'il vous faut : les demandes les plus fréquentes sont traitées en priorité.",
+    "requestPart": "Demander une pièce",
+    "emptyTitle": "Aucune pièce pour l'instant",
+    "emptyDescription": "Ce produit est référencé et prêt : le catalogue s'enrichit avec la demande. Demandez la pièce qu'il vous faut, ou publiez-en une si vous en avez.",
+    "publish": "Publier une pièce"
+  },
+  "ProductReferences": {
+    "manufacturer_ref": "Références du modèle",
+    "commercial_name": "Aussi vendu sous le nom",
+    "ean": "Codes-barres",
+    "withRegion": "{value} ({region})"
+  },
+  "RequestedParts": {
+    "demand": "{count} personnes ont demandé une pièce pour ce produit",
+    "title": "Pièces demandées",
+    "requests": "{count, plural, one {# demande} other {# demandes}}"
+  },
+  "RequestPartForm": {
+    "label": "Décrivez la pièce qu'il vous faut",
+    "placeholder": "Décrivez la pièce qu'il vous faut (marque, modèle, quelle pièce)…",
+    "submit": "Demander cette pièce",
+    "sending": "Envoi…",
+    "tooShort": "Ajoutez une courte description (au moins {min} caractères) pour que nous sachions quoi chercher.",
+    "failed": "L'envoi de votre demande a échoué. Veuillez réessayer.",
+    "done": "Merci, votre demande est enregistrée. Les pièces les plus demandées sont ajoutées au catalogue en priorité."
+  },
+  "SearchPage": {
+    "title": "Recherche",
+    "prompt": "Recherchez un produit, une pièce ou une marque pour voir les résultats."
+  },
+  "SearchResults": {
+    "matchingTitle": "Produits correspondants",
+    "matchingDescription": "Aucune pièce n'est encore publiée pour ces produits. Ouvrez-en un pour demander une pièce ou voir ce que d'autres ont demandé.",
+    "closeTitle": "Résultats proches",
+    "closeDescription": "Ces résultats ne correspondent qu'en partie à « {query} ».",
+    "unserved": {
+      "no_results": {
+        "title": "Aucune pièce référencée pour « {query} » pour l'instant",
+        "intro": "Le catalogue s'enrichit avec la demande. Dites-nous ce qu'il vous faut : les demandes les plus fréquentes sont traitées en priorité."
+      },
+      "approximate": {
+        "title": "Aucun résultat exact pour « {query} »",
+        "intro": "Les résultats ci-dessous ne correspondent qu'en partie à votre recherche. Dites-nous ce qu'il vous faut : les demandes les plus fréquentes sont traitées en priorité."
+      },
+      "no_parts": {
+        "title": "Aucune pièce publiée pour « {query} » pour l'instant",
+        "intro": "Ces produits sont au catalogue, mais personne n'a encore publié de pièce pour eux. Dites-nous ce qu'il vous faut : les demandes les plus fréquentes sont traitées en priorité."
+      }
+    },
+    "attachTitle": "« {query} » est-il inscrit sur votre appareil ?",
+    "attachDescription": "Indiquez-nous à quel produit il correspond : il deviendra recherchable après vérification.",
+    "requestTitle": "Demander la pièce",
+    "publish": "Publier une pièce",
+    "viewBrand": "Voir {brand}",
+    "filterLabel": "Filtrer les résultats par type",
+    "types": {
+      "all": "Tous",
+      "products": "Produits",
+      "parts": "Pièces",
+      "brands": "Marques"
+    },
+    "seeAll": "Voir les {items}",
+    "empty": {
+      "products": "Aucun produit ne correspond à « {query} ».",
+      "parts": "Aucune pièce ne correspond à « {query} ».",
+      "brands": "Aucune marque ne correspond à « {query} »."
+    }
+  },
+  "AttachReference": {
+    "done": "Merci. Nous vérifions chaque suggestion avant d'ajouter « {reference} » à la recherche.",
+    "searchLabel": "Rechercher le produit par marque ou par nom",
+    "searchPlaceholder": "Rechercher par marque ou nom de produit…",
+    "productLabel": "Produit auquel appartient cette référence",
+    "searching": "Recherche…",
+    "noMatch": "Aucun produit ne correspond à cette recherche.",
+    "prompt": "Recherchez la marque ou le nom de votre appareil.",
+    "failed": "L'envoi de votre suggestion a échoué. Veuillez réessayer.",
+    "sending": "Envoi…",
+    "submit": "Suggérer ce produit"
+  },
+  "BrandPage": {
+    "empty": "Aucune pièce disponible pour {brand} pour l'instant. Le catalogue s'enrichit avec la demande.",
+    "categories": "Catégories",
+    "products": "Produits"
+  },
+  "BrandCategoryPage": {
+    "title": "{brand} · {category}",
+    "empty": "Aucune pièce disponible pour {brand} dans la catégorie {category} pour l'instant. Le catalogue s'enrichit avec la demande.",
+    "viewAll": "Voir tous les produits {brand}"
+  },
+  "CategoryPage": {
+    "inlined": "Tout le contenu de la catégorie {category} se trouve pour l'instant dans <link>{child}</link>.",
+    "empty": "Aucune pièce disponible dans la catégorie {category} pour l'instant. Le catalogue s'enrichit avec la demande.",
+    "backTo": "Retour à {name}",
+    "backToBrowse": "Retour à la navigation",
+    "subcategories": "Sous-catégories",
+    "brands": "Marques"
+  },
+  "ContributingPage": {
+    "metaTitle": "Contribuer une pièce",
+    "metaDescription": "Comment contribuer une pièce au Common Parts Index",
+    "title": "Contribuer une pièce au Common Parts Index",
+    "intro": "Le Common Parts Index est un catalogue public de modèles de pièces détachées, vérifiés, structurés et maintenus pour aider chacun à réparer les objets qu'il possède. Tout le monde peut contribuer. Les pièces publiées sur Common Parts pour la première fois sont hébergées ici ; les pièces déjà publiées ailleurs sont référencées, avec un lien vers la plateforme d'origine. Ce guide explique ce que nous acceptons, comment soumettre une pièce et ce qui se passe ensuite.",
+    "accept": {
+      "title": "Ce que nous acceptons",
+      "intro": "Une pièce est éligible à l'Index si elle remplit les conditions suivantes.",
+      "repair": {
+        "title": "Elle contribue à la réparabilité.",
+        "body": "La pièce doit avoir une fonction pour garder un objet en usage : remplacer un composant cassé, renforcer un point faible connu ou corriger un défaut de conception à l'origine de pannes répétées. Les pièces purement décoratives ou esthétiques ne sont pas éligibles. Les améliorations qui prolongent réellement la durée de vie sont les bienvenues."
+      },
+      "product": {
+        "title": "Elle cible un produit réel et identifiable.",
+        "body": "La pièce doit être associée à au moins un produit commercial : une marque connue et un modèle ou une gamme précise. Les pièces génériques sans produit cible défini ne sont pas éligibles pour l'instant. Une pièce peut être compatible avec plusieurs produits."
+      },
+      "license": {
+        "title": "Elle a une licence connue et un auteur identifiable.",
+        "body": "Le modèle d'origine doit être publié sous une licence connue et attribué à un auteur identifiable : un nom ou un pseudonyme, avec un lien vers la publication d'origine. Les republications anonymes sans source traçable ne sont pas acceptées.",
+        "hosted": "Pour les <strong>pièces hébergées</strong>, publiées sur Common Parts pour la première fois et dont les fichiers sont stockés et servis directement par Common Parts, la licence doit être ouverte : CC0, CC BY, CC BY-SA, MIT ou GPL. Si vous êtes l'auteur d'origine et que le modèle n'a pas de licence, vous pouvez en déclarer une lors de la soumission.",
+        "referenced": "Pour les <strong>pièces référencées</strong>, déjà publiées ailleurs, dont les fichiers restent sur la plateforme d'origine et vers lesquelles nous renvoyons, les licences Creative Commons sont acceptées, y compris NC et ND, ainsi que les autres licences proposées par la plateforme. Les licences qui interdisent de partager le modèle, y compris les licences propriétaires, ne sont pas acceptées."
+      },
+      "file": {
+        "title": "Le fichier est utilisable.",
+        "body": "Nous acceptons les formats STL, OBJ, STP et STEP. Le fichier doit pouvoir être ouvert et être géométriquement sain : ni corrompu, ni mis à l'échelle arbitrairement. Pour les pièces référencées, le fichier doit être accessible à l'URL source au moment de la soumission."
+      }
+    },
+    "reject": {
+      "title": "Ce que nous n'acceptons pas",
+      "decorative": "Les pièces décoratives ou esthétiques sans fonction de réparation",
+      "tools": "Les outils de réparation (un outil qui aide à réparer n'est pas une pièce détachée)",
+      "noProduct": "Les pièces sans produit cible identifiable",
+      "forbiddenLicense": "Les modèles dont la licence interdit le partage, y compris les licences propriétaires",
+      "ncNd": "Les modèles sous licence CC NC ou CC ND <strong>hébergés directement sur Common Parts</strong> : ces licences sont incompatibles avec la redistribution des fichiers. Une pièce sous ces licences déjà publiée ailleurs peut tout de même être ajoutée comme pièce référencée.",
+      "broken": "Les fichiers impossibles à ouvrir ou manifestement défectueux",
+      "duplicate": "Les republications à l'identique d'un modèle déjà indexé, depuis la même source et sans valeur ajoutée",
+      "variants": "Plusieurs versions d'une même pièce pour un même produit sont les bienvenues : matériaux différents, paramètres d'impression différents, conceptions alternatives. La diversité est utile."
+    },
+    "verification": {
+      "title": "Statut de vérification",
+      "intro": "Chaque pièce de l'Index porte un statut de vérification qui reflète le niveau de preuve disponible. Le statut est fixé par le registre à mesure que les preuves s'accumulent : ce n'est pas au contributeur de le déclarer. Les pièces nouvellement ajoutées commencent non vérifiées.",
+      "status": "Statut",
+      "meaning": "Signification",
+      "unverified": {
+        "label": "Non vérifiée",
+        "meaning": "Le fichier existe et répond à nos critères, mais aucune confirmation d'impression n'est encore disponible"
+      },
+      "authorTested": {
+        "label": "Testée par l'auteur",
+        "meaning": "L'auteur d'origine a confirmé que la pièce a été imprimée et qu'elle s'ajuste"
+      },
+      "communityValidated": {
+        "label": "Validée par la communauté",
+        "meaning": "Un ou plusieurs utilisateurs indépendants ont confirmé une impression et un ajustement réussis"
+      }
+    },
+    "submit": {
+      "title": "Comment soumettre une pièce",
+      "intro": "Une seule question décide de la manière dont une pièce est publiée : d'où vient-elle ? Non pas qui l'a conçue, mais où elle est déjà disponible. Une pièce que vous avez conçue mais publiée sur votre propre site ou dépôt vient d'ailleurs, et vous restez crédité comme son auteur d'origine.",
+      "original": {
+        "title": "Si vous l'avez conçue et la publiez ici pour la première fois",
+        "body": "C'est le rôle de <publish>Publier une pièce</publish> : votre propre conception, avec des fichiers hébergés ici et qui restent téléchargeables. Votre progression est enregistrée à chaque étape, vous pouvez donc vous arrêter et revenir plus tard.",
+        "steps": {
+          "identify": "Nommez la pièce, placez-la dans une catégorie et choisissez la licence sous laquelle vous la publiez",
+          "files": "Ajoutez les fichiers du modèle et des photos de la pièce imprimée",
+          "details": "Ajoutez la description, les instructions et les paramètres d'impression",
+          "products": "Associez les produits compatibles : une pièce détachée se trouve par l'appareil qu'elle répare",
+          "review": "Vérifiez la page telle qu'elle apparaîtra, puis publiez"
+        },
+        "license": "Comme Common Parts héberge et redistribue les fichiers, la licence doit autoriser l'usage commercial et la modification. Les licences avec des restrictions NC ou ND ne peuvent pas être publiées de cette manière (voir ci-dessous).",
+        "badge": "Une pièce publiée de cette manière porte le badge <strong>Originale</strong>."
+      },
+      "elsewhere": {
+        "title": "Si elle est déjà publiée ailleurs",
+        "body": "Les pièces de Printables, Thingiverse, GitHub ou d'ailleurs suivent un second parcours, pour que l'attribution à l'auteur d'origine et les conditions de sa licence soient respectées. Une pièce publiée ailleurs est toujours référencée : ses fichiers restent sur la publication d'origine et Common Parts y renvoie, sous l'une des licences acceptées pour les pièces référencées. La pièce porte le badge <strong>Référencée</strong>.",
+        "start": "Commencez au même endroit, avec l'URL où la pièce est publiée. Common Parts la compare à ce qui est déjà indexé, remplit ce qu'il peut à partir de la source et vous demande de confirmer l'attribution et la licence avant toute mise en ligne."
+      }
+    },
+    "after": {
+      "title": "Après la soumission",
+      "checks": "Une pièce est mise en ligne dès qu'elle passe les contrôles de publication : une licence sous laquelle Common Parts peut la publier, les fichiers nécessaires et au moins un produit compatible. Une pièce venue d'ailleurs nécessite en plus la confirmation de son attribution et de son éligibilité. S'il manque quelque chose, l'étape de vérification l'indique et la pièce reste en brouillon jusqu'à ce que vous la complétiez ; les contrôles sont refaits sur nos serveurs, rien ne peut donc y échapper.",
+      "attribution": "Nous ne modifions ni votre modèle ni ses métadonnées sans vous contacter. L'attribution est permanente et publique."
+    },
+    "dataLicense": {
+      "title": "Licence des données que vous contribuez",
+      "body": "Les données que vous ajoutez à l'Index (produits compatibles, références de produits, paramètres d'impression, champs structurés et retours d'impression) sont publiées sous la <license>licence {licenseName} ({shortName})</license>, avec attribution à « {attribution} ». Les fichiers des pièces, ainsi que la description, les instructions et les images reprises de la publication d'origine d'une pièce référencée, conservent la licence choisie par leur auteur. Voir la <terms>section 4.2 des Conditions d'utilisation</terms>."
+    },
+    "questions": {
+      "title": "Questions",
+      "body": "Si vous ne savez pas si une pièce est éligible, ou si vous souhaitez contribuer en nombre (par exemple en tant que Repair Café qui importe un ensemble de modèles validés), écrivez-nous à <mail>{email}</mail>."
+    }
   }
 }
