@@ -1,4 +1,4 @@
-import type { CurationChecklist, CurationCriterionKey, Part } from '@/types/database'
+import type { CurationChecklist, CurationCriterionKey } from '@/types/database'
 
 /**
  * Curation checklist v1 — the six blocking criteria (Flow P3 §4.3.3).
@@ -58,22 +58,6 @@ export function missingCriteria(checklist: CurationChecklist | null | undefined)
 }
 
 /**
- * Coerces an untrusted value into a clean CurationChecklist: only known
- * criterion keys, only boolean values. Returns null when the input is not an
- * object, so callers can 400 instead of silently storing garbage.
- */
-export function sanitizeChecklist(value: unknown): CurationChecklist | null {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null
-  const input = value as Record<string, unknown>
-  const result: CurationChecklist = {}
-  for (const criterion of CURATION_BLOCKING_CRITERIA) {
-    const raw = input[criterion.key]
-    if (typeof raw === 'boolean') result[criterion.key] = raw
-  }
-  return result
-}
-
-/**
  * Non-blocking curation flags (Flow P3 §4.3.6). The UI presents each as a
  * positive confirmation; leaving it unchecked sets the needs_* column.
  * needs_legal_review is deliberately NOT in this list — it is a blocking flag
@@ -119,6 +103,3 @@ export const CURATION_FLAGS: readonly CurationFlag[] = [
     description: 'The category assignment is certain, not a best guess.',
   },
 ] as const
-
-/** The needs_* flag subset of a part row, as stored in the database. */
-export type CurationFlagState = Pick<Part, CurationFlagColumn>

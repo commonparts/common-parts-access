@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchPartRequestCounts } from '@/lib/supabase/queries/part-requests'
-import { isValidUuid } from '@/lib/utils/validation'
+import { parseSearchParams } from '@/lib/api/parse'
+import { demandQuerySchema } from '@/lib/schemas/curation'
 
 // GET /api/curation/demand?productId=… — read-only demand context for the
 // curation tool: open part-request counts for the selected product, via the
@@ -14,12 +15,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const productId = request.nextUrl.searchParams.get('productId')?.trim() ?? ''
-    if (!isValidUuid(productId)) {
-      return NextResponse.json({ error: 'A valid productId is required' }, { status: 400 })
-    }
+    const query = parseSearchParams(request.nextUrl.searchParams, demandQuerySchema)
+    if (!query.ok) return query.response
 
-    const requests = await fetchPartRequestCounts(productId)
+    const requests = await fetchPartRequestCounts(query.data.productId)
     return NextResponse.json({ requests })
   } catch (error) {
     console.error('Failed to fetch demand context', error)

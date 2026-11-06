@@ -4,9 +4,8 @@ import { withResolvedPartMedia } from '@/lib/storage/url'
 import { createUploadDraft, listUploadDrafts } from '@/lib/supabase/queries/upload'
 import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
-import { findForbiddenField, forbiddenFieldError } from '@/lib/upload/payload'
-import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { isValidUuid, trimmedString } from '@/lib/utils/validation'
+import { parseJsonBody } from '@/lib/api/parse'
+import { createUploadDraftSchema } from '@/lib/schemas/upload'
 
 // GET /api/upload/drafts — the contributor's own open upload drafts, for resume.
 export async function GET() {
@@ -36,41 +35,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const body = await request.json().catch(() => null)
-    if (!body || typeof body !== 'object' || Array.isArray(body)) {
-      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
-    }
-    const payload = body as Record<string, unknown>
+    // The flow's narrowing (fields the contributor may not set, the explicit
+    // originality declaration) is enforced by the schema, not in the form.
+    const body = await parseJsonBody(request, createUploadDraftSchema)
+    if (!body.ok) return body.response
+    const { title: name, categoryId, licenseId } = body.data
 
-    // The flow's narrowing is enforced here, not in the form.
-    const forbidden = findForbiddenField(payload)
-    if (forbidden) {
-      return NextResponse.json({ error: forbiddenFieldError(forbidden) }, { status: 400 })
-    }
-
-    const name = trimmedString(payload.title)
-    const categoryId = trimmedString(payload.categoryId)
-    const licenseId = trimmedString(payload.licenseId)
-
-    if (name.length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH || name.length > VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH) {
-      return NextResponse.json(
-        { error: `Title must be between ${VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH} and ${VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH} characters` },
-        { status: 400 },
-      )
-    }
-
-    // The declaration must be an explicit true — a missing or truthy-ish value
-    // is not someone claiming authorship of a design.
-    if (payload.attested !== true) {
-      return NextResponse.json(
-        { error: 'The originality declaration must be confirmed to start an upload' },
-        { status: 400 },
-      )
-    }
-
-    if (!isValidUuid(categoryId)) {
-      return NextResponse.json({ error: 'A category is required' }, { status: 400 })
-    }
     const { data: category, error: categoryError } = await supabase
       .from('categories')
       .select('id')
@@ -80,9 +50,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
     }
 
-    if (!isValidUuid(licenseId)) {
-      return NextResponse.json({ error: 'A license is required' }, { status: 400 })
-    }
     const license = await getLicenseById(licenseId)
     if (!license) {
       return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })

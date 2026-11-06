@@ -7,6 +7,8 @@
  * every call returns null, so the curation flow keeps platform detection only.
  */
 
+import { serverEnv } from '@/lib/env'
+
 const THINGIVERSE_API_URL = 'https://api.thingiverse.com'
 const REQUEST_TIMEOUT_MS = 5000
 
@@ -19,7 +21,7 @@ export const THINGIVERSE_BASE_URL = 'https://www.thingiverse.com'
 export const THINGIVERSE_CDN_HOST = 'cdn.thingiverse.com'
 
 function appToken(): string | null {
-  return process.env.THINGIVERSE_APP_TOKEN?.trim() || null
+  return serverEnv('THINGIVERSE_APP_TOKEN') ?? null
 }
 
 /** Whether the Thingiverse extractor and image import can run. */

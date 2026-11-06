@@ -8,7 +8,7 @@ const DUPLICATE_DOTS_REGEX = /\.\.+/g
  * Storage bucket of each `part_files.file_category`. The bucket is not stored
  * on the row: `upload_path` is relative to the bucket of its category.
  */
-export const PART_FILE_CATEGORY_BUCKETS: Readonly<Record<string, string>> = {
+const PART_FILE_CATEGORY_BUCKETS: Readonly<Record<string, string>> = {
   model: STORAGE_BUCKETS.MODEL_FILES,
   image: STORAGE_BUCKETS.MODEL_THUMBNAILS,
 }
@@ -119,4 +119,36 @@ export function buildZipEntryPath(params: {
 
   const path = sanitizedSegments.join('/').replace(/\/+/g, '/')
   return path || sanitizeSegment(fallbackName, 'file')
+}
+
+/**
+ * Builds the relative storage reference stored in the database for an object
+ * (`bucket/path`, #56). Public URLs are derived from it at the API boundary
+ * by `resolveStorageUrl()`, so no row embeds the storage host.
+ */
+export function toStorageReference(bucket: string, storagePath: string): string {
+  return `${bucket}/${storagePath.replace(/^\/+/, '')}`
+}
+
+const OWN_OBJECT_NAME_REGEX = /^[A-Za-z0-9._-]+$/
+const MAX_STORAGE_REFERENCE_LENGTH = 500
+
+/**
+ * True when `reference` is a relative storage reference to an object the
+ * user uploaded directly in their own folder of `bucket`:
+ * `bucket/{userId}/{objectName}`, with a single safe object name. Used to
+ * accept a reference sent by the client without storing an arbitrary URL.
+ */
+export function isOwnStorageReference(
+  reference: string,
+  bucket: string,
+  userId: string
+): boolean {
+  if (reference.length > MAX_STORAGE_REFERENCE_LENGTH) return false
+  const prefix = `${bucket}/${userId}/`
+  if (!reference.startsWith(prefix)) return false
+  const objectName = reference.slice(prefix.length)
+  // A single path segment: no '/' can lead out of the user's folder, and
+  // '.' / '..' are refused outright.
+  return OWN_OBJECT_NAME_REGEX.test(objectName) && objectName !== '.' && objectName !== '..'
 }

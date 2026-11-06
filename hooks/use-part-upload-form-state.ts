@@ -2,6 +2,7 @@ import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { VALIDATION_LIMITS } from "@/lib/utils/constants"
 import { createClient } from "@/lib/supabase/client"
+import { toStorageReference } from "@/lib/storage/path-utils"
 import type { PartFileHostingType, PartOriginType, PartVerificationStatus } from "@/types/database"
 import type { SourcePlatform } from "@/types/database"
 
@@ -480,8 +481,9 @@ export function usePartUploadFormState({
 
         if (uploadError) throw uploadError
 
-        const { data: publicData } = supabase.storage.from(STORAGE_BUCKETS.PRODUCT_THUMBNAILS).getPublicUrl(path)
-        imageUrl = publicData.publicUrl
+        // The product stores a relative storage reference, resolved to a
+        // public URL when it is read (#56).
+        imageUrl = toStorageReference(STORAGE_BUCKETS.PRODUCT_THUMBNAILS, path)
       } catch (uploadErr) {
         const fallback = "Failed to upload image"
         const message = uploadErr instanceof Error ? uploadErr.message : fallback

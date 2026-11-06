@@ -1,3 +1,4 @@
+import { serverEnv } from '@/lib/env'
 import { isValidUuid } from '@/lib/utils/validation'
 
 // Separator of the user ids listed in `CURATOR_USER_IDS`.
@@ -26,5 +27,5 @@ export function parseCuratorIds(raw: string | undefined): ReadonlySet<string> {
  */
 export function isCurator(userId: string | null | undefined): boolean {
   if (!userId) return false
-  return parseCuratorIds(process.env.CURATOR_USER_IDS).has(userId.toLowerCase())
+  return parseCuratorIds(serverEnv('CURATOR_USER_IDS')).has(userId.toLowerCase())
 }

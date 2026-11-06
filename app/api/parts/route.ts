@@ -1,29 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { parseSearchParams } from '@/lib/api/parse'
+import { partListQuerySchema } from '@/lib/schemas/parts'
 import { fetchPartCards } from '@/lib/supabase/queries/part'
-import type { PartListOptions } from '@/types/parts'
 
 // GET /api/parts - List all parts with pagination, sorting, and search
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const sortByParam = searchParams.get('sortBy') || 'created_at'
-    const allowedSort: PartListOptions['sortBy'][] = ['likes', 'views', 'newest', 'created_at']
-    const sortBy = allowedSort.includes(sortByParam as PartListOptions['sortBy'])
-      ? (sortByParam as PartListOptions['sortBy'])
-      : 'created_at'
-    const sortOrder = searchParams.get('sortOrder') || 'desc'
-    const search = searchParams.get('search') || ''
-    const productId = searchParams.get('productId') || undefined
-    const brandId = searchParams.get('brandId') || undefined
-    const categoryId = searchParams.get('categoryId') || undefined
+    const query = parseSearchParams(request.nextUrl.searchParams, partListQuerySchema)
+    if (!query.ok) return query.response
+    const { page, limit, sortBy, sortOrder, search, productId, brandId, categoryId } = query.data
 
     const { parts, pagination } = await fetchPartCards({
       page,
       limit,
       sortBy,
-      sortOrder: sortOrder === 'asc' ? 'asc' : 'desc',
+      sortOrder,
       search,
       product: productId,
       brand: brandId,
@@ -45,11 +36,4 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     )
   }
-}
-
-// POST /api/parts - Create new part
-export async function POST(request: NextRequest) {
-  // TODO: Implement part creation
-  const body = await request.json()
-  return NextResponse.json({ message: 'Part created', part: body }, { status: 201 })
 }

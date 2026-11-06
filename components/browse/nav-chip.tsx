@@ -19,7 +19,7 @@ export function NavChip({ href, label, caption, className }: NavChipProps) {
     <Link
       href={href}
       className={cn(
-        'inline-flex items-baseline gap-xs rounded-lg border border-border-subtle bg-bg-surface px-md py-xs text-body text-text-primary transition-colors hover:border-border-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface',
+        'inline-flex items-baseline gap-xs rounded-lg border border-border-subtle bg-bg-surface px-md py-xs text-body text-text-primary transition-colors hover:border-border-default focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface',
         className,
       )}
     >

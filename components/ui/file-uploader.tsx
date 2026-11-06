@@ -78,7 +78,7 @@ export function FileUploader({
         "rounded-lg border border-dashed border-border-subtle p-lg text-center shadow-none transition-colors",
         // A div has no :disabled state, so the design-system disabled tokens are applied directly.
         disabled
-          ? "cursor-not-allowed bg-bg-disabled text-text-disabled [&_*]:text-text-disabled"
+          ? "cursor-not-allowed bg-bg-disabled text-text-disabled **:text-text-disabled"
           : isDragOver
             ? "cursor-pointer border-action-primary bg-action-primary/5"
             : "cursor-pointer bg-bg-surface hover:border-action-primary/60 hover:bg-bg-hover",

@@ -15,11 +15,11 @@ import type {
   PartListOptions,
   PartListResult,
   PartSeoData,
-  PartSeoRow,
   MyPartListItem,
   MyPartListResult,
 } from '@/types/parts';
 import { firstEmbedded } from '@/lib/utils/supabase-embed';
+import { narrowPartRow } from '@/lib/supabase/rows';
 
 /**
  * How many compatible products a card lists by name before collapsing the rest
@@ -297,7 +297,7 @@ export async function fetchFeaturedPartCards(limit = 8) {
     throw error;
   }
 
-  return ((data ?? []) as PartCardRow[]).map(mapPartRowToCard);
+  return (data ?? []).map(mapPartRowToCard);
 }
 
 /**
@@ -331,7 +331,7 @@ export async function fetchPartCardsByIds(ids: string[]): Promise<PartCardData[]
 
   // `in` returns rows in no particular order: restore the caller's ranking.
   const cardsById = new Map(
-    ((data ?? []) as PartCardRow[]).map((row) => [row.id, mapPartRowToCard(row)]),
+    (data ?? []).map((row) => [row.id, mapPartRowToCard(row)]),
   );
   return uniqueIds
     .map((id) => cardsById.get(id))
@@ -385,7 +385,7 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     throw error;
   }
 
-  const part = data as unknown as PartSeoRow;
+  const part = data;
   const author = firstEmbedded(part.user_profiles);
   // One licence per part (#374): for a curated part, the one chosen at the source.
   const license = firstEmbedded(part.licenses);
@@ -458,14 +458,14 @@ export async function fetchUserParts(
   const totalPages = countPages(total, limit);
 
   return {
-    parts: (data ?? []).map(
-      (row: { id: string; name: string; slug: string; created_at: string | null; thumbnail_url: string | null; status: string | null }): MyPartListItem => ({
+    parts: (data ?? []).map(narrowPartRow).map(
+      (row): MyPartListItem => ({
         id: row.id,
         name: row.name,
         slug: row.slug,
         createdAt: row.created_at ?? null,
         thumbnailUrl: resolveStorageUrl(row.thumbnail_url),
-        status: (row.status ?? 'draft') as MyPartListItem['status'],
+        status: row.status,
       })
     ),
     pagination: {
@@ -501,7 +501,7 @@ export async function deletePart(slug: string, userId: string): Promise<void> {
   if (!part) throw new Error('PART_NOT_FOUND');
   if (part.user_id !== userId) throw new Error('FORBIDDEN');
 
-  const filePaths = (part.part_files as { upload_path: string }[])
+  const filePaths = part.part_files
     .map((f) => f.upload_path)
     .filter(Boolean);
 

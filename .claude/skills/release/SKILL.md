@@ -5,7 +5,7 @@ description: Promotion and release procedure for Common Parts Access. Use when a
 
 # Release — promotion and release notes
 
-Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which the human applies when they land on `dev`. Destructive migrations are applied automatically when the release is merged into `main`, and ship in a later release than the code change that stops using what they remove, through a draft follow-up PR labelled `status:next-release` (see `docs/DEV_STRATEGY.md`, Database Schema).
+Branch flow: feature branches → `dev` (squash) → `staging` (merge commit) → `main` (merge commit). Railway deploys `staging` and `main` automatically on push. There is a single Supabase database behind every environment, so a promotion carries no migration step for additive migrations, which are applied before their PR is merged into `dev`. Destructive migrations are applied automatically when the release is merged into `main`, and ship in a later release than the code change that stops using what they remove, through a draft follow-up PR labelled `status:next-release` (see `docs/DEV_STRATEGY.md`, Database Schema).
 
 A promotion is always a PR. Open it, keep it green, and merge it only when the human asks for that merge, with a merge commit, never a squash: a squash would leave `staging` and `main` without `dev`'s history and every later promotion would conflict.
 

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fetchUserParts } from '@/lib/supabase/queries/part'
-import type { PartStatus } from '@/types/database'
-
-const VALID_STATUSES: PartStatus[] = ['draft', 'published', 'archived']
+import { parseSearchParams } from '@/lib/api/parse'
+import { myPartsQuerySchema } from '@/lib/schemas/parts'
 
 // GET /api/parts/mine - List the authenticated user's own parts
 export async function GET(request: NextRequest) {
@@ -14,17 +13,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
+    const query = parseSearchParams(request.nextUrl.searchParams, myPartsQuerySchema)
+    if (!query.ok) return query.response
 
-    const rawPage = parseInt(searchParams.get('page') ?? '1', 10)
-    const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1
-
-    const rawStatus = searchParams.get('status') ?? 'published'
-    const status: PartStatus = (VALID_STATUSES as string[]).includes(rawStatus)
-      ? (rawStatus as PartStatus)
-      : 'published'
-
-    const result = await fetchUserParts(user.id, { page, status })
+    const result = await fetchUserParts(user.id, query.data)
     return NextResponse.json(result)
   } catch (error) {
     console.error('Failed to fetch user parts:', error)

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { attachProductReference } from '@/lib/supabase/queries/search-demand'
 import { parseAcceptLanguage } from '@/lib/utils/locale'
-import { validateReferenceAttachment } from '@/lib/utils/product-references'
+import { parseJsonBody } from '@/lib/api/parse'
+import { referenceAttachmentSchema } from '@/lib/schemas/search'
 
 /**
  * POST /api/product-references — a visitor tells us which product an unknown
@@ -11,21 +12,12 @@ import { validateReferenceAttachment } from '@/lib/utils/product-references'
  * a visitor sends reaches other visitors unreviewed.
  */
 export async function POST(request: NextRequest) {
-  let payload: unknown
-  try {
-    payload = await request.json()
-  } catch {
-    return NextResponse.json({ error: 'Invalid reference: body must be JSON' }, { status: 400 })
-  }
-
-  const validation = validateReferenceAttachment(payload)
-  if (!validation.ok) {
-    return NextResponse.json({ error: validation.error }, { status: 400 })
-  }
+  const body = await parseJsonBody(request, referenceAttachmentSchema, 'Invalid reference: body must be JSON')
+  if (!body.ok) return body.response
 
   try {
     const locale = parseAcceptLanguage(request.headers.get('accept-language'))
-    const result = await attachProductReference(validation.value, locale)
+    const result = await attachProductReference(body.data, locale)
 
     if (result === 'unknown_product') {
       return NextResponse.json({ error: 'Invalid reference: that product does not exist' }, { status: 404 })

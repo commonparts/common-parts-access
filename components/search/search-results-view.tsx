@@ -300,7 +300,7 @@ function ResultGroups({
               aria-pressed={isActive}
               onClick={() => selectType(type)}
               className={cn(
-                "rounded-full border px-md py-xs text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface",
+                "rounded-full border px-md py-xs text-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface",
                 isActive
                   ? "border-transparent bg-action-primary/10 text-action-primary"
                   : "border-border-subtle bg-bg-subtle text-text-primary hover:bg-bg-hover",
@@ -420,7 +420,7 @@ function ResultSection({
           <button
             type="button"
             onClick={onSeeAll}
-            className="text-sm font-medium text-action-primary transition-colors hover:text-action-primaryHover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
+            className="text-sm font-medium text-action-primary transition-colors hover:text-action-primaryHover focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
           >
             {seeAllLabel}
           </button>

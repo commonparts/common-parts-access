@@ -90,7 +90,7 @@ interface FileRowProps {
 
 const FileRow = React.memo(({ file, isDownloading, iconWrapperClass, icon, onDownload }: FileRowProps) => (
   <div className="group flex items-center gap-sm rounded-lg border border-border-subtle p-sm transition-colors hover:bg-bg-hover">
-    <div className={cn("flex h-8 w-8 flex-shrink-0 items-center justify-center rounded", iconWrapperClass)}>
+    <div className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded", iconWrapperClass)}>
       {icon}
     </div>
     <div className="min-w-0 flex-1">

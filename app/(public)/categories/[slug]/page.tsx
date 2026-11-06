@@ -179,7 +179,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
             Everything in {data.category.name} currently sits under{' '}
             <Link
               href={categoryCanonicalPath(inlinedFrom.slug)}
-              className="font-medium text-text-primary underline underline-offset-2 transition-colors hover:text-text-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-border-focus"
+              className="font-medium text-text-primary underline underline-offset-2 transition-colors hover:text-text-secondary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus"
             >
               {inlinedFrom.name}
             </Link>

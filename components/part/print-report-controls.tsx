@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { reportPrint } from "@/lib/actions/print-reports"
 import { cn } from "@/lib/utils"
 import {
   MAX_PRINT_REPORT_COMMENT_LENGTH,
@@ -8,7 +9,7 @@ import {
   type PrintReportStats,
 } from "@/lib/utils/print-reports"
 import { Button } from "@/components/ui/button"
-import { DropdownInput } from "@/components/ui/dropdown-input"
+import { NativeSelect } from "@/components/ui/native-select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
@@ -62,25 +63,20 @@ export function PrintReportControls({
     setPending(true)
     setMessage(null)
     try {
-      const response = await fetch("/api/print-reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          partId,
-          productId,
-          result,
-          // Always resend the details so changing the result keeps them.
-          comment,
-          productReferenceId: referenceId || null,
-        }),
+      const response = await reportPrint({
+        partId,
+        productId,
+        result,
+        // Always resend the details so changing the result keeps them.
+        comment,
+        productReferenceId: referenceId || null,
       })
-      const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setMessage(data?.error ?? "Report failed: please try again")
+        setMessage(response.error)
         return false
       }
       setReportedResult(result)
-      onStatsChange(data.stats)
+      onStatsChange(response.data)
       setMessage(successMessage)
       return true
     } catch {
@@ -151,8 +147,7 @@ export function PrintReportControls({
           {references.length > 0 && (
             <div className="space-y-2xs">
               <Label htmlFor={`${idPrefix}-reference`}>Your product reference (optional)</Label>
-              <DropdownInput
-                as="select"
+              <NativeSelect
                 id={`${idPrefix}-reference`}
                 value={referenceId}
                 onChange={(e) => setReferenceId(e.target.value)}
@@ -163,7 +158,7 @@ export function PrintReportControls({
                     {reference.value}
                   </option>
                 ))}
-              </DropdownInput>
+              </NativeSelect>
             </div>
           )}
           <div className="flex gap-xs">

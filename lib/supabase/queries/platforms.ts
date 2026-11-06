@@ -1,15 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
 import type { SourcePlatform } from '@/types/database'
 
+const SOURCE_PLATFORM_SELECT = 'id, slug, name, base_url, logo_url, import_supported, active'
+
+/** The source platform columns read by SOURCE_PLATFORM_SELECT. */
+export type SourcePlatformSummary = Omit<SourcePlatform, 'created_at'>
+
 /**
  * Returns all active source platforms ordered by name.
  * Used to populate the platform selector in the upload form and for display in part details.
  */
-export async function getActiveSourcePlatforms(): Promise<SourcePlatform[]> {
+export async function getActiveSourcePlatforms(): Promise<SourcePlatformSummary[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('source_platforms')
-    .select('id, slug, name, base_url, logo_url, import_supported, active')
+    .select(SOURCE_PLATFORM_SELECT)
     .eq('active', true)
     .order('name')
   if (error) throw error
@@ -20,11 +25,11 @@ export async function getActiveSourcePlatforms(): Promise<SourcePlatform[]> {
  * Returns a single source platform by slug, or null if not found.
  * Used by the part details API to resolve the display name and base URL.
  */
-export async function getSourcePlatformBySlug(slug: string): Promise<SourcePlatform | null> {
+export async function getSourcePlatformBySlug(slug: string): Promise<SourcePlatformSummary | null> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('source_platforms')
-    .select('id, slug, name, base_url, logo_url, import_supported, active')
+    .select(SOURCE_PLATFORM_SELECT)
     .eq('slug', slug)
     .maybeSingle()
   if (error) throw error
@@ -48,7 +53,7 @@ export async function validateSourceUrlMatchesPlatform(
   platformSlug: string,
   sourceUrl: string,
 ): Promise<SourcePlatformUrlCheck> {
-  let platform: SourcePlatform | null
+  let platform: SourcePlatformSummary | null
   try {
     platform = await getSourcePlatformBySlug(platformSlug)
   } catch (error) {

@@ -95,11 +95,3 @@ export async function resetPasswordForEmail(email: string, redirectTo: string) {
     redirectTo,
   });
 }
-
-/**
- * Get current user (client-side)
- */
-export async function getCurrentUser() {
-  const supabase = createClient();
-  return await supabase.auth.getUser();
-}

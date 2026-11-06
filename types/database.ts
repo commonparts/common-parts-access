@@ -1,317 +1,80 @@
+import type { z } from 'zod';
+import type {
+  curationChecklistSchema,
+  partDimensionsSchema,
+  partPrintSettingsSchema,
+} from '@/lib/schemas/part-fields';
+import type { Database, Tables } from '@/types/supabase';
+
 // ============================================================================
-// Core Database Types - Matches Supabase schema exactly
+// Row types — derived from the generated schema in types/supabase.ts.
+//
+// types/supabase.ts is generated from the production schema (`npm run
+// db:types`) and is regenerated in the same PR as every migration, so a
+// renamed or dropped column breaks the build instead of failing at runtime.
+// Nothing in this file redeclares a column by hand: what follows only names
+// the generated rows, and narrows the columns the generator cannot describe.
 // ============================================================================
 
-export interface UserProfile {
-  id: string;
-  username: string;
-  display_name?: string | null;
-  bio?: string | null;
-  avatar_url?: string | null;
-  website_url?: string | null;
-  location?: string | null;
-  reputation_score?: number;
-  verified_maker?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+export type License = Tables<'licenses'>;
+export type Brand = Tables<'brands'>;
+export type Category = Tables<'categories'>;
+export type Product = Tables<'products'>;
+export type SourcePlatform = Tables<'source_platforms'>;
 
-export interface License {
-  id: string;
-  spdx_id: string;         // e.g. "CC0-1.0", "CC-BY-4.0"
-  name: string;            // full legal name
-  short_name: string;      // display label
-  url: string;             // canonical URL
-  allows_redistribution: boolean;
-  requires_attribution: boolean;
-  allows_commercial: boolean;
-  is_copyleft: boolean;
-  created_at?: string;
-}
-
-export interface Brand {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  logo_url?: string | null;
-  website_url?: string | null;
-  founded_year?: number | null;
-  country?: string | null; // ISO country code
-  verified?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  icon?: string | null; // Storage path to category icon image (e.g. 'category-icons/icon.png')
-  parent_id?: string | null;
-  level?: number;
-  path?: string | null; // Materialized path: /electronics/phones/
-  created_at?: string;
-}
-
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  brand_id?: string | null;
-  category_id?: string | null;
-  description?: string | null;
-  release_year?: number | null;
-  discontinued?: boolean;
-  image_url?: string | null;
-  parts_count?: number; // denormalized count of published parts (trigger-maintained)
-  open_requests_count?: number; // denormalized count of open part requests (trigger-maintained)
-  is_listed?: boolean; // generated: parts_count > 0 or open_requests_count > 0, the public listing rule
-  created_at?: string;
-  updated_at?: string;
-}
-
-// Captures part demand ("Request this part"). Deliberately separate from
-// feedback: no triage pipeline, demand accumulates until fulfilled, and its
-// aggregates are publicly displayable (unlike feedback's restrictive RLS).
-export type PartRequestStatus = 'open' | 'fulfilled' | 'dismissed';
-
-export interface PartRequest {
-  id: string;
-  product_id?: string | null;
-  raw_query?: string | null;
-  description?: string | null;
-  user_id?: string | null;
-  page_url?: string | null;
-  status: PartRequestStatus;
-  fulfilled_by_part_id?: string | null;
-  created_at?: string;
-}
+/** One row returned by an RPC that returns a set (`returns table (...)`). */
+type RpcRow<Name extends keyof Database['public']['Functions']> =
+  Database['public']['Functions'][Name]['Returns'] extends readonly (infer Row)[] ? Row : never;
 
 // Row shape returned by the fetch_part_request_counts RPC — aggregate only,
 // never any row-level or identifying data.
-export interface PartRequestCount {
-  description: string;
-  request_count: number;
-}
+export type PartRequestCount = RpcRow<'fetch_part_request_counts'>;
 
 // ============================================================================
-// Part JSONB column shapes
+// Column domains the generator cannot express.
+//
+// The generator types a text column restricted by a CHECK constraint as
+// `string`, and a jsonb column as `Json`. The unions and shapes below are the
+// values those constraints and the API validation allow. Each list mirrors the
+// CHECK constraint of its column in supabase/migrations/.
 // ============================================================================
 
-export interface PartDimensions {
-  length?: number;
-  width?: number;
-  height?: number;
-  unit?: 'mm' | 'cm' | 'in';
-}
+export const PART_STATUSES = ['draft', 'published', 'archived'] as const;
+export type PartStatus = (typeof PART_STATUSES)[number];
 
-export type SupportType = 'none' | 'buildplate_only' | 'everywhere';
-
-export interface PartPrintSettings {
-  layer_height?: number; // mm, non-negative
-  infill?: number;       // 0–100 %
-  supports?: SupportType;
-}
-
-// ============================================================================
-// Part enum types — declared before Part so the interface can reference them
-// ============================================================================
-
-export type PartStatus = 'draft' | 'published' | 'archived';
-
-// The six blocking criteria of curation checklist v1 (Flow P3 §4.3.3).
-// Stored on parts.curation_checklist as a partial {criterion: boolean} map;
-// all six must be true for a curated part to be publishable.
-export type CurationCriterionKey =
-  | 'eligibility'
-  | 'product_target'
-  | 'license'
-  | 'file'
-  | 'attribution'
-  | 'duplicate';
-
-export type CurationChecklist = Partial<Record<CurationCriterionKey, boolean>>;
 export type PartOriginType = 'original' | 'curated' | 'manufacturer';
 export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 export type PartFileHostingType = 'hosted' | 'link_out';
 
-export interface Part {
-  id: string;
-  name: string;
-  slug: string;
-  description?: string | null;
-  // Null once the owning account is deleted: the part stays published,
-  // anonymized (issue #178).
-  user_id: string | null;
-  // No brand_id: a part's brands are the distinct brands of the products it
-  // fits, read through part_products (issue #315).
-  category_id?: string | null;
+// The jsonb shapes are the output types of the schemas that validate them on
+// the way in (lib/schemas/part-fields.ts), so the two cannot drift.
 
-  // Part details
-  part_name?: string | null;
-  part_number?: string | null;
-  material?: string | null;
-  color?: string | null;
-  dimensions?: PartDimensions | null;
-  
-  // 3D Print settings
-  print_settings?: PartPrintSettings | null;
-  estimated_print_time?: number | null; // minutes
-  estimated_material_usage?: number | null; // grams (stored as DECIMAL)
-  
-  // Files and media
-  thumbnail_url?: string | null;
-  images?: string[] | null; // Array of image URLs (text[])
-  
-  // Status and metrics
-  status?: PartStatus;
-  view_count?: number;
-  like_count?: number;
-  
-  // Origin tracking
+/** Shape of parts.dimensions (jsonb). */
+type PartDimensions = z.output<typeof partDimensionsSchema>;
+
+/** Shape of parts.print_settings (jsonb). */
+type PartPrintSettings = z.output<typeof partPrintSettingsSchema>;
+
+/**
+ * Shape of parts.curation_checklist (jsonb): the six blocking criteria of
+ * curation checklist v1 (Flow P3 §4.3.3), each optional.
+ */
+export type CurationChecklist = z.output<typeof curationChecklistSchema>;
+export type CurationCriterionKey = keyof CurationChecklist;
+
+/**
+ * Domain types of the parts columns the generator types loosely. Applied to a
+ * selected row by `narrowPartRow()` in lib/supabase/rows.ts.
+ */
+export interface PartColumnDomains {
+  status: PartStatus;
   origin_type: PartOriginType;
-  source_url?: string | null;
-  source_platform?: string | null;   // FK to source_platforms.slug
-  source_published_at?: string | null;
-  file_hosting_type?: PartFileHostingType;
-
-  // Attribution (required when origin_type = 'curated')
-  original_author?: string | null;
-  original_author_url?: string | null;
-
-  // License
-  license_id?: string | null;
-
-  // Validation
   verification_status: PartVerificationStatus;
-  makes_count?: number; // every print report on the part, trigger-maintained (#318)
-
-  // Metadata
-  tags?: string[] | null;
-  instructions?: string | null;
-  notes?: string | null;
-
-  // Curation (Flow P3) — non-blocking flags, the blocking legal-review flag,
-  // and the blocking-checklist state. Maintained by the internal curation tool.
-  needs_verification?: boolean;
-  needs_print_settings?: boolean;
-  needs_photo?: boolean;
-  needs_instructions?: boolean;
-  needs_category?: boolean;
-  needs_legal_review?: boolean;
-  legal_review_justification?: string | null;
-  curation_checklist?: CurationChecklist;
-
-  // Public upload flow (origin_type = 'original') — the contributor's
-  // declaration that they created the part and may publish it. Blocking
-  // condition of the upload publish gate.
-  originality_attested?: boolean;
-  originality_attested_at?: string | null;
-
-  created_at?: string;
-  updated_at?: string;
+  file_hosting_type: PartFileHostingType;
+  dimensions: PartDimensions | null;
+  print_settings: PartPrintSettings | null;
+  curation_checklist: CurationChecklist;
 }
 
-// Rejection traceability (Flow P3 §4.3.3): a rejected source is recorded with
-// its reason and failed criteria, independently of any part row.
-export interface CurationRejection {
-  id: string;
-  source_url: string;
-  reason: string;
-  failed_criteria: CurationCriterionKey[];
-  created_by: string | null; // Null once the curator's account is deleted (issue #178)
-  created_at?: string;
-}
-
-export interface PartFile {
-  id: string;
-  part_id: string;
-  filename: string; // max 255 chars
-  original_filename: string; // max 255 chars
-  file_type: string; // stl, obj, step, pdf, etc. (max 10 chars)
-  file_size: number; // bytes (BIGINT)
-  file_url: string | null; // Deprecated (#56): not written; storage location is upload_path
-  file_category: string; // model, documentation, image (max 20 chars)
-  upload_path: string; // Storage path
-  checksum?: string | null; // File integrity (max 64 chars)
-  created_at?: string;
-}
-
-export interface PartLike {
-  id: string;
-  user_id: string | null; // Null once the liking account is deleted (issue #178)
-  part_id: string;
-  liked_at?: string;
-}
-
-export interface PartDownload {
-  id: string;
-  part_id: string;
-  file_id: string | null; // Nullable for archive/ZIP downloads
-  downloaded_at?: string;
-}
-
-export interface PartComment {
-  id: string;
-  part_id: string;
-  user_id: string | null; // Null once the author's account is deleted (issue #178)
-  parent_id?: string | null; // For nested comments
-  content: string;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Collection {
-  id: string;
-  name: string; // max 200 chars
-  description?: string | null;
-  user_id: string;
-  is_public?: boolean;
-  thumbnail_url?: string | null;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface CollectionPart {
-  collection_id: string;
-  part_id: string;
-  added_at?: string;
-}
-
-// ============================================================================
-// Enhanced Types with Relations - Used in queries and API responses
-// ============================================================================
-
-export interface PartWithRelations extends Part {
-  user_profiles?: UserProfile | UserProfile[];
-  brands?: Brand | Brand[];
-  categories?: Category | Category[];
-  products?: (Product & { brands?: Brand | Brand[] }) | (Product & { brands?: Brand | Brand[] })[];
-  licenses?: License | License[];
-}
-
-// ============================================================================
-// Database Filter Types
-// ============================================================================
-
-export interface PartFilters {
-  category_id?: string;
-  brand_id?: string;
-  product_id?: string;
-  status?: PartStatus;
-  user_id?: string;
-  tags?: string[];
-}
-
-export interface SourcePlatform {
-  id: string;
-  slug: string;
-  name: string;
-  base_url: string;
-  logo_url?: string | null;
-  import_supported: boolean;
-  active: boolean;
-  created_at?: string;
-}
+/** A parts row with its constrained columns narrowed to their domain types. */
+export type Part = Omit<Tables<'parts'>, keyof PartColumnDomains> & PartColumnDomains;

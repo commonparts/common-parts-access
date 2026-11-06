@@ -1,4 +1,3 @@
-import { isValidUuid, trimmedString } from './validation'
 import { toEvidenceLevel, type EvidenceLevel } from './evidence-level'
 
 /**
@@ -34,67 +33,5 @@ export function toPrintReportStats(row: PrintReportStatsRow): PrintReportStats {
     worksWithAdjustments: row.works_with_adjustments_count ?? 0,
     doesNotWork: row.does_not_work_count ?? 0,
     evidenceLevel: toEvidenceLevel(row.evidence_level),
-  }
-}
-
-export interface PrintReportInput {
-  partId: string
-  productId: string
-  result: PrintReportResult
-  comment: string | null
-  productReferenceId: string | null
-}
-
-export type PrintReportValidation =
-  | { ok: true; value: PrintReportInput }
-  | { ok: false; error: string }
-
-/**
- * Validates an untrusted print report payload. Comment and reference are
- * optional: an empty comment or a null reference means "none". Returns the
- * sanitized input or an actionable error; never throws.
- */
-export function validatePrintReport(payload: unknown): PrintReportValidation {
-  if (typeof payload !== 'object' || payload === null) {
-    return { ok: false, error: 'Invalid report: expected a JSON object' }
-  }
-  const body = payload as Record<string, unknown>
-
-  const partId = trimmedString(body.partId)
-  const productId = trimmedString(body.productId)
-  if (!isValidUuid(partId) || !isValidUuid(productId)) {
-    return { ok: false, error: 'Invalid report: partId and productId must be UUIDs' }
-  }
-
-  if (!PRINT_REPORT_RESULTS.includes(body.result as PrintReportResult)) {
-    return { ok: false, error: `Invalid report: result must be one of ${PRINT_REPORT_RESULTS.join(', ')}` }
-  }
-
-  if (body.comment != null && typeof body.comment !== 'string') {
-    return { ok: false, error: 'Invalid report: comment must be a string' }
-  }
-  const comment = trimmedString(body.comment)
-  if (comment.length > MAX_PRINT_REPORT_COMMENT_LENGTH) {
-    return { ok: false, error: `Invalid report: comment is limited to ${MAX_PRINT_REPORT_COMMENT_LENGTH} characters` }
-  }
-
-  let productReferenceId: string | null = null
-  if (body.productReferenceId != null) {
-    const reference = trimmedString(body.productReferenceId)
-    if (!isValidUuid(reference)) {
-      return { ok: false, error: 'Invalid report: productReferenceId must be a UUID' }
-    }
-    productReferenceId = reference
-  }
-
-  return {
-    ok: true,
-    value: {
-      partId,
-      productId,
-      result: body.result as PrintReportResult,
-      comment: comment || null,
-      productReferenceId,
-    },
   }
 }

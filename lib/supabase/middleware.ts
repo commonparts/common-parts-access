@@ -1,5 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { findPublicEnv } from "@/lib/public-env";
+import type { Database } from "@/types/supabase";
 
 /**
  * Dashboard routes that require authentication.
@@ -24,19 +26,17 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
   // If env vars are missing, skip session management and pass through.
   // This prevents the middleware from crashing preview deployments
   // where environment variables have not been configured yet.
-  if (!supabaseUrl || !supabasePublishableKey) {
+  const env = findPublicEnv();
+  if (!env) {
     return supabaseResponse;
   }
 
-  const supabase = createServerClient(
-    supabaseUrl,
-    supabasePublishableKey,
+  const supabase = createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
       cookies: {
         getAll() {

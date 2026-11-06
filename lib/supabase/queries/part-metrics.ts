@@ -1,28 +1,32 @@
 import { createClient } from '@/lib/supabase/server';
-import type { Part } from '@/types/database';
 import type { SourceClickContext } from '@/lib/utils/source-clicks';
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createClient>>;
-type PublishedPartSlice = Pick<Part, 'id' | 'name' | 'like_count'>;
 
-async function getPublishedPart(slug: string, columns: string, supabase: SupabaseServerClient): Promise<PublishedPartSlice> {
+// One column list for every lookup: each caller reads a subset of it, and a
+// fixed literal lets the typed client infer the row instead of a cast.
+const PUBLISHED_PART_COLUMNS = 'id, name, like_count';
+
+/**
+ * Resolves a published part by slug, or throws an error whose code is
+ * PART_NOT_FOUND (the routes map it to a 404). Covered by the public read
+ * policy on published parts.
+ */
+async function getPublishedPart(slug: string, supabase: SupabaseServerClient) {
 	const { data, error } = await supabase
 		.from('parts')
-		.select(columns)
+		.select(PUBLISHED_PART_COLUMNS)
 		.eq('slug', slug)
 		.eq('status', 'published')
 		.single();
 
-	const hasEmbeddedError =
-		data && typeof data === 'object' && 'error' in data;
-
-	if (error || !data || hasEmbeddedError) {
-		const err = new Error('PART_NOT_FOUND') as Error & { code?: string };
+	if (error || !data) {
+		const err: Error & { code?: string } = new Error('PART_NOT_FOUND');
 		err.code = 'PART_NOT_FOUND';
 		throw err;
 	}
 
-	return data as unknown as PublishedPartSlice;
+	return data;
 }
 
 /**
@@ -34,11 +38,7 @@ async function getPublishedPart(slug: string, columns: string, supabase: Supabas
 export async function recordPartView(slug: string): Promise<void> {
 	const supabase = await createClient();
 
-	const part = await getPublishedPart(
-		slug,
-		'id',
-		supabase,
-	);
+	const part = await getPublishedPart(slug, supabase);
 
 	const { error: insertError } = await supabase
 		.from('part_views')
@@ -62,11 +62,7 @@ export async function recordPartSourceClick(
 ): Promise<void> {
 	const supabase = await createClient();
 
-	const part = await getPublishedPart(
-		slug,
-		'id',
-		supabase,
-	);
+	const part = await getPublishedPart(slug, supabase);
 
 	const { error: insertError } = await supabase
 		.from('part_source_clicks')
@@ -121,31 +117,23 @@ export async function recordPartDownloadForPart(
 export async function recordPartDownload(input: RecordDownloadInput) {
 	const supabase = await createClient();
 
-	const part = await getPublishedPart(
-		input.slug,
-		'id, name',
-		supabase,
-	);
+	const part = await getPublishedPart(input.slug, supabase);
 
 	await recordPartDownloadForPart(
-		part.id as string,
+		part.id,
 		input.fileId,
 		input.downloadedAt,
 	);
 
-	return { partId: part.id as string, partName: part.name as string };
+	return { partId: part.id, partName: part.name };
 }
 
 export async function getLikeState(slug: string, userId?: string | null) {
 	const supabase = await createClient();
-	const part = await getPublishedPart(
-		slug,
-		'id, like_count',
-		supabase,
-	);
+	const part = await getPublishedPart(slug, supabase);
 
 	if (!userId) {
-		return { partId: part.id as string, likes: part.like_count || 0, liked: false };
+		return { partId: part.id, likes: part.like_count || 0, liked: false };
 	}
 
 	const { data: likeRow, error: likeError } = await supabase
@@ -160,20 +148,16 @@ export async function getLikeState(slug: string, userId?: string | null) {
 	}
 
 	return {
-		partId: part.id as string,
+		partId: part.id,
 		likes: part.like_count || 0,
 		liked: Boolean(likeRow),
-		likeId: likeRow?.id as string | undefined,
+		likeId: likeRow?.id,
 	};
 }
 
 export async function addLike(slug: string, userId: string) {
 	const supabase = await createClient();
-	const part = await getPublishedPart(
-		slug,
-		'id, like_count',
-		supabase,
-	);
+	const part = await getPublishedPart(slug, supabase);
 
 	const { data: existingLike, error: existingLikeError } = await supabase
 		.from('part_likes')
@@ -202,11 +186,7 @@ export async function addLike(slug: string, userId: string) {
 
 export async function removeLike(slug: string, userId: string) {
 	const supabase = await createClient();
-	const part = await getPublishedPart(
-		slug,
-		'id, like_count',
-		supabase,
-	);
+	const part = await getPublishedPart(slug, supabase);
 
 	const { data: existingLike, error: existingLikeError } = await supabase
 		.from('part_likes')

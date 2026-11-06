@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import type { Category } from '@/types/database'
 
-export async function fetchCategoriesTree(): Promise<Category[]> {
+/** The category columns listed by fetchCategoriesTree. */
+export type CategoryTreeNode = Pick<Category, 'id' | 'name' | 'slug' | 'parent_id' | 'level' | 'path'>
+
+export async function fetchCategoriesTree(): Promise<CategoryTreeNode[]> {
   const supabase = await createClient()
   const { data, error } = await supabase
     .from('categories')
@@ -12,5 +15,5 @@ export async function fetchCategoriesTree(): Promise<Category[]> {
     throw error
   }
 
-  return (data ?? []) as Category[]
+  return data ?? []
 }

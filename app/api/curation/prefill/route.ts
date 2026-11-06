@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getPrefillFromSourceUrl } from '@/lib/curation/prefill'
-import { isValidHttpUrl } from '@/lib/utils/validation'
-
-const SOURCE_URL_MAX_LENGTH = 2048
+import { parseSearchParams } from '@/lib/api/parse'
+import { sourceUrlQuerySchema } from '@/lib/schemas/curation'
 
 // GET /api/curation/prefill?url=… — best-effort pre-fill of the curation
 // source step (platform, author, declared license) from a source URL.
@@ -17,10 +16,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const url = request.nextUrl.searchParams.get('url')?.trim() ?? ''
-    if (!url || url.length > SOURCE_URL_MAX_LENGTH || !isValidHttpUrl(url)) {
-      return NextResponse.json({ error: 'A valid http(s) source URL is required' }, { status: 400 })
-    }
+    const query = parseSearchParams(request.nextUrl.searchParams, sourceUrlQuerySchema)
+    if (!query.ok) return query.response
+    const { url } = query.data
 
     const prefill = await getPrefillFromSourceUrl(url)
     return NextResponse.json({ prefill })

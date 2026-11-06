@@ -2,7 +2,9 @@
 
 Current schema of the Common Parts Access database (Supabase, PostgreSQL), as of v1.2.0 (October 2026). For how it got here, see [DATA_MODEL_EVOLUTION.md](./DATA_MODEL_EVOLUTION.md) (historical).
 
-There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied by the human, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled, and the Data API reaches a table only through explicit grants (see [Data API grants](#data-api-grants)).
+There is one database, production, behind every environment. Schema changes are SQL files in `supabase/migrations/`: additive ones are applied before their PR is merged into `dev`, destructive ones automatically when the release is merged into `main` (see [DEV_STRATEGY.md](./DEV_STRATEGY.md#database-schema-supabase)). Every table in `public` has RLS enabled, and the Data API reaches a table only through explicit grants (see [Data API grants](#data-api-grants)).
+
+The TypeScript types of this schema are generated into `types/supabase.ts` (`npm run db:types`) and are regenerated in the same PR as the migration that changes the schema; see [Generated types](./DEV_STRATEGY.md#generated-types) (#483). The text columns restricted by a CHECK constraint and the jsonb columns are typed loosely by the generator; their domains are in `types/database.ts`, and the jsonb shapes are the Zod schemas of `lib/schemas/part-fields.ts`.
 
 ---
 
@@ -105,10 +107,10 @@ A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/k
 External platforms parts come from: `slug`, `name`, `base_url`, `logo_url`, `import_supported`, `active`.
 
 ### `part_files`
-Files attached to a part: `filename`, `original_filename`, `file_type`, `file_size`, `file_category`, `upload_path` (storage path, source of truth), `checksum`. `upload_path` is relative to the bucket of `file_category`: `model` → `model-files`, `image` → `model-thumbnails` (`partFileBucket()` in `lib/storage/path-utils.ts`). Storage buckets keep their historical ids `model-files` and `model-thumbnails`. `file_url` is deprecated (#56): nullable since `20261105101644_part_files_file_url_nullable.sql`, no longer written or read, and dropped by a later migration. See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md).
+Files attached to a part: `filename`, `original_filename`, `file_type`, `file_size`, `file_category`, `upload_path` (storage path, source of truth), `checksum`. `upload_path` is relative to the bucket of `file_category`: `model` → `model-files`, `image` → `model-thumbnails` (`partFileBucket()` in `lib/storage/path-utils.ts`). Storage buckets keep their historical ids `model-files` and `model-thumbnails`. The former `file_url` column, which held the full public URL, is dropped by `20261105125752_relative_storage_references.sql` (#56). See [FILE_DOWNLOADS.md](./FILE_DOWNLOADS.md).
 
 #### Storage references
-`parts.thumbnail_url`, `parts.images`, `products.image_url` and `user_profiles.avatar_url` hold storage references. Every read that returns them to a client resolves them with `resolveStorageUrl()` / `resolveStorageUrls()` (`lib/storage/url.ts`): a relative `bucket/path` becomes `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}`, a full URL is returned unchanged. The rows written so far hold full public URLs; the application still writes full URLs for these columns (#56).
+`parts.thumbnail_url`, `parts.images`, `products.image_url`, `user_profiles.avatar_url` and `collections.thumbnail_url` hold storage references: a relative `bucket/path` (for example `model-thumbnails/{userId}/{partId}/thumbnails/00-front.jpg`), never the storage host (#56). The application writes them with `toStorageReference()` (`lib/storage/path-utils.ts`). A product image reference sent by the client is accepted only in the user's own folder of `product-thumbnails` (`isOwnStorageReference()`). Every read that returns them to a client resolves them with `resolveStorageUrl()` / `resolveStorageUrls()` (`lib/storage/url.ts`) to `{NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/{bucket}/{path}`; a full URL, such as an external avatar, is returned unchanged. Rows written before #56 held full public URLs; `20261105125752_relative_storage_references.sql` rewrote them to relative references. A Supabase public URL written by a release older than #479 is still read correctly, since a full URL is returned unchanged.
 
 ---
 

@@ -13,7 +13,7 @@ import type { PartFileHostingType, PartOriginType } from '@/types/database'
  * do not appear in any string here — they are storage terms, not UI terms.
  */
 
-export type PublicationKind = 'original' | 'hosted' | 'referenced'
+type PublicationKind = 'original' | 'hosted' | 'referenced'
 
 export interface PublicationLabel {
   kind: PublicationKind

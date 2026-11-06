@@ -21,7 +21,6 @@ export default defineConfig({
         '**/*.spec.{ts,tsx}',
         '**/*.config.{ts,js,mjs}',
         '**/types/**',
-        'design-tokens/**',
       ],
       // Start at 0 — raise these thresholds as tests are added.
       thresholds: {
@@ -35,6 +34,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
+      // `server-only` throws on import unless resolved under the `react-server`
+      // condition, which Vitest does not use. Point it at the package's own
+      // empty module, the file Next.js resolves for server code, so tests can
+      // import server modules such as lib/supabase/admin.ts.
+      'server-only': path.resolve(__dirname, 'node_modules/server-only/empty.js'),
     },
   },
 })

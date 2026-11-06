@@ -18,13 +18,14 @@ Use this reference when adding or updating interactive controls so they stay vis
 - Textareas: mirror input styling; adjust only `rows` or vertical padding if needed.
 
 ## Combobox
+- Built on the shadcn `Command` (cmdk) and `Popover` (Radix) components (#484).
 - Input field: inherits Input styles.
-- Dropdown rows (options, empty state, create row): `px-md py-sm text-sm`.
-- Dropdown surface: `rounded-lg border border-border-subtle bg-bg-surface shadow-overlay` with `mt-sm`.
+- Dropdown rows (options, empty state, create row): `px-md py-2xs text-sm font-medium`, separated by `border-border-subtle`.
+- Dropdown surface: `PopoverContent` with `rounded-lg border border-border-subtle bg-bg-surface shadow-none`, as wide as the field and 16px below it.
 
 ## Select Elements (plain `<select>`)
 - Match inputs: `rounded-lg border border-border-subtle px-md py-sm text-sm shadow-surface transition-colors`.
-- Clip the selected label with `truncate`: in WebKit on iOS, a label wider than the field otherwise widens the page's scrollable area (#218). `DropdownInput` with `as="select"` applies it.
+- Clip the selected label with `truncate`: in WebKit on iOS, a label wider than the field otherwise widens the page's scrollable area (#218). `NativeSelect` applies it.
 
 ## File Uploader
 - Surface: `rounded-lg border border-dashed border-border-subtle bg-bg-surface p-lg text-center shadow-surface transition-colors`.
@@ -44,5 +45,5 @@ Use this reference when adding or updating interactive controls so they stay vis
 ## Examples
 - Input: `className="flex w-full rounded-lg border border-border-subtle bg-bg-surface px-md py-sm text-sm ... focus-visible:ring-2 focus-visible:ring-border-focus ..."`
 - Button: `<Button className="bg-action-primary text-text-inverse shadow-raised hover:bg-action-primaryHover border-transparent">Label</Button>`
-- Combobox option row: `className="w-full cursor-pointer border-b border-border-subtle px-md py-sm text-left text-sm ..."`
+- Combobox option row: `CommandItem` with `className="rounded-none border-b border-border-subtle px-md py-2xs font-medium ..."`
 - Select: `className="flex w-full rounded-lg border border-border-subtle bg-bg-surface px-md py-sm text-sm ..."`

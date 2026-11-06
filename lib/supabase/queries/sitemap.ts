@@ -14,13 +14,6 @@ const SITEMAP_PAGE_SIZE = 1000
  */
 const SITEMAP_MAX_ROWS_PER_ENTITY = 20_000
 
-interface SitemapProductRow {
-  slug: string
-  updated_at: string | null
-  brands: { slug: string } | { slug: string }[] | null
-  categories: { slug: string; path: string } | { slug: string; path: string }[] | null
-}
-
 /**
  * Reads every row of a paginated query, SITEMAP_PAGE_SIZE at a time, up to
  * SITEMAP_MAX_ROWS_PER_ENTITY. `fetchPage` must order on a unique column so
@@ -59,7 +52,7 @@ export async function fetchSitemapProducts(): Promise<SitemapProduct[]> {
       .eq('is_listed', true)
       .order('id')
       .range(from, to)
-    return { data: data as unknown as SitemapProductRow[] | null, error }
+    return { data, error }
   })
 
   return rows.map((row) => {

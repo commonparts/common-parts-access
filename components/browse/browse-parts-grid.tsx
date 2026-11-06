@@ -9,6 +9,7 @@ import { Grid } from '@/components/layout/grid'
 import { SearchBar } from '@/components/layout/search-bar'
 import { PartGrid } from '@/components/part/part-grid'
 import { Button } from '@/components/ui/button'
+import { parsePageParam } from '@/lib/utils/validation'
 import type { PartCardData } from '@/types/parts'
 
 interface PaginationInfo {
@@ -48,7 +49,8 @@ export function BrowsePartsGrid() {
     hasPrev: false,
   })
 
-  const currentPage = parseInt(searchParams.get('page') || '1')
+  // A malformed ?page= reads as page 1: the API refuses anything but a positive integer.
+  const currentPage = parsePageParam(searchParams.get('page') ?? undefined)
   const currentSort = resolveSortKey(searchParams.get('sortBy'))
   const currentSearch = searchParams.get('search') || ''
   const currentProduct = searchParams.get('productId') || ''
