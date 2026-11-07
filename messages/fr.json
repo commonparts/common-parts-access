@@ -106,7 +106,6 @@
       "terms": "Conditions d'utilisation",
       "legalNotice": "Mentions légales"
     },
-    "official": "Common Parts Access est une interface officielle de l'infrastructure Common Parts.",
     "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>."
   },
   "UserMenu": {
