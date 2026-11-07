@@ -2,11 +2,13 @@
 
 import { useState } from 'react'
 import { MessageSquare } from 'lucide-react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FeedbackForm } from './feedback-form'
 
 export function FeedbackButton() {
+  const t = useTranslations('Feedback')
   const [open, setOpen] = useState(false)
 
   return (
@@ -16,7 +18,7 @@ export function FeedbackButton() {
         size="icon"
         onClick={() => setOpen(true)}
         className="fixed bottom-lg right-lg z-50"
-        aria-label="Send feedback"
+        aria-label={t('title')}
       >
         <MessageSquare aria-hidden="true" />
       </Button>
@@ -39,13 +41,13 @@ export function FeedbackButton() {
             <Card className="flex max-h-full flex-col shadow-none">
               <CardHeader className="shrink-0 flex-row items-center justify-between pb-xs">
                 <CardTitle id="feedback-panel-title" className="text-heading-sm font-semibold text-text-primary">
-                  Send feedback
+                  {t('title')}
                 </CardTitle>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
                   className="text-text-secondary transition-colors hover:text-text-primary"
-                  aria-label="Close feedback panel"
+                  aria-label={t('close')}
                 >
                   <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />

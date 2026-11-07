@@ -15,8 +15,12 @@ Most traffic is expected from search engines and direct links, so every public p
 
 - Descriptions stay within about 155 characters.
 - A zero-part brand or category gets generic description copy rather than "0 parts" in a search snippet. On-page counts still show zeros.
-- Canonical URLs come from the `*CanonicalPath()` helpers. Paginated listings never put `page` in the canonical.
+- Canonical and Open Graph URLs come from `localizedPageMetadata()`, given a path built by a `*CanonicalPath()` helper and the active locale. Paginated listings never put `page` in the canonical.
 - Since #315 a part has no brand of its own: the brand in its title comes from the first linked product, and a part with no product has none.
+
+## Locale prefix (#498, #501)
+
+Every page URL carries a locale prefix (`/fr/...`, `/en/...`). Canonical URLs, Open Graph URLs, JSON-LD URLs and sitemap entries carry the locale of the page, and the `hreflang` alternates are the `Link` header of the proxy: see [SEO URLs in I18N.md](./I18N.md#seo-urls). Page titles and descriptions are in the page's locale (#499): the copy is the `Seo` messages and the messages of each page, the brand, product and category names stay as stored. The examples in the table above are the English copy.
 
 ## Structured data
 
@@ -26,17 +30,17 @@ Most traffic is expected from search engines and direct links, so every public p
 
 ## Sitemap and robots (#257)
 
-- `/sitemap.xml` (`app/sitemap.ts`) lists only what public navigation shows: brand pages, category pages, brand-scoped category listings, product pages and part pages (`buildSitemapPaths()` in `lib/utils/sitemap.ts`). Rendered dynamically, since it reads the catalog through the cookie-based server client.
+- `/sitemap.xml` (`app/sitemap.ts`) lists only what public navigation shows: brand pages, category pages, brand-scoped category listings, product pages and part pages, plus the home, `/browse` and `/contributing`, once per locale (`buildSitemap()` in `lib/utils/sitemap.ts`). The legal pages are not listed. Rendered dynamically, since it reads the catalog through the cookie-based server client.
 - `/robots.txt` (`app/robots.ts`) allows everything and points to the sitemap. Nothing is disallowed, on purpose: crawlers must fetch `/search` pages to read their `noindex` tag, and part pages render their details client-side from `/api/parts/[slug]/details`, so blocking `/api/` would keep crawlers from rendering them.
-- Absolute URLs are built with `absoluteAppUrl()` (`lib/utils/validation.ts`).
+- Absolute URLs of pages are built with `localizedUrl()` (`lib/utils/seo.ts`), other absolute URLs with `absoluteAppUrl()` (`lib/utils/validation.ts`).
 
 ## HTTP status of unknown pages (#275)
 
 - An unknown slug on a public entity page (`/parts/[slug]`, `/product/[slug]`, `/brands/[brand]`, `/brands/[brand]/[category]`, `/categories/[slug]`) answers HTTP 404 with the not-found page. The page calls `notFound()` when its query returns no row.
-- No `loading.tsx` may sit at the app root or in `app/(public)/`. A loading file is a Suspense boundary: the response starts streaming with status 200 before the page runs, so `notFound()` can only render the not-found UI and search engines see a soft 404. `app/route-boundaries.test.ts` fails if such a file is added.
-- The only loading boundary is `app/(dashboard)/loading.tsx`, on private pages. A client component that reads `useSearchParams()` gets its own `<Suspense>` in the page that renders it (`/login`, `/sign-up`, the `/browse` grid).
+- No `loading.tsx` may sit at the app root, at the locale root (`app/[locale]/`) or in `app/[locale]/(public)/`. A loading file is a Suspense boundary: the response starts streaming with status 200 before the page runs, so `notFound()` can only render the not-found UI and search engines see a soft 404. `app/route-boundaries.test.ts` fails if such a file is added.
+- The only loading boundary is `app/[locale]/(dashboard)/loading.tsx`, on private pages. A client component that reads `useSearchParams()` gets its own `<Suspense>` in the page or layout component that renders it (`/login`, `/sign-up`, the `/browse` grid, the language switcher of the navbar).
 
 ## Key files
 
 - `lib/utils/seo.ts`, `lib/utils/sitemap.ts`, `app/sitemap.ts`, `app/robots.ts`
-- `generateMetadata` in each page under `app/(public)/`
+- `generateMetadata` in each page under `app/[locale]/(public)/`, in `app/[locale]/page.tsx` and in `components/legal/legal-page.tsx`

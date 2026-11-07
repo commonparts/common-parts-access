@@ -3,6 +3,7 @@ import { recordPartDownload } from '@/lib/supabase/queries/part-metrics'
 import { isPartNotFoundError } from '@/lib/utils/errors'
 import { parseJsonBody } from '@/lib/api/parse'
 import { downloadSchema } from '@/lib/schemas/parts'
+import { getApiTranslations } from '@/lib/api/translations'
 
 export const runtime = 'nodejs'
 
@@ -12,7 +13,8 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const body = await parseJsonBody(request, downloadSchema, 'Invalid JSON body')
+  const t = await getApiTranslations(request)
+  const body = await parseJsonBody(request, downloadSchema)
   if (!body.ok) return body.response
 
   try {
@@ -27,7 +29,7 @@ export async function POST(
   } catch (error) {
     if (isPartNotFoundError(error)) {
       return NextResponse.json(
-        { error: 'Part not found' },
+        { error: t('partNotFound') },
         { status: 404 }
       )
     }

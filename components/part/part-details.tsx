@@ -3,11 +3,12 @@
 import * as React from "react"
 import { useState, useEffect, useCallback, useMemo, useRef } from "react"
 import Image from "next/image"
-import Link from "next/link"
+import { useFormatter, useLocale, useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 import { isValidHttpUrl } from "@/lib/utils/validation"
-import { formatLicenseNotice } from "@/lib/utils/formatters"
+import { splitPrintTime } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
@@ -23,14 +24,18 @@ import { SourceLink } from "./source-link"
 
 
 /**
- * Public badge labels per verification status. `certified` is deliberately
- * absent: certification is frozen and must not be promised publicly (#326).
+ * Statuses with a public badge, keyed to their `PartDetails.verificationStatus`
+ * message. `certified` is deliberately absent: certification is frozen and
+ * must not be promised publicly (#326).
  */
-const VERIFICATION_STATUS_LABELS: Partial<Record<PartData['verificationStatus'], string>> = {
-  unverified: '⊘ Unverified',
-  author_tested: '✓ Author-tested',
-  community_validated: '✓✓ Community-validated',
-}
+const VERIFICATION_STATUS_KEYS = {
+  unverified: 'unverified',
+  author_tested: 'authorTested',
+  community_validated: 'communityValidated',
+} as const
+
+/** The dimensions shown on the part page, in display order. */
+const DIMENSION_KEYS = ['length', 'width', 'height', 'diameter', 'thickness'] as const
 
 /** Field label in the Attribution & license card: an eyebrow, distinct from every value (#204). */
 const ATTRIBUTION_LABEL_CLASS = "text-micro font-medium uppercase tracking-caps text-text-secondary"
@@ -138,10 +143,18 @@ interface PartData {
   files: PartPageFile[]
 }
 
+/** Why the part could not be shown, for the matching message. */
+type PartLoadError = 'notFound' | 'failed'
+
 export function PartDetails({ slug, className }: PartDetailsProps) {
+  const t = useTranslations('PartDetails')
+  const card = useTranslations('PartCard')
+  const publicationLabels = useTranslations('Publication')
+  const format = useFormatter()
+  const locale = useLocale()
   const [part, setPart] = useState<PartData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<PartLoadError | null>(null)
   const [selectedImageIndex, setSelectedImageIndex] = useState(0)
   const [likePending, setLikePending] = useState(false)
   const [downloadPending, setDownloadPending] = useState(false)
@@ -155,13 +168,18 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     if (!part?.license) return null
     const author =
       part.originalAuthor || part.author?.displayName || part.author?.username || null
-    return formatLicenseNotice({
-      licenseName: part.license.shortName || part.license.name,
-      requiresAttribution: part.license.requiresAttribution,
-      isCopyleft: part.license.isCopyleft,
-      author,
-    })
-  }, [part])
+    // License and author, then the attribution obligation and, for copyleft
+    // licenses, the ShareAlike clause. Informational only: it never gates
+    // the download.
+    const license = part.license.shortName || part.license.name
+    return [
+      author ? t('licenseNotice.byAuthor', { license, author }) : t('licenseNotice.license', { license }),
+      part.license.requiresAttribution && t('licenseNotice.attribution'),
+      part.license.isCopyleft && t('licenseNotice.shareAlike'),
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }, [part, t])
 
   const adjustLikes = useCallback((liked: boolean, delta: number) => {
     setPart(prev => {
@@ -207,11 +225,12 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         setLoading(true)
         setError(null)
         
-        const response = await fetch(`/api/parts/${slug}/details`)
+        const response = await fetch(`/api/parts/${slug}/details?locale=${locale}`)
         
         if (!response.ok) {
           if (response.status === 404) {
-            throw new Error('Part not found')
+            setError('notFound')
+            return
           }
           throw new Error(`Failed to fetch part: ${response.statusText}`)
         }
@@ -223,7 +242,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
         setPart(normalizedPart)
       } catch (err) {
         console.error('Error fetching part:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load part')
+        setError('failed')
       } finally {
         setLoading(false)
       }
@@ -232,7 +251,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     if (slug) {
       fetchPart()
     }
-  }, [slug])
+  }, [slug, locale])
 
   useEffect(() => {
     if (!part || viewTrackedRef.current) return
@@ -294,27 +313,15 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     } catch (err) {
       console.error('Like toggle failed:', err)
       adjustLikes(!nextLiked, nextLiked ? -1 : 1)
-      alert('Unable to update like. Please try again.')
+      alert(t('likeFailed'))
     } finally {
       setLikePending(false)
     }
-  }, [part, likePending, adjustLikes, syncLikes])
+  }, [part, likePending, adjustLikes, syncLikes, t])
 
-  const formatPrintTime = (minutes?: number) => {
-    if (!minutes) return 'Not specified'
-    if (minutes < 60) return `${minutes}m`
-    const hours = Math.floor(minutes / 60)
-    const mins = minutes % 60
-    return `${hours}h ${mins > 0 ? `${mins}m` : ''}`
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    }).format(new Date(dateString))
-  }
+  /** Shows a failed download; the reason comes from the download API. */
+  const alertDownloadFailure = (reason: string | undefined) =>
+    alert(reason ? t('downloadFailedReason', { reason }) : t('downloadFailed'))
 
   if (loading) {
     return (
@@ -345,8 +352,8 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold mb-2">Unable to load part</h3>
-          <p role="alert" className="text-body text-status-errorText">{error}</p>
+          <h3 className="text-lg font-semibold mb-2">{t('errorTitle')}</h3>
+          <p role="alert" className="text-body text-status-errorText">{t(`error.${error}`)}</p>
         </div>
       </div>
     )
@@ -363,6 +370,10 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
 
   // How the part entered the registry, in the reader's vocabulary (#301).
   const publication = describePublication(part.originType, part.fileHostingType)
+  const printTime = splitPrintTime(part.estimatedPrintTime)
+  const dimensions = part.partDetails.dimensions
+  const verificationKey =
+    part.verificationStatus === 'certified' ? null : VERIFICATION_STATUS_KEYS[part.verificationStatus]
 
   // The platform's display name, or its slug when the platform is not listed.
   const sourcePlatformLabel = part.sourcePlatformName ?? part.sourcePlatform
@@ -408,7 +419,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 >
                   <Image
                     src={image}
-                    alt={`${part.name} ${index + 1}`}
+                    alt={t('imageAlt', { name: part.name, index: index + 1 })}
                     width={64}
                     height={64}
                     className="h-full w-full object-cover"
@@ -426,8 +437,8 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 users and most screen readers never surface a tooltip. It is
                 absolutely positioned, so it is not a flex item and adds no gap. */}
             <Badge variant="outline">
-              {publication.badge}
-              <span className="sr-only"> — {publication.description}</span>
+              {publicationLabels(`${publication}.badge`)}
+              <span className="sr-only">{t('publicationDescription', { description: publicationLabels(`${publication}.description`) })}</span>
             </Badge>
             {part.brands && part.brands.length > 0 && (
               <p className="text-micro font-medium uppercase tracking-caps text-text-secondary">
@@ -447,24 +458,27 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             <h1 className="text-heading-lg font-heading font-semibold text-text-primary">{part.name}</h1>
             {part.originType === 'curated' && part.originalAuthor && (
               <p className="text-body text-text-secondary">
-                Original design by{' '}
-                {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
-                  <a
-                    href={part.originalAuthorUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-text-primary hover:underline"
-                  >
-                    {part.originalAuthor}
-                  </a>
-                ) : (
-                  <span className="font-medium text-text-primary">{part.originalAuthor}</span>
-                )}
-                {sourcePlatformLabel && <> on {sourcePlatformLabel}</>}
+                {t.rich(sourcePlatformLabel ? 'originalDesignOn' : 'originalDesign', {
+                  author: part.originalAuthor,
+                  platform: sourcePlatformLabel ?? '',
+                  credit: (chunks) =>
+                    part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
+                      <a
+                        href={part.originalAuthorUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-text-primary hover:underline"
+                      >
+                        {chunks}
+                      </a>
+                    ) : (
+                      <span className="font-medium text-text-primary">{chunks}</span>
+                    ),
+                })}
               </p>
             )}
             {part.partDetails.partName && (
-              <p className="text-body text-text-secondary">Part: {part.partDetails.partName}</p>
+              <p className="text-body text-text-secondary">{t('partName', { name: part.partDetails.partName })}</p>
             )}
             {part.description && (
               <p className="text-body text-text-secondary leading-relaxed">{part.description}</p>
@@ -479,8 +493,10 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
-                <span className="font-semibold text-text-primary">{part.stats.likes}</span>
-                <span>likes</span>
+                {t.rich('likes', {
+                  count: part.stats.likes,
+                  strong: (chunks) => <span className="font-semibold text-text-primary">{chunks}</span>,
+                })}
               </div>
             </div>
           )}
@@ -504,7 +520,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                       </svg>
-                      View on {part.sourcePlatformName ?? 'the original source'}
+                      {part.sourcePlatformName ? t('viewOn', { platform: part.sourcePlatformName }) : t('viewOnSource')}
                     </SourceLink>
                   </Button>
                 ) : (
@@ -512,7 +528,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                     </svg>
-                    View on {part.sourcePlatformName ?? 'the original source'}
+                    {part.sourcePlatformName ? t('viewOn', { platform: part.sourcePlatformName }) : t('viewOnSource')}
                   </Button>
                 )
               ) : (
@@ -528,11 +544,11 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                       const result = await downloadAllPartFiles(part.files, part.slug, part.name)
                       if (!result.success) {
                         console.error('Download failed:', result.error)
-                        alert(`Download failed: ${result.error}`)
+                        alertDownloadFailure(result.error)
                       }
                     } catch (error) {
                       console.error('Download error:', error)
-                      alert('Download failed. Please try again.')
+                      alertDownloadFailure(undefined)
                     } finally {
                       setDownloadPending(false)
                     }
@@ -547,7 +563,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                   )}
-                  {downloadPending ? 'Preparing download...' : 'Download'}
+                  {t(downloadPending ? 'preparingDownload' : 'download')}
                 </Button>
               )}
               {SOCIAL_FEATURES_ENABLED && (
@@ -572,7 +588,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                     </svg>
                   )}
-                  {part.viewerHasLiked ? 'Liked' : 'Like'}
+                  {t(part.viewerHasLiked ? 'liked' : 'like')}
                 </Button>
               )}
             </div>
@@ -591,7 +607,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
             <Card className="border-border-subtle">
               <CardHeader className="pb-2">
                 <CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">
-                  Created by
+                  {t('createdBy')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex items-center gap-sm">
@@ -617,7 +633,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     </span>
                     {part.author.verifiedMaker && (
                       <Badge variant="soft">
-                        Verified maker
+                        {t('verifiedMaker')}
                       </Badge>
                     )}
                   </div>
@@ -650,7 +666,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
-                Instructions
+                {t('instructions')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -667,76 +683,56 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
-              Part details
+              {t('details')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {part.partDetails.partNumber && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-text-secondary font-medium">Part number</span>
+                <span className="text-text-secondary font-medium">{t('partNumber')}</span>
                 <span className="font-mono text-sm bg-bg-muted px-2 py-1 rounded">{part.partDetails.partNumber}</span>
               </div>
             )}
             {part.partDetails.material && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-text-secondary font-medium">Material</span>
+                <span className="text-text-secondary font-medium">{t('material')}</span>
                 <span className="font-medium">{part.partDetails.material}</span>
               </div>
             )}
             {part.partDetails.color && (
               <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-text-secondary font-medium">Color</span>
+                <span className="text-text-secondary font-medium">{t('color')}</span>
                 <span className="font-medium">{part.partDetails.color}</span>
               </div>
             )}
-            {part.partDetails.dimensions && (
+            {dimensions && (
               <div className="flex flex-col gap-2">
-                <span className="text-text-secondary font-medium">Dimensions</span>
+                <span className="text-text-secondary font-medium">{t('dimensions')}</span>
                 <div className="bg-bg-subtle p-3 rounded-lg">
-                  {typeof part.partDetails.dimensions === 'object' ? (
+                  {typeof dimensions === 'object' ? (
                     <div className="space-y-1 text-sm">
-                      {part.partDetails.dimensions.length && (
-                        <div className="flex justify-between">
-                          <span className="text-text-primary">Length:</span>
-                          <span className="font-mono">{part.partDetails.dimensions.length} {part.partDetails.dimensions.unit || 'mm'}</span>
-                        </div>
-                      )}
-                      {part.partDetails.dimensions.width && (
-                        <div className="flex justify-between">
-                          <span className="text-text-primary">Width:</span>
-                          <span className="font-mono">{part.partDetails.dimensions.width} {part.partDetails.dimensions.unit || 'mm'}</span>
-                        </div>
-                      )}
-                      {part.partDetails.dimensions.height && (
-                        <div className="flex justify-between">
-                          <span className="text-text-primary">Height:</span>
-                          <span className="font-mono">{part.partDetails.dimensions.height} {part.partDetails.dimensions.unit || 'mm'}</span>
-                        </div>
-                      )}
-                      {part.partDetails.dimensions.diameter && (
-                        <div className="flex justify-between">
-                          <span className="text-text-primary">Diameter:</span>
-                          <span className="font-mono">{part.partDetails.dimensions.diameter} {part.partDetails.dimensions.unit || 'mm'}</span>
-                        </div>
-                      )}
-                      {part.partDetails.dimensions.thickness && (
-                        <div className="flex justify-between">
-                          <span className="text-text-primary">Thickness:</span>
-                          <span className="font-mono">{part.partDetails.dimensions.thickness} {part.partDetails.dimensions.unit || 'mm'}</span>
-                        </div>
+                      {DIMENSION_KEYS.map((key) =>
+                        dimensions[key] ? (
+                          <div key={key} className="flex justify-between">
+                            <span className="text-text-primary">{t(`dimension.${key}`)}</span>
+                            <span className="font-mono">{dimensions[key]} {dimensions.unit || 'mm'}</span>
+                          </div>
+                        ) : null,
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm font-mono">{String(part.partDetails.dimensions)}</p>
+                    <p className="text-sm font-mono">{String(dimensions)}</p>
                   )}
                 </div>
               </div>
             )}
             <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
               <span className="text-text-secondary font-medium">
-                {part.originType === 'curated' ? 'Added' : 'Uploaded'}
+                {t(part.originType === 'curated' ? 'added' : 'uploaded')}
               </span>
-              <span className="text-sm">{formatDate(part.createdAt)}</span>
+              <span className="text-sm">
+                {format.dateTime(new Date(part.createdAt), { year: 'numeric', month: 'long', day: 'numeric' })}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -750,18 +746,18 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H9.5a2 2 0 01-2-2V5a2 2 0 012-2H14" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7v10l3-3 3 3V7z" />
                 </svg>
-                Print settings
+                {t('printSettings')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {part.estimatedPrintTime && (
+              {printTime && (
                 <div className="flex items-center gap-2 p-3 bg-bg-subtle rounded-lg">
                   <svg className="w-4 h-4 text-text-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-text-primary">Print time</p>
-                    <p className="font-semibold">{formatPrintTime(part.estimatedPrintTime)}</p>
+                    <p className="text-sm text-text-primary">{t('printTime')}</p>
+                    <p className="font-semibold">{card('printTime', printTime)}</p>
                   </div>
                 </div>
               )}
@@ -771,14 +767,16 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                   </svg>
                   <div className="flex-1">
-                    <p className="text-sm text-text-primary">Material usage</p>
-                    <p className="font-semibold">{part.estimatedMaterialUsage}g</p>
+                    <p className="text-sm text-text-primary">{t('materialUsage')}</p>
+                    <p className="font-semibold">
+                      {format.number(part.estimatedMaterialUsage, { style: 'unit', unit: 'gram', unitDisplay: 'narrow' })}
+                    </p>
                   </div>
                 </div>
               )}
               {part.printSettings && (
                 <div className="space-y-2">
-                  <h4 className="font-medium text-sm">Recommended settings</h4>
+                  <h4 className="font-medium text-sm">{t('recommendedSettings')}</h4>
                   <div className="space-y-2">
                     {typeof part.printSettings === 'object' && Object.entries(part.printSettings).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center text-sm">
@@ -800,7 +798,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Attribution & license
+              {t('attribution')}
             </CardTitle>
           </CardHeader>
           {/* Each field has its own treatment so the card scans at a glance
@@ -814,7 +812,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <>
                   {part.originalAuthor && (
                     <div className="space-y-3xs">
-                      <dt className={ATTRIBUTION_LABEL_CLASS}>Original author</dt>
+                      <dt className={ATTRIBUTION_LABEL_CLASS}>{t('originalAuthor')}</dt>
                       <dd className="text-bodyLg font-semibold text-text-primary">
                         {part.originalAuthorUrl && isValidHttpUrl(part.originalAuthorUrl) ? (
                           <a
@@ -833,7 +831,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                   )}
 
                   <div className="space-y-3xs">
-                    <dt className={ATTRIBUTION_LABEL_CLASS}>Source</dt>
+                    <dt className={ATTRIBUTION_LABEL_CLASS}>{t('source')}</dt>
                     {sourcePlatformLabel && (
                       <dd className="text-body font-medium text-text-primary">{sourcePlatformLabel}</dd>
                     )}
@@ -844,7 +842,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                         context="part_page"
                         className={cn(ATTRIBUTION_LINK_CLASS, "break-all text-text-secondary underline underline-offset-2 hover:text-text-primary")}
                       >
-                        {sourcePlatformLabel ? `View on ${sourcePlatformLabel}` : 'View original post'}
+                        {sourcePlatformLabel ? t('viewOn', { platform: sourcePlatformLabel }) : t('viewOriginal')}
                       </SourceLink>
                     </dd>
                   </div>
@@ -853,7 +851,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
 
               {/* License — always rendered, one per part (#372) */}
               <div className="space-y-3xs">
-                <dt className={ATTRIBUTION_LABEL_CLASS}>License</dt>
+                <dt className={ATTRIBUTION_LABEL_CLASS}>{t('license')}</dt>
                 {part.license ? (
                   <>
                     <dd>
@@ -880,13 +878,11 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
               {/* Verification status — last and quieter: it qualifies the part
                   rather than crediting anyone. Hidden for statuses with no
                   public label. */}
-              {VERIFICATION_STATUS_LABELS[part.verificationStatus] && (
+              {verificationKey && (
                 <div className="flex flex-wrap items-center justify-between gap-xs border-t border-border-subtle pt-sm">
-                  <dt className={ATTRIBUTION_LABEL_CLASS}>Verification</dt>
+                  <dt className={ATTRIBUTION_LABEL_CLASS}>{t('verification')}</dt>
                   <dd>
-                    <Badge variant="soft">
-                      {VERIFICATION_STATUS_LABELS[part.verificationStatus]}
-                    </Badge>
+                    <Badge variant="soft">{t(`verificationStatus.${verificationKey}`)}</Badge>
                   </dd>
                 </div>
               )}
@@ -909,11 +905,11 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 const result = await downloadFile(file, part.slug)
                 if (!result.success) {
                   console.error('Download failed:', result.error)
-                  alert(`Download failed: ${result.error}`)
+                  alertDownloadFailure(result.error)
                 }
               } catch (error) {
                 console.error('Download error:', error)
-                alert('Download failed. Please try again.')
+                alertDownloadFailure(undefined)
               }
             }}
           />
@@ -933,7 +929,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                 <svg className="w-5 h-5 text-institutional-malachite" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
                 </svg>
-                Additional notes
+                {t('notes')}
               </CardTitle>
             </CardHeader>
             <CardContent>

@@ -1,7 +1,8 @@
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+
+import { Link } from '@/i18n/navigation'
 
 import { cn } from '@/lib/utils'
-import { pluralize } from '@/lib/utils/formatters'
 
 interface CategoryTileProps {
   name: string
@@ -28,6 +29,7 @@ export function CategoryTile({
   hint,
   className,
 }: CategoryTileProps) {
+  const counts = useTranslations('Counts')
   return (
     <Link
       href={href}
@@ -41,10 +43,10 @@ export function CategoryTile({
       </span>
       <span className="text-caption text-text-secondary">
         <span className="font-semibold text-text-primary">
-          {pluralize(partsCount, 'part')}
+          {counts('parts', { count: partsCount })}
         </span>
         {' · '}
-        {pluralize(productCount, 'product')}
+        {counts('products', { count: productCount })}
       </span>
       {hint && <span className="truncate text-caption text-text-secondary">{hint}</span>}
     </Link>

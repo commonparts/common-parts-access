@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { PartRequestCount } from '@/types/database'
@@ -22,6 +23,7 @@ interface ProductDemand {
  * by captured demand. Fetches per product and caches within the session.
  */
 export function DemandPanel({ productIds, productNames, className }: DemandPanelProps) {
+  const t = useTranslations('DemandPanel')
   const [demand, setDemand] = React.useState<ProductDemand[]>([])
   const [loading, setLoading] = React.useState(false)
   const cacheRef = React.useRef(new Map<string, PartRequestCount[]>())
@@ -74,21 +76,19 @@ export function DemandPanel({ productIds, productNames, className }: DemandPanel
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">Captured demand</CardTitle>
-        {totalRequests > 0 && <Badge variant="soft">{totalRequests} open requests</Badge>}
+        <CardTitle className="text-base">{t('title')}</CardTitle>
+        {totalRequests > 0 && <Badge variant="soft">{t('openRequests', { count: totalRequests })}</Badge>}
       </CardHeader>
       <CardContent className="space-y-sm">
-        {loading && <p className="text-sm text-text-secondary">Loading demand…</p>}
-        {!loading && totalRequests === 0 && (
-          <p className="text-sm text-text-secondary">No open part requests for the selected products.</p>
-        )}
+        {loading && <p className="text-sm text-text-secondary">{t('loading')}</p>}
+        {!loading && totalRequests === 0 && <p className="text-sm text-text-secondary">{t('empty')}</p>}
         {!loading &&
           demand
             .filter((d) => d.requests.length > 0)
             .map((d) => (
               <div key={d.productId} className="space-y-2xs">
                 <p className="text-sm font-medium text-text-primary">
-                  {productNames[d.productId] ?? 'Selected product'}
+                  {productNames[d.productId] ?? t('selectedProduct')}
                 </p>
                 <ul className="space-y-2xs">
                   {d.requests.map((r) => (

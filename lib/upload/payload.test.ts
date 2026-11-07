@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { FORBIDDEN_UPLOAD_FIELDS, findForbiddenField, forbiddenFieldError } from './payload'
+import { FORBIDDEN_UPLOAD_FIELDS, findForbiddenField } from './payload'
 
 describe('findForbiddenField', () => {
   it('accepts a payload using only what the public flow may set', () => {
@@ -54,10 +54,5 @@ describe('findForbiddenField', () => {
     const payload = Object.create({ sourceUrl: 'https://www.printables.com/model/1' }) as Record<string, unknown>
     payload.title = 'Part'
     expect(findForbiddenField(payload)).toBe('sourceUrl')
-  })
-
-  it('names the offending field in the error message', () => {
-    expect(forbiddenFieldError('sourceUrl')).toContain('"sourceUrl"')
-    expect(forbiddenFieldError('sourceUrl')).toContain('curation')
   })
 })

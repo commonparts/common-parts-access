@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { partFileBucket, toStorageReference } from '@/lib/storage/path-utils'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { isValidUuid } from '@/lib/utils/validation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 const MAX_SLUG_LENGTH = 200
 
@@ -15,16 +16,17 @@ const MAX_SLUG_LENGTH = 200
  * `parts` and `part_files` exposes the files of published parts to everyone.
  */
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string; fileId: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
     const { slug, fileId } = await params
     if (!slug || slug.length > MAX_SLUG_LENGTH) {
-      return NextResponse.json({ error: 'Invalid part slug' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidSlug') }, { status: 400 })
     }
     if (!isValidUuid(fileId)) {
-      return NextResponse.json({ error: 'Invalid file id' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidFileId') }, { status: 400 })
     }
 
     const supabase = await createClient()
@@ -37,7 +39,7 @@ export async function GET(
       .single()
 
     if (partError || !part) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
     const { data: file, error: fileError } = await supabase
@@ -48,14 +50,14 @@ export async function GET(
       .single()
 
     if (fileError || !file) {
-      return NextResponse.json({ error: 'File not found' }, { status: 404 })
+      return NextResponse.json({ error: t('fileNotFound') }, { status: 404 })
     }
 
     const bucket = partFileBucket(file.file_category)
     const storagePath = file.upload_path?.replace(/^\/+/, '')
     if (!bucket || !storagePath) {
       console.error('Download URL: file has no resolvable storage location', fileId)
-      return NextResponse.json({ error: 'This file is not available for download' }, { status: 404 })
+      return NextResponse.json({ error: t('fileNotDownloadable') }, { status: 404 })
     }
 
     return NextResponse.json({
@@ -64,6 +66,6 @@ export async function GET(
     })
   } catch (error) {
     console.error('Error generating download URL:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

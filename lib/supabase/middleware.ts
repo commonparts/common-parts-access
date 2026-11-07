@@ -1,11 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
+import { hasLocale } from "next-intl";
 import { NextResponse, type NextRequest } from "next/server";
+import { routing } from "@/i18n/routing";
 import { findPublicEnv } from "@/lib/public-env";
 import type { Database } from "@/types/supabase";
 
 /**
- * Dashboard routes that require authentication.
- * These correspond to routes inside app/(dashboard)/.
+ * Dashboard routes that require authentication, without their locale prefix.
+ * These correspond to routes inside app/[locale]/(dashboard)/.
  */
 const PROTECTED_ROUTE_PREFIXES = [
   "/publish",
@@ -17,23 +19,26 @@ const PROTECTED_ROUTE_PREFIXES = [
 ];
 
 /**
- * Refreshes the Supabase session on every request and protects dashboard routes.
+ * Refreshes the Supabase session on every page request, protects dashboard
+ * routes, then hands the request to the locale routing.
  * Unauthenticated users accessing a protected route are redirected to
- * /login?redirect=<original-path> so they can return after signing in.
+ * /<locale>/login?redirect=<original-path> so they can return after signing in.
+ * A path without a locale prefix is not checked: the locale routing redirects
+ * it to its prefixed URL, which is.
  */
-export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
-
+export async function updateSession(
+  request: NextRequest,
+  routeLocale: (request: NextRequest) => NextResponse,
+) {
   // If env vars are missing, skip session management and pass through.
   // This prevents the middleware from crashing preview deployments
   // where environment variables have not been configured yet.
   const env = findPublicEnv();
   if (!env) {
-    return supabaseResponse;
+    return routeLocale(request);
   }
 
+  const refreshedCookies: Parameters<NextResponse["cookies"]["set"]>[] = [];
   const supabase = createServerClient<Database>(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
@@ -43,15 +48,12 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value),
-          );
-          supabaseResponse = NextResponse.next({
-            request,
+          // Written to the request so the locale routing forwards the
+          // refreshed session to Server Components, and kept for the response.
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            refreshedCookies.push([name, value, options]);
           });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options),
-          );
         },
       },
     },
@@ -65,29 +67,31 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
-  const isProtected = PROTECTED_ROUTE_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  const locale = pathname.split("/")[1];
+  const isProtected =
+    hasLocale(routing.locales, locale) &&
+    PROTECTED_ROUTE_PREFIXES.some(
+      (prefix) =>
+        pathname === `/${locale}${prefix}` ||
+        pathname.startsWith(`/${locale}${prefix}/`),
+    );
 
+  let response: NextResponse;
   if (isProtected && !user) {
     const url = request.nextUrl.clone();
     // Clear the original page's query string before building the login URL
     // so protected-route params are not leaked or duplicated on /login.
     url.search = "";
-    url.pathname = "/login";
+    url.pathname = `/${locale}/login`;
     // Preserve only the pathname so the user returns to the right page after
     // signing in without leaking protected-route query params into the login
     // URL (browser history, server logs, referrer headers).
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    // Copy Supabase cookie mutations explicitly so refreshed/cleared auth
-    // cookies are preserved on the redirect response. Using cookies.getAll()
-    // avoids the Set-Cookie collapse problem that happens when iterating headers.
-    const redirectResponse = NextResponse.redirect(url);
-    supabaseResponse.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie);
-    });
-    return redirectResponse;
+    url.searchParams.set("redirect", pathname);
+    response = NextResponse.redirect(url);
+  } else {
+    response = routeLocale(request);
   }
 
-  return supabaseResponse;
+  refreshedCookies.forEach((cookie) => response.cookies.set(...cookie));
+  return response;
 }

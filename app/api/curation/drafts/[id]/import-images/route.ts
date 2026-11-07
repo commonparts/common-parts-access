@@ -9,6 +9,7 @@ import { resolveStorageUrls } from '@/lib/storage/url'
 import { toStorageReference } from '@/lib/storage/path-utils'
 import { isValidUuid } from '@/lib/utils/validation'
 import { MAX_FILENAME_LENGTH, STORAGE_BUCKETS } from '@/constants/app'
+import { getApiTranslations } from '@/lib/api/translations'
 
 export const runtime = 'nodejs'
 
@@ -20,36 +21,37 @@ export const runtime = 'nodejs'
 // logged with its reason, never a failure of the whole import. Printables
 // sources, and Thingiverse sources when THINGIVERSE_APP_TOKEN is set (#431).
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const { id } = await context.params
     if (!isValidUuid(id)) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
     const draft = await getCurationDraft(id)
     if (!draft || draft.user_id !== user.id) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
     if (draft.status !== 'draft') {
-      return NextResponse.json({ error: 'Only drafts can import images' }, { status: 409 })
+      return NextResponse.json({ error: t('onlyDraftsImportImages') }, { status: 409 })
     }
 
     // Idempotency: the import targets a fresh draft. Once any image exists
     // (imported or manual), re-running would duplicate or reorder — skip.
     if (draft.image_file_count > 0) {
-      return NextResponse.json({ imported: 0, images: resolveStorageUrls(draft.images), skipped: 'Images already registered for this draft' })
+      return NextResponse.json({ imported: 0, images: resolveStorageUrls(draft.images), skipped: t('imagesAlreadyRegistered') })
     }
 
     // resolveSourceGallery checks the source URL host before reading its path as an id.
     const gallery = draft.source_url ? resolveSourceGallery(draft.source_url) : null
     if (!gallery) {
       return NextResponse.json(
-        { error: 'Image import is not available for this source: it needs a Printables model or Thingiverse Thing URL, and Thingiverse import must be enabled on the server' },
+        { error: t('imageImportUnavailable') },
         { status: 400 },
       )
     }
@@ -123,7 +125,7 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
         .from(STORAGE_BUCKETS.MODEL_THUMBNAILS)
         .remove(fileRows.map((f) => f.upload_path))
         .catch(() => {})
-      return NextResponse.json({ error: 'Failed to register imported images' }, { status: 500 })
+      return NextResponse.json({ error: t('imageImportFailed') }, { status: 500 })
     }
 
     const sortedImages = mergeImageUrls(draft.thumbnail_url, draft.images, importedImageRefs)
@@ -138,6 +140,6 @@ export async function POST(request: NextRequest, context: { params: Promise<{ id
     return NextResponse.json({ imported: fileRows.length, images: resolveStorageUrls(sortedImages) })
   } catch (error) {
     console.error('Curation image import failed', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

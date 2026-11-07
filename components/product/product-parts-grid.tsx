@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { PartCard } from "@/components/part/part-card"
 import { EvidenceLevelBadge } from "@/components/part/evidence-level-badge"
 import type { ProductPart } from "@/lib/supabase/queries/product-page"
@@ -9,9 +10,10 @@ interface ProductPartsGridProps {
 }
 
 export function ProductPartsGrid({ parts }: ProductPartsGridProps) {
+  const t = useTranslations("ProductPage")
   return (
     <div className="space-y-md">
-      <h2 className="font-heading text-heading-sm font-semibold text-text-primary">Parts</h2>
+      <h2 className="font-heading text-heading-sm font-semibold text-text-primary">{t("parts")}</h2>
 
       <div className="grid grid-cols-1 gap-md sm:grid-cols-2 lg:grid-cols-3">
         {parts.map((part) => (

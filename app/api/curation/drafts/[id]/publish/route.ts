@@ -7,6 +7,9 @@ import { publishDraftPart } from '@/lib/supabase/queries/publish'
 import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { isValidUuid } from '@/lib/utils/validation'
+import { getApiTranslations } from '@/lib/api/translations'
+import { getTranslations } from 'next-intl/server'
+import { requestLocale } from '@/lib/utils/locale'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -27,77 +30,77 @@ type RouteContext = { params: Promise<{ id: string }> }
 // The draft -> published transition itself runs with the service role, so
 // that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const { id } = await context.params
     if (!isValidUuid(id)) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
 
     const draft = await getCurationDraft(id)
     if (!draft || draft.user_id !== user.id) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
     if (draft.status !== 'draft') {
-      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+      return NextResponse.json({ error: t('alreadyPublished') }, { status: 409 })
     }
 
     const blockers: string[] = []
 
     if (!isChecklistComplete(draft.curation_checklist)) {
-      const missing = missingCriteria(draft.curation_checklist)
-      blockers.push(`Unchecked blocking criteria: ${missing.join(', ')}`)
+      const labels = await getTranslations({ locale: requestLocale(request), namespace: 'CurationCriteria' })
+      const missing = missingCriteria(draft.curation_checklist).map((criterion) => labels(`${criterion}.label`))
+      blockers.push(t('blockers.criteria', { criteria: missing.join(', ') }))
     }
 
     if (draft.needs_legal_review) {
-      blockers.push('The part is flagged for legal review and cannot be published')
+      blockers.push(t('blockers.legalReview'))
     }
 
     if (draft.file_hosting_type !== CURATED_FILE_HOSTING_TYPE) {
-      blockers.push(
-        'A part published elsewhere is always referenced, never hosted — save the Origin step again to reference it at its source',
-      )
+      blockers.push(t('blockers.hosted'))
     }
 
     if (!draft.license_id) {
-      blockers.push('The license at the source is required')
+      blockers.push(t('blockers.sourceLicense'))
     } else {
       const license = await getLicenseById(draft.license_id)
       if (!license) {
-        blockers.push('The selected license could not be verified')
+        blockers.push(t('blockers.licenseUnverified'))
       }
     }
 
     if (!draft.source_platform) {
-      blockers.push('A source platform is required for a part published elsewhere')
+      blockers.push(t('sourcePlatformRequired'))
     }
     if (draft.model_file_count > 0) {
-      blockers.push('A part published elsewhere must not host model files — remove them')
+      blockers.push(t('blockers.removeModelFiles'))
     }
 
     if (draft.product_ids.length < 1) {
-      blockers.push('At least one product must be linked')
+      blockers.push(t('blockers.product'))
     } else {
       const linkBlocker = await findProductLinkBlocker(draft.product_ids)
-      if (linkBlocker) blockers.push(linkBlocker)
+      if (linkBlocker) blockers.push(t(`blockers.${linkBlocker}`))
     }
 
     if (blockers.length > 0) {
-      return NextResponse.json({ error: 'Publication blocked', blockers }, { status: 422 })
+      return NextResponse.json({ error: t('publicationBlocked'), blockers }, { status: 422 })
     }
 
     const published = await publishDraftPart(id, user.id)
     if (!published) {
-      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+      return NextResponse.json({ error: t('alreadyPublished') }, { status: 409 })
     }
     return NextResponse.json({ ok: true, slug: draft.slug })
   } catch (error) {
     console.error('Failed to publish curated part', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

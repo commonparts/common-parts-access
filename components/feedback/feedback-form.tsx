@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -10,18 +11,15 @@ import { submitFeedback } from '@/lib/supabase/queries/feedback'
 
 type FeedbackType = 'bug' | 'improvement' | 'question' | 'other'
 
-const FEEDBACK_TYPES: { value: FeedbackType; label: string; description: string }[] = [
-  { value: 'bug',         label: 'Bug',         description: 'Something is broken' },
-  { value: 'improvement', label: 'Improvement', description: 'A feature or enhancement' },
-  { value: 'question',    label: 'Question',    description: 'I need clarification' },
-  { value: 'other',       label: 'Other',       description: 'Anything else' },
-]
+// Each type has a label and a description in the `Feedback.types` messages.
+const FEEDBACK_TYPES: FeedbackType[] = ['bug', 'improvement', 'question', 'other']
 
 interface FeedbackFormProps {
   onClose?: () => void
 }
 
 export function FeedbackForm({ onClose }: FeedbackFormProps) {
+  const t = useTranslations('Feedback')
   const supabase = useMemo(() => createClient(), [])
   const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -58,7 +56,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
   if (status === 'success') {
     return (
       <div className="flex items-center justify-center p-lg">
-        <p className="text-body text-text-secondary">Feedback received. Thank you.</p>
+        <p className="text-body text-text-secondary">{t('done')}</p>
       </div>
     )
   }
@@ -67,29 +65,29 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
     <div className="flex flex-col gap-sm p-md">
       {/* Type selector */}
       <div className="grid grid-cols-2 gap-xs">
-        {FEEDBACK_TYPES.map((t) => (
+        {FEEDBACK_TYPES.map((value) => (
           <button
-            key={t.value}
+            key={value}
             type="button"
-            onClick={() => setType(t.value)}
+            onClick={() => setType(value)}
             className={`rounded-lg border px-sm py-xs text-left text-sm transition-colors ${
-              type === t.value
+              type === value
                 ? 'border-border-default bg-bg-subtle text-text-primary'
                 : 'border-border-subtle text-text-secondary hover:border-border-default hover:bg-bg-hover'
             }`}
           >
-            <div className="font-medium">{t.label}</div>
-            <div className="text-xs text-text-secondary">{t.description}</div>
+            <div className="font-medium">{t(`types.${value}.label`)}</div>
+            <div className="text-xs text-text-secondary">{t(`types.${value}.description`)}</div>
           </button>
         ))}
       </div>
 
       {/* Title */}
       <div className="flex flex-col gap-xs">
-        <Label htmlFor="feedback-title">Title</Label>
+        <Label htmlFor="feedback-title">{t('titleLabel')}</Label>
         <Input
           id="feedback-title"
-          placeholder="Short title"
+          placeholder={t('titlePlaceholder')}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={200}
@@ -98,10 +96,10 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
 
       {/* Description */}
       <div className="flex flex-col gap-xs">
-        <Label htmlFor="feedback-description">Description</Label>
+        <Label htmlFor="feedback-description">{t('descriptionLabel')}</Label>
         <Textarea
           id="feedback-description"
-          placeholder="Describe the issue or idea..."
+          placeholder={t('descriptionPlaceholder')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           maxLength={5000}
@@ -110,7 +108,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
       </div>
 
       {status === 'error' && (
-        <p role="alert" className="text-sm text-status-errorText">Something went wrong. Please try again.</p>
+        <p role="alert" className="text-sm text-status-errorText">{t('failed')}</p>
       )}
 
       <Button
@@ -118,7 +116,7 @@ export function FeedbackForm({ onClose }: FeedbackFormProps) {
         disabled={status === 'loading' || !title.trim() || !description.trim()}
         className="w-full"
       >
-        {status === 'loading' ? 'Sending...' : 'Submit feedback'}
+        {t(status === 'loading' ? 'sending' : 'submit')}
       </Button>
     </div>
   )

@@ -6,21 +6,23 @@ import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
 import { parseJsonBody } from '@/lib/api/parse'
 import { createUploadDraftSchema } from '@/lib/schemas/upload'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // GET /api/upload/drafts — the contributor's own open upload drafts, for resume.
-export async function GET() {
+export async function GET(request: Request) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const drafts = await listUploadDrafts(user.id)
     return NextResponse.json({ drafts: drafts.map(withResolvedPartMedia) })
   } catch (error) {
     console.error('Failed to list upload drafts', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }
 
@@ -28,11 +30,12 @@ export async function GET() {
 // Requires a title, a category, a hostable license, and the originality
 // declaration. Everything else arrives via PATCH.
 export async function POST(request: NextRequest) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     // The flow's narrowing (fields the contributor may not set, the explicit
@@ -47,18 +50,18 @@ export async function POST(request: NextRequest) {
       .eq('id', categoryId)
       .maybeSingle()
     if (categoryError || !category) {
-      return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidCategory') }, { status: 400 })
     }
 
     const license = await getLicenseById(licenseId)
     if (!license) {
-      return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidLicense') }, { status: 400 })
     }
     // The upload flow only hosts files, so the whitelist applies with no
     // link-out escape hatch: NC/ND parts cannot be published through it.
     if (!isHostableLicenseRow(license)) {
       return NextResponse.json(
-        { error: 'Hosting requires a license allowing commercial use and modification (no NC/ND restrictions)' },
+        { error: t('hostingLicense') },
         { status: 400 },
       )
     }
@@ -67,6 +70,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ draft }, { status: 201 })
   } catch (error) {
     console.error('Failed to create upload draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

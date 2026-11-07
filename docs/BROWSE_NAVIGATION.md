@@ -32,11 +32,12 @@ Navigation shows only what has something to offer (#312, #321):
 - **Paginated listings** keep one canonical URL without the `page` parameter. On the brand listings and the product page, a missing, malformed or non-positive `page` reads as page 1 (`parsePageParam`). On those pages and on `GET /api/parts`, a page past the last one re-queries page 1 instead of failing (`fetchPageOrFirst` in `lib/utils/pagination.ts`, #383), and `GET /api/parts` reports the page it returned in `pagination.page`. That route validates its query with `partListQuerySchema` (`lib/schemas/parts.ts`): a malformed `page`, a `limit` outside 1–100, an unknown `sortBy` or `sortOrder`, or a filter id that is not a UUID answers **400** naming the parameter (#483). The `/browse` grid reads its own `?page=` with `parsePageParam`, so a malformed value in the address bar still shows page 1.
 - **The hub degrades**: if the navigation function is unavailable, `/browse` renders an empty navigation (the sections hide themselves) and keeps the parts grid.
 - **Grid filters** (category, brand, product, sort) are exploration tools. The grid defaults to newest first; there is no download-based sort (#373). The "Most liked" sort is hidden with the social features flag (#322).
+- **Category names** are in the locale of the page: the navigation functions take `p_locale` and order names in that locale, and the brand listings localize the embedded category (#502, see [I18N.md](./I18N.md#category-names)). Slugs do not change with the locale.
 - All navigation functions are `SECURITY INVOKER` and filter on `parts.status = 'published'`, so anonymous and signed-in visitors see identical counts.
 
 ## Key files
 
-- `app/(public)/browse/page.tsx`, `app/(public)/categories/[slug]/page.tsx`, `app/(public)/brands/[brand]/page.tsx`, `app/(public)/brands/[brand]/[category]/page.tsx`
+- `app/[locale]/(public)/browse/page.tsx`, `app/[locale]/(public)/categories/[slug]/page.tsx`, `app/[locale]/(public)/brands/[brand]/page.tsx`, `app/[locale]/(public)/brands/[brand]/[category]/page.tsx`
 - `components/browse/`
 - `lib/supabase/queries/browse-nav.ts`, `category-page.ts`, `brand-page.ts`
 - `lib/utils/pagination.ts`: page ranges and the out-of-range fallback shared by every paginated listing

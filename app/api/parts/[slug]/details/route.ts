@@ -5,9 +5,13 @@ import { distinctBrands } from '@/lib/utils/catalog'
 import { toPrintReportStats } from '@/lib/utils/print-reports'
 import type { Brand } from '@/types/database'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { localizeCategory } from '@/lib/utils/locale'
+import { parseSearchParams } from '@/lib/api/parse'
+import { localeQuerySchema } from '@/lib/schemas/common'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { resolveStorageUrl, resolveStorageUrls } from '@/lib/storage/url'
+import { getApiTranslations } from '@/lib/api/translations'
 
 /**
  * Compatible products listed on a part page, each rendering print report
@@ -51,12 +55,15 @@ function toProductBrandPayload(brand: BrandRow): ProductBrandPayload {
   return { name: brand.name, slug: brand.slug, verified: brand.verified ?? false }
 }
 
-// GET /api/parts/[slug]/details - Get detailed part information by slug
+// GET /api/parts/[slug]/details?locale= - Get detailed part information by slug
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
+    const query = await parseSearchParams(request, localeQuerySchema)
+    if (!query.ok) return query.response
     const supabase = await createClient()
     const { slug } = await params
 
@@ -117,17 +124,17 @@ export async function GET(
 
     if (partError) {
       if (partError.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+        return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
       }
       console.error('Error fetching part:', partError)
-      return NextResponse.json({ error: 'Failed to fetch part' }, { status: 500 })
+      return NextResponse.json({ error: t('loadFailed') }, { status: 500 })
     }
 
     // RLS already limits reads to published rows plus the owner's own; this
     // explicit check keeps the route correct even if policies change. Owners
     // can preview their drafts (curation review screen); everyone else 404s.
     if (part.status !== 'published' && (!user || user.id !== part.user_id)) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
     const [
@@ -167,7 +174,7 @@ export async function GET(
               slug,
               verified
             ),
-            categories(name, slug),
+            categories(name, name_fr, slug),
             product_references(id, value, type)
           )
         `)
@@ -266,14 +273,13 @@ export async function GET(
         } : null,
         products: compatibleProducts.map((p) => {
           const pBrand = firstEmbedded(p.brands)
-          const pCategory = firstEmbedded(p.categories)
           return {
             id: p.id,
             name: p.name,
             slug: p.slug,
             brand: pBrand ? toProductBrandPayload(pBrand) : null,
             // The category belongs to the product, not to the part (#372).
-            category: pCategory ? { name: pCategory.name, slug: pCategory.slug } : null,
+            category: localizeCategory(firstEmbedded(p.categories), query.data.locale),
             reportStats: p.reportStats,
             references: (p.product_references ?? []).map((r) => ({ id: r.id, value: r.value })),
           }
@@ -284,6 +290,6 @@ export async function GET(
     })
   } catch (error) {
     console.error('Unexpected error fetching part details:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

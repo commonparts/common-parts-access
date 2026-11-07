@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { requestPart } from "@/lib/actions/part-requests"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -15,9 +16,8 @@ export interface RequestPartFormProps {
   /** The failed search term, stored as raw_query for curation context. */
   rawQuery?: string
   defaultDescription?: string
-  placeholder?: string
+  /** The submit button label; "Request this part" by default. */
   submitLabel?: string
-  successMessage?: string
 }
 
 /**
@@ -28,10 +28,9 @@ export function RequestPartForm({
   productId,
   rawQuery,
   defaultDescription = "",
-  placeholder = "Describe the part you need (brand, model, which part)…",
-  submitLabel = "Request this part",
-  successMessage = "Thanks — your request is logged. Parts with the most demand get prioritized for the catalog.",
+  submitLabel,
 }: RequestPartFormProps) {
+  const t = useTranslations("RequestPartForm")
   const [description, setDescription] = React.useState(defaultDescription)
   const [state, setState] = React.useState<SubmitState>("idle")
 
@@ -60,7 +59,7 @@ export function RequestPartForm({
   if (state === "done") {
     return (
       <div className="rounded-lg border border-border-subtle bg-bg-subtle p-lg text-sm text-text-primary">
-        {successMessage}
+        {t("done")}
       </div>
     )
   }
@@ -74,21 +73,21 @@ export function RequestPartForm({
           if (state === "invalid" || state === "failed") setState("idle")
         }}
         rows={3}
-        aria-label="Describe the part you need"
-        placeholder={placeholder}
+        aria-label={t("label")}
+        placeholder={t("placeholder")}
       />
       {state === "invalid" && (
         <p className="text-caption text-text-secondary">
-          Please add a short description (at least {MIN_DESCRIPTION_LENGTH} characters) so we know what to source.
+          {t("tooShort", { min: MIN_DESCRIPTION_LENGTH })}
         </p>
       )}
       {state === "failed" && (
         <p role="alert" className="text-sm text-status-errorText">
-          Something went wrong sending your request. Please try again.
+          {t("failed")}
         </p>
       )}
       <Button type="submit" disabled={state === "submitting"}>
-        {state === "submitting" ? "Sending…" : submitLabel}
+        {state === "submitting" ? t("sending") : (submitLabel ?? t("submit"))}
       </Button>
     </form>
   )

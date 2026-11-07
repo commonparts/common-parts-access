@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { PUBLISH_STEPS, blockersForStep, firstBlockedStep, type PublishBlocker } from './steps'
 
-const blocker = (step: PublishBlocker['step'], message = 'x'): PublishBlocker => ({ step, message })
+const blocker = (step: PublishBlocker['step'], reason: PublishBlocker['reason'] = 'title'): PublishBlocker => ({
+  step,
+  reason,
+})
 
 describe('firstBlockedStep', () => {
   it('opens on Review when nothing is missing', () => {
@@ -31,11 +34,11 @@ describe('firstBlockedStep', () => {
 describe('blockersForStep', () => {
   it('returns only the blockers a step owns', () => {
     const blockers = [
-      blocker(PUBLISH_STEPS.ORIGIN, 'a'),
-      blocker(PUBLISH_STEPS.FILES, 'b'),
-      blocker(PUBLISH_STEPS.ORIGIN, 'c'),
+      blocker(PUBLISH_STEPS.ORIGIN, 'title'),
+      blocker(PUBLISH_STEPS.FILES, 'modelFile'),
+      blocker(PUBLISH_STEPS.ORIGIN, 'category'),
     ]
-    expect(blockersForStep(blockers, PUBLISH_STEPS.ORIGIN).map((b) => b.message)).toEqual(['a', 'c'])
+    expect(blockersForStep(blockers, PUBLISH_STEPS.ORIGIN).map((b) => b.reason)).toEqual(['title', 'category'])
     expect(blockersForStep(blockers, PUBLISH_STEPS.DETAILS)).toEqual([])
   })
 })

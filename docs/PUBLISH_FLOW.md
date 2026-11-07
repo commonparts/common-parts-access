@@ -14,7 +14,7 @@ The reason for keeping the engines apart is inherited from `UPLOAD_FLOW.md` (Flo
 
 ## Vocabulary
 
-Database values, column names, API routes and code paths **do not change**. Only user-facing copy does. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`), so the part page, the tools and the drafts list cannot describe the same record differently.
+Database values, column names, API routes and code paths **do not change**. Only user-facing copy does. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`, which returns the kind), and the badge and description of each kind are the `Publication` messages, so the part page, the tools and the drafts list cannot describe the same record differently.
 
 | Storage (unchanged) | UI term | Part-page badge |
 |---|---|---|
@@ -93,7 +93,7 @@ The `curation_checklist` / `originality_attested` separation is deliberately pre
 
 Both tools used to resume at a hardcoded step (Files for upload, Checklist for curation). Unified rule: **a resumed draft opens at the first step containing an unmet publish blocker**, falling back to Review when none remain.
 
-`lib/publish/blockers.ts` mirrors both gates as pure functions returning blockers tagged with the step that owns them, so the resume step and the "still needed before publishing" list are one derivation. It is a mirror only — no server change, and the gates stay the authority.
+`lib/publish/blockers.ts` mirrors both gates as pure functions returning blockers tagged with the step that owns them, so the resume step and the "still needed before publishing" list are one derivation. A blocker carries a `reason` (and, for an unmet criterion, the `criterion`), which the Review step words with the `PublishBlockers` messages. It is a mirror only — no server change, and the gates stay the authority.
 
 ## Publish gates
 
@@ -111,7 +111,7 @@ Unchanged by the unification, both of them — including HTTP 422 with `blockers
 ## Key files
 
 ```
-app/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms (#431)
+app/[locale]/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms (#431)
 components/publish/
   publish-page.tsx                          Orientation question + merged drafts
   orientation-question.tsx                 The one branching decision

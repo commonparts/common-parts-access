@@ -1,14 +1,17 @@
+import type { CurationCriterionKey } from '@/types/database'
+
 /**
  * The step structure shared by both publish tracks (issue #302).
  *
- * Both tracks render the same five steps in the same order, so the labels and
- * the step indices are defined once here rather than in each tool. The two
+ * Both tracks render the same five steps in the same order, so the step names
+ * (their labels are the `PublishSteps` messages) and indices are defined once
+ * here rather than in each tool. The two
  * engines behind them are unchanged — `/api/upload/**` and `/api/curation/**`
  * keep their own endpoints, gates and `origin_type` scoping. This module is
  * about where things are *rendered*, never about what is *enforced*.
  */
 
-export const PUBLISH_STEP_LABELS = ['Origin', 'Files', 'Details', 'Compatibility', 'Review'] as const
+export const PUBLISH_STEP_NAMES = ['origin', 'files', 'details', 'compatibility', 'review'] as const
 
 /** Step indices, named so call sites read as intent rather than magic numbers. */
 export const PUBLISH_STEPS = {
@@ -29,9 +32,28 @@ export type PublishStepIndex = (typeof PUBLISH_STEPS)[keyof typeof PUBLISH_STEPS
  */
 export interface PublishBlocker {
   step: PublishStepIndex
-  /** Shown to the contributor — must name the missing thing, not the column. */
-  message: string
+  /**
+   * The `PublishBlockers` message shown to the contributor: it names the
+   * missing thing, not the column.
+   */
+  reason: PublishBlockerReason
+  /** The unmet criterion, for the `criterion` reason. */
+  criterion?: CurationCriterionKey
 }
+
+type PublishBlockerReason =
+  | 'title'
+  | 'category'
+  | 'license'
+  | 'attestation'
+  | 'modelFile'
+  | 'product'
+  | 'criterion'
+  | 'hosted'
+  | 'sourceLicense'
+  | 'sourcePlatform'
+  | 'removeModelFiles'
+  | 'legalReview'
 
 /**
  * The step a session should open at: the first one holding an unmet blocker,

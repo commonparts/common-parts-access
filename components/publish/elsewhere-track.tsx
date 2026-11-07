@@ -1,8 +1,8 @@
 'use client'
 
 import * as React from 'react'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from 'next-intl'
+import { Link, useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Alert } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -24,20 +24,15 @@ import { RejectionRecorder } from '@/components/publish/rejection-recorder'
 import { ReviewStep } from '@/components/publish/review-step'
 import { StepNav } from '@/components/publish/step-nav'
 import { usePartUploadFormState } from '@/hooks/use-part-upload-form-state'
-import { uploadFilesFromClient } from '@/lib/storage/client-upload'
-import {
-  CURATION_BLOCKING_CRITERIA,
-  CURATION_FLAGS,
-  missingCriteria,
-  type CurationFlagColumn,
-} from '@/lib/curation/checklist'
+import { StorageUploadError, uploadFilesFromClient } from '@/lib/storage/client-upload'
+import { CURATION_FLAGS, missingCriteria, type CurationFlagColumn } from '@/lib/curation/checklist'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { shouldImportOnResume, supportsImageImport } from '@/lib/curation/image-import'
 import { elsewhereTrackBlockers } from '@/lib/publish/blockers'
 import { FLAG_STEP } from '@/lib/publish/placement'
 import {
   PUBLISH_STEPS,
-  PUBLISH_STEP_LABELS,
+  PUBLISH_STEP_NAMES,
   firstBlockedStep,
   type PublishStepIndex,
 } from '@/lib/publish/steps'
@@ -81,7 +76,7 @@ interface ElsewhereTrackProps {
 }
 
 const allFlagsUnconfirmed = (): Record<CurationFlagColumn, boolean> =>
-  Object.fromEntries(CURATION_FLAGS.map((f) => [f.column, false])) as Record<
+  Object.fromEntries(CURATION_FLAGS.map((column) => [column, false])) as Record<
     CurationFlagColumn,
     boolean
   >
@@ -112,6 +107,11 @@ export function ElsewhereTrack({
   onExit,
   imageImportPlatforms,
 }: ElsewhereTrackProps) {
+  const t = useTranslations('ElsewhereTrack')
+  const flow = useTranslations('PublishFlow')
+  const steps = useTranslations('PublishSteps')
+  const criteria = useTranslations('CurationCriteria')
+  const flags = useTranslations('CurationFlags')
   const router = useRouter()
   const form = usePartUploadFormState({ preselectFirstLicense: false })
   const { formData, setFormData } = form
@@ -189,7 +189,7 @@ export function ElsewhereTrack({
         const res = await fetch(`/api/curation/drafts/${initialDraftId}`)
         const json = await res.json().catch(() => ({}))
         if (!res.ok || !json.draft) {
-          if (!cancelled) setError(json.error || 'Failed to load the draft')
+          if (!cancelled) setError(json.error || flow('loadFailed'))
           return
         }
         if (cancelled) return
@@ -231,7 +231,7 @@ export function ElsewhereTrack({
         const hydratedChecklist: CurationChecklist = draft.curation_checklist ?? {}
         setChecklist(hydratedChecklist)
         setConfirmedFlags(
-          Object.fromEntries(CURATION_FLAGS.map((f) => [f.column, draft[f.column] !== true])) as Record<
+          Object.fromEntries(CURATION_FLAGS.map((column) => [column, draft[column] !== true])) as Record<
             CurationFlagColumn,
             boolean
           >,
@@ -278,7 +278,7 @@ export function ElsewhereTrack({
           ),
         )
       } catch {
-        if (!cancelled) setError('Failed to load the draft')
+        if (!cancelled) setError(flow('loadFailed'))
       } finally {
         if (!cancelled) setHydrating(false)
       }
@@ -374,12 +374,12 @@ export function ElsewhereTrack({
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        setError(json.error || 'Failed to save the draft')
+        setError(json.error || flow('saveFailed'))
         return false
       }
       return true
     },
-    [],
+    [flow],
   )
 
   const patchDraft = React.useCallback(
@@ -398,11 +398,11 @@ export function ElsewhereTrack({
   const flagPatchForStep = React.useCallback(
     (stepIndex: PublishStepIndex): Record<string, boolean> =>
       Object.fromEntries(
-        CURATION_FLAGS.filter((f) => FLAG_STEP[f.column] === stepIndex).map((f) => [
-          f.column,
+        CURATION_FLAGS.filter((column) => FLAG_STEP[column] === stepIndex).map((column) => [
+          column,
           // The column records what is still missing, so it is the negation
           // of the contributor's positive confirmation.
-          !confirmedFlags[f.column],
+          !confirmedFlags[column],
         ]),
       ),
     [confirmedFlags],
@@ -444,7 +444,7 @@ export function ElsewhereTrack({
           const json = await res.json().catch(() => ({}))
           if (!res.ok) {
             if (res.status === 409 && json.duplicate) setDuplicate(json.duplicate)
-            setError(json.error || 'Failed to create the draft')
+            setError(json.error || flow('createFailed'))
             return false
           }
           const newId: string = json.draft.id
@@ -500,13 +500,14 @@ export function ElsewhereTrack({
 
         return true
       } catch {
-        setError('Failed to save the draft')
+        setError(flow('saveFailed'))
         return false
       } finally {
         setSaving(false)
       }
     },
     [
+      flow,
       draftId,
       formData,
       checklist,
@@ -552,14 +553,14 @@ export function ElsewhereTrack({
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(json.error || 'Failed to register uploaded files')
+        setError(json.error || flow('registerFailed'))
         return
       }
       setModelFileCount((count) => count + uploads.modelFiles.length)
       if (Array.isArray(json.images)) setImageUrls(json.images)
       setFormData((prev) => ({ ...prev, files: [], thumbnails: [] }))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'File upload failed')
+      setError(err instanceof StorageUploadError ? flow('uploadFailedFile', { name: err.fileName }) : flow('uploadFailed'))
     } finally {
       setUploadingFiles(false)
     }
@@ -581,12 +582,12 @@ export function ElsewhereTrack({
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        setError(json.error || 'Failed to record the decision')
+        setError(json.error || t('rejectFailed'))
         return
       }
       setRejected(true)
     } catch {
-      setError('Failed to record the decision')
+      setError(t('rejectFailed'))
     } finally {
       setRejecting(false)
     }
@@ -606,12 +607,12 @@ export function ElsewhereTrack({
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
         if (Array.isArray(json.blockers)) setPublishBlockers(json.blockers)
-        setError(json.error || 'Publication failed')
+        setError(json.error || flow('publishFailed'))
         return
       }
       router.push(`/parts/${json.slug}`)
     } catch {
-      setError('Publication failed')
+      setError(flow('publishFailed'))
     } finally {
       setPublishing(false)
     }
@@ -644,16 +645,12 @@ export function ElsewhereTrack({
     formData.sourcePlatform.length > 0 &&
     !duplicate
 
-  const criterion = (key: CurationCriterionKey) =>
-    CURATION_BLOCKING_CRITERIA.find((c) => c.key === key)!
-
   const renderCriterion = (key: CurationCriterionKey, hint?: React.ReactNode) => {
-    const def = criterion(key)
     return (
       <JudgementCheckbox
         id={`criterion-${key}`}
-        label={def.label}
-        description={def.description}
+        label={criteria(`${key}.label`)}
+        description={criteria(`${key}.description`)}
         checked={checklist[key] === true}
         onChange={(checked) => toggleCriterion(key, checked)}
         hint={hint}
@@ -663,31 +660,28 @@ export function ElsewhereTrack({
 
   /** Renders the completeness confirmations the given step owns. */
   const renderFlagsForStep = (stepIndex: PublishStepIndex) =>
-    CURATION_FLAGS.filter((def) => FLAG_STEP[def.column] === stepIndex).map((def) => (
+    CURATION_FLAGS.filter((column) => FLAG_STEP[column] === stepIndex).map((column) => (
       <JudgementCheckbox
-        key={def.column}
-        id={`flag-${def.column}`}
-        label={def.label}
-        description={def.description}
-        checked={confirmedFlags[def.column]}
-        onChange={(checked) => toggleFlag(def.column, checked)}
+        key={column}
+        id={`flag-${column}`}
+        label={flags(`${column}.label`)}
+        description={flags(`${column}.description`)}
+        checked={confirmedFlags[column]}
+        onChange={(checked) => toggleFlag(column, checked)}
       />
     ))
 
   if (hydrating) {
-    return <p className="text-sm text-text-secondary">Loading your draft…</p>
+    return <p className="text-sm text-text-secondary">{flow('loadingDraft')}</p>
   }
 
   if (rejected) {
     return (
       <Card>
         <CardContent className="space-y-sm pt-md">
-          <p className="text-text-primary">Decision recorded for this source.</p>
-          <p className="text-sm text-text-secondary">
-            The reason and the unconfirmed checks are traced in the log. The draft, if one was
-            created, remains available in your drafts.
-          </p>
-          <Button onClick={onExit}>Back to drafts</Button>
+          <p className="text-text-primary">{t('rejected')}</p>
+          <p className="text-sm text-text-secondary">{t('rejectedDetail')}</p>
+          <Button onClick={onExit}>{t('backToDrafts')}</Button>
         </CardContent>
       </Card>
     )
@@ -695,7 +689,7 @@ export function ElsewhereTrack({
 
   return (
     <div className="space-y-md">
-      <Stepper labels={PUBLISH_STEP_LABELS} current={step} ariaLabel="Publish steps" />
+      <Stepper labels={PUBLISH_STEP_NAMES.map((name) => steps(name))} current={step} ariaLabel={steps('label')} />
 
       {error && (
         <Alert>
@@ -707,69 +701,63 @@ export function ElsewhereTrack({
         <div className="space-y-md">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Origin</CardTitle>
+              <CardTitle className="text-base">{steps('origin')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
-                <Label htmlFor="elsewhere-source-url">Where is it published? *</Label>
+                <Label htmlFor="elsewhere-source-url">{t('sourceUrl')}</Label>
                 <Input
                   id="elsewhere-source-url"
                   type="url"
                   value={formData.sourceUrl}
                   onChange={(e) => setFormData((prev) => ({ ...prev, sourceUrl: e.target.value }))}
-                  placeholder="https://www.thingiverse.com/thing:…"
+                  placeholder={t('sourceUrlPlaceholder')}
                   disabled={Boolean(draftId)}
                   required
                 />
-                {checkingSource && (
-                  <p className="text-sm text-text-secondary">Checking the registry…</p>
-                )}
-                {draftId && (
-                  <p className="text-sm text-text-secondary">
-                    The source is fixed once the draft exists.
-                  </p>
-                )}
+                {checkingSource && <p className="text-sm text-text-secondary">{t('checkingSource')}</p>}
+                {draftId && <p className="text-sm text-text-secondary">{t('sourceFixed')}</p>}
               </div>
 
               {duplicate && (
                 <Alert>
-                  This source is already in the registry:{' '}
-                  {duplicate.status === 'published' ? (
-                    <Link href={`/parts/${duplicate.slug}`} className="font-medium underline">
-                      {duplicate.name}
-                    </Link>
-                  ) : (
-                    <span className="font-medium">{duplicate.name} (draft)</span>
-                  )}
-                  . A second record cannot be created.
+                  {t.rich(duplicate.status === 'published' ? 'duplicatePublished' : 'duplicateDraft', {
+                    name: duplicate.name,
+                    part: (chunks) =>
+                      duplicate.status === 'published' ? (
+                        <Link href={`/parts/${duplicate.slug}`} className="font-medium underline">
+                          {chunks}
+                        </Link>
+                      ) : (
+                        <span className="font-medium">{chunks}</span>
+                      ),
+                  })}
                 </Alert>
               )}
 
               {renderCriterion(
                 'duplicate',
                 !duplicate && formData.sourceUrl.trim() && !checkingSource
-                  ? 'The registry has no part with this source URL.'
+                  ? t('noDuplicate')
                   : undefined,
               )}
 
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
-                  <Label htmlFor="elsewhere-title">Part title *</Label>
+                  <Label htmlFor="elsewhere-title">{flow('title')}</Label>
                   <Input
                     id="elsewhere-title"
                     value={formData.title}
                     onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                    placeholder="e.g. Dishwasher rack wheel clip"
+                    placeholder={flow('titlePlaceholder')}
                     maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                     required
                   />
                 </div>
                 <div className="space-y-2xs">
                   <div className="flex items-center gap-2xs">
-                    <Label htmlFor="elsewhere-platform">Platform *</Label>
-                    {prefilledFields.has('sourcePlatform') && (
-                      <Badge variant="outline">Pre-filled</Badge>
-                    )}
+                    <Label htmlFor="elsewhere-platform">{t('platform')}</Label>
+                    {prefilledFields.has('sourcePlatform') && <Badge variant="outline">{flow('prefilled')}</Badge>}
                   </div>
                   <NativeSelect
                     id="elsewhere-platform"
@@ -779,7 +767,7 @@ export function ElsewhereTrack({
                     }
                     required
                   >
-                    <option value="">Select platform</option>
+                    <option value="">{t('selectPlatform')}</option>
                     {form.sourcePlatforms.map((platform) => (
                       <option key={platform.slug} value={platform.slug}>
                         {platform.name}
@@ -790,7 +778,7 @@ export function ElsewhereTrack({
               </div>
 
               <div className="space-y-2xs">
-                <Label>Category</Label>
+                <Label>{t('category')}</Label>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   {form.categoryLevels.map((level, idx) => (
                     <NativeSelect
@@ -801,10 +789,10 @@ export function ElsewhereTrack({
                     >
                       <option value="">
                         {form.loadingMeta
-                          ? 'Loading categories…'
+                          ? flow('loadingCategories')
                           : idx === 0
-                            ? 'Select category'
-                            : 'Refine (optional)'}
+                            ? flow('selectCategory')
+                            : flow('refineCategory')}
                       </option>
                       {level.options.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -821,16 +809,14 @@ export function ElsewhereTrack({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Attribution</CardTitle>
+              <CardTitle className="text-base">{t('attribution')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="grid grid-cols-1 gap-md md:grid-cols-2">
                 <div className="space-y-2xs">
                   <div className="flex items-center gap-2xs">
-                    <Label htmlFor="elsewhere-author">Original author *</Label>
-                    {prefilledFields.has('originalAuthor') && (
-                      <Badge variant="outline">Pre-filled</Badge>
-                    )}
+                    <Label htmlFor="elsewhere-author">{t('author')}</Label>
+                    {prefilledFields.has('originalAuthor') && <Badge variant="outline">{flow('prefilled')}</Badge>}
                   </div>
                   <Input
                     id="elsewhere-author"
@@ -838,16 +824,14 @@ export function ElsewhereTrack({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, originalAuthor: e.target.value }))
                     }
-                    placeholder="Author name on the source platform"
+                    placeholder={t('authorPlaceholder')}
                     required
                   />
                 </div>
                 <div className="space-y-2xs">
                   <div className="flex items-center gap-2xs">
-                    <Label htmlFor="elsewhere-author-url">Author URL</Label>
-                    {prefilledFields.has('originalAuthorUrl') && (
-                      <Badge variant="outline">Pre-filled</Badge>
-                    )}
+                    <Label htmlFor="elsewhere-author-url">{t('authorUrl')}</Label>
+                    {prefilledFields.has('originalAuthorUrl') && <Badge variant="outline">{flow('prefilled')}</Badge>}
                   </div>
                   <Input
                     id="elsewhere-author-url"
@@ -856,7 +840,7 @@ export function ElsewhereTrack({
                     onChange={(e) =>
                       setFormData((prev) => ({ ...prev, originalAuthorUrl: e.target.value }))
                     }
-                    placeholder="https://…"
+                    placeholder={t('authorUrlPlaceholder')}
                   />
                 </div>
               </div>
@@ -866,15 +850,13 @@ export function ElsewhereTrack({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">License and files</CardTitle>
+              <CardTitle className="text-base">{t('licenseAndFiles')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
                 <div className="flex items-center gap-2xs">
-                  <Label htmlFor="elsewhere-license">License at the source *</Label>
-                  {prefilledFields.has('licenseId') && (
-                    <Badge variant="outline">Pre-filled</Badge>
-                  )}
+                  <Label htmlFor="elsewhere-license">{t('license')}</Label>
+                  {prefilledFields.has('licenseId') && <Badge variant="outline">{flow('prefilled')}</Badge>}
                 </div>
                 <NativeSelect
                   id="elsewhere-license"
@@ -883,24 +865,19 @@ export function ElsewhereTrack({
                   required
                 >
                   <option value="">
-                    {form.loadingMeta ? 'Loading licenses…' : 'Select the license declared at the source'}
+                    {form.loadingMeta ? flow('loadingLicenses') : t('selectLicense')}
                   </option>
                   {form.licenses.map((license) => (
                     <option key={license.id} value={license.id}>
-                      {license.shortName} — {license.name}
+                      {flow('licenseOption', { shortName: license.shortName, name: license.name })}
                     </option>
                   ))}
                 </NativeSelect>
-                <p className="text-sm text-text-secondary">
-                  The part keeps the license its designer chose. It is referenced at its source, so
-                  NC and ND licenses are allowed.
-                </p>
+                <p className="text-sm text-text-secondary">{t('licenseHint')}</p>
               </div>
 
               <div className="rounded-md border border-border-subtle bg-bg-subtle p-sm">
-                <p className="text-sm text-text-primary">
-                  Common Parts will link to the source; the files stay where they are published.
-                </p>
+                <p className="text-sm text-text-primary">{t('linkOut')}</p>
               </div>
 
               {renderCriterion('license')}
@@ -909,13 +886,10 @@ export function ElsewhereTrack({
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Scope</CardTitle>
+              <CardTitle className="text-base">{t('scope')}</CardTitle>
             </CardHeader>
             <CardContent>
-              {renderCriterion(
-                'eligibility',
-                'A functional spare part for a real product — not a decoration, not a tool.',
-              )}
+              {renderCriterion('eligibility', t('eligibilityHint'))}
             </CardContent>
           </Card>
 
@@ -929,10 +903,10 @@ export function ElsewhereTrack({
 
           <StepNav
             onBack={onExit}
-            backLabel="Exit"
+            backLabel={flow('exit')}
             onSaveAndExit={draftId ? saveAndExit : undefined}
             onContinue={() => goTo(PUBLISH_STEPS.FILES)}
-            continueLabel={draftId ? 'Save and continue' : 'Create draft and continue'}
+            continueLabel={draftId ? flow('saveAndContinue') : flow('createAndContinue')}
             continueDisabled={!originStepReady}
             saving={saving}
           />
@@ -952,7 +926,7 @@ export function ElsewhereTrack({
             uploadReady={Boolean(draftId && draftSlug && userId)}
             onUpload={handleUploadFiles}
             importingImages={importingImages}
-            helpText="Open the files in a slicer before confirming the file check — whether they open is a human judgement."
+            helpText={t('filesHelp')}
             judgements={
               <>
                 {renderCriterion('file')}
@@ -1005,7 +979,7 @@ export function ElsewhereTrack({
             onBack={() => goTo(PUBLISH_STEPS.DETAILS)}
             onSaveAndExit={saveAndExit}
             onContinue={() => goTo(PUBLISH_STEPS.REVIEW)}
-            continueLabel="Review"
+            continueLabel={steps('review')}
             saving={saving}
           />
         </div>
@@ -1026,7 +1000,7 @@ export function ElsewhereTrack({
           <ChecklistRollup checklist={checklist} onJumpTo={goTo} />
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Print confirmation</CardTitle>
+              <CardTitle className="text-base">{t('printConfirmation')}</CardTitle>
             </CardHeader>
             <CardContent>{renderFlagsForStep(PUBLISH_STEPS.REVIEW)}</CardContent>
           </Card>

@@ -53,7 +53,7 @@ describe('reportPrint', () => {
   it('rejects invalid input before any lookup', async () => {
     expect(await reportPrint({ ...report, partId: 'x' })).toEqual({
       ok: false,
-      error: 'Invalid report: partId and productId must be UUIDs',
+      error: 'partId: Invalid identifier',
     })
     expect(getUser).not.toHaveBeenCalled()
   })
@@ -62,7 +62,7 @@ describe('reportPrint', () => {
     getUser.mockResolvedValue({ data: { user: null }, error: new AuthApiError('down', 500, undefined) })
     expect(await reportPrint(report)).toEqual({
       ok: false,
-      error: 'Report failed: could not verify your session, please try again',
+      error: 'Report failed: your session could not be verified. Please try again.',
     })
     expect(submitPrintReport).not.toHaveBeenCalled()
   })
@@ -90,7 +90,7 @@ describe('requestPart', () => {
   it('rejects a description that is too short', async () => {
     expect(await requestPart({ description: 'x' })).toEqual({
       ok: false,
-      error: 'Description must be at least 2 characters',
+      error: 'Description: Too small: expected string to have >=2 characters',
     })
     expect(createPartRequest).not.toHaveBeenCalled()
   })

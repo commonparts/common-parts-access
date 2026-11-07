@@ -1,6 +1,6 @@
 # Hero Section (Home)
 
-The home page (`app/page.tsx`) is `Navbar` → `Hero` → `FeaturedParts` → `Footer`. Since issue #308 the hero is a single centred column built around the global search bar; the earlier two-lane layout (publish lane + product-picker search card) was removed.
+The home page (`app/[locale]/page.tsx`) is `Navbar` → `Hero` → `FeaturedParts` → `Footer`. Since issue #308 the hero is a single centred column built around the global search bar; the earlier two-lane layout (publish lane + product-picker search card) was removed.
 
 ## Layout
 - `Section` → `Container size="xl"` → one centred column capped at `max-w-xl` (`mx-auto w-full`). The hero uses no `Grid`: the fixed gaps of a 12-column grid made it wider than mobile screens (#393).

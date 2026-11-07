@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -9,9 +10,6 @@ interface PaginationProps {
   totalPages: number
   onPageChange: (page: number) => void
   className?: string
-  showInfo?: boolean
-  totalItems?: number
-  itemsPerPage?: number
   hasNext?: boolean
   hasPrev?: boolean
 }
@@ -21,12 +19,10 @@ export function Pagination({
   totalPages, 
   onPageChange, 
   className,
-  showInfo = true,
-  totalItems,
-  itemsPerPage,
   hasNext,
   hasPrev
 }: PaginationProps) {
+  const t = useTranslations("Pagination")
   const getVisiblePages = () => {
     const delta = 2
     const range = []
@@ -67,14 +63,6 @@ export function Pagination({
 
   return (
     <div className={cn("flex flex-col items-center gap-4", className)}>
-      {showInfo && totalItems && itemsPerPage && (
-        <div className="text-sm text-text-secondary">
-          Showing {((currentPage - 1) * itemsPerPage) + 1} to{' '}
-          {Math.min(currentPage * itemsPerPage, totalItems)} of{' '}
-          {totalItems} parts
-        </div>
-      )}
-
       {/* Full pagination from `sm`; below it, the simplified one replaces it. */}
       <div className="hidden items-center gap-1 sm:flex">
         {/* Previous Button */}
@@ -88,7 +76,7 @@ export function Pagination({
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
           </svg>
-          Previous
+          {t("previous")}
         </Button>
 
         {/* Page Numbers */}
@@ -124,7 +112,7 @@ export function Pagination({
           disabled={!hasNextPage}
           className="flex items-center gap-1"
         >
-          Next
+          {t("next")}
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -145,7 +133,7 @@ export function Pagination({
         </Button>
         
         <span className="text-sm text-text-secondary px-2">
-          {currentPage} of {totalPages}
+          {t("compactPageOf", { page: currentPage, totalPages })}
         </span>
         
         <Button

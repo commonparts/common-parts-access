@@ -1,12 +1,13 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CURATION_BLOCKING_CRITERIA } from '@/lib/curation/checklist'
 import { CRITERION_STEP } from '@/lib/publish/placement'
-import { PUBLISH_STEP_LABELS, type PublishStepIndex } from '@/lib/publish/steps'
+import { PUBLISH_STEP_NAMES, type PublishStepIndex } from '@/lib/publish/steps'
 import type { CurationChecklist } from '@/types/database'
 import { cn } from '@/lib/utils'
 
@@ -27,37 +28,38 @@ interface ChecklistRollupProps {
  * server-side gate remains the authority.
  */
 export function ChecklistRollup({ checklist, onJumpTo, className }: ChecklistRollupProps) {
-  const unmet = CURATION_BLOCKING_CRITERIA.filter((criterion) => checklist[criterion.key] !== true)
+  const t = useTranslations('ChecklistRollup')
+  const criteria = useTranslations('CurationCriteria')
+  const steps = useTranslations('PublishSteps')
+  const unmet = CURATION_BLOCKING_CRITERIA.filter((criterion) => checklist[criterion] !== true)
 
   return (
     <Card className={className}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">Before publishing</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
         {unmet.length === 0 ? (
-          <Badge variant="soft">All checks confirmed</Badge>
+          <Badge variant="soft">{t('allConfirmed')}</Badge>
         ) : (
           <Badge variant="outline">
-            {unmet.length} of {CURATION_BLOCKING_CRITERIA.length} still to confirm
+            {t('remaining', { count: unmet.length, total: CURATION_BLOCKING_CRITERIA.length })}
           </Badge>
         )}
       </CardHeader>
       <CardContent className="space-y-sm">
         {unmet.length === 0 ? (
-          <p className="text-sm text-text-secondary">
-            Every check is confirmed. Publishing runs the same checks again on the server.
-          </p>
+          <p className="text-sm text-text-secondary">{t('allConfirmedDetail')}</p>
         ) : (
           <ul className="space-y-2xs">
             {unmet.map((criterion) => {
-              const step = CRITERION_STEP[criterion.key]
+              const step = CRITERION_STEP[criterion]
               return (
                 <li
-                  key={criterion.key}
+                  key={criterion}
                   className={cn('flex flex-wrap items-center justify-between gap-2xs')}
                 >
-                  <span className="text-sm text-text-primary">{criterion.label}</span>
+                  <span className="text-sm text-text-primary">{criteria(`${criterion}.label`)}</span>
                   <Button variant="link" onClick={() => onJumpTo(step)}>
-                    Go to {PUBLISH_STEP_LABELS[step]}
+                    {steps('goTo', { step: steps(PUBLISH_STEP_NAMES[step]) })}
                   </Button>
                 </li>
               )

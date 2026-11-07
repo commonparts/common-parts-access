@@ -12,11 +12,6 @@ import type { PartFileHostingType } from '@/types/database'
  */
 export const CURATED_FILE_HOSTING_TYPE = 'link_out' satisfies PartFileHostingType
 
-export const CURATED_HOSTED_ERROR =
-  "A part published elsewhere is always referenced: its files stay at the source. Set fileHostingType to 'link_out' or omit it."
-
-const INVALID_HOSTING_TYPE = 'Invalid file hosting type'
-
 /**
  * Schema of the optional `fileHostingType` of a curation request body. Null
  * or empty reads as `link_out`; `hosted` is refused with an actionable
@@ -24,11 +19,11 @@ const INVALID_HOSTING_TYPE = 'Invalid file hosting type'
  * schema is used: an absent key leaves the column unchanged.
  */
 export const curatedHostingTypeSchema = z
-  .string({ error: INVALID_HOSTING_TYPE })
+  .string()
   .trim()
   .nullable()
   .transform((value, ctx): typeof CURATED_FILE_HOSTING_TYPE => {
     if (!value || value === CURATED_FILE_HOSTING_TYPE) return CURATED_FILE_HOSTING_TYPE
-    ctx.addIssue({ code: 'custom', message: value === 'hosted' ? CURATED_HOSTED_ERROR : INVALID_HOSTING_TYPE })
+    ctx.addIssue({ code: 'custom', message: value === 'hosted' ? 'curatedHosted' : 'invalidHostingType' })
     return z.NEVER
   })

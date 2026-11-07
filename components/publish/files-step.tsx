@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -67,21 +68,22 @@ export function FilesStep({
   judgements,
   helpText,
 }: FilesStepProps) {
+  const t = useTranslations('FilesStep')
   const { formData } = form
   const nothingSelected = formData.files.length === 0 && formData.thumbnails.length === 0
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0">
-        <CardTitle className="text-base">Files</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
         <div className="flex gap-2xs">
           {!referenced && (
             <Badge variant={modelFileCount > 0 ? 'soft' : 'outline'}>
-              {modelFileCount} part {modelFileCount === 1 ? 'file' : 'files'}
+              {t('modelFileCount', { count: modelFileCount })}
             </Badge>
           )}
           <Badge variant={imageUrls.length > 0 ? 'soft' : 'outline'}>
-            {imageUrls.length} {imageUrls.length === 1 ? 'image' : 'images'}
+            {t('imageCount', { count: imageUrls.length })}
           </Badge>
         </div>
       </CardHeader>
@@ -89,30 +91,28 @@ export function FilesStep({
         <div className="grid grid-cols-1 gap-md md:grid-cols-2">
           {referenced ? (
             <div className="space-y-2xs">
-              <Label>Model files</Label>
+              <Label>{t('referencedLabel')}</Label>
               <p className="rounded-md border border-border-subtle bg-bg-subtle p-sm text-sm text-text-secondary">
-                The model files stay where they are published and are never uploaded here.{' '}
-                {sourceUrl && isValidHttpUrl(sourceUrl) ? (
-                  <>
-                    Check at{' '}
-                    <a
-                      href={sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="font-medium text-text-primary underline"
-                    >
-                      the source
-                    </a>{' '}
-                    that they open correctly.
-                  </>
-                ) : (
-                  'Check at the source that they open correctly.'
-                )}
+                {t.rich('referenced', {
+                  source: (chunks) =>
+                    sourceUrl && isValidHttpUrl(sourceUrl) ? (
+                      <a
+                        href={sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium text-text-primary underline"
+                      >
+                        {chunks}
+                      </a>
+                    ) : (
+                      chunks
+                    ),
+                })}
               </p>
             </div>
           ) : (
             <div className="space-y-2xs">
-              <Label>Model files (STL / 3MF / STEP)</Label>
+              <Label>{t('modelFiles')}</Label>
               <FileUploader
                 accept={FILE_TYPES.MODEL_FILES.join(',')}
                 multiple
@@ -120,17 +120,15 @@ export function FilesStep({
               />
               {formData.files.length > 0 && (
                 <p className="text-sm text-text-secondary">
-                  Selected: {formData.files.map((f) => f.name).join(', ')}
+                  {t('selected', { names: formData.files.map((f) => f.name).join(', ') })}
                 </p>
               )}
             </div>
           )}
 
           <div className="space-y-2xs">
-            <Label>Photos of the printed part</Label>
-            {importingImages && (
-              <p className="text-sm text-text-secondary">Importing images from the source…</p>
-            )}
+            <Label>{t('photos')}</Label>
+            {importingImages && <p className="text-sm text-text-secondary">{t('importing')}</p>}
             <FileUploader
               accept={FILE_TYPES.IMAGE_FILES.join(',')}
               multiple
@@ -139,7 +137,7 @@ export function FilesStep({
             />
             {formData.thumbnails.length > 0 && (
               <p className="text-sm text-text-secondary">
-                Selected: {formData.thumbnails.map((f) => f.name).join(', ')}
+                {t('selected', { names: formData.thumbnails.map((f) => f.name).join(', ') })}
               </p>
             )}
           </div>
@@ -153,15 +151,10 @@ export function FilesStep({
             onClick={onUpload}
             disabled={uploading || !uploadReady || importingImages || nothingSelected}
           >
-            {uploading ? 'Uploading…' : 'Upload selected files'}
+            {uploading ? t('uploading') : t('upload')}
           </Button>
           <p className="text-sm text-text-secondary">
-            {!uploadReady
-              ? 'Preparing the upload session…'
-              : importingImages
-                ? 'Upload is available once the image import ends.'
-                : (helpText ??
-                'Files are stored as soon as you upload them — you can leave and come back.')}
+            {!uploadReady ? t('preparing') : importingImages ? t('afterImport') : (helpText ?? t('help'))}
           </p>
         </div>
 

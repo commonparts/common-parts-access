@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useTranslations } from "next-intl";
 import { Command as CommandPrimitive } from "cmdk";
 
 import { Command, CommandItem, CommandList } from "./command";
@@ -47,7 +48,7 @@ const CREATE_VALUE = "create-option";
 export function Combobox<T extends ComboboxOption>({
   id,
   label,
-  placeholder = "Type to search...",
+  placeholder,
   options,
   searchTerm,
   onSearchChange,
@@ -59,9 +60,10 @@ export function Combobox<T extends ComboboxOption>({
   onOpenChange,
   className,
   disabled = false,
-  emptyMessage = "No options found",
+  emptyMessage,
   inputClassName,
 }: ComboboxProps<T>) {
+  const t = useTranslations("Combobox");
   const inputRef = React.useRef<HTMLInputElement>(null);
   const trimmedSearch = searchTerm.trim();
   const filteredOptions = options.filter((option) =>
@@ -106,7 +108,7 @@ export function Combobox<T extends ComboboxOption>({
                 aria-labelledby={undefined}
                 aria-expanded={isOpen}
                 type="text"
-                placeholder={placeholder}
+                placeholder={placeholder ?? t("placeholder")}
                 disabled={disabled}
                 onFocus={() => onOpenChange(true)}
                 onKeyDown={(e) => {
@@ -144,7 +146,7 @@ export function Combobox<T extends ComboboxOption>({
                   </CommandItem>
                 ))
               ) : (
-                <div className="px-md py-2xs text-sm text-text-secondary">{emptyMessage}</div>
+                <div className="px-md py-2xs text-sm text-text-secondary">{emptyMessage ?? t("empty")}</div>
               )}
               {showCreate && (
                 <CommandItem
@@ -155,7 +157,7 @@ export function Combobox<T extends ComboboxOption>({
                   }}
                   className={cn(ROW_CLASS, "border-t")}
                 >
-                  {createLabel ? createLabel(trimmedSearch) : `Create product: ${trimmedSearch}`}
+                  {createLabel ? createLabel(trimmedSearch) : t("create", { value: trimmedSearch })}
                 </CommandItem>
               )}
             </CommandList>

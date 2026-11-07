@@ -5,7 +5,7 @@ Downloads are anonymous: no account or cookie-based identification is required (
 
 ## Flow
 1. User clicks a download action on the part page.
-2. A non-blocking, one-line license notice appears at the trigger: license, author, attribution obligation, and the ShareAlike clause for copyleft licenses (built by `formatLicenseNotice()` in `lib/utils/formatters.ts`). It informs — it never gates the download.
+2. A non-blocking, one-line license notice appears at the trigger: license, author, attribution obligation, and the ShareAlike clause for copyleft licenses (the `PartDetails.licenseNotice` messages, joined in `components/part/part-details.tsx`). It informs — it never gates the download.
 3. **Single file:** client calls `/api/parts/[slug]/files/[fileId]/download-url`, then triggers the browser download and posts `/api/parts/[slug]/download` to log it.
 4. **Bulk archive:** client calls `/api/parts/[slug]/files/archive`; server streams a ZIP that preserves nested folders and logs one row to `part_downloads` with `file_id = null`.
 5. Each download, single file or archive, is one row in `part_downloads`: an archive logs one row, not one per file.
@@ -70,7 +70,6 @@ Downloads are anonymous: no account or cookie-based identification is required (
 
 ## Reusable Functions
 - `recordPartDownload()` (`lib/supabase/queries/part-metrics.ts`) — Anonymous `part_downloads` insert shared by the single-file and archive endpoints.
-- `formatLicenseNotice()` (`lib/utils/formatters.ts`) — One-line license/attribution notice shown at download trigger.
 - `partFileBucket(category)` (`lib/storage/path-utils.ts`) — Bucket of a part file category, null for an unknown one.
 - `extractBucketStoragePath(reference, bucket)` (`lib/storage/path-utils.ts`) — Bucket-relative path of a stored reference, a public URL or a relative `bucket/path`.
 - `toStorageReference(bucket, path)` (`lib/storage/path-utils.ts`) — Relative `bucket/path` reference stored in the database.

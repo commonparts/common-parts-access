@@ -12,10 +12,12 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { parseRedirectParam } from "@/lib/utils/validation";
+import { authErrorKey } from "@/lib/utils/auth-errors";
 
 /** Where a user lands after signing in when no safe `redirect` param is set. */
 const DEFAULT_POST_LOGIN_PATH = "/";
@@ -24,6 +26,9 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const t = useTranslations("LoginForm");
+  const auth = useTranslations("AuthForms");
+  const errors = useTranslations("AuthErrors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +53,7 @@ export function LoginForm({
       window.location.replace(redirectPath ?? DEFAULT_POST_LOGIN_PATH);
     } catch (error: unknown) {
       console.error("[LoginForm] Login error:", error);
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(errors(authErrorKey(error)));
       // Reset only on failure: on success the button stays in its loading
       // state until the next document replaces this page.
       setIsLoading(false);
@@ -59,20 +64,18 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-lg", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-heading-sm">Login</CardTitle>
-          <CardDescription>
-            Enter your email below to login to your account
-          </CardDescription>
+          <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin}>
             <div className="flex flex-col gap-lg">
               <div className="grid gap-sm">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{auth("email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder={auth("emailPlaceholder")}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -80,12 +83,12 @@ export function LoginForm({
               </div>
               <div className="grid gap-sm">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{auth("password")}</Label>
                   <Link
                     href="/forgot-password"
                     className="ml-auto inline-block text-caption underline"
                   >
-                    Forgot your password?
+                    {t("forgotPassword")}
                   </Link>
                 </div>
                 <Input
@@ -98,11 +101,11 @@ export function LoginForm({
               </div>
               {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Logging in..." : "Login"}
+                {isLoading ? t("submitting") : t("submit")}
               </Button>
             </div>
             <div className="mt-md text-center text-caption">
-              Don&apos;t have an account?{" "}
+              {t("noAccount")}{" "}
               <Link
                 href={
                   redirectPath
@@ -111,7 +114,7 @@ export function LoginForm({
                 }
                 className="underline"
               >
-                Sign up
+                {t("signUp")}
               </Link>
             </div>
           </form>

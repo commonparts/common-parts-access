@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface FileUploaderProps {
@@ -21,6 +22,7 @@ export function FileUploader({
   children,
   disabled = false
 }: FileUploaderProps) {
+  const t = useTranslations("FileUploader")
   const [isDragOver, setIsDragOver] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
@@ -108,12 +110,9 @@ export function FileUploader({
           </div>
           <div>
             <p className="mb-sm text-sm text-text-secondary">
-              Drag and drop your files here, or{" "}
-              <span className="font-medium text-action-primary">browse</span>
+              {t.rich("prompt", { browse: (chunks) => <span className="font-medium text-action-primary">{chunks}</span> })}
             </p>
-            <p className="text-xs text-text-secondary">
-              Max file size: {Math.round(maxSize / (1024 * 1024))}MB
-            </p>
+            <p className="text-xs text-text-secondary">{t("maxSize", { size: Math.round(maxSize / (1024 * 1024)) })}</p>
           </div>
         </div>
       )}

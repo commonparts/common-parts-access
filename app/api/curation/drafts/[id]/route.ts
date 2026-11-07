@@ -14,6 +14,7 @@ import { parseJsonBody } from '@/lib/api/parse'
 import { toPartDraftColumns } from '@/lib/schemas/drafts'
 import { updateCurationDraftSchema } from '@/lib/schemas/curation'
 import { isValidUuid } from '@/lib/utils/validation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -31,31 +32,33 @@ async function requireOwnDraft(id: string) {
 
 // GET /api/curation/drafts/[id] — full draft state for session resume.
 export async function GET(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const { id } = await context.params
     const { user, draft } = await requireOwnDraft(id)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    if (!user) return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
 
     // user_id is fetched for the ownership check only — never echoed back.
     const clientDraft = omitKey(withResolvedPartMedia(draft), 'user_id')
     return NextResponse.json({ draft: clientDraft })
   } catch (error) {
     console.error('Failed to load curation draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }
 
 // PATCH /api/curation/drafts/[id] — partial autosave of the curation session.
 // Accepts any subset of the editable fields; only provided keys are written.
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const { id } = await context.params
     const { user, draft } = await requireOwnDraft(id)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    if (!user) return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     if (draft.status !== 'draft') {
-      return NextResponse.json({ error: 'Only drafts can be edited by the curation tool' }, { status: 409 })
+      return NextResponse.json({ error: t('onlyDraftsEditable') }, { status: 409 })
     }
 
     const body = await parseJsonBody(request, updateCurationDraftSchema)
@@ -98,14 +101,14 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (categoryId !== undefined) {
       if (categoryId) {
         const { data: category, error } = await supabase.from('categories').select('id').eq('id', categoryId).maybeSingle()
-        if (error || !category) return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
+        if (error || !category) return NextResponse.json({ error: t('invalidCategory') }, { status: 400 })
       }
       patch.category_id = categoryId
     }
 
     if (licenseId !== undefined) {
       const license = await getLicenseById(licenseId)
-      if (!license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      if (!license) return NextResponse.json({ error: t('invalidLicense') }, { status: 400 })
       patch.license_id = licenseId
     }
 
@@ -116,7 +119,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       // link-out (the whole point is NOT hosting them).
       if (draft.model_file_count > 0) {
         return NextResponse.json(
-          { error: 'Model files are already uploaded — a part published elsewhere must not host files; remove them first' },
+          { error: t('curatedHasModelFiles') },
           { status: 409 },
         )
       }
@@ -130,11 +133,11 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     const nextPlatform = patch.source_platform !== undefined ? patch.source_platform : draft.source_platform ?? null
     if (nextHostingType === 'link_out') {
       if (!nextPlatform) {
-        return NextResponse.json({ error: 'A source platform is required for a part published elsewhere' }, { status: 400 })
+        return NextResponse.json({ error: t('sourcePlatformRequired') }, { status: 400 })
       }
       const platformCheck = await validateSourceUrlMatchesPlatform(nextPlatform, draft.source_url ?? '')
       if (!platformCheck.ok) {
-        return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
+        return NextResponse.json({ error: t(platformCheck.error) }, { status: platformCheck.status })
       }
     } else if (patch.source_platform) {
       const { data: platform, error } = await supabase
@@ -142,7 +145,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         .select('slug')
         .eq('slug', patch.source_platform)
         .maybeSingle()
-      if (error || !platform) return NextResponse.json({ error: 'Unknown source platform' }, { status: 400 })
+      if (error || !platform) return NextResponse.json({ error: t('unknownSourcePlatform') }, { status: 400 })
     }
 
     // The DB constraint also enforces this pair; failing early gives a clean 400.
@@ -151,13 +154,13 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       ? patch.legal_review_justification
       : draft.legal_review_justification ?? null
     if (nextNeedsLegalReview && !nextJustification) {
-      return NextResponse.json({ error: 'A justification is required when flagging for legal review' }, { status: 400 })
+      return NextResponse.json({ error: t('justificationRequired') }, { status: 400 })
     }
 
     if (productIds !== undefined && productIds.length > 0) {
       const { data: rows, error } = await supabase.from('products').select('id').in('id', productIds)
       if (error || !rows || rows.length !== productIds.length) {
-        return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
+        return NextResponse.json({ error: t('invalidProducts') }, { status: 400 })
       }
     }
 
@@ -165,6 +168,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Failed to update curation draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

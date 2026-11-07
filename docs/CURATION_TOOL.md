@@ -8,7 +8,7 @@ It is a **judged, unitary** flow — one part at a time, no bulk import, no auto
 
 > **Curation vs. upload.** Curation covers parts that *reference a publication made elsewhere*: the files stay at the original publication and Common Parts links to them (#396). A contributor publishing **their own design** uses the public [upload flow](UPLOAD_FLOW.md) instead. The two are kept apart at the query level — every curation query is scoped to `origin_type = 'curated'`, every upload query to `'original'` — so neither flow can touch the other's drafts.
 
-**Route:** `/publish` (under the `(dashboard)` route group), shared with the original track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/login?redirect=/publish`. There is no curator role — any authenticated user may publish on either track (decision 2026-07-17). The former `/curation` route is removed, not redirected.
+**Route:** `/publish` (under the `(dashboard)` route group), shared with the original track — see [PUBLISH_FLOW.md](PUBLISH_FLOW.md). Protected by `lib/supabase/middleware.ts` (`/publish` is in `PROTECTED_ROUTE_PREFIXES`); unauthenticated visitors are redirected to `/<locale>/login?redirect=/<locale>/publish`. There is no curator role — any authenticated user may publish on either track (decision 2026-07-17). The former `/curation` route is removed, not redirected.
 
 > **Scope note.** The product-family concept referenced in the original issue was cancelled before implementation (the `flatten_products` migration removed `parent_id`/`product_kind`/`compatibility_status`). Entity assignment is **brand + flat product** only; there is no family selection and no per-product compatibility status.
 
@@ -53,7 +53,7 @@ Extraction runs **server-side only** and is not exposed publicly. Implemented vi
 
 ### 2. Blocking checklist
 
-The six criteria of **curation checklist v1**, defined once in `lib/curation/checklist.ts` (`CURATION_BLOCKING_CRITERIA`) and shared by the UI and the publish gate so they can never drift:
+The six criteria of **curation checklist v1**, defined once in `lib/curation/checklist.ts` (`CURATION_BLOCKING_CRITERIA`) and shared by the UI and the publish gate so they can never drift. Their labels and descriptions are the `CurationCriteria` messages, keyed by criterion:
 
 | Key | Label | Meaning |
 |-----|-------|---------|
@@ -79,7 +79,7 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 ### 4. Non-blocking flags & files
 
-- **Completeness flags**, defined in `CURATION_FLAGS` and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
+- **Completeness flags**, defined in `CURATION_FLAGS` (worded by the `CurationFlags` messages) and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
 - **Files:** a curated part uploads no model files (they stay at the source). Photos go through the three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/parts/[slug]/files`), which bypasses the Vercel body-size limit.
 - **Image previews.** Registered images (imported or uploaded) are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — so it is obvious the gallery is in place rather than an opaque count. Both `POST /api/parts/[slug]/files` and the import endpoint return the part's `images` list so the grid updates without a refetch.
 
@@ -90,7 +90,7 @@ The tool fires `POST /api/curation/drafts/[id]/import-images` in the background 
 - **Draft creation** — right after the Origin step creates the draft.
 - **Draft resume** — when a resumed draft has no registered image (`image_file_count = 0` and an empty `images` array). This covers drafts created outside the Origin step, which never went through the creation trigger, and drafts whose import failed at creation. A resumed draft that already has at least one image, or whose source platform is not supported, triggers nothing. The resume import fires once per resume (guarded against effect re-runs and React strict mode) and never blocks hydration.
 
-In both cases the Files step shows the import in progress, then the resulting grid and thumbnail, without a page reload. While the import runs, the photo field accepts neither a click nor a drop and the upload button is disabled; both are re-enabled when the import ends, whether it succeeded or failed. The import rewrites the part's image list from the state it read before importing, so a photo uploaded concurrently would drop out of the list (#357). The platform condition is shared by both triggers in `lib/curation/image-import.ts`. The platforms the import can run for depend on the server configuration, so the server page `app/(dashboard)/publish/page.tsx` computes them (`enabledImageImportPlatforms`) at request time and passes them to the client flow: without `THINGIVERSE_APP_TOKEN`, a Thingiverse draft triggers nothing.
+In both cases the Files step shows the import in progress, then the resulting grid and thumbnail, without a page reload. While the import runs, the photo field accepts neither a click nor a drop and the upload button is disabled; both are re-enabled when the import ends, whether it succeeded or failed. The import rewrites the part's image list from the state it read before importing, so a photo uploaded concurrently would drop out of the list (#357). The platform condition is shared by both triggers in `lib/curation/image-import.ts`. The platforms the import can run for depend on the server configuration, so the server page `app/[locale]/(dashboard)/publish/page.tsx` computes them (`enabledImageImportPlatforms`) at request time and passes them to the client flow: without `THINGIVERSE_APP_TOKEN`, a Thingiverse draft triggers nothing.
 
 The endpoint resolves the gallery from the draft's source URL (`resolveSourceGallery`): the URL host must be the platform's (`printables.com` or `thingiverse.com`, www-insensitive) before its path is read as a model or Thing id, and a platform not enabled on the server returns **400**. For Printables, the images come from the GraphQL API; for Thingiverse, from `GET /things/{id}/images`, in gallery order (`rank`), taking each image's original upload on `cdn.thingiverse.com` — any other host is dropped. The endpoint downloads the gallery server-side (`downloadSourceImage`) and registers each image under a numbered filename (`00-…`, `01-…`, in page order). The canonical filename sort (`sortImageUrls`) then makes `00` the thumbnail and keeps the slideshow in source order — no display-side change needed. It is **best-effort and idempotent**: unreachable, oversized (> 8 MB) or non-image entries are skipped (an image is any extension in `FILE_TYPES.IMAGE_FILES`, GIF included — #217, served with an `image/*` content type) with gapless numbering, the batch is capped at the existing 10-image limit, and a draft that already has images is left untouched. Downloads never follow a redirect, so they stay on the CDN host the listing returned. Thingiverse downloads carry `THINGIVERSE_USER_AGENT` and never the app token: `cdn.thingiverse.com` answers a Cloudflare challenge (403) to a client that does not identify itself (#431). A failed import is silent for the curator, who uploads photos manually; the server logs each skipped image with its filename and reason (HTTP status, Cloudflare challenge, refused redirect, content type, size, timeout). Implemented via `lib/curation/source-images.ts`; thumbnail selection is the shared `mergeImageUrls` in `lib/utils/images.ts`.
 
@@ -185,7 +185,7 @@ RLS: authenticated users may insert (with `created_by = auth.uid()`) and read.
 ## Key files
 
 ```
-app/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms
+app/[locale]/(dashboard)/publish/page.tsx           Server entry: resolves the image-import platforms
 components/publish/
   publish-page.tsx                          Drafts list + session launcher (both tracks)
   elsewhere-track.tsx                       The 5-step stepper orchestrator
