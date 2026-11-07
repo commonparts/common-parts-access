@@ -3,43 +3,78 @@ import { z } from 'zod'
 import { parseJsonBody, parseSearchParams, validate } from './parse'
 
 const schema = z.object({
-  title: z.string().min(3, { error: 'Title must be at least 3 characters' }),
+  title: z.string().min(3),
   unit: z.enum(['mm', 'cm']).optional(),
+  attested: z.literal(true, { error: 'attestationRequired' }).optional(),
 })
 
+function post(body: string, headers: Record<string, string> = {}): Request {
+  return new Request('http://localhost/api', { method: 'POST', body, headers })
+}
+
+/** The message of a refused parse, which must be a 400. */
+async function errorOf(result: Promise<{ ok: true } | { ok: false; response: Response }>): Promise<string> {
+  const parsed = await result
+  if (parsed.ok) throw new Error('expected a refusal')
+  expect(parsed.response.status).toBe(400)
+  return (await parsed.response.json()).error
+}
+
 describe('validate', () => {
-  it('keeps a message written in the schema', () => {
-    expect(validate(schema, { title: 'ab' })).toEqual({ ok: false, error: 'Title must be at least 3 characters' })
+  it('names the field in front of the default message', async () => {
+    expect(await validate(schema, { title: 'ab' })).toEqual({
+      ok: false,
+      error: 'Title: Too small: expected string to have >=3 characters',
+    })
   })
 
-  it('names the field in front of a default message', () => {
-    const result = validate(schema, { title: 'Hinge', unit: 'in' })
-    expect(result.ok).toBe(false)
-    expect(!result.ok && result.error).toMatch(/^unit: /)
+  it('translates a message key written in the schema', async () => {
+    expect(await validate(schema, { title: 'Hinge', attested: false })).toEqual({
+      ok: false,
+      error: 'Originality declaration: Must be confirmed to start an upload',
+    })
   })
 
-  it('returns the parsed value', () => {
-    expect(validate(schema, { title: 'Hinge' })).toEqual({ ok: true, data: { title: 'Hinge' } })
+  it('reads a missing field as required and shows an unlabelled field by its name', async () => {
+    expect(await validate(z.object({ size: z.number(), extra: z.number() }), { size: 1 })).toEqual({
+      ok: false,
+      error: 'extra: Required',
+    })
+  })
+
+  it('passes the params of a custom issue to its message', async () => {
+    const forbidden = z.object({}).superRefine((_, ctx) => {
+      ctx.addIssue({ code: 'custom', message: 'forbiddenUploadField', params: { field: 'sourceUrl' } })
+    })
+    const result = await validate(forbidden, {})
+    expect(!result.ok && result.error).toMatch(/^"sourceUrl" cannot be set through the upload flow/)
+  })
+
+  it('returns the parsed value', async () => {
+    expect(await validate(schema, { title: 'Hinge' })).toEqual({ ok: true, data: { title: 'Hinge' } })
   })
 })
 
 describe('parseJsonBody', () => {
-  function post(body: string): Request {
-    return new Request('http://localhost/api', { method: 'POST', body })
-  }
-
-  it('answers 400 with the given message when the body is not JSON', async () => {
-    const result = await parseJsonBody(post('{'), schema, 'Invalid JSON body')
-    expect(result.ok).toBe(false)
-    if (result.ok) return
-    expect(result.response.status).toBe(400)
-    expect(await result.response.json()).toEqual({ error: 'Invalid JSON body' })
+  it('answers 400 when the body is not JSON', async () => {
+    const request = post('{', { 'accept-language': 'en-GB' })
+    expect(await errorOf(parseJsonBody(request, schema))).toBe('Invalid request body: expected JSON')
   })
 
-  it('answers 400 naming the invalid field', async () => {
-    const result = await parseJsonBody(post('{"title":"ab"}'), schema)
-    if (result.ok) throw new Error('expected a refusal')
-    expect(await result.response.json()).toEqual({ error: 'Title must be at least 3 characters' })
+  it('answers in the default locale when the request names none', async () => {
+    expect(await errorOf(parseJsonBody(post('{'), schema))).toBe('Corps de requête invalide : JSON attendu')
+  })
+
+  it('answers in the locale of the locale cookie', async () => {
+    const request = post('{"title":"Hinge","unit":"in"}', { cookie: 'NEXT_LOCALE=fr' })
+    expect(await errorOf(parseJsonBody(request, schema))).toBe(
+      'Unité : Option invalide : une valeur parmi "mm"|"cm" attendue',
+    )
+  })
+
+  it('answers in the preferred supported language without a cookie', async () => {
+    const request = post('{"title":"ab"}', { 'accept-language': 'de-DE, fr;q=0.8, en;q=0.5' })
+    expect(await errorOf(parseJsonBody(request, schema))).toMatch(/^Titre : Trop petit/)
   })
 
   it('returns the parsed body', async () => {
@@ -49,12 +84,13 @@ describe('parseJsonBody', () => {
 
 describe('parseSearchParams', () => {
   const query = z.object({ q: z.string().default(''), page: z.string().optional() })
+  const get = (search: string) => new Request(`http://localhost/api${search}`)
 
-  it('reads absent parameters as undefined so defaults apply', () => {
-    expect(parseSearchParams(new URLSearchParams(''), query)).toEqual({ ok: true, data: { q: '' } })
+  it('reads absent parameters as undefined so defaults apply', async () => {
+    expect(await parseSearchParams(get(''), query)).toEqual({ ok: true, data: { q: '' } })
   })
 
-  it('reads the last value of a repeated parameter', () => {
-    expect(parseSearchParams(new URLSearchParams('q=a&q=b'), query)).toEqual({ ok: true, data: { q: 'b' } })
+  it('reads the last value of a repeated parameter', async () => {
+    expect(await parseSearchParams(get('?q=a&q=b'), query)).toEqual({ ok: true, data: { q: 'b' } })
   })
 })

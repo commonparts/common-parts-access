@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import type { PartUploadFormState } from '@/hooks/use-part-upload-form-state'
-import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
+import { COLOR_MAX_LENGTH, DIMENSION_UNITS, MATERIAL_MAX_LENGTH, SUPPORT_TYPES } from '@/lib/utils/part-metadata'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
 interface DetailsStepProps {
@@ -35,10 +36,11 @@ function FieldLabel({
   children: React.ReactNode
   prefilled?: boolean
 }) {
+  const t = useTranslations('PublishFlow')
   return (
     <div className="flex items-center gap-2xs">
       <Label htmlFor={htmlFor}>{children}</Label>
-      {prefilled && <Badge variant="outline">Pre-filled</Badge>}
+      {prefilled && <Badge variant="outline">{t('prefilled')}</Badge>}
     </div>
   )
 }
@@ -57,6 +59,7 @@ export function DetailsStep({
   prefilledFields,
   flags,
 }: DetailsStepProps) {
+  const t = useTranslations('DetailsStep')
   const { formData, setFormData } = form
   const isPrefilled = (field: string) => prefilledFields?.has(field) === true
 
@@ -71,19 +74,19 @@ export function DetailsStep({
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Part details</CardTitle>
+          <CardTitle className="text-base">{t('details')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="space-y-2xs">
             <FieldLabel htmlFor={`${idPrefix}-description`} prefilled={isPrefilled('description')}>
-              Short description
+              {t('description')}
             </FieldLabel>
             <Textarea
               id={`${idPrefix}-description`}
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
-              placeholder="What the part is and what it fixes"
+              placeholder={t('descriptionPlaceholder')}
               maxLength={VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
@@ -95,14 +98,14 @@ export function DetailsStep({
 
           <div className="space-y-2xs">
             <FieldLabel htmlFor={`${idPrefix}-instructions`} prefilled={isPrefilled('instructions')}>
-              Instructions
+              {t('instructions')}
             </FieldLabel>
             <Textarea
               id={`${idPrefix}-instructions`}
               rows={6}
               value={formData.instructions}
               onChange={(e) => setFormData((prev) => ({ ...prev, instructions: e.target.value }))}
-              placeholder="How to print it, and how to fit it to the product"
+              placeholder={t('instructionsPlaceholder')}
               maxLength={VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
             />
             <div className="flex justify-end text-caption text-text-secondary">
@@ -113,14 +116,14 @@ export function DetailsStep({
           </div>
 
           <div className="space-y-2xs">
-            <Label htmlFor={`${idPrefix}-tags`}>Tags</Label>
+            <Label htmlFor={`${idPrefix}-tags`}>{t('tags')}</Label>
             <div className="flex gap-sm">
               <Input
                 id={`${idPrefix}-tags`}
                 value={form.tagInput}
                 onChange={(e) => form.setTagInput(e.target.value)}
                 onKeyDown={handleTagKeyDown}
-                placeholder="Enter a tag and press Enter"
+                placeholder={t('tagPlaceholder')}
               />
               <Button
                 type="button"
@@ -128,7 +131,7 @@ export function DetailsStep({
                 onClick={() => form.addTag(form.tagInput)}
                 disabled={!form.tagInput.trim()}
               >
-                Add
+                {t('addTag')}
               </Button>
             </div>
             {formData.tags.length > 0 && (
@@ -140,9 +143,9 @@ export function DetailsStep({
                       type="button"
                       onClick={() => form.removeTag(tag)}
                       className="ml-2xs rounded-full hover:text-status-errorText focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                      aria-label={`Remove ${tag}`}
+                      aria-label={t('removeTag', { tag })}
                     >
-                      ×
+                      {'×'}
                     </button>
                   </Badge>
                 ))}
@@ -154,39 +157,39 @@ export function DetailsStep({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Print metadata</CardTitle>
+          <CardTitle className="text-base">{t('printMetadata')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-md">
           <div className="grid grid-cols-1 gap-md md:grid-cols-2">
             <div className="space-y-2xs">
               <FieldLabel htmlFor={`${idPrefix}-material`} prefilled={isPrefilled('material')}>
-                Material
+                {t('material')}
               </FieldLabel>
               <Input
                 id={`${idPrefix}-material`}
                 value={formData.material}
                 onChange={(e) => setFormData((prev) => ({ ...prev, material: e.target.value }))}
-                placeholder="e.g. PLA, PETG, ABS"
+                placeholder={t('materialPlaceholder')}
                 maxLength={MATERIAL_MAX_LENGTH}
               />
             </div>
             <div className="space-y-2xs">
-              <Label htmlFor={`${idPrefix}-color`}>Color</Label>
+              <Label htmlFor={`${idPrefix}-color`}>{t('color')}</Label>
               <Input
                 id={`${idPrefix}-color`}
                 value={formData.color}
                 onChange={(e) => setFormData((prev) => ({ ...prev, color: e.target.value }))}
-                placeholder="e.g. Black, White, Any"
+                placeholder={t('colorPlaceholder')}
                 maxLength={COLOR_MAX_LENGTH}
               />
             </div>
           </div>
 
           <fieldset className="space-y-2xs">
-            <legend className="text-sm font-medium text-text-primary">Dimensions</legend>
+            <legend className="text-sm font-medium text-text-primary">{t('dimensions')}</legend>
             <div className="grid grid-cols-2 gap-sm md:grid-cols-4">
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-dim-length`}>Length</Label>
+                <Label htmlFor={`${idPrefix}-dim-length`}>{t('length')}</Label>
                 <Input
                   id={`${idPrefix}-dim-length`}
                   type="number"
@@ -198,7 +201,7 @@ export function DetailsStep({
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-dim-width`}>Width</Label>
+                <Label htmlFor={`${idPrefix}-dim-width`}>{t('width')}</Label>
                 <Input
                   id={`${idPrefix}-dim-width`}
                   type="number"
@@ -210,7 +213,7 @@ export function DetailsStep({
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-dim-height`}>Height</Label>
+                <Label htmlFor={`${idPrefix}-dim-height`}>{t('height')}</Label>
                 <Input
                   id={`${idPrefix}-dim-height`}
                   type="number"
@@ -222,26 +225,28 @@ export function DetailsStep({
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-dim-unit`}>Unit</Label>
+                <Label htmlFor={`${idPrefix}-dim-unit`}>{t('unit')}</Label>
                 <NativeSelect
                   id={`${idPrefix}-dim-unit`}
                   value={formData.dimensionsUnit}
                   onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsUnit: e.target.value }))}
                 >
-                  <option value="mm">mm</option>
-                  <option value="cm">cm</option>
-                  <option value="in">in</option>
+                  {DIMENSION_UNITS.map((unit) => (
+                    <option key={unit} value={unit}>
+                      {t(`units.${unit}`)}
+                    </option>
+                  ))}
                 </NativeSelect>
               </div>
             </div>
           </fieldset>
 
           <fieldset className="space-y-2xs">
-            <legend className="text-sm font-medium text-text-primary">Print settings</legend>
+            <legend className="text-sm font-medium text-text-primary">{t('printSettings')}</legend>
             <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
               <div className="space-y-2xs">
                 <FieldLabel htmlFor={`${idPrefix}-layer-height`} prefilled={isPrefilled('layerHeight')}>
-                  Layer height (mm)
+                  {t('layerHeight')}
                 </FieldLabel>
                 <Input
                   id={`${idPrefix}-layer-height`}
@@ -250,11 +255,11 @@ export function DetailsStep({
                   step="0.01"
                   value={formData.layerHeight}
                   onChange={(e) => setFormData((prev) => ({ ...prev, layerHeight: e.target.value }))}
-                  placeholder="e.g. 0.2"
+                  placeholder={t('layerHeightPlaceholder')}
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-infill`}>Infill (%)</Label>
+                <Label htmlFor={`${idPrefix}-infill`}>{t('infill')}</Label>
                 <Input
                   id={`${idPrefix}-infill`}
                   type="number"
@@ -263,20 +268,22 @@ export function DetailsStep({
                   step="1"
                   value={formData.infill}
                   onChange={(e) => setFormData((prev) => ({ ...prev, infill: e.target.value }))}
-                  placeholder="e.g. 20"
+                  placeholder={t('infillPlaceholder')}
                 />
               </div>
               <div className="space-y-2xs">
-                <Label htmlFor={`${idPrefix}-supports`}>Supports</Label>
+                <Label htmlFor={`${idPrefix}-supports`}>{t('supports')}</Label>
                 <NativeSelect
                   id={`${idPrefix}-supports`}
                   value={formData.supports}
                   onChange={(e) => setFormData((prev) => ({ ...prev, supports: e.target.value }))}
                 >
-                  <option value="">Not specified</option>
-                  <option value="none">None</option>
-                  <option value="buildplate_only">Build plate only</option>
-                  <option value="everywhere">Everywhere</option>
+                  <option value="">{t('supportsUnset')}</option>
+                  {SUPPORT_TYPES.map((support) => (
+                    <option key={support} value={support}>
+                      {t(`supportTypes.${support}`)}
+                    </option>
+                  ))}
                 </NativeSelect>
               </div>
             </div>
@@ -285,7 +292,7 @@ export function DetailsStep({
           <div className="grid grid-cols-1 gap-md md:grid-cols-2">
             <div className="space-y-2xs">
               <FieldLabel htmlFor={`${idPrefix}-print-time`} prefilled={isPrefilled('estimatedPrintTime')}>
-                Estimated print time (minutes)
+                {t('printTime')}
               </FieldLabel>
               <Input
                 id={`${idPrefix}-print-time`}
@@ -294,7 +301,7 @@ export function DetailsStep({
                 step="1"
                 value={formData.estimatedPrintTime}
                 onChange={(e) => setFormData((prev) => ({ ...prev, estimatedPrintTime: e.target.value }))}
-                placeholder="e.g. 120"
+                placeholder={t('printTimePlaceholder')}
               />
             </div>
             <div className="space-y-2xs">
@@ -302,7 +309,7 @@ export function DetailsStep({
                 htmlFor={`${idPrefix}-material-usage`}
                 prefilled={isPrefilled('estimatedMaterialUsage')}
               >
-                Estimated material usage (grams)
+                {t('materialUsage')}
               </FieldLabel>
               <Input
                 id={`${idPrefix}-material-usage`}
@@ -313,7 +320,7 @@ export function DetailsStep({
                 onChange={(e) =>
                   setFormData((prev) => ({ ...prev, estimatedMaterialUsage: e.target.value }))
                 }
-                placeholder="e.g. 45"
+                placeholder={t('materialUsagePlaceholder')}
               />
             </div>
           </div>

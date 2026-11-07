@@ -47,9 +47,6 @@ export function toPartDraftColumns(input: PartDraftFieldsInput): PartDraftColumn
   return columns
 }
 
-/** Refusal of a PATCH that sends no field the route knows. */
-export const NOTHING_TO_UPDATE = 'Nothing to update'
-
 /** Whether a parsed PATCH body carries at least one field. */
 export function hasFields(input: object): boolean {
   return Object.keys(input).length > 0

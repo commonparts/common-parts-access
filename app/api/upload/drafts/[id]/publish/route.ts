@@ -5,8 +5,8 @@ import { getLicenseById } from '@/lib/supabase/queries/licenses'
 import { findProductLinkBlocker } from '@/lib/supabase/queries/products'
 import { publishDraftPart } from '@/lib/supabase/queries/publish'
 import { isHostableLicenseRow } from '@/lib/utils/licenses'
-import { ATTESTATION_BLOCKER } from '@/lib/upload/attestation'
 import { isValidUuid } from '@/lib/utils/validation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -25,73 +25,74 @@ type RouteContext = { params: Promise<{ id: string }> }
 // The draft -> published transition itself runs with the service role, so
 // that the database can refuse it from the public API keys (#403).
 export async function POST(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const { id } = await context.params
     if (!isValidUuid(id)) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
 
     const draft = await getUploadDraft(id)
     if (!draft || draft.user_id !== user.id) {
-      return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+      return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     }
     if (draft.status !== 'draft') {
-      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+      return NextResponse.json({ error: t('alreadyPublished') }, { status: 409 })
     }
 
     const blockers: string[] = []
 
     if (!draft.name?.trim()) {
-      blockers.push('A title is required')
+      blockers.push(t('blockers.title'))
     }
 
     if (!draft.category_id) {
-      blockers.push('A category is required')
+      blockers.push(t('blockers.category'))
     }
 
     if (!draft.originality_attested) {
-      blockers.push(ATTESTATION_BLOCKER)
+      blockers.push(t('blockers.attestation'))
     }
 
     if (!draft.license_id) {
-      blockers.push('A license is required')
+      blockers.push(t('blockers.license'))
     } else {
       const license = await getLicenseById(draft.license_id)
       if (!license) {
-        blockers.push('The selected license could not be verified')
+        blockers.push(t('blockers.licenseUnverified'))
       } else if (!isHostableLicenseRow(license)) {
-        blockers.push('Hosting requires a license allowing commercial use and modification (no NC/ND restrictions)')
+        blockers.push(t('hostingLicense'))
       }
     }
 
     if (draft.model_file_count < 1) {
-      blockers.push('At least one model file must be uploaded')
+      blockers.push(t('blockers.modelFile'))
     }
 
     if (draft.product_ids.length < 1) {
-      blockers.push('At least one compatible product must be linked — without it the part cannot be found by device')
+      blockers.push(t('blockers.product'))
     } else {
       const linkBlocker = await findProductLinkBlocker(draft.product_ids)
-      if (linkBlocker) blockers.push(linkBlocker)
+      if (linkBlocker) blockers.push(t(`blockers.${linkBlocker}`))
     }
 
     if (blockers.length > 0) {
-      return NextResponse.json({ error: 'Publication blocked', blockers }, { status: 422 })
+      return NextResponse.json({ error: t('publicationBlocked'), blockers }, { status: 422 })
     }
 
     const published = await publishDraftPart(id, user.id)
     if (!published) {
-      return NextResponse.json({ error: 'This part is already published' }, { status: 409 })
+      return NextResponse.json({ error: t('alreadyPublished') }, { status: 409 })
     }
     return NextResponse.json({ ok: true, slug: draft.slug })
   } catch (error) {
     console.error('Failed to publish uploaded part', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

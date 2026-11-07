@@ -3,20 +3,22 @@ import { createClient } from '@/lib/supabase/server'
 import { getPrefillFromSourceUrl } from '@/lib/curation/prefill'
 import { parseSearchParams } from '@/lib/api/parse'
 import { sourceUrlQuerySchema } from '@/lib/schemas/curation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // GET /api/curation/prefill?url=… — best-effort pre-fill of the curation
 // source step (platform, author, declared license) from a source URL.
 // Extraction runs server-side only; a failed extraction returns null fields,
 // never an error — the tool must never block on it (Flow P3 §4.4).
 export async function GET(request: NextRequest) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
-    const query = parseSearchParams(request.nextUrl.searchParams, sourceUrlQuerySchema)
+    const query = await parseSearchParams(request, sourceUrlQuerySchema)
     if (!query.ok) return query.response
     const { url } = query.data
 
@@ -24,6 +26,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ prefill })
   } catch (error) {
     console.error('Curation prefill failed', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

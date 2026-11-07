@@ -13,12 +13,16 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "@/i18n/navigation";
+import { authErrorKey } from "@/lib/utils/auth-errors";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function UpdatePasswordForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const t = useTranslations("UpdatePasswordForm");
+  const errors = useTranslations("AuthErrors");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,7 +39,7 @@ export function UpdatePasswordForm({
       //Redirect route
       router.push("/");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(errors(authErrorKey(error)));
     } finally {
       setIsLoading(false);
     }
@@ -45,20 +49,18 @@ export function UpdatePasswordForm({
     <div className={cn("flex flex-col gap-lg", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-heading-sm">Reset Your Password</CardTitle>
-          <CardDescription>
-            Please enter your new password below.
-          </CardDescription>
+          <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleForgotPassword}>
             <div className="flex flex-col gap-lg">
               <div className="grid gap-sm">
-                <Label htmlFor="password">New password</Label>
+                <Label htmlFor="password">{t("password")}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="New password"
+                  placeholder={t("password")}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -66,7 +68,7 @@ export function UpdatePasswordForm({
               </div>
               {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Saving..." : "Save new password"}
+                {isLoading ? t("submitting") : t("submit")}
               </Button>
             </div>
           </form>

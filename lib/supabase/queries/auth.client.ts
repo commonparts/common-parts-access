@@ -1,3 +1,5 @@
+import { AuthError } from "@supabase/supabase-js";
+import type { Locale } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { checkUsernameAvailability, updateUserProfile } from "@/lib/supabase/queries/users";
 
@@ -13,12 +15,14 @@ export async function signInWithPassword(email: string, password: string) {
 }
 
 /**
- * Sign up with email and password
+ * Sign up with email and password. The interface locale is stored in the user
+ * metadata, where the Supabase Auth email templates read it (#500).
  */
 export async function signUp(
-  email: string, 
-  password: string, 
+  email: string,
+  password: string,
   username: string,
+  locale: Locale,
   redirectTo?: string
 ) {
   const supabase = createClient();
@@ -33,7 +37,7 @@ export async function signUp(
   if (!available) {
     return { 
       data: null, 
-      error: new Error("Username is already taken") 
+      error: new AuthError("Username is already taken", 409, "username_taken")
     };
   }
   
@@ -46,6 +50,7 @@ export async function signUp(
       emailRedirectTo: redirectTo,
       data: {
         username: username,
+        locale,
       },
     },
   });

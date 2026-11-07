@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { getLocale } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { redirect } from '@/i18n/navigation'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Grid } from '@/components/layout/grid'
@@ -15,6 +15,7 @@ export default async function MyPartsPage({ searchParams }: PageProps) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return redirect({ href: '/login', locale: await getLocale() })
 
+  const t = await getTranslations('DashboardPages.myParts')
   const { page: pageParam } = await searchParams
   const rawPage = parseInt(pageParam || '1', 10)
   const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1
@@ -25,10 +26,7 @@ export default async function MyPartsPage({ searchParams }: PageProps) {
   })
 
   return (
-    <DashboardShell
-      title="My parts"
-      description="Manage your published parts."
-    >
+    <DashboardShell title={t('title')} description={t('description')}>
       <Grid columns={12}>
         <div className="col-span-12 space-y-md">
           <MyPartsList

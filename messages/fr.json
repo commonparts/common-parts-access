@@ -106,7 +106,8 @@
       "terms": "Conditions d'utilisation",
       "legalNotice": "Mentions légales"
     },
-    "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>."
+    "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>.",
+    "copyright": "© {year} Common Parts"
   },
   "LegalPages": {
     "governingLanguage": "Ce texte est publié en français et en anglais. En cas de divergence entre les deux versions, la version française prévaut.",
@@ -549,5 +550,685 @@
       "title": "Questions",
       "body": "Si vous ne savez pas si une pièce est éligible, ou si vous souhaitez contribuer en nombre (par exemple en tant que Repair Café qui importe un ensemble de modèles validés), écrivez-nous à <mail>{email}</mail>."
     }
+  },
+  "Validation": {
+    "field": "{field} : {message}",
+    "required": "Obligatoire",
+    "invalidRequest": "Requête invalide",
+    "invalidJson": "Corps de requête invalide : JSON attendu",
+    "invalidJsonValue": "JSON invalide",
+    "uuid": "Identifiant invalide",
+    "httpUrl": "Doit être une URL http(s)",
+    "duplicateIds": "Chaque élément ne peut figurer qu’une fois",
+    "nothingToUpdate": "Rien à mettre à jour",
+    "pathCharacters": "Ne doit contenir ni barre oblique, ni barre oblique inversée, ni deux points consécutifs",
+    "letterOrDigit": "Doit contenir au moins une lettre ou un chiffre",
+    "attestationRequired": "Doit être confirmée pour commencer une publication",
+    "forbiddenUploadField": "« {field} » ne peut pas être défini par le parcours de publication : il publie des pièces originales hébergées ici. Les pièces venant d’une autre plateforme passent par la curation.",
+    "curatedHosted": "Une pièce publiée ailleurs est toujours référencée : ses fichiers restent à la source. Indiquez 'link_out' ou omettez le champ.",
+    "invalidHostingType": "Type d’hébergement des fichiers invalide"
+  },
+  "Fields": {
+    "title": "Titre",
+    "description": "Description",
+    "instructions": "Instructions",
+    "tags": "Étiquettes",
+    "material": "Matériau",
+    "color": "Couleur",
+    "dimensions": "Dimensions",
+    "length": "Longueur",
+    "width": "Largeur",
+    "height": "Hauteur",
+    "unit": "Unité",
+    "print_settings": "Paramètres d’impression",
+    "layer_height": "Hauteur de couche",
+    "infill": "Remplissage",
+    "supports": "Supports",
+    "estimated_print_time": "Temps d’impression",
+    "estimated_material_usage": "Quantité de matériau",
+    "productIds": "Produits compatibles",
+    "productId": "Produit",
+    "categoryId": "Catégorie",
+    "licenseId": "Licence",
+    "brandId": "Marque",
+    "sourceUrl": "URL source",
+    "url": "URL",
+    "originalAuthor": "Auteur d’origine",
+    "originalAuthorUrl": "URL de l’auteur d’origine",
+    "sourcePlatform": "Plateforme source",
+    "fileHostingType": "Hébergement des fichiers",
+    "checklist": "Liste de contrôle",
+    "legalReviewJustification": "Justification",
+    "reason": "Motif",
+    "failedCriteria": "Critères non remplis",
+    "attested": "Déclaration d’originalité",
+    "files": "Fichiers",
+    "originalName": "Nom du fichier",
+    "filename": "Nom du fichier",
+    "size": "Taille du fichier",
+    "comment": "Commentaire",
+    "result": "Résultat",
+    "name": "Nom",
+    "releaseYear": "Année de sortie",
+    "imageUrl": "Image",
+    "value": "Référence",
+    "rawQuery": "Terme recherché",
+    "pageUrl": "URL de la page"
+  },
+  "Api": {
+    "signInRequired": "Connectez-vous pour continuer",
+    "forbidden": "Vous n’avez pas accès à cette pièce",
+    "serverError": "Une erreur est survenue de notre côté. Veuillez réessayer.",
+    "loadFailed": "Les données n’ont pas pu être chargées. Veuillez réessayer.",
+    "partNotFound": "Pièce introuvable",
+    "draftNotFound": "Brouillon introuvable",
+    "fileNotFound": "Fichier introuvable",
+    "productNotFound": "Produit introuvable",
+    "invalidSlug": "Adresse de pièce invalide",
+    "invalidFileId": "Identifiant de fichier invalide",
+    "invalidLicense": "Choisissez une licence dans la liste",
+    "invalidCategory": "Choisissez une catégorie dans la liste",
+    "invalidProducts": "Un ou plusieurs produits sélectionnés n’existent plus",
+    "sourceInRegistry": "Cette URL source figure déjà dans le registre",
+    "sourceClaimed": "Cette URL source est déjà utilisée par un autre brouillon",
+    "onlyDraftsImportImages": "Les images ne peuvent être importées que dans un brouillon",
+    "imagesAlreadyRegistered": "Les images de ce brouillon sont déjà enregistrées",
+    "imageImportUnavailable": "L’import d’images n’est pas disponible pour cette source : il faut une URL de modèle Printables ou de Thing Thingiverse, et l’import Thingiverse doit être activé sur le serveur",
+    "imageImportFailed": "Les images n’ont pas pu être importées. Veuillez réessayer.",
+    "alreadyPublished": "Cette pièce est déjà publiée",
+    "publicationBlocked": "Publication bloquée : complétez les points indiqués",
+    "onlyDraftsEditable": "Seuls les brouillons peuvent être modifiés",
+    "curatedHasModelFiles": "Des fichiers de modèle sont déjà envoyés : une pièce publiée ailleurs n’héberge pas de fichiers. Supprimez-les d’abord.",
+    "sourcePlatformRequired": "Choisissez la plateforme où la pièce est publiée",
+    "unknownSourcePlatform": "Plateforme source inconnue",
+    "justificationRequired": "Une justification est requise pour signaler une pièce à l’examen juridique",
+    "noFiles": "Aucun fichier disponible au téléchargement",
+    "tooManyArchiveFiles": "Cette pièce compte plus de {max} fichiers : téléchargez-les un par un",
+    "filesUnavailable": "Les fichiers sont indisponibles pour le moment. Veuillez réessayer plus tard.",
+    "downloadFailed": "Le téléchargement n’a pas pu être préparé. Veuillez réessayer.",
+    "bucketMismatch": "Espace de stockage incorrect pour les fichiers {category}",
+    "fileTooLarge": "{name} est trop volumineux (max. {max} Mo)",
+    "extensionNotAllowed": "L’extension .{extension} n’est pas autorisée pour les fichiers {category}",
+    "extensionMismatch": "L’extension .{extension} ne correspond pas au nom de fichier {filename}",
+    "pathMismatch": "Le chemin du fichier ne correspond pas à votre compte, à la pièce et au nom du fichier",
+    "totalSizeExceeded": "Ces fichiers dépassent la taille totale autorisée",
+    "tooManyModelFiles": "Trop de fichiers de modèle (max. {max})",
+    "tooManyThumbnails": "Trop de photos (max. {max})",
+    "modelFilesLimit": "Ajouter {count, plural, one {# fichier de modèle} other {# fichiers de modèle}} dépasserait la limite de {max} ({existing} déjà enregistrés)",
+    "thumbnailsLimit": "Ajouter {count, plural, one {# photo} other {# photos}} dépasserait la limite de {max} ({existing} déjà enregistrées)",
+    "curatedNoModelFiles": "Une pièce publiée ailleurs n’héberge pas de fichiers de modèle : ses fichiers restent à la source. Envoyez uniquement des photos.",
+    "registerFailed": "Les fichiers envoyés n’ont pas pu être enregistrés. Veuillez réessayer.",
+    "registeredWithoutUpdate": "Les fichiers ont été enregistrés, mais la pièce n’a pas pu être mise à jour",
+    "fileNotDownloadable": "Ce fichier n’est pas disponible au téléchargement",
+    "likeFailed": "Votre « j’aime » n’a pas pu être enregistré. Veuillez réessayer.",
+    "trackingFailed": "La visite n’a pas pu être enregistrée",
+    "referenceNeedsLetter": "La référence doit contenir au moins une lettre ou un chiffre",
+    "invalidProductImage": "Image de produit invalide : envoyez d’abord l’image dans votre propre dossier d’images de produits",
+    "productExists": "Un produit portant ce nom existe déjà pour cette marque",
+    "productCreateFailed": "Le produit n’a pas pu être créé. Veuillez réessayer.",
+    "hostingLicense": "L’hébergement exige une licence qui autorise l’usage commercial et la modification (aucune restriction NC ou ND)",
+    "accountDeletionUnavailable": "La suppression automatique du compte n’est pas encore disponible. Pour supprimer votre compte, écrivez à contact@commonparts.org.",
+    "accountDeletionFailed": "Votre compte n’a pas pu être supprimé pour le moment. Veuillez réessayer, ou écrivez à contact@commonparts.org si le problème persiste.",
+    "reportPartNotLinked": "Signalement impossible : cette pièce n’est pas publiée ou n’est pas liée à ce produit",
+    "reportInvalidReference": "Signalement impossible : la référence n’appartient pas à ce produit",
+    "reportRateLimited": "Trop de signalements depuis cette session, réessayez dans une heure",
+    "reportSessionFailed": "Signalement impossible : votre session n’a pas pu être vérifiée. Veuillez réessayer.",
+    "reportFailed": "Signalement impossible : veuillez réessayer",
+    "sourcePlatformMismatch": "L’URL source n’est pas sur la plateforme choisie",
+    "invalidSourceUrl": "URL source invalide",
+    "blockers": {
+      "title": "Donnez un titre à la pièce",
+      "category": "Choisissez une catégorie",
+      "license": "Choisissez la licence sous laquelle vous publiez",
+      "attestation": "Confirmez la déclaration d’originalité",
+      "modelFile": "Envoyez au moins un fichier de modèle",
+      "product": "Liez au moins un produit compatible : sans lui, la pièce est introuvable par produit",
+      "licenseUnverified": "La licence choisie n’a pas pu être vérifiée",
+      "criteria": "Critères bloquants non cochés : {criteria}",
+      "legalReview": "Cette pièce est signalée pour examen juridique et ne peut pas être publiée avant d’être validée",
+      "hosted": "Une pièce publiée ailleurs est toujours référencée, jamais hébergée : enregistrez de nouveau l’étape Origine pour la référencer à sa source",
+      "sourceLicense": "Choisissez la licence à la source",
+      "removeModelFiles": "Supprimez les fichiers de modèle envoyés : une pièce publiée ailleurs ne les héberge pas",
+      "productsUnverified": "Les produits liés n’ont pas pu être vérifiés",
+      "productWithoutBrand": "Chaque produit lié doit appartenir à une marque : la pièce se parcourt par marque, puis par produit"
+    }
+  },
+  "PublishSteps": {
+    "label": "Étapes de publication",
+    "origin": "Origine",
+    "files": "Fichiers",
+    "details": "Détails",
+    "compatibility": "Compatibilité",
+    "review": "Vérification",
+    "goTo": "Aller à l’étape {step}"
+  },
+  "PublishTracks": {
+    "elsewhere": {
+      "answer": "Elle est déjà publiée ailleurs",
+      "detail": "Printables, Thingiverse, GitHub ou une autre plateforme, y compris la mienne.",
+      "badge": "Publiée ailleurs"
+    },
+    "original": {
+      "answer": "Je l’ai conçue",
+      "detail": "Je la publie ici pour la première fois.",
+      "badge": "Originale"
+    }
+  },
+  "OrientationQuestion": {
+    "title": "D’où vient cette pièce ?",
+    "recommended": "Recommandé",
+    "fixed": "Cette réponse est définitive une fois le brouillon créé. Pour la changer ensuite, supprimez le brouillon et recommencez : d’ici là, vous pouvez changer d’avis librement."
+  },
+  "StepNav": {
+    "back": "Retour",
+    "saveAndExit": "Enregistrer et quitter",
+    "saving": "Enregistrement…",
+    "continue": "Continuer"
+  },
+  "ChecklistRollup": {
+    "title": "Avant de publier",
+    "allConfirmed": "Tous les contrôles sont confirmés",
+    "remaining": "{count} sur {total} restant à confirmer",
+    "allConfirmedDetail": "Tous les contrôles sont confirmés. La publication les exécute de nouveau sur le serveur."
+  },
+  "CurationCriteria": {
+    "eligibility": {
+      "label": "Pièce éligible",
+      "description": "Pièce détachée fonctionnelle pour un produit réel : dans le périmètre du registre, ni décorative ni générique."
+    },
+    "product_target": {
+      "label": "Produit cible identifié",
+      "description": "La pièce vise un produit identifiable ; la fiche produit est liée pendant cette session."
+    },
+    "license": {
+      "label": "Licence vérifiée",
+      "description": "Licence SPDX identifiée, parmi les licences que Common Parts répertorie. La pièce est référencée à sa source, donc les conditions NC et ND sont acceptées ; une licence qui interdit de partager le modèle ne l’est pas."
+    },
+    "file": {
+      "label": "Fichier valide",
+      "description": "Fichier STL, 3MF ou STEP présent (envoyé ici, ou vérifié à la source pour une pièce référencée) qui s’ouvre correctement dans une visionneuse ou un trancheur."
+    },
+    "attribution": {
+      "label": "Attribution complète",
+      "description": "Auteur d’origine, URL source et licence à la source renseignés sur la fiche."
+    },
+    "duplicate": {
+      "label": "Aucun doublon",
+      "description": "La source et la pièce ne figurent pas déjà dans le registre (URL source vérifiée)."
+    }
+  },
+  "CurationFlags": {
+    "needs_verification": {
+      "label": "Impression vérifiée",
+      "description": "La pièce a été imprimée et s’adapte ; sinon, la fiche est signalée comme à vérifier."
+    },
+    "needs_print_settings": {
+      "label": "Paramètres d’impression fournis",
+      "description": "Le matériau, l’orientation ou les réglages du trancheur sont documentés."
+    },
+    "needs_photo": {
+      "label": "Photo de la pièce imprimée",
+      "description": "Au moins une photo de l’impression réelle est incluse."
+    },
+    "needs_instructions": {
+      "label": "Instructions fournies",
+      "description": "Des instructions d’installation ou de remplacement sont présentes."
+    },
+    "needs_category": {
+      "label": "Catégorie confirmée",
+      "description": "La catégorie attribuée est certaine, pas une estimation."
+    }
+  },
+  "PublishBlockers": {
+    "title": "Donnez un titre à la pièce",
+    "category": "Choisissez une catégorie",
+    "license": "Choisissez la licence sous laquelle vous publiez",
+    "attestation": "Confirmez la déclaration d’originalité",
+    "modelFile": "Envoyez au moins un fichier de modèle",
+    "product": "Liez au moins un produit compatible",
+    "criterion": "À confirmer : {criterion}",
+    "hosted": "Enregistrez de nouveau cette étape : une pièce publiée ailleurs est référencée à sa source, jamais hébergée",
+    "sourceLicense": "Choisissez la licence à la source",
+    "sourcePlatform": "Indiquez la plateforme où la pièce est publiée",
+    "removeModelFiles": "Supprimez les fichiers de modèle envoyés : cette pièce est référencée à sa source",
+    "legalReview": "Cette pièce est signalée pour examen juridique et ne peut pas être publiée avant d’être validée"
+  },
+  "ReviewStep": {
+    "title": "Vérification : la page telle qu’elle apparaîtra",
+    "blocked": "Publication bloquée :",
+    "stillNeeded": "Encore nécessaire avant de publier",
+    "dataLicense": "Les données que vous saisissez ici (produits compatibles, paramètres d’impression, champs structurés) sont publiées sous <licenseLink>{license}</licenseLink>. Les fichiers, et le contenu repris de la source, gardent la licence de leur auteur. Voir la <terms>section 4.2 des conditions d’utilisation</terms>.",
+    "back": "Retour",
+    "saveAsDraft": "Enregistrer comme brouillon",
+    "publishing": "Publication…",
+    "publish": "Publier"
+  },
+  "RegisteredImages": {
+    "summary": "{count, plural, one {# image figure sur le brouillon} other {# images figurent sur le brouillon, dans l’ordre du diaporama : la première est la vignette}}.",
+    "thumbnail": "Vignette",
+    "image": "Image {position}"
+  },
+  "RejectionRecorder": {
+    "title": "Pièce inadaptée ?",
+    "intro": "Si cette pièce ne peut pas remplir l’un des contrôles, indiquez pourquoi. Tout ce qui n’est pas confirmé est tracé automatiquement, pour que la décision reste vérifiable.",
+    "placeholder": "Pourquoi cette pièce est-elle refusée ?",
+    "reasonLabel": "Motif du refus de cette pièce",
+    "recording": "Enregistrement…",
+    "record": "Enregistrer et arrêter"
+  },
+  "LegalReviewEscalation": {
+    "title": "Quelque chose semble anormal ?",
+    "flag": "Signaler pour examen juridique",
+    "flagDetail": "La licence déclarée est ambiguë, ou le contexte est suspect. La pièce reste enregistrée mais ne peut pas être publiée avant d’être validée.",
+    "justification": "Justification (obligatoire)",
+    "justificationPlaceholder": "Qu’est-ce qui n’est pas clair dans la licence ou l’origine de cette pièce ?"
+  },
+  "DemandPanel": {
+    "title": "Demande exprimée",
+    "openRequests": "{count, plural, one {# demande ouverte} other {# demandes ouvertes}}",
+    "loading": "Chargement de la demande…",
+    "empty": "Aucune demande de pièce ouverte pour les produits sélectionnés.",
+    "selectedProduct": "Produit sélectionné"
+  },
+  "CompatibilityStep": {
+    "title": "Sur quoi s’adapte-t-elle ?",
+    "intro": "Une pièce détachée se trouve par l’appareil qu’elle répare : les visiteurs parcourent la marque, puis le produit, puis les pièces. Au moins un produit est nécessaire pour publier. Ajoutez des produits d’autant de marques que la pièce en équipe : elle est listée sous chacune d’elles.",
+    "brand": "Marque",
+    "loadingBrands": "Chargement des marques…",
+    "searchBrands": "Rechercher une marque",
+    "noMatchingBrands": "Aucune marque correspondante",
+    "noBrands": "Aucune marque trouvée",
+    "brandHint": "Restreint la liste des produits ci-dessous. Changez-la pour ajouter des produits d’une autre marque : ceux déjà liés sont conservés. Les marques sont gérées par Common Parts ; si la vôtre manque, envoyez un avis.",
+    "products": "Produits compatibles *",
+    "loadingProducts": "Chargement des produits…",
+    "brandFirst": "Choisissez d’abord une marque",
+    "productLimit": "Maximum de {max} produits atteint",
+    "searchProducts": "Rechercher et ajouter un produit",
+    "createProduct": "Créer le produit : {name}",
+    "noMatchingProducts": "Aucun produit correspondant",
+    "noProducts": "Aucun produit trouvé",
+    "product": "Produit",
+    "removeProduct": "Retirer {name}"
+  },
+  "FilesStep": {
+    "title": "Fichiers",
+    "modelFileCount": "{count, plural, one {# fichier de pièce} other {# fichiers de pièce}}",
+    "imageCount": "{count, plural, one {# image} other {# images}}",
+    "referencedLabel": "Fichiers de modèle",
+    "referenced": "Les fichiers de modèle restent là où ils sont publiés et ne sont jamais envoyés ici. Vérifiez à <source>la source</source> qu’ils s’ouvrent correctement.",
+    "modelFiles": "Fichiers de modèle (STL / 3MF / STEP)",
+    "selected": "Sélection : {names}",
+    "photos": "Photos de la pièce imprimée",
+    "importing": "Import des images depuis la source…",
+    "uploading": "Envoi…",
+    "upload": "Envoyer les fichiers sélectionnés",
+    "preparing": "Préparation de l’envoi…",
+    "afterImport": "L’envoi sera disponible à la fin de l’import des images.",
+    "help": "Les fichiers sont enregistrés dès leur envoi : vous pouvez partir et revenir."
+  },
+  "DetailsStep": {
+    "details": "Détails de la pièce",
+    "description": "Description courte",
+    "descriptionPlaceholder": "Ce qu’est la pièce et ce qu’elle répare",
+    "instructions": "Instructions",
+    "instructionsPlaceholder": "Comment l’imprimer, et comment la monter sur le produit",
+    "tags": "Étiquettes",
+    "tagPlaceholder": "Saisissez une étiquette et appuyez sur Entrée",
+    "addTag": "Ajouter",
+    "removeTag": "Retirer {tag}",
+    "printMetadata": "Données d’impression",
+    "material": "Matériau",
+    "materialPlaceholder": "ex. PLA, PETG, ABS",
+    "color": "Couleur",
+    "colorPlaceholder": "ex. Noir, Blanc, Indifférent",
+    "dimensions": "Dimensions",
+    "length": "Longueur",
+    "width": "Largeur",
+    "height": "Hauteur",
+    "unit": "Unité",
+    "units": {
+      "mm": "mm",
+      "cm": "cm",
+      "in": "po"
+    },
+    "printSettings": "Paramètres d’impression",
+    "layerHeight": "Hauteur de couche (mm)",
+    "layerHeightPlaceholder": "ex. 0,2",
+    "infill": "Remplissage (%)",
+    "infillPlaceholder": "ex. 20",
+    "supports": "Supports",
+    "supportsUnset": "Non précisé",
+    "supportTypes": {
+      "none": "Aucun",
+      "buildplate_only": "Plateau uniquement",
+      "everywhere": "Partout"
+    },
+    "printTime": "Temps d’impression estimé (minutes)",
+    "printTimePlaceholder": "ex. 120",
+    "materialUsage": "Quantité de matériau estimée (grammes)",
+    "materialUsagePlaceholder": "ex. 45"
+  },
+  "Attestation": {
+    "title": "Déclaration d’originalité",
+    "clauses": {
+      "authorship": "J’ai conçu cette pièce moi-même. Ce n’est ni une copie, ni une republication, ni une dérivée de la pièce de quelqu’un d’autre.",
+      "rights": "Je détiens les droits pour la publier, et j’accorde à Common Parts Access le droit d’héberger et de distribuer les fichiers sous la licence que j’ai choisie.",
+      "hosting": "Les fichiers sont publiés ici, et non liés depuis une autre plateforme. Une pièce déjà publiée ailleurs, y compris sur votre propre site ou dépôt, se publie par le parcours « publiée ailleurs », où vous êtes crédité comme auteur d’origine."
+    },
+    "summary": "J’ai créé cette pièce et je détiens le droit de la publier ici sous la licence choisie.",
+    "recordedOn": "La déclaration a été enregistrée le {date}, à la création de ce brouillon.",
+    "recorded": "La déclaration a été enregistrée à la création de ce brouillon."
+  },
+  "PublishFlow": {
+    "loadFailed": "Le brouillon n’a pas pu être chargé. Veuillez réessayer.",
+    "saveFailed": "Le brouillon n’a pas pu être enregistré. Veuillez réessayer.",
+    "createFailed": "Le brouillon n’a pas pu être créé. Veuillez réessayer.",
+    "registerFailed": "Les fichiers envoyés n’ont pas pu être enregistrés. Veuillez réessayer.",
+    "uploadFailedFile": "{name} n’a pas pu être envoyé. Veuillez réessayer.",
+    "uploadFailed": "L’envoi a échoué. Veuillez réessayer.",
+    "publishFailed": "La publication a échoué. Veuillez réessayer.",
+    "loadingDraft": "Chargement de votre brouillon…",
+    "title": "Titre de la pièce *",
+    "titlePlaceholder": "ex. Clip de roulette de panier de lave-vaisselle",
+    "category": "Catégorie *",
+    "loadingCategories": "Chargement des catégories…",
+    "selectCategory": "Choisir une catégorie",
+    "refineCategory": "Préciser (facultatif)",
+    "license": "Licence *",
+    "loadingLicenses": "Chargement des licences…",
+    "licenseOption": "{shortName} — {name}",
+    "exit": "Quitter",
+    "saveAndContinue": "Enregistrer et continuer",
+    "createAndContinue": "Créer le brouillon et continuer",
+    "prefilled": "Prérempli"
+  },
+  "OriginalTrack": {
+    "selectLicense": "Choisissez la licence sous laquelle vous publiez",
+    "licenseHint": "Common Parts héberge et redistribue vos fichiers, la licence doit donc autoriser l’usage commercial et la modification. Les licences avec restriction NC ou ND ne peuvent pas être proposées dans ce parcours."
+  },
+  "ElsewhereTrack": {
+    "rejectFailed": "La décision n’a pas pu être enregistrée. Veuillez réessayer.",
+    "rejected": "Décision enregistrée pour cette source.",
+    "rejectedDetail": "Le motif et les contrôles non confirmés sont tracés dans le journal. Le brouillon, s’il a été créé, reste disponible dans vos brouillons.",
+    "backToDrafts": "Retour aux brouillons",
+    "sourceUrl": "Où est-elle publiée ? *",
+    "sourceUrlPlaceholder": "https://www.thingiverse.com/thing:…",
+    "checkingSource": "Vérification du registre…",
+    "sourceFixed": "La source est définitive une fois le brouillon créé.",
+    "duplicatePublished": "Cette source figure déjà dans le registre : <part>{name}</part>. Une seconde fiche ne peut pas être créée.",
+    "duplicateDraft": "Cette source figure déjà dans le registre : <part>{name} (brouillon)</part>. Une seconde fiche ne peut pas être créée.",
+    "noDuplicate": "Le registre ne contient aucune pièce avec cette URL source.",
+    "platform": "Plateforme *",
+    "selectPlatform": "Choisir une plateforme",
+    "category": "Catégorie",
+    "attribution": "Attribution",
+    "author": "Auteur d’origine *",
+    "authorPlaceholder": "Nom de l’auteur sur la plateforme source",
+    "authorUrl": "URL de l’auteur",
+    "authorUrlPlaceholder": "https://…",
+    "licenseAndFiles": "Licence et fichiers",
+    "license": "Licence à la source *",
+    "selectLicense": "Choisissez la licence déclarée à la source",
+    "licenseHint": "La pièce garde la licence choisie par son concepteur. Elle est référencée à sa source, donc les licences NC et ND sont acceptées.",
+    "linkOut": "Common Parts renverra vers la source ; les fichiers restent là où ils sont publiés.",
+    "scope": "Périmètre",
+    "eligibilityHint": "Une pièce détachée fonctionnelle pour un produit réel : ni une décoration, ni un outil.",
+    "filesHelp": "Ouvrez les fichiers dans un trancheur avant de confirmer le contrôle du fichier : savoir s’ils s’ouvrent relève d’un jugement humain.",
+    "printConfirmation": "Confirmation d’impression"
+  },
+  "AuthForms": {
+    "email": "E-mail",
+    "emailPlaceholder": "m@exemple.fr",
+    "password": "Mot de passe"
+  },
+  "AuthErrors": {
+    "invalidCredentials": "E-mail ou mot de passe incorrect",
+    "emailNotConfirmed": "Confirmez d’abord votre adresse e-mail : ouvrez le lien de l’e-mail que nous vous avons envoyé",
+    "userExists": "Un compte existe déjà pour cette adresse e-mail",
+    "usernameTaken": "Ce nom d’utilisateur est déjà pris",
+    "weakPassword": "Ce mot de passe est trop faible : choisissez-en un plus long",
+    "samePassword": "Le nouveau mot de passe doit être différent de l’actuel",
+    "invalidEmail": "Saisissez une adresse e-mail valide",
+    "rateLimited": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+    "generic": "Une erreur est survenue. Veuillez réessayer."
+  },
+  "LoginForm": {
+    "title": "Connexion",
+    "description": "Saisissez votre e-mail ci-dessous pour vous connecter à votre compte",
+    "forgotPassword": "Mot de passe oublié ?",
+    "submitting": "Connexion…",
+    "submit": "Se connecter",
+    "noAccount": "Pas encore de compte ?",
+    "signUp": "S’inscrire"
+  },
+  "SignUpForm": {
+    "title": "Inscription",
+    "description": "Créer un compte",
+    "username": "Nom d’utilisateur",
+    "repeatPassword": "Confirmer le mot de passe",
+    "passwordsDiffer": "Les mots de passe ne correspondent pas",
+    "usernameRequired": "Le nom d’utilisateur est obligatoire",
+    "usernameTooShort": "Le nom d’utilisateur doit comporter au moins {min} caractères",
+    "usernameCharacters": "Le nom d’utilisateur ne peut contenir que des lettres, des chiffres, des tirets bas et des tirets",
+    "submitting": "Création de votre compte…",
+    "submit": "S’inscrire",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "signIn": "Se connecter"
+  },
+  "ForgotPasswordForm": {
+    "sentTitle": "Consultez vos e-mails",
+    "sentDescription": "Instructions de réinitialisation envoyées",
+    "sentBody": "Si vous vous êtes inscrit avec votre e-mail et un mot de passe, vous recevrez un e-mail de réinitialisation du mot de passe.",
+    "title": "Réinitialiser votre mot de passe",
+    "description": "Saisissez votre e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe",
+    "submitting": "Envoi…",
+    "submit": "Envoyer l’e-mail de réinitialisation",
+    "haveAccount": "Vous avez déjà un compte ?",
+    "signIn": "Se connecter"
+  },
+  "UpdatePasswordForm": {
+    "title": "Réinitialiser votre mot de passe",
+    "description": "Saisissez votre nouveau mot de passe ci-dessous.",
+    "password": "Nouveau mot de passe",
+    "submitting": "Enregistrement…",
+    "submit": "Enregistrer le nouveau mot de passe"
+  },
+  "DeleteAccountPage": {
+    "title": "Supprimer votre compte",
+    "description": "Cette action supprime définitivement votre compte et vos données personnelles. Elle est irréversible.",
+    "scope": "Votre profil, vos collections et vos pièces non publiées sont supprimés. Les pièces que vous avez publiées restent disponibles, sans vous être attribuées, et vos « j’aime » sont conservés de façon anonyme.",
+    "publishedParts": "Pour faire aussi retirer vos pièces publiées, écrivez à contact@commonparts.org avant de supprimer votre compte. Si vous continuez, vous serez déconnecté immédiatement.",
+    "continue": "Continuer vers la confirmation",
+    "cancel": "Annuler"
+  },
+  "DeleteAccountForm": {
+    "title": "Confirmer la suppression",
+    "description": "Cette action est définitive. Saisissez {word} pour supprimer votre compte.",
+    "confirmWord": "SUPPRIMER",
+    "label": "Saisissez {word} pour confirmer",
+    "typeToConfirm": "Veuillez saisir {word} pour confirmer.",
+    "failed": "Votre compte n’a pas pu être supprimé pour le moment. Veuillez réessayer.",
+    "submitting": "Suppression…",
+    "submit": "Supprimer mon compte"
+  },
+  "DeleteAccountSuccessPage": {
+    "title": "Compte supprimé",
+    "description": "Votre compte a été supprimé. Merci d’avoir participé à Common Parts Access.",
+    "home": "Retour à l’accueil",
+    "signUp": "Créer un nouveau compte"
+  },
+  "AuthErrorPage": {
+    "title": "Erreur d’authentification",
+    "confirmationTitle": "Lien expiré ou invalide",
+    "confirmationDescription": "Votre lien de confirmation n’a pas pu être traité.",
+    "confirmationError": "Le lien de confirmation est invalide ou a expiré.",
+    "whatYouCanDo": "Ce que vous pouvez faire :",
+    "requestNewEmail": "Revenez à l’<link>inscription</link> et demandez un nouvel e-mail de confirmation",
+    "checkSpam": "Cherchez le lien de confirmation dans vos courriers indésirables",
+    "linkExpiry": "Les liens de confirmation expirent au bout de 24 heures",
+    "signUpAgain": "S’inscrire de nouveau",
+    "signIn": "Se connecter",
+    "unspecified": "Une erreur non précisée est survenue pendant l’authentification.",
+    "home": "Retour à l’accueil"
+  },
+  "LogoutSuccessPage": {
+    "title": "Déconnecté",
+    "description": "Vous êtes déconnecté de Common Parts Access. Votre session s’est terminée en toute sécurité et vos données restent protégées.",
+    "home": "Retour à l’accueil",
+    "signIn": "Se reconnecter",
+    "thanks": "Merci de participer à Common Parts Access. Nous sommes là dès que vous avez besoin de trouver ou de publier des pièces de réparation."
+  },
+  "SignUpSuccessPage": {
+    "title": "Merci pour votre inscription !",
+    "description": "Consultez vos e-mails pour confirmer",
+    "body": "Votre inscription est enregistrée. Consultez vos e-mails pour confirmer votre compte avant de vous connecter."
+  },
+  "SignOutPage": {
+    "title": "Déconnexion en cours",
+    "description": "Patientez pendant que nous fermons votre session. Si vous n’êtes pas redirigé, revenez à l’accueil.",
+    "home": "Retour à l’accueil"
+  },
+  "DashboardPages": {
+    "dashboard": {
+      "title": "Tableau de bord",
+      "description": "Vue d’ensemble de votre activité de contributeur.",
+      "comingSoon": "Le contenu du tableau de bord arrive bientôt."
+    },
+    "downloads": {
+      "title": "Téléchargements",
+      "description": "Retrouvez les pièces que vous avez téléchargées et suivez leur activité.",
+      "comingSoon": "La vue des téléchargements arrive bientôt."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Suivez l’activité des pièces et vos messages.",
+      "comingSoon": "La vue des notifications arrive bientôt."
+    },
+    "settings": {
+      "title": "Paramètres",
+      "description": "Modifiez votre compte et vos préférences.",
+      "comingSoon": "La vue des paramètres arrive bientôt."
+    },
+    "account": {
+      "title": "Paramètres du compte",
+      "comingSoon": "Les paramètres du compte seront disponibles ici"
+    },
+    "preferences": {
+      "title": "Préférences",
+      "comingSoon": "Les préférences seront disponibles ici"
+    },
+    "profile": {
+      "title": "Paramètres du profil",
+      "comingSoon": "Les paramètres du profil seront disponibles ici"
+    },
+    "drafts": {
+      "title": "Pièces en brouillon",
+      "comingSoon": "Vos pièces en brouillon s’afficheront ici"
+    },
+    "published": {
+      "title": "Pièces publiées",
+      "comingSoon": "Vos pièces publiées s’afficheront ici"
+    },
+    "myParts": {
+      "title": "Mes pièces",
+      "description": "Gérez vos pièces publiées."
+    }
+  },
+  "MyPartsList": {
+    "deleteFailed": "La pièce n’a pas pu être supprimée. Veuillez réessayer.",
+    "emptyPage": "Aucune pièce publiée sur cette page.",
+    "empty": "Vous n’avez encore publié aucune pièce.",
+    "page": "Page {page}",
+    "uploaded": "Envoyée le {date}",
+    "uploadDateUnknown": "Date d’envoi inconnue",
+    "deletePart": "Supprimer {name}",
+    "deleteTitle": "Supprimer la pièce",
+    "deleteConfirm": "Voulez-vous vraiment supprimer « {name} » ? Cette action est irréversible.",
+    "delete": "Supprimer",
+    "deleting": "Suppression…"
+  },
+  "PublishPage": {
+    "title": "Publier une pièce",
+    "description": "Ajoutez une pièce détachée au Common Parts Index. Votre progression est enregistrée à chaque étape : vous pouvez vous arrêter et revenir.",
+    "loadFailed": "Vos brouillons n’ont pas pu être chargés. Veuillez réessayer.",
+    "deleteFailed": "Le brouillon n’a pas pu être supprimé. Veuillez réessayer.",
+    "inProgress": "En cours",
+    "loading": "Chargement des brouillons…",
+    "empty": "Rien en cours. Répondez à la question ci-dessus pour commencer une pièce.",
+    "lastEdited": "Modifié {time}",
+    "draft": "Brouillon",
+    "resume": "Reprendre",
+    "deleteDraft": "Supprimer {name}",
+    "deleteTitle": "Supprimer le brouillon",
+    "deleteConfirm": "Voulez-vous vraiment supprimer le brouillon « {name} » ? Les fichiers envoyés sont supprimés. Cette action est irréversible.",
+    "delete": "Supprimer",
+    "deleting": "Suppression…"
+  },
+  "SearchDemandPage": {
+    "title": "Demande de recherche",
+    "description": "Les recherches qui n’ont trouvé aucune pièce, et les références que les visiteurs ont proposées à partir d’elles.",
+    "misses": "Recherches sans réponse les plus fréquentes",
+    "missesIntro": "{days} derniers jours. Une recherche est sans réponse sauf si une pièce, ou un produit ayant une pièce publiée, lui correspond entièrement. Les graphies qui se normalisent de la même façon sont comptées ensemble ; une recherche compte une fois par jour (UTC), quel que soit le nombre de fois où elle a été enregistrée ce jour-là, et le résultat retenu est le plus récent.",
+    "filterLabel": "Filtrer les recherches par résultat",
+    "allOutcomes": "Tous les résultats",
+    "outcomes": {
+      "no_results": "Aucun résultat",
+      "approximate": "Résultats approchants uniquement",
+      "no_parts": "Produit sans pièce"
+    },
+    "search": "Recherche",
+    "outcome": "Résultat",
+    "days": "Jours",
+    "lastSeen": "Dernière occurrence",
+    "noMissesWithOutcome": "Aucune recherche sans réponse avec le résultat « {outcome} » sur cette période.",
+    "noMisses": "Aucune recherche sans réponse sur cette période.",
+    "pending": "Références en attente",
+    "pendingIntro": "Passez <code>status</code> à <code>validated</code> ou <code>rejected</code> sur la ligne de <code>product_references</code> pour examiner une proposition.",
+    "reference": "Référence",
+    "product": "Produit",
+    "type": "Type",
+    "region": "Région",
+    "suggested": "Proposée le",
+    "referenceTypes": {
+      "manufacturer_ref": "Référence de modèle",
+      "commercial_name": "Nom commercial",
+      "ean": "Code-barres"
+    },
+    "noPending": "Aucune référence en attente d’examen."
+  },
+  "CreateProductModal": {
+    "title": "Créer un produit",
+    "description": "Prérempli à partir de la marque et de la catégorie choisies.",
+    "cancel": "Annuler",
+    "name": "Nom du produit *",
+    "namePlaceholder": "Saisissez le nom du produit",
+    "brand": "Marque *",
+    "selectBrand": "Choisir une marque",
+    "category": "Catégorie *",
+    "selectCategory": "Choisir une catégorie",
+    "productDescription": "Description",
+    "descriptionPlaceholder": "Décrivez brièvement le produit",
+    "releaseYear": "Année de sortie",
+    "releaseYearPlaceholder": "ex. 2023",
+    "image": "Image du produit (facultatif)",
+    "selected": "Sélection : {name}",
+    "creating": "Création…",
+    "submit": "Créer le produit",
+    "signInToUpload": "Connectez-vous pour envoyer une image de produit",
+    "imageUploadFailed": "L’image du produit n’a pas pu être envoyée. Veuillez réessayer.",
+    "createFailed": "Le produit n’a pas pu être créé. Veuillez réessayer."
+  },
+  "ConfirmationDialog": {
+    "confirm": "Confirmer",
+    "cancel": "Annuler"
+  },
+  "FileUploader": {
+    "prompt": "Glissez-déposez vos fichiers ici, ou <browse>parcourez</browse>",
+    "maxSize": "Taille maximale : {size} Mo"
+  },
+  "Combobox": {
+    "placeholder": "Tapez pour rechercher…",
+    "empty": "Aucune option trouvée",
+    "create": "Créer : {value}"
   }
 }

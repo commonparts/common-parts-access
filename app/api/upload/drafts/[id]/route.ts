@@ -13,6 +13,7 @@ import { parseJsonBody } from '@/lib/api/parse'
 import { toPartDraftColumns } from '@/lib/schemas/drafts'
 import { updateUploadDraftSchema } from '@/lib/schemas/upload'
 import { isValidUuid } from '@/lib/utils/validation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -30,31 +31,33 @@ async function requireOwnDraft(id: string) {
 
 // GET /api/upload/drafts/[id] — full draft state for session resume.
 export async function GET(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const { id } = await context.params
     const { user, draft } = await requireOwnDraft(id)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    if (!user) return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
 
     // user_id is fetched for the ownership check only — never echoed back.
     const clientDraft = omitKey(withResolvedPartMedia(draft), 'user_id')
     return NextResponse.json({ draft: clientDraft })
   } catch (error) {
     console.error('Failed to load upload draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }
 
 // PATCH /api/upload/drafts/[id] — partial autosave of the upload session.
 // Accepts any subset of the editable fields; only provided keys are written.
 export async function PATCH(request: NextRequest, context: RouteContext) {
+  const t = await getApiTranslations(request)
   try {
     const { id } = await context.params
     const { user, draft } = await requireOwnDraft(id)
-    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    if (!draft) return NextResponse.json({ error: 'Draft not found' }, { status: 404 })
+    if (!user) return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
+    if (!draft) return NextResponse.json({ error: t('draftNotFound') }, { status: 404 })
     if (draft.status !== 'draft') {
-      return NextResponse.json({ error: 'Only drafts can be edited by the upload flow' }, { status: 409 })
+      return NextResponse.json({ error: t('onlyDraftsEditable') }, { status: 409 })
     }
 
     // Unknown keys are ignored; the fields the upload flow does not expose are
@@ -68,16 +71,16 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     if (categoryId !== undefined) {
       const { data: category, error } = await supabase.from('categories').select('id').eq('id', categoryId).maybeSingle()
-      if (error || !category) return NextResponse.json({ error: 'Invalid category selected' }, { status: 400 })
+      if (error || !category) return NextResponse.json({ error: t('invalidCategory') }, { status: 400 })
       patch.category_id = categoryId
     }
 
     if (licenseId !== undefined) {
       const license = await getLicenseById(licenseId)
-      if (!license) return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      if (!license) return NextResponse.json({ error: t('invalidLicense') }, { status: 400 })
       if (!isHostableLicenseRow(license)) {
         return NextResponse.json(
-          { error: 'Hosting requires a license allowing commercial use and modification (no NC/ND restrictions)' },
+          { error: t('hostingLicense') },
           { status: 400 },
         )
       }
@@ -87,7 +90,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     if (productIds !== undefined && productIds.length > 0) {
       const { data: rows, error } = await supabase.from('products').select('id').in('id', productIds)
       if (error || !rows || rows.length !== productIds.length) {
-        return NextResponse.json({ error: 'One or more selected products are invalid' }, { status: 400 })
+        return NextResponse.json({ error: t('invalidProducts') }, { status: 400 })
       }
     }
 
@@ -95,6 +98,6 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ ok: true })
   } catch (error) {
     console.error('Failed to update upload draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

@@ -30,7 +30,7 @@ The license list is filtered to the **hosting whitelist** — commercial use *an
 
 #### Originality declaration
 
-The contributor's counterpart of the curator's blocking checklist, and the **only blocking check** in this flow. It is one statement covering three clauses (`ATTESTATION_CLAUSES` in `lib/upload/attestation.ts`): the part is their own design, they hold the right to publish it under the selected license, and the files are published here rather than linked from elsewhere.
+The contributor's counterpart of the curator's blocking checklist, and the **only blocking check** in this flow. It is one statement covering three clauses (`ATTESTATION_CLAUSES` in `lib/upload/attestation.ts`, worded by the `Attestation` messages): the part is their own design, they hold the right to publish it under the selected license, and the files are published here rather than linked from elsewhere.
 
 It is presented as a single checkbox over an itemized list, not three checkboxes — this is one declaration, and splitting it would invite confirming two thirds of a legal claim.
 

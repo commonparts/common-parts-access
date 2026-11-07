@@ -1,12 +1,14 @@
+import { getTranslations } from "next-intl/server"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
 import { Grid } from "@/components/layout/grid"
 
-export default function NotificationsPage() {
+export default async function NotificationsPage() {
+  const t = await getTranslations('DashboardPages.notifications')
   return (
-    <DashboardShell title="Notifications" description="Stay updated on part activity and messages.">
+    <DashboardShell title={t('title')} description={t('description')}>
       <Grid columns={12}>
         <div className="col-span-12 rounded-lg border border-border-subtle bg-bg-surface p-lg text-text-secondary">
-          Notifications view coming soon.
+          {t('comingSoon')}
         </div>
       </Grid>
     </DashboardShell>

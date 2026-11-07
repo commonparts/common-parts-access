@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
 import { cn } from '@/lib/utils'
 
 interface RegisteredImagesProps {
@@ -16,14 +17,12 @@ interface RegisteredImagesProps {
  * obvious the gallery is in place, rather than an opaque count.
  */
 export function RegisteredImages({ urls, className }: RegisteredImagesProps) {
+  const t = useTranslations('RegisteredImages')
   if (urls.length === 0) return null
 
   return (
     <div className={cn('space-y-2xs', className)}>
-      <p className="text-sm text-text-secondary">
-        {urls.length} {urls.length === 1 ? 'image is' : 'images are'} on the draft, in slideshow
-        order — the first is the thumbnail.
-      </p>
+      <p className="text-sm text-text-secondary">{t('summary', { count: urls.length })}</p>
       <div className="flex flex-wrap gap-2xs">
         {urls.map((url, index) => (
           <div
@@ -32,14 +31,14 @@ export function RegisteredImages({ urls, className }: RegisteredImagesProps) {
           >
             <Image
               src={url}
-              alt={index === 0 ? 'Thumbnail' : `Image ${index + 1}`}
+              alt={index === 0 ? t('thumbnail') : t('image', { position: index + 1 })}
               fill
               sizes="80px"
               className="object-cover"
             />
             {index === 0 && (
               <span className="absolute inset-x-0 bottom-0 bg-bg-overlay py-3xs text-center text-xs text-text-primary">
-                Thumbnail
+                {t('thumbnail')}
               </span>
             )}
           </div>

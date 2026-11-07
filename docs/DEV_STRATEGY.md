@@ -116,7 +116,7 @@ Triggered on:
 Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
-3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
+3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433). It includes `react/jsx-no-literals`, which refuses interface text written in JSX instead of the message files (#500, see [I18N.md](./I18N.md#messages))
 4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx`, `components/ui/command.tsx`, `components/ui/dropdown-menu.tsx` and `components/ui/popover.tsx`, kept so the files stay close to upstream (#482, #484), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
 5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 

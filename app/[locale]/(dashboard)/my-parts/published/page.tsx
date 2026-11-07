@@ -1,9 +1,12 @@
-export default function PublishedPage() {
+import { getTranslations } from "next-intl/server"
+
+export default async function PublishedPage() {
+  const t = await getTranslations('DashboardPages.published')
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Published parts</h1>
-      <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-600">Your published parts will be displayed here</p>
+      <h1 className="mb-md font-heading text-heading-md font-semibold text-text-primary">{t('title')}</h1>
+      <div className="rounded-lg bg-bg-surface p-md shadow-surface">
+        <p className="text-text-secondary">{t('comingSoon')}</p>
       </div>
     </div>
   )

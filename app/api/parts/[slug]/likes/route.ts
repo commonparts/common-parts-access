@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { addLike, getLikeState, removeLike } from '@/lib/supabase/queries/part-metrics'
 import { isPartNotFoundError } from '@/lib/utils/errors'
+import { getApiTranslations } from '@/lib/api/translations'
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { slug } = await params
@@ -19,24 +21,25 @@ export async function GET(
     })
   } catch (error) {
     if (isPartNotFoundError(error)) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
     console.error('Like status error:', error)
-    return NextResponse.json({ error: 'Failed to fetch like status' }, { status: 500 })
+    return NextResponse.json({ error: t('loadFailed') }, { status: 500 })
   }
 }
 
 export async function POST(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { slug } = await params
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const result = await addLike(slug, user.id)
@@ -47,24 +50,25 @@ export async function POST(
     })
   } catch (error) {
     if (isPartNotFoundError(error)) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
     console.error('Like creation error:', error)
-    return NextResponse.json({ error: 'Failed to like part' }, { status: 500 })
+    return NextResponse.json({ error: t('likeFailed') }, { status: 500 })
   }
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { slug } = await params
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const result = await removeLike(slug, user.id)
@@ -75,9 +79,9 @@ export async function DELETE(
     })
   } catch (error) {
     if (isPartNotFoundError(error)) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
     console.error('Like deletion error:', error)
-    return NextResponse.json({ error: 'Failed to unlike part' }, { status: 500 })
+    return NextResponse.json({ error: t('likeFailed') }, { status: 500 })
   }
 }

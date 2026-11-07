@@ -15,12 +15,21 @@ import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { parseRedirectParam } from "@/lib/utils/validation";
+import { authErrorKey } from "@/lib/utils/auth-errors";
+
+/** Shortest username accepted at sign-up. */
+const USERNAME_MIN_LENGTH = 3;
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
+  const t = useTranslations("SignUpForm");
+  const auth = useTranslations("AuthForms");
+  const errors = useTranslations("AuthErrors");
+  const locale = useLocale();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,26 +46,26 @@ export function SignUpForm({
     setError(null);
 
     if (password !== repeatPassword) {
-      setError("Passwords do not match");
+      setError(t("passwordsDiffer"));
       setIsLoading(false);
       return;
     }
 
     if (!username.trim()) {
-      setError("Username is required");
+      setError(t("usernameRequired"));
       setIsLoading(false);
       return;
     }
 
     // Basic username validation
-    if (username.length < 3) {
-      setError("Username must be at least 3 characters long");
+    if (username.length < USERNAME_MIN_LENGTH) {
+      setError(t("usernameTooShort", { min: USERNAME_MIN_LENGTH }));
       setIsLoading(false);
       return;
     }
 
     if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      setError("Username can only contain letters, numbers, underscores, and hyphens");
+      setError(t("usernameCharacters"));
       setIsLoading(false);
       return;
     }
@@ -65,11 +74,11 @@ export function SignUpForm({
       const confirmUrl = redirectPath
         ? `${window.location.origin}/confirm?next=${encodeURIComponent(redirectPath)}`
         : `${window.location.origin}/confirm`;
-      const { error } = await signUp(email, password, username, confirmUrl);
+      const { error } = await signUp(email, password, username, locale, confirmUrl);
       if (error) throw error;
       router.push("/sign-up-success");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(errors(authErrorKey(error)));
     } finally {
       setIsLoading(false);
     }
@@ -79,39 +88,39 @@ export function SignUpForm({
     <div className={cn("flex flex-col gap-lg", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-heading-sm">Sign up</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
+          <CardDescription>{t("description")}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignUp}>
             <div className="flex flex-col gap-lg">
               <div className="grid gap-sm">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{auth("email")}</Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder={auth("emailPlaceholder")}
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
               <div className="grid gap-sm">
-                <Label htmlFor="username">Username</Label>
+                <Label htmlFor="username">{t("username")}</Label>
                 <Input
                   id="username"
                   type="text"
                   required
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  minLength={3}
+                  minLength={USERNAME_MIN_LENGTH}
                   pattern="[a-zA-Z0-9_-]+"
-                  title="Username can only contain letters, numbers, underscores, and hyphens"
+                  title={t("usernameCharacters")}
                 />
               </div>
               <div className="grid gap-sm">
                 <div className="flex items-center">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{auth("password")}</Label>
                 </div>
                 <Input
                   id="password"
@@ -123,7 +132,7 @@ export function SignUpForm({
               </div>
               <div className="grid gap-sm">
                 <div className="flex items-center">
-                  <Label htmlFor="repeat-password">Repeat Password</Label>
+                  <Label htmlFor="repeat-password">{t("repeatPassword")}</Label>
                 </div>
                 <Input
                   id="repeat-password"
@@ -135,11 +144,11 @@ export function SignUpForm({
               </div>
               {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating an account..." : "Sign up"}
+                {isLoading ? t("submitting") : t("submit")}
               </Button>
             </div>
             <div className="mt-md text-center text-caption">
-              Already have an account?{" "}
+              {t("haveAccount")}{" "}
               <Link
                 href={
                   redirectPath
@@ -148,7 +157,7 @@ export function SignUpForm({
                 }
                 className="underline"
               >
-                Login
+                {t("signIn")}
               </Link>
             </div>
           </form>

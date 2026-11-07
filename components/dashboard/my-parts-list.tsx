@@ -1,6 +1,6 @@
 'use client'
 
-import { useFormatter } from 'next-intl'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
@@ -24,6 +24,8 @@ interface MyPartsListProps {
  * Deletion is confirmed via a modal dialog before the API call is made.
  */
 export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsListProps) {
+  const t = useTranslations('MyPartsList')
+  const pagination = useTranslations('Pagination')
   const format = useFormatter()
   const [parts, setParts] = useState<MyPartListItem[]>(initialParts)
   const [pendingDelete, setPendingDelete] = useState<MyPartListItem | null>(null)
@@ -43,7 +45,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
 
       if (!response.ok) {
         const body = (await response.json()) as { error?: string }
-        throw new Error(body.error || 'Delete failed. Please try again.')
+        throw new Error(body.error || t('deleteFailed'))
       }
 
       let updatedCount = 0
@@ -62,7 +64,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
       }
     } catch (err) {
       setPendingDelete(null)
-      setDeleteError(err instanceof Error ? err.message : 'An unexpected error occurred.')
+      setDeleteError(err instanceof Error ? err.message : t('deleteFailed'))
     } finally {
       setDeleting(false)
     }
@@ -73,7 +75,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
       return (
         <div className="space-y-md">
           <div className="rounded-lg border border-border-subtle bg-bg-surface p-lg text-sm text-text-secondary">
-            No published parts on this page.
+            {t('emptyPage')}
           </div>
           <div className="flex items-center justify-between">
             <Button
@@ -85,9 +87,9 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
                 window.location.href = url.toString()
               }}
             >
-              Previous
+              {pagination('previous')}
             </Button>
-            <span className="text-sm text-text-secondary">Page {currentPage}</span>
+            <span className="text-sm text-text-secondary">{t('page', { page: currentPage })}</span>
             <div />
           </div>
         </div>
@@ -95,7 +97,7 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
     }
     return (
       <div className="rounded-lg border border-border-subtle bg-bg-surface p-lg text-sm text-text-secondary">
-        You have no published parts yet.
+        {t('empty')}
       </div>
     )
   }
@@ -121,14 +123,16 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
               <div className="min-w-0 space-y-xs">
                 <p className="truncate text-sm font-medium text-text-primary">{part.name}</p>
                 <p className="text-xs text-text-secondary">
-                  {part.createdAt ? `Uploaded ${format.dateTime(new Date(part.createdAt), { dateStyle: 'medium' })}` : 'Upload date unknown'}
+                  {part.createdAt
+                    ? t('uploaded', { date: format.dateTime(new Date(part.createdAt), { dateStyle: 'medium' }) })
+                    : t('uploadDateUnknown')}
                 </p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              aria-label={`Delete ${part.name}`}
+              aria-label={t('deletePart', { name: part.name })}
               onClick={() => setPendingDelete(part)}
             >
               <Trash2 />
@@ -149,9 +153,9 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
               window.location.href = url.toString()
             }}
           >
-            Previous
+            {pagination('previous')}
           </Button>
-          <span className="text-sm text-text-secondary">Page {currentPage}</span>
+          <span className="text-sm text-text-secondary">{t('page', { page: currentPage })}</span>
           <Button
             variant="outline"
             size="sm"
@@ -162,17 +166,17 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
               window.location.href = url.toString()
             }}
           >
-            Next
+            {pagination('next')}
           </Button>
         </div>
       )}
 
       <ConfirmationDialog
         open={pendingDelete !== null}
-        title="Delete part"
-        description={`Are you sure you want to delete "${pendingDelete?.name}"? This action cannot be undone.`}
-        confirmLabel="Delete"
-        loadingLabel="Deleting…"
+        title={t('deleteTitle')}
+        description={t('deleteConfirm', { name: pendingDelete?.name ?? '' })}
+        confirmLabel={t('delete')}
+        loadingLabel={t('deleting')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           if (!deleting) setPendingDelete(null)

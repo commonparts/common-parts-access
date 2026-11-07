@@ -1,23 +1,25 @@
+import { getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 
 import { AuthShell } from "@/components/layout/auth-shell"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
-export default function SignOutPage() {
+export default async function SignOutPage() {
+	const t = await getTranslations("SignOutPage")
 	return (
 		<AuthShell>
 			<Card className="text-center shadow-overlay">
 				<CardHeader className="items-center gap-sm">
-					<CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">Signing you out</CardTitle>
+					<CardTitle className="text-heading-sm font-heading font-semibold text-text-primary">{t("title")}</CardTitle>
 					<CardDescription className="text-body text-text-secondary">
-						Hang tight while we close your session. If you are not redirected, you can head back to the harbor.
+						{t("description")}
 					</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="flex justify-center">
 						<Button asChild>
-							<Link href="/">Return home</Link>
+							<Link href="/">{t("home")}</Link>
 						</Button>
 					</div>
 				</CardContent>

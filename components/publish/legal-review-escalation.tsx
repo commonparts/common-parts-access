@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
@@ -31,10 +32,11 @@ export function LegalReviewEscalation({
   onJustificationChange,
   className,
 }: LegalReviewEscalationProps) {
+  const t = useTranslations('LegalReviewEscalation')
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-base">Something looks wrong?</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-sm">
         <div className="flex items-start gap-sm">
@@ -46,24 +48,21 @@ export function LegalReviewEscalation({
           />
           <div className="space-y-2xs">
             <Label htmlFor="needs-legal-review" className="text-text-primary">
-              Flag for legal review
+              {t('flag')}
             </Label>
-            <p className="text-sm text-text-secondary">
-              The declared license is ambiguous, or the context is suspicious. The part stays saved
-              but cannot be published until it is cleared.
-            </p>
+            <p className="text-sm text-text-secondary">{t('flagDetail')}</p>
           </div>
         </div>
 
         {needsLegalReview && (
           <div className="space-y-2xs">
-            <Label htmlFor="legal-justification">Justification (required)</Label>
+            <Label htmlFor="legal-justification">{t('justification')}</Label>
             <Textarea
               id="legal-justification"
               rows={3}
               value={justification}
               onChange={(e) => onJustificationChange(e.target.value)}
-              placeholder="What is unclear about this part's license or origin?"
+              placeholder={t('justificationPlaceholder')}
               maxLength={JUSTIFICATION_MAX_LENGTH}
             />
           </div>
