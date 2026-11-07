@@ -6,8 +6,11 @@ import type { ComponentType } from 'react'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { APP_NAME } from '@/lib/utils/constants'
+import { localizedPageMetadata } from '@/lib/utils/seo'
 
-type LegalPageKey = 'terms' | 'privacy' | 'legalNotice'
+const LEGAL_PAGE_PATHS = { terms: '/terms', privacy: '/privacy', legalNotice: '/legal-notice' }
+
+type LegalPageKey = keyof typeof LEGAL_PAGE_PATHS
 
 interface LegalPageProps {
   page: LegalPageKey
@@ -16,8 +19,12 @@ interface LegalPageProps {
 }
 
 export async function legalPageMetadata(page: LegalPageKey): Promise<Metadata> {
-  const t = await getTranslations('LegalPages')
-  return { title: t(`${page}.title`), description: t(`${page}.description`) }
+  const [t, locale] = await Promise.all([getTranslations('LegalPages'), getLocale()])
+  return {
+    title: t(`${page}.title`),
+    description: t(`${page}.description`),
+    ...localizedPageMetadata(LEGAL_PAGE_PATHS[page], locale),
+  }
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { notFound } from 'next/navigation'
 
@@ -19,6 +19,7 @@ import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
   buildBreadcrumbJsonLd,
+  localizedPageMetadata,
   rootBreadcrumbTrail,
   seoDescription,
   serializeJsonLd,
@@ -63,22 +64,15 @@ export async function generateMetadata({
     )
     // The canonical never carries the page param — paginated views are
     // variants of the same listing.
-    const canonicalPath = brandCategoryCanonicalPath(brand.slug, listing.category.slug)
-
-    // Relative URLs resolve against metadataBase (set in the root layout).
     return {
       title,
       description,
-      alternates: {
-        canonical: canonicalPath,
-      },
-      openGraph: {
+      ...localizedPageMetadata(brandCategoryCanonicalPath(brand.slug, listing.category.slug), await getLocale(), {
         title,
         description,
-        url: canonicalPath,
         siteName: APP_NAME,
         type: 'website',
-      },
+      }),
     }
   } catch (error) {
     console.error('Error generating brand category page metadata:', error)
@@ -115,10 +109,11 @@ export default async function BrandCategoryPage({
 
   const { category, products, total, page, totalPages } = listing
 
-  const [t, counts, crumbs] = await Promise.all([
+  const [t, counts, crumbs, locale] = await Promise.all([
     getTranslations('BrandCategoryPage'),
     getTranslations('Counts'),
     getTranslations('Breadcrumbs'),
+    getLocale(),
   ])
   const canonicalPath = brandCategoryCanonicalPath(brand.slug, category.slug)
   const breadcrumbTrail = [
@@ -126,7 +121,7 @@ export default async function BrandCategoryPage({
     { name: brand.name, path: brandCanonicalPath(brand.slug) },
     { name: category.name },
   ]
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail, locale)
 
   return (
     <Section>

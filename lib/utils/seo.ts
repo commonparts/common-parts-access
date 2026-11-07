@@ -6,6 +6,10 @@
  * product name for query matching.
  */
 
+import type { Metadata } from 'next'
+import type { Locale } from 'next-intl'
+
+import { getPathname } from '@/i18n/navigation'
 import { truncateText } from '@/lib/utils/formatters'
 import { absoluteAppUrl, isValidHttpUrl } from '@/lib/utils/validation'
 import { resolveStorageUrl } from '@/lib/storage/url'
@@ -17,6 +21,26 @@ const SEO_DESCRIPTION_MAX_LENGTH = 160
 /** Cuts a meta description to the search snippet budget. */
 export function seoDescription(text: string): string {
   return truncateText(text, SEO_DESCRIPTION_MAX_LENGTH)
+}
+
+/** Absolute URL of an in-app path in a locale: "/browse" in fr gives "<APP_URL>/fr/browse". */
+export function localizedUrl(path: string, locale: Locale): string {
+  return absoluteAppUrl(getPathname({ href: path, locale }))
+}
+
+/**
+ * The canonical and Open Graph URLs of a public page in its locale, with the
+ * page's own Open Graph fields merged in, so no page can drop `og:url`. The
+ * hreflang alternates are not declared here: the next-intl middleware sends
+ * them in a `Link` header (docs/I18N.md).
+ */
+export function localizedPageMetadata(
+  path: string,
+  locale: Locale,
+  openGraph?: NonNullable<Metadata['openGraph']>,
+): Pick<Metadata, 'alternates' | 'openGraph'> {
+  const url = localizedUrl(path, locale)
+  return { alternates: { canonical: url }, openGraph: { ...openGraph, url } }
 }
 
 /** Canonical path for a part page (public route is /parts — issue #258). */
@@ -57,15 +81,16 @@ export function productFullName(brandName: string | null, productName: string): 
  * parts, falling back to the uploader; the license links to the effective
  * (source-first) license text. `description` is the page's meta description
  * and `rootTrail` the breadcrumb root of a part fitting no product, both in
- * the page's locale.
+ * the page's locale, which `locale` is.
  */
 export function buildPartJsonLd(
   part: PartSeoData,
   description: string,
   rootTrail: BreadcrumbJsonLdItem[],
+  locale: Locale,
 ): Record<string, unknown> {
   const pagePath = partCanonicalPath(part.slug)
-  const url = absoluteAppUrl(pagePath)
+  const url = localizedUrl(pagePath, locale)
   const image = resolveStorageUrl(part.thumbnailUrl)
   const creatorName = part.originalAuthor || part.authorName
 
@@ -112,7 +137,7 @@ export function buildPartJsonLd(
 
   return {
     '@context': 'https://schema.org',
-    '@graph': [partEntity, buildBreadcrumbList(pagePath, buildPartBreadcrumbTrail(part, rootTrail))],
+    '@graph': [partEntity, buildBreadcrumbList(pagePath, buildPartBreadcrumbTrail(part, rootTrail), locale)],
   }
 }
 
@@ -162,15 +187,16 @@ export interface BreadcrumbJsonLdItem {
 function buildBreadcrumbList(
   pagePath: string,
   items: BreadcrumbJsonLdItem[],
+  locale: Locale,
 ): Record<string, unknown> {
   return {
     '@type': 'BreadcrumbList',
-    '@id': `${absoluteAppUrl(pagePath)}#breadcrumb`,
+    '@id': `${localizedUrl(pagePath, locale)}#breadcrumb`,
     itemListElement: items.map((item, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      ...(item.path && index < items.length - 1 ? { item: absoluteAppUrl(item.path) } : {}),
+      ...(item.path && index < items.length - 1 ? { item: localizedUrl(item.path, locale) } : {}),
     })),
   }
 }
@@ -182,8 +208,9 @@ function buildBreadcrumbList(
 export function buildBreadcrumbJsonLd(
   pagePath: string,
   items: BreadcrumbJsonLdItem[],
+  locale: Locale,
 ): Record<string, unknown> {
-  return { '@context': 'https://schema.org', ...buildBreadcrumbList(pagePath, items) }
+  return { '@context': 'https://schema.org', ...buildBreadcrumbList(pagePath, items, locale) }
 }
 
 /** Maps a breadcrumb trail to the props of the visible Breadcrumbs component. */
