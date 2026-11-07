@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { Button } from '@/components/ui/button'
 import { notFound } from 'next/navigation'
@@ -11,6 +11,7 @@ import { fetchPartSeoBySlug } from '@/lib/supabase/queries/part'
 import {
   buildPartBreadcrumbTrail,
   buildPartJsonLd,
+  localizedPageMetadata,
   partCanonicalPath,
   partFitLabel,
   rootBreadcrumbTrail,
@@ -66,25 +67,19 @@ export async function generateMetadata({ params }: PartPageProps): Promise<Metad
     }
 
     const { title, description } = await partSeoCopy(part)
-    const canonicalPath = partCanonicalPath(part.slug)
     const image = resolveStorageUrl(part.thumbnailUrl)
 
-    // Relative URLs resolve against metadataBase (set in the root layout).
     return {
       title,
       description,
       keywords: part.tags.length > 0 ? part.tags.join(', ') : undefined,
-      alternates: {
-        canonical: canonicalPath,
-      },
-      openGraph: {
+      ...localizedPageMetadata(partCanonicalPath(part.slug), await getLocale(), {
         title,
         description,
-        url: canonicalPath,
         siteName: APP_NAME,
         type: 'website',
         images: image ? [{ url: image, alt: part.name }] : undefined,
-      },
+      }),
       twitter: {
         card: 'summary_large_image',
         title,
@@ -108,10 +103,11 @@ export default async function PartPage({ params }: PartPageProps) {
     notFound()
   }
 
-  const [t, crumbs, { description }] = await Promise.all([
+  const [t, crumbs, { description }, locale] = await Promise.all([
     getTranslations('PartPage'),
     getTranslations('Breadcrumbs'),
     partSeoCopy(part),
+    getLocale(),
   ])
   const rootTrail = rootBreadcrumbTrail({ home: crumbs('home'), browse: crumbs('browse') })
 
@@ -120,7 +116,7 @@ export default async function PartPage({ params }: PartPageProps) {
       <Container size="xl" className="space-y-lg">
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPartJsonLd(part, description, rootTrail)) }}
+          dangerouslySetInnerHTML={{ __html: serializeJsonLd(buildPartJsonLd(part, description, rootTrail, locale)) }}
         />
 
         {/* Brand › Category › Product › Part — same trail as the JSON-LD. */}

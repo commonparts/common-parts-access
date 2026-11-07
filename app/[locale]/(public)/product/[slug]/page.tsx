@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { getTranslations } from "next-intl/server"
+import { getLocale, getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { headers } from "next/headers"
 import { notFound } from "next/navigation"
@@ -21,6 +21,7 @@ import { parsePageParam } from "@/lib/utils/validation"
 import {
   buildBreadcrumbJsonLd,
   buildProductBreadcrumbTrail,
+  localizedPageMetadata,
   productCanonicalPath,
   productFullName,
   seoDescription,
@@ -41,7 +42,11 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>
 }): Promise<Metadata> {
   const { slug } = await params
-  const [data, t] = await Promise.all([fetchProductPageBySlug(slug), getTranslations("Seo")])
+  const [data, t, locale] = await Promise.all([
+    fetchProductPageBySlug(slug),
+    getTranslations("Seo"),
+    getLocale(),
+  ])
   if (!data) return { title: t("productNotFoundTitle") }
 
   const { product } = data
@@ -56,21 +61,16 @@ export async function generateMetadata({
       ? t("productDescriptionCategory", { product: fullName, category: product.category.name, app: APP_NAME })
       : t("productDescription", { product: fullName, app: APP_NAME }),
   )
-  const canonicalPath = productCanonicalPath(product.slug)
-
-  // Relative URLs resolve against metadataBase (set in the root layout).
   return {
     title,
     description,
-    alternates: { canonical: canonicalPath },
-    openGraph: {
+    ...localizedPageMetadata(productCanonicalPath(product.slug), locale, {
       title,
       description,
-      url: canonicalPath,
       siteName: APP_NAME,
       type: "website",
       images: product.image_url ? [{ url: product.image_url, alt: displayName }] : undefined,
-    },
+    }),
   }
 }
 
@@ -86,9 +86,10 @@ export default async function ProductPage({
   if (!data) notFound()
 
   const { product, references } = data
-  const [displayName, t] = await Promise.all([
+  const [displayName, t, locale] = await Promise.all([
     resolveDisplayName(product.name, references),
     getTranslations("ProductPage"),
+    getLocale(),
   ])
 
   // One page of parts, cut in the database (#373). An invalid or out-of-range
@@ -114,7 +115,7 @@ export default async function ProductPage({
 
   // Brand › Category › Product (Flow P2), shared with part pages.
   const breadcrumbTrail = buildProductBreadcrumbTrail({ ...product, name: displayName })
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(productCanonicalPath(product.slug), breadcrumbTrail)
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(productCanonicalPath(product.slug), breadcrumbTrail, locale)
 
   return (
     <Section>

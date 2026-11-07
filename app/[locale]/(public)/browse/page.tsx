@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Suspense } from 'react'
 
 import { Container } from '@/components/layout/container'
@@ -8,6 +8,7 @@ import { BrowseNavSections } from '@/components/browse/browse-nav-sections'
 import { BrowsePartsGrid } from '@/components/browse/browse-parts-grid'
 import { fetchBrowseNav, type BrowseNav } from '@/lib/supabase/queries/browse-nav'
 import { APP_NAME } from '@/lib/utils/constants'
+import { localizedPageMetadata } from '@/lib/utils/seo'
 
 // This page uses cookies() via the Supabase server client,
 // so it cannot be statically rendered at build time.
@@ -20,16 +21,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: {
-      canonical: '/browse',
-    },
-    openGraph: {
+    ...localizedPageMetadata('/browse', await getLocale(), {
       title,
       description,
-      url: '/browse',
       siteName: APP_NAME,
       type: 'website',
-    },
+    }),
   }
 }
 

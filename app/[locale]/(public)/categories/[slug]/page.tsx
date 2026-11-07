@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { Link } from '@/i18n/navigation'
 import { notFound } from 'next/navigation'
 
@@ -18,6 +18,7 @@ import {
   brandCategoryCanonicalPath,
   buildBreadcrumbJsonLd,
   categoryCanonicalPath,
+  localizedPageMetadata,
   rootBreadcrumbTrail,
   seoDescription,
   serializeJsonLd,
@@ -56,22 +57,15 @@ export async function generateMetadata({ params }: CategoryPageProps): Promise<M
         app: APP_NAME,
       }),
     )
-    const canonicalPath = categoryCanonicalPath(data.category.slug)
-
-    // Relative URLs resolve against metadataBase (set in the root layout).
     return {
       title,
       description,
-      alternates: {
-        canonical: canonicalPath,
-      },
-      openGraph: {
+      ...localizedPageMetadata(categoryCanonicalPath(data.category.slug), await getLocale(), {
         title,
         description,
-        url: canonicalPath,
         siteName: APP_NAME,
         type: 'website',
-      },
+      }),
     }
   } catch (error) {
     console.error('Error generating category page metadata:', error)
@@ -115,10 +109,11 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     effective = child
   }
 
-  const [t, counts, crumbs] = await Promise.all([
+  const [t, counts, crumbs, locale] = await Promise.all([
     getTranslations('CategoryPage'),
     getTranslations('Counts'),
     getTranslations('Breadcrumbs'),
+    getLocale(),
   ])
   const canonicalPath = categoryCanonicalPath(data.category.slug)
   const breadcrumbTrail = [
@@ -129,7 +124,7 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     })),
     { name: data.category.name },
   ]
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail, locale)
 
   // The "no parts" notice must never contradict the counts in the header:
   // if inconsistent data ever yields parts without navigable children or

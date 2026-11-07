@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 
 import { Breadcrumbs } from '@/components/layout/breadcrumbs'
@@ -19,6 +19,7 @@ import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
   buildBreadcrumbJsonLd,
+  localizedPageMetadata,
   rootBreadcrumbTrail,
   seoDescription,
   serializeJsonLd,
@@ -57,22 +58,15 @@ export async function generateMetadata({ params }: BrandPageProps): Promise<Meta
     )
     // The canonical never carries the page param — paginated views are
     // variants of the same listing.
-    const canonicalPath = brandCanonicalPath(brand.slug)
-
-    // Relative URLs resolve against metadataBase (set in the root layout).
     return {
       title,
       description,
-      alternates: {
-        canonical: canonicalPath,
-      },
-      openGraph: {
+      ...localizedPageMetadata(brandCanonicalPath(brand.slug), await getLocale(), {
         title,
         description,
-        url: canonicalPath,
         siteName: APP_NAME,
         type: 'website',
-      },
+      }),
     }
   } catch (error) {
     console.error('Error generating brand page metadata:', error)
@@ -99,17 +93,18 @@ export default async function BrandPage({ params, searchParams }: BrandPageProps
     fetchBrandProductsPage(brand.id, parsePageParam(rawPage)),
   ])
 
-  const [t, counts, crumbs] = await Promise.all([
+  const [t, counts, crumbs, locale] = await Promise.all([
     getTranslations('BrandPage'),
     getTranslations('Counts'),
     getTranslations('Breadcrumbs'),
+    getLocale(),
   ])
   const canonicalPath = brandCanonicalPath(brand.slug)
   const breadcrumbTrail = [
     ...rootBreadcrumbTrail({ home: crumbs('home'), browse: crumbs('browse') }),
     { name: brand.name },
   ]
-  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail)
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd(canonicalPath, breadcrumbTrail, locale)
 
   return (
     <Section>

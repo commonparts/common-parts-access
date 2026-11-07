@@ -1,14 +1,18 @@
 /**
  * Sitemap URL derivation (issue #257). The sitemap lists only what public
  * navigation shows: listed products (products.is_listed), the brands and
- * categories holding one, and published parts. /search is never listed —
- * its pages are noindex.
+ * categories holding one, and published parts, once per locale. /search is
+ * never listed — its pages are noindex.
  */
 
+import type { MetadataRoute } from 'next'
+
+import { routing } from '@/i18n/routing'
 import {
   brandCanonicalPath,
   brandCategoryCanonicalPath,
   categoryCanonicalPath,
+  localizedUrl,
   partCanonicalPath,
   productCanonicalPath,
 } from '@/lib/utils/seo'
@@ -34,7 +38,7 @@ export interface SitemapPart {
   updatedAt: string | null
 }
 
-export interface SitemapPath {
+interface SitemapPath {
   path: string
   lastModified?: string
 }
@@ -50,8 +54,10 @@ export function categoryPathSlugs(path: string): string[] {
 }
 
 /**
- * Builds the sitemap's in-app paths, in priority order: navigation roots,
- * categories, brands, brand-scoped category listings, products, parts.
+ * Builds the sitemap entries: each in-app path, in priority order (navigation
+ * roots, categories, brands, brand-scoped category listings, products, parts),
+ * once per locale with its localized absolute URL. The hreflang alternates are
+ * not repeated here: the next-intl middleware sends them in a `Link` header.
  *
  * - A category is listed when its subtree holds a listed product, so every
  *   ancestor on a listed product's category path is included
@@ -60,13 +66,11 @@ export function categoryPathSlugs(path: string): string[] {
  *   are the direct categories of those products (fetch_brand_nav) — the pages
  *   /brands/[brand]/[category] that product breadcrumbs link to.
  *
- * Duplicates are removed and the result is capped at SITEMAP_MAX_URLS; the
- * priority order decides what is dropped first (parts, then products).
+ * Duplicates are removed and the entries are capped at SITEMAP_MAX_URLS; the
+ * priority order decides what is dropped first (parts, then products), and a
+ * path keeps all its locales or none.
  */
-export function buildSitemapPaths(
-  products: SitemapProduct[],
-  parts: SitemapPart[],
-): SitemapPath[] {
+export function buildSitemap(products: SitemapProduct[], parts: SitemapPart[]): MetadataRoute.Sitemap {
   const categories = new Set<string>()
   const brands = new Set<string>()
   const brandCategories = new Set<string>()
@@ -97,5 +101,9 @@ export function buildSitemapPaths(
     ...parts.map((part) => withDate(partCanonicalPath(part.slug), part.updatedAt)),
   ]
 
-  return paths.slice(0, SITEMAP_MAX_URLS)
+  return paths
+    .slice(0, Math.floor(SITEMAP_MAX_URLS / routing.locales.length))
+    .flatMap(({ path, lastModified }) =>
+      routing.locales.map((locale) => ({ url: localizedUrl(path, locale), ...(lastModified ? { lastModified } : {}) })),
+    )
 }

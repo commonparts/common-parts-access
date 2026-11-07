@@ -1,11 +1,12 @@
 import type { Metadata } from 'next'
-import { getTranslations } from 'next-intl/server'
+import { getLocale, getTranslations } from 'next-intl/server'
 import type { ReactNode } from 'react'
 
 import { Link } from '@/i18n/navigation'
 import { Container } from '@/components/layout/container'
 import { Section } from '@/components/layout/section'
 import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
+import { localizedPageMetadata } from '@/lib/utils/seo'
 
 const CONTACT_EMAIL = 'contact@commonparts.org'
 
@@ -22,7 +23,11 @@ const strong = (chunks: ReactNode) => <strong className="font-medium text-text-p
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('ContributingPage')
-  return { title: t('metaTitle'), description: t('metaDescription') }
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+    ...localizedPageMetadata('/contributing', await getLocale()),
+  }
 }
 
 /**
