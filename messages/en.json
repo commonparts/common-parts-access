@@ -445,9 +445,9 @@
     "brands": "Brands"
   },
   "ContributingPage": {
-    "metaTitle": "Contributing a part",
-    "metaDescription": "How to contribute a part to the Common Parts Index",
-    "title": "Contributing a part to the Common Parts Index",
+    "metaTitle": "Contributing to the index",
+    "metaDescription": "How to contribute to the Common Parts Index",
+    "title": "Contributing to the Common Parts Index",
     "intro": "The Common Parts Index is a public catalog of spare part models — reviewed, structured, and maintained to help people repair the objects they own. Anyone can contribute. Parts published on Common Parts for the first time are hosted here; parts already published elsewhere are referenced, with a link to the original platform. This guide explains what we accept, how to submit, and what happens after.",
     "accept": {
       "title": "What we accept",

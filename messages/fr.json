@@ -89,7 +89,7 @@
   },
   "Hero": {
     "title": "La réparation commence par l'accès à la bonne pièce.",
-    "description": "Common Parts Access est une plateforme ouverte pour publier et consulter des pièces détachées numériques, conçue pour garder les objets du quotidien en usage."
+    "description": "Common Parts Access est une plateforme ouverte pour publier et consulter des pièces détachées numériques, conçue pour garder les objets du quotidien plus longtemps."
   },
   "Footer": {
     "tagline": "Une infrastructure pour les pièces détachées numériques. Un registre ouvert et public de pièces de rechange.",
@@ -317,7 +317,7 @@
     "noMatch": "Aucun produit compatible ne correspond à « {query} ».",
     "showFewer": "Afficher moins de produits",
     "showAll": "Afficher les {count} produits",
-    "report": "Signaler une impression",
+    "report": "Déclarer une impression",
     "hideReport": "Masquer le retour d'impression",
     "reportProduct": " sur {product}"
   },
@@ -445,9 +445,9 @@
     "brands": "Marques"
   },
   "ContributingPage": {
-    "metaTitle": "Contribuer une pièce",
-    "metaDescription": "Comment contribuer une pièce au Common Parts Index",
-    "title": "Contribuer une pièce au Common Parts Index",
+    "metaTitle": "Contribuer à l'index",
+    "metaDescription": "Comment contribuer au Common Parts Index",
+    "title": "Contribuer au Common Parts Index",
     "intro": "Le Common Parts Index est un catalogue public de modèles de pièces détachées, vérifiés, structurés et maintenus pour aider chacun à réparer les objets qu'il possède. Tout le monde peut contribuer. Les pièces publiées sur Common Parts pour la première fois sont hébergées ici ; les pièces déjà publiées ailleurs sont référencées, avec un lien vers la plateforme d'origine. Ce guide explique ce que nous acceptons, comment soumettre une pièce et ce qui se passe ensuite.",
     "accept": {
       "title": "Ce que nous acceptons",
