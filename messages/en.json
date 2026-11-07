@@ -108,6 +108,21 @@
     },
     "licenses": "Code under <code>{codeLicense}</code>. Data under <data>{dataLicense}</data>."
   },
+  "LegalPages": {
+    "governingLanguage": "This text is published in French and in English. In case of discrepancy between the two versions, the French version prevails.",
+    "terms": {
+      "title": "Terms of use",
+      "description": "Terms of use of Common Parts Access"
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "Privacy policy of Common Parts Access"
+    },
+    "legalNotice": {
+      "title": "Legal notice",
+      "description": "Legal notice of Common Parts Access"
+    }
+  },
   "UserMenu": {
     "open": "Open profile menu",
     "myParts": "My parts",
