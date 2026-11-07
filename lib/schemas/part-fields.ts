@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 import { clearableText, uuidList } from '@/lib/schemas/common'
-import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata'
+import { COLOR_MAX_LENGTH, DIMENSION_UNITS, MATERIAL_MAX_LENGTH, SUPPORT_TYPES } from '@/lib/utils/part-metadata'
 
 /**
  * Schemas of the part fields shared by the two publish flows: the public
@@ -13,41 +13,26 @@ import { COLOR_MAX_LENGTH, MATERIAL_MAX_LENGTH } from '@/lib/utils/part-metadata
 
 const { PART } = VALIDATION_LIMITS
 
-const DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
-const SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
 
 /** A number that is finite (Zod refuses NaN and Infinity) and not negative. */
-function nonNegativeNumber(message: string) {
-  return z.number({ error: message }).nonnegative({ error: message })
-}
+const nonNegativeNumber = z.number().nonnegative()
 
 /** Shape of parts.dimensions (jsonb). Unknown keys are dropped. */
-export const partDimensionsSchema = z.object(
-  {
-    length: nonNegativeNumber('dimensions.length must be a non-negative finite number').optional(),
-    width: nonNegativeNumber('dimensions.width must be a non-negative finite number').optional(),
-    height: nonNegativeNumber('dimensions.height must be a non-negative finite number').optional(),
-    unit: z.enum(DIMENSION_UNITS, { error: 'dimensions.unit must be one of: mm, cm, in' }).optional(),
-  },
-  { error: 'dimensions must be a JSON object' },
-)
+export const partDimensionsSchema = z.object({
+  length: nonNegativeNumber.optional(),
+  width: nonNegativeNumber.optional(),
+  height: nonNegativeNumber.optional(),
+  unit: z.enum(DIMENSION_UNITS).optional(),
+})
 
 /** Shape of parts.print_settings (jsonb). Unknown keys are dropped. */
-export const partPrintSettingsSchema = z.object(
-  {
-    layer_height: nonNegativeNumber('print_settings.layer_height must be a non-negative finite number').optional(),
-    infill: nonNegativeNumber('print_settings.infill must be a finite number between 0 and 100')
-      .max(100, { error: 'print_settings.infill must be a finite number between 0 and 100' })
-      .optional(),
-    supports: z
-      .enum(SUPPORT_TYPES, { error: 'print_settings.supports must be one of: none, buildplate_only, everywhere' })
-      .optional(),
-  },
-  { error: 'print_settings must be a JSON object' },
-)
+export const partPrintSettingsSchema = z.object({
+  layer_height: nonNegativeNumber.optional(),
+  infill: nonNegativeNumber.max(100).optional(),
+  supports: z.enum(SUPPORT_TYPES).optional(),
+})
 
-const CHECKLIST_MESSAGE = 'Checklist must be an object of criterion booleans'
-const criterion = z.boolean({ error: CHECKLIST_MESSAGE }).optional()
+const criterion = z.boolean().optional()
 
 /**
  * Shape of parts.curation_checklist (jsonb): the six blocking criteria of
@@ -63,7 +48,6 @@ export const curationChecklistSchema = z.object(
     attribution: criterion,
     duplicate: criterion,
   },
-  { error: CHECKLIST_MESSAGE },
 )
 
 /** The criterion keys of the checklist, as an enum schema. */
@@ -75,100 +59,52 @@ export const curationCriterionKeySchema = curationChecklistSchema.keyof()
  * match `schema`. The string form is required rather than coerced, so a
  * malformed payload never silently wipes stored data on a partial autosave.
  */
-function jsonColumn<Schema extends z.ZodType>(name: string, schema: Schema) {
+function jsonColumn<Schema extends z.ZodType>(schema: Schema) {
   return z
-    .string({ error: `${name} must be a JSON string` })
+    .string()
     .trim()
-    .transform((raw, ctx): z.output<Schema> | null => {
+    .transform((raw, ctx): unknown => {
       if (!raw) return null
-      let parsed: unknown
       try {
-        parsed = JSON.parse(raw)
+        return JSON.parse(raw)
       } catch {
-        ctx.addIssue({ code: 'custom', message: `Invalid JSON in ${name}` })
+        ctx.addIssue({ code: 'custom', message: 'invalidJsonValue' })
         return z.NEVER
       }
-      const result = schema.safeParse(parsed)
-      if (!result.success) {
-        ctx.addIssue({ code: 'custom', message: result.error.issues[0]?.message ?? `Invalid ${name}` })
-        return z.NEVER
-      }
-      return result.data
     })
+    .pipe(schema.nullable())
 }
 
 /**
  * A number column sent as a numeric string: an empty string clears it (null),
  * anything else must be a non-negative number, and an integer when `integer`
- * is set. Integers must be safe (below 2^53) so a bigint column never stores a
- * silently rounded value.
+ * is set. Zod's integers are safe (below 2^53), so a bigint column never
+ * stores a silently rounded value.
  */
-function numericColumn(name: string, integer: boolean) {
+function numericColumn(integer: boolean) {
+  const number = integer ? z.number().int() : z.number()
   return z
-    .string({ error: `${name} must be a string` })
+    .string()
     .trim()
-    .transform((raw, ctx): number | null => {
-      if (!raw) return null
-      const parsed = Number(raw)
-      const valid = integer ? Number.isSafeInteger(parsed) : Number.isFinite(parsed)
-      if (!valid) {
-        ctx.addIssue({ code: 'custom', message: `${name} must be a valid ${integer ? 'integer' : 'number'}` })
-        return z.NEVER
-      }
-      if (parsed < 0) {
-        ctx.addIssue({ code: 'custom', message: `${name} must be a non-negative number` })
-        return z.NEVER
-      }
-      return parsed
-    })
+    .transform((raw) => (raw ? Number(raw) : null))
+    .pipe(number.nonnegative().nullable())
 }
-
-const TITLE_MESSAGE = `Title must be between ${PART.TITLE_MIN_LENGTH} and ${PART.TITLE_MAX_LENGTH} characters`
-const TAG_MESSAGE = `Tags must be between ${PART.TAG_MIN_LENGTH} and ${PART.TAG_MAX_LENGTH} characters`
 
 /** Fields both draft PATCH routes accept, each optional (only sent keys are written). */
 export const partDraftFields = {
-  title: z
-    .string({ error: TITLE_MESSAGE })
-    .trim()
-    .min(PART.TITLE_MIN_LENGTH, { error: TITLE_MESSAGE })
-    .max(PART.TITLE_MAX_LENGTH, { error: TITLE_MESSAGE }),
-  description: clearableText(PART.DESCRIPTION_MAX_LENGTH, {
-    type: 'Description must be a string',
-    tooLong: `Description must be at most ${PART.DESCRIPTION_MAX_LENGTH} characters`,
-  }),
-  instructions: clearableText(PART.INSTRUCTIONS_MAX_LENGTH, {
-    type: 'Instructions must be a string',
-    tooLong: `Instructions must be at most ${PART.INSTRUCTIONS_MAX_LENGTH} characters`,
-  }),
+  title: z.string().trim().min(PART.TITLE_MIN_LENGTH).max(PART.TITLE_MAX_LENGTH),
+  description: clearableText(PART.DESCRIPTION_MAX_LENGTH),
+  instructions: clearableText(PART.INSTRUCTIONS_MAX_LENGTH),
   // Blank tags are dropped before the limits apply, as the form may send them.
   tags: z
-    .array(z.string({ error: 'Tags must be an array of strings' }), { error: 'Tags must be an array' })
+    .array(z.string())
     .transform((tags) => tags.map((tag) => tag.trim()).filter(Boolean))
-    .pipe(
-      z
-        .array(
-          z
-            .string()
-            .min(PART.TAG_MIN_LENGTH, { error: TAG_MESSAGE })
-            .max(PART.TAG_MAX_LENGTH, { error: TAG_MESSAGE }),
-        )
-        .max(PART.TAGS_MAX_COUNT, { error: `Too many tags (max ${PART.TAGS_MAX_COUNT})` }),
-    ),
-  material: clearableText(MATERIAL_MAX_LENGTH, {
-    type: 'Material must be a string',
-    tooLong: `Material is too long (max ${MATERIAL_MAX_LENGTH} characters)`,
-  }),
-  color: clearableText(COLOR_MAX_LENGTH, {
-    type: 'Color must be a string',
-    tooLong: `Color is too long (max ${COLOR_MAX_LENGTH} characters)`,
-  }),
-  dimensions: jsonColumn('dimensions', partDimensionsSchema),
-  print_settings: jsonColumn('print_settings', partPrintSettingsSchema),
-  estimated_print_time: numericColumn('estimated_print_time', true),
-  estimated_material_usage: numericColumn('estimated_material_usage', false),
-  productIds: uuidList(PART.PRODUCTS_MAX_COUNT, {
-    invalid: 'productIds must be unique product UUIDs',
-    tooMany: `Too many products (max ${PART.PRODUCTS_MAX_COUNT})`,
-  }),
+    .pipe(z.array(z.string().min(PART.TAG_MIN_LENGTH).max(PART.TAG_MAX_LENGTH)).max(PART.TAGS_MAX_COUNT)),
+  material: clearableText(MATERIAL_MAX_LENGTH),
+  color: clearableText(COLOR_MAX_LENGTH),
+  dimensions: jsonColumn(partDimensionsSchema),
+  print_settings: jsonColumn(partPrintSettingsSchema),
+  estimated_print_time: numericColumn(true),
+  estimated_material_usage: numericColumn(false),
+  productIds: uuidList(PART.PRODUCTS_MAX_COUNT),
 }

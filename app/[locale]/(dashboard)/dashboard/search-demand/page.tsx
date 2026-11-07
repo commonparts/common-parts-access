@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { getFormatter, getLocale } from "next-intl/server"
+import { getFormatter, getLocale, getTranslations } from "next-intl/server"
 import { Link } from "@/i18n/navigation"
 import { notFound } from "next/navigation"
 import { DashboardShell } from "@/components/layout/dashboard-shell"
@@ -11,23 +11,18 @@ import {
 import { createClient } from "@/lib/supabase/server"
 import { isCurator } from "@/lib/auth/permissions"
 import { formatRegionName } from "@/lib/utils/formatters"
-import { isSearchMissOutcome, SEARCH_MISS_OUTCOMES, type SearchMissOutcome } from "@/types/search"
+import type { ProductReferenceType } from "@/lib/utils/product-references"
+import { isSearchMissOutcome, SEARCH_MISS_OUTCOMES } from "@/types/search"
 
-export const metadata: Metadata = {
-  title: "Search demand",
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("SearchDemandPage")
+  return { title: t("title") }
 }
 
 // Window and size of the "most frequent misses" table.
 const MISSES_WINDOW_DAYS = 30
 const MISSES_LIMIT = 50
 const PENDING_LIMIT = 50
-
-// Why a search was unserved (issue #452), as shown in the table and filter.
-const OUTCOME_LABEL: Record<SearchMissOutcome, string> = {
-  no_results: "No results",
-  approximate: "Close matches only",
-  no_parts: "Product without parts",
-}
 
 const CELL = "border-b border-border-subtle px-sm py-xs text-left align-top text-sm"
 const HEAD = `${CELL} font-medium text-text-secondary`
@@ -54,7 +49,7 @@ export default async function SearchDemandPage({
   const outcomeParam = (await searchParams).outcome
   const outcome = typeof outcomeParam === "string" && isSearchMissOutcome(outcomeParam) ? outcomeParam : null
 
-  const [format, locale] = await Promise.all([getFormatter(), getLocale()])
+  const [t, format, locale] = await Promise.all([getTranslations("SearchDemandPage"), getFormatter(), getLocale()])
   const formatDate = (date: string) => format.dateTime(new Date(date), { dateStyle: "medium" })
   const [misses, pending] = await Promise.all([
     fetchTopSearchMisses(MISSES_WINDOW_DAYS, MISSES_LIMIT, outcome),
@@ -63,20 +58,13 @@ export default async function SearchDemandPage({
 
   return (
     <DashboardShell
-      title="Search demand"
-      description="Searches that found no part, and the references visitors suggested from them."
+      title={t("title")}
+      description={t("description")}
     >
       <section className="space-y-sm">
-        <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-          Most frequent misses
-        </h2>
-        <p className="text-body text-text-secondary">
-          Last {MISSES_WINDOW_DAYS} days. A search is a miss unless a part, or a product with a
-          published part, matches it fully. Spellings that normalize alike are counted together;
-          a search counts once per day (UTC), however many times it was logged that day, and the
-          outcome is the latest one.
-        </p>
-        <nav aria-label="Filter misses by outcome" className="flex flex-wrap gap-xs">
+        <h2 className="font-heading text-heading-sm font-semibold text-text-primary">{t("misses")}</h2>
+        <p className="text-body text-text-secondary">{t("missesIntro", { days: MISSES_WINDOW_DAYS })}</p>
+        <nav aria-label={t("filterLabel")} className="flex flex-wrap gap-xs">
           {[null, ...SEARCH_MISS_OUTCOMES].map((value) => {
             const isActive = value === outcome
             return (
@@ -92,7 +80,7 @@ export default async function SearchDemandPage({
                   href={value ? `/dashboard/search-demand?outcome=${value}` : "/dashboard/search-demand"}
                   aria-current={isActive ? "page" : undefined}
                 >
-                  {value ? OUTCOME_LABEL[value] : "All outcomes"}
+                  {value ? t(`outcomes.${value}`) : t("allOutcomes")}
                 </Link>
               </Badge>
             )
@@ -103,10 +91,10 @@ export default async function SearchDemandPage({
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className={HEAD}>Search</th>
-                  <th className={HEAD}>Outcome</th>
-                  <th className={HEAD}>Days</th>
-                  <th className={HEAD}>Last seen</th>
+                  <th className={HEAD}>{t("search")}</th>
+                  <th className={HEAD}>{t("outcome")}</th>
+                  <th className={HEAD}>{t("days")}</th>
+                  <th className={HEAD}>{t("lastSeen")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -122,7 +110,7 @@ export default async function SearchDemandPage({
                         {miss.raw_query}
                       </Link>
                     </td>
-                    <td className={`${CELL} text-text-secondary`}>{OUTCOME_LABEL[miss.outcome]}</td>
+                    <td className={`${CELL} text-text-secondary`}>{t(`outcomes.${miss.outcome}`)}</td>
                     <td className={`${CELL} text-text-primary`}>{miss.miss_count}</td>
                     <td className={`${CELL} text-text-secondary`}>{formatDate(miss.last_seen)}</td>
                   </tr>
@@ -132,33 +120,24 @@ export default async function SearchDemandPage({
           </div>
         ) : (
           <p className="text-body text-text-secondary">
-            {outcome ? (
-              <>No missed search with the outcome &ldquo;{OUTCOME_LABEL[outcome]}&rdquo; in this window.</>
-            ) : (
-              "No missed search in this window."
-            )}
+            {outcome ? t("noMissesWithOutcome", { outcome: t(`outcomes.${outcome}`) }) : t("noMisses")}
           </p>
         )}
       </section>
 
       <section className="space-y-sm">
-        <h2 className="font-heading text-heading-sm font-semibold text-text-primary">
-          Pending references
-        </h2>
-        <p className="text-body text-text-secondary">
-          Set <code>status</code> to <code>validated</code> or <code>rejected</code> on the
-          row in <code>product_references</code> to review a suggestion.
-        </p>
+        <h2 className="font-heading text-heading-sm font-semibold text-text-primary">{t("pending")}</h2>
+        <p className="text-body text-text-secondary">{t.rich("pendingIntro", { code: (chunks) => <code>{chunks}</code> })}</p>
         {pending.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className={HEAD}>Reference</th>
-                  <th className={HEAD}>Product</th>
-                  <th className={HEAD}>Type</th>
-                  <th className={HEAD}>Region</th>
-                  <th className={HEAD}>Suggested</th>
+                  <th className={HEAD}>{t("reference")}</th>
+                  <th className={HEAD}>{t("product")}</th>
+                  <th className={HEAD}>{t("type")}</th>
+                  <th className={HEAD}>{t("region")}</th>
+                  <th className={HEAD}>{t("suggested")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +152,10 @@ export default async function SearchDemandPage({
                         {[reference.brand_name, reference.product_name].filter(Boolean).join(" ")}
                       </Link>
                     </td>
-                    <td className={`${CELL} text-text-secondary`}>{reference.type}</td>
+                    <td className={`${CELL} text-text-secondary`}>
+                      {/* product_references.type is CHECK-constrained to the reference types. */}
+                      {t(`referenceTypes.${reference.type as ProductReferenceType}`)}
+                    </td>
                     <td className={`${CELL} text-text-secondary`}>
                       {reference.region ? formatRegionName(reference.region, locale) : "—"}
                     </td>
@@ -184,7 +166,7 @@ export default async function SearchDemandPage({
             </table>
           </div>
         ) : (
-          <p className="text-body text-text-secondary">No reference awaiting review.</p>
+          <p className="text-body text-text-secondary">{t("noPending")}</p>
         )}
       </section>
     </DashboardShell>

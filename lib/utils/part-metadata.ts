@@ -9,6 +9,10 @@
 export const MATERIAL_MAX_LENGTH = 100
 export const COLOR_MAX_LENGTH = 50
 
+/** Values of parts.dimensions.unit and parts.print_settings.supports. */
+export const DIMENSION_UNITS = ['mm', 'cm', 'in'] as const
+export const SUPPORT_TYPES = ['none', 'buildplate_only', 'everywhere'] as const
+
 /** Flat metadata form fields, as held by the part-upload form state. */
 export interface PartMetadataFormFields {
   material: string

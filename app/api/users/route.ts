@@ -4,12 +4,14 @@ import { AccountDeletionError, deleteAccount } from "@/lib/account/deletion";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createAccountDeletionSteps } from "@/lib/supabase/queries/account-deletion";
 import { createClient } from "@/lib/supabase/server";
+import { getApiTranslations } from '@/lib/api/translations'
 
 // DELETE /api/users - Delete current user account
 // Published parts stay without an owner, likes and comments are anonymized,
 // collections and unpublished parts are deleted (issue #178, see
 // docs/ACCOUNT_DELETION_POLICY.md).
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const t = await getApiTranslations(request)
   const supabase = await createClient();
   const {
     data: { user },
@@ -17,7 +19,7 @@ export async function DELETE() {
   } = await supabase.auth.getUser();
 
   if (error || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: t('signInRequired') }, { status: 401 });
   }
 
   let adminClient: ReturnType<typeof createAdminClient>;
@@ -26,7 +28,7 @@ export async function DELETE() {
   } catch (err) {
     console.error("Account deletion: admin client unavailable", err);
     return NextResponse.json(
-      { error: "Automated account deletion is not available yet. To delete your account, please email contact@commonparts.org." },
+      { error: t('accountDeletionUnavailable') },
       { status: 503 },
     );
   }
@@ -37,7 +39,7 @@ export async function DELETE() {
     // The stage names where deletion stopped; every stage is safe to retry.
     console.error("Account deletion failed", err instanceof AccountDeletionError ? err.stage : "unknown", err);
     return NextResponse.json(
-      { error: "Unable to delete your account right now. Please try again, or email contact@commonparts.org if it keeps failing." },
+      { error: t('accountDeletionFailed') },
       { status: 500 },
     );
   }

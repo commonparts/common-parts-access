@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Combobox } from '@/components/ui/combobox'
@@ -43,6 +44,7 @@ export function CompatibilityStep({
   demandPanel,
   judgements,
 }: CompatibilityStepProps) {
+  const t = useTranslations('CompatibilityStep')
   const { formData, setFormData } = form
 
   const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
@@ -50,21 +52,17 @@ export function CompatibilityStep({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">What does it fit?</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-md">
-        <p className="text-sm text-text-secondary">
-          A spare part is found by the device it repairs: visitors browse brand, then product, then
-          parts. At least one product is required to publish. Add products from as many brands as
-          the part fits — the part is listed under each of them.
-        </p>
+        <p className="text-sm text-text-secondary">{t('intro')}</p>
 
         <div className="grid grid-cols-1 gap-md md:grid-cols-2">
           <div className="space-y-2xs">
-            <Label htmlFor={`${idPrefix}-brand`}>Brand</Label>
+            <Label htmlFor={`${idPrefix}-brand`}>{t('brand')}</Label>
             <Combobox
               id={`${idPrefix}-brand`}
-              placeholder={form.loadingMeta ? 'Loading brands…' : 'Search brands'}
+              placeholder={form.loadingMeta ? t('loadingBrands') : t('searchBrands')}
               options={form.brands.map((b) => ({ id: b.id, name: b.name }))}
               searchTerm={form.brandSearch}
               onSearchChange={form.setBrandSearch}
@@ -75,27 +73,23 @@ export function CompatibilityStep({
               isOpen={form.brandOpen}
               onOpenChange={form.setBrandOpen}
               disabled={form.loadingMeta}
-              emptyMessage={form.brandSearch ? 'No matching brands' : 'No brands found'}
+              emptyMessage={form.brandSearch ? t('noMatchingBrands') : t('noBrands')}
             />
-            <p className="text-sm text-text-secondary">
-              Narrows the product list below. Switch it to add products from another brand — the
-              ones already linked are kept. Brands are maintained by Common Parts; if yours is
-              missing, send feedback.
-            </p>
+            <p className="text-sm text-text-secondary">{t('brandHint')}</p>
           </div>
 
           <div className="space-y-2xs">
-            <Label htmlFor={`${idPrefix}-product`}>Compatible products *</Label>
+            <Label htmlFor={`${idPrefix}-product`}>{t('products')}</Label>
             <Combobox
               id={`${idPrefix}-product`}
               placeholder={
                 form.loadingProducts
-                  ? 'Loading products…'
+                  ? t('loadingProducts')
                   : !formData.brandId
-                    ? 'Select a brand first'
+                    ? t('brandFirst')
                     : atProductLimit
-                      ? `Maximum ${VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT} products reached`
-                      : 'Search and add a product'
+                      ? t('productLimit', { max: VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT })
+                      : t('searchProducts')
               }
               options={form.products
                 .filter((p) => !formData.productIds.includes(p.id))
@@ -110,24 +104,24 @@ export function CompatibilityStep({
               }}
               allowCreate={true}
               onCreate={form.handleOpenCreateProduct}
-              createLabel={(value) => `Create product: ${value}`}
+              createLabel={(value) => t('createProduct', { name: value })}
               isOpen={form.productOpen}
               onOpenChange={form.setProductOpen}
               disabled={form.loadingProducts || !formData.brandId || atProductLimit}
-              emptyMessage={form.productSearch ? 'No matching products' : 'No products found'}
+              emptyMessage={form.productSearch ? t('noMatchingProducts') : t('noProducts')}
             />
             {formData.productIds.length > 0 && (
               <div className="mt-2xs flex flex-wrap gap-2xs">
                 {formData.productIds.map((pid) => (
                   <Badge key={pid} variant="soft">
-                    {form.productNames[pid] ?? 'Product'}
+                    {form.productNames[pid] ?? t('product')}
                     <button
                       type="button"
                       onClick={() => form.removeProduct(pid)}
                       className="ml-2xs rounded-full hover:text-status-errorText focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-                      aria-label={`Remove ${form.productNames[pid] ?? 'product'}`}
+                      aria-label={t('removeProduct', { name: form.productNames[pid] ?? t('product') })}
                     >
-                      ×
+                      {'×'}
                     </button>
                   </Badge>
                 ))}

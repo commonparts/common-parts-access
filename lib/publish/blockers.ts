@@ -33,25 +33,22 @@ export function originalTrackBlockers(state: OriginalTrackState): PublishBlocker
   const blockers: PublishBlocker[] = []
 
   if (state.title.trim().length < VALIDATION_LIMITS.PART.TITLE_MIN_LENGTH) {
-    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Give the part a title' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'title' })
   }
   if (!state.categoryId) {
-    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Choose a category' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'category' })
   }
   if (!state.licenseId) {
-    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Choose the license you publish under' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'license' })
   }
   if (!state.attested) {
-    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Confirm the originality declaration' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'attestation' })
   }
   if (state.modelFileCount < 1) {
-    blockers.push({ step: PUBLISH_STEPS.FILES, message: 'Upload at least one model file' })
+    blockers.push({ step: PUBLISH_STEPS.FILES, reason: 'modelFile' })
   }
   if (state.productCount < 1) {
-    blockers.push({
-      step: PUBLISH_STEPS.COMPATIBILITY,
-      message: 'Link at least one compatible product',
-    })
+    blockers.push({ step: PUBLISH_STEPS.COMPATIBILITY, reason: 'product' })
   }
 
   return blockers
@@ -79,50 +76,32 @@ export function elsewhereTrackBlockers(state: ElsewhereTrackState): PublishBlock
   // Each unmet criterion is reported on the step that renders it, so the jump
   // link lands on the evidence rather than on a checklist that no longer exists.
   for (const criterion of CURATION_BLOCKING_CRITERIA) {
-    if (state.checklist[criterion.key] !== true) {
-      blockers.push({
-        step: CRITERION_STEP[criterion.key],
-        message: `Confirm: ${criterion.label.toLowerCase()}`,
-      })
+    if (state.checklist[criterion] !== true) {
+      blockers.push({ step: CRITERION_STEP[criterion], reason: 'criterion', criterion })
     }
   }
 
   if (!state.referenced) {
-    blockers.push({
-      step: PUBLISH_STEPS.ORIGIN,
-      message: 'Save this step again — a part published elsewhere is referenced at its source, never hosted',
-    })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'hosted' })
   }
 
   if (!state.licenseId) {
-    blockers.push({ step: PUBLISH_STEPS.ORIGIN, message: 'Choose the license at the source' })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'sourceLicense' })
   }
 
   if (!state.sourcePlatform) {
-    blockers.push({
-      step: PUBLISH_STEPS.ORIGIN,
-      message: 'Name the platform the part is published on',
-    })
+    blockers.push({ step: PUBLISH_STEPS.ORIGIN, reason: 'sourcePlatform' })
   }
   if (state.modelFileCount > 0) {
-    blockers.push({
-      step: PUBLISH_STEPS.FILES,
-      message: 'Remove the uploaded model files — this part is referenced at its source',
-    })
+    blockers.push({ step: PUBLISH_STEPS.FILES, reason: 'removeModelFiles' })
   }
 
   if (state.productCount < 1) {
-    blockers.push({
-      step: PUBLISH_STEPS.COMPATIBILITY,
-      message: 'Link at least one compatible product',
-    })
+    blockers.push({ step: PUBLISH_STEPS.COMPATIBILITY, reason: 'product' })
   }
 
   if (state.needsLegalReview) {
-    blockers.push({
-      step: PUBLISH_STEPS.REVIEW,
-      message: 'This part is flagged for legal review and cannot be published until it is cleared',
-    })
+    blockers.push({ step: PUBLISH_STEPS.REVIEW, reason: 'legalReview' })
   }
 
   return blockers

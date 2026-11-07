@@ -39,8 +39,3 @@ export const FORBIDDEN_UPLOAD_FIELDS = [
 export function findForbiddenField(payload: Record<string, unknown>): string | null {
   return FORBIDDEN_UPLOAD_FIELDS.find((field) => field in payload) ?? null
 }
-
-/** Error message for a rejected payload, naming the offending field. */
-export function forbiddenFieldError(field: string): string {
-  return `"${field}" cannot be set through the upload flow — it publishes original parts hosted here. Parts from another platform go through curation.`
-}

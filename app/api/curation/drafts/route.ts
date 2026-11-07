@@ -10,25 +10,27 @@ import { validateSourceUrlMatchesPlatform } from '@/lib/supabase/queries/platfor
 import { parseJsonBody } from '@/lib/api/parse'
 import { createCurationDraftSchema } from '@/lib/schemas/curation'
 import { hasErrorCode } from '@/lib/utils/errors'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // Postgres unique-violation SQLSTATE — raised by idx_parts_source_url when a
 // draft invisible to the caller (another user's) already claims the URL.
 const UNIQUE_VIOLATION = '23505'
 
 // GET /api/curation/drafts — the caller's curated drafts for session resume.
-export async function GET() {
+export async function GET(request: Request) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const drafts = await listCurationDrafts(user.id)
     return NextResponse.json({ drafts })
   } catch (error) {
     console.error('Failed to list curation drafts', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }
 
@@ -39,11 +41,12 @@ export async function GET() {
 // elsewhere is always referenced (#396): the draft is created as link_out,
 // so the source platform is required too.
 export async function POST(request: NextRequest) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     // The files stay at the source, so the source platform claim is mandatory
@@ -54,20 +57,20 @@ export async function POST(request: NextRequest) {
 
     const license = await getLicenseById(licenseId)
     if (!license) {
-      return NextResponse.json({ error: 'Invalid license selected' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidLicense') }, { status: 400 })
     }
 
     // Single round trip: the helper covers both platform existence and the
     // URL domain match.
     const platformCheck = await validateSourceUrlMatchesPlatform(sourcePlatform, sourceUrl)
     if (!platformCheck.ok) {
-      return NextResponse.json({ error: platformCheck.error }, { status: platformCheck.status })
+      return NextResponse.json({ error: t(platformCheck.error) }, { status: platformCheck.status })
     }
 
     const duplicate = await findPartBySourceUrl(sourceUrl)
     if (duplicate) {
       return NextResponse.json(
-        { error: 'This source URL is already in the registry', duplicate },
+        { error: t('sourceInRegistry'), duplicate },
         { status: 409 },
       )
     }
@@ -86,7 +89,7 @@ export async function POST(request: NextRequest) {
       // The pre-check cannot see other users' drafts; the unique index can.
       if (hasErrorCode(insertError, UNIQUE_VIOLATION)) {
         return NextResponse.json(
-          { error: 'This source URL is already claimed by another draft', duplicate: null },
+          { error: t('sourceClaimed'), duplicate: null },
           { status: 409 },
         )
       }
@@ -94,6 +97,6 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error('Failed to create curation draft', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

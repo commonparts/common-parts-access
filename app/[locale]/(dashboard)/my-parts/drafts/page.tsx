@@ -1,9 +1,12 @@
-export default function DraftsPage() {
+import { getTranslations } from "next-intl/server"
+
+export default async function DraftsPage() {
+  const t = await getTranslations('DashboardPages.drafts')
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Draft parts</h1>
+      <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-600">Your draft parts will be displayed here</p>
+        <p className="text-gray-600">{t('comingSoon')}</p>
       </div>
     </div>
   )

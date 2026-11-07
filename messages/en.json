@@ -106,7 +106,8 @@
       "terms": "Terms of use",
       "legalNotice": "Legal notice"
     },
-    "licenses": "Code under <code>{codeLicense}</code>. Data under <data>{dataLicense}</data>."
+    "licenses": "Code under <code>{codeLicense}</code>. Data under <data>{dataLicense}</data>.",
+    "copyright": "© {year} Common Parts"
   },
   "LegalPages": {
     "governingLanguage": "This text is published in French and in English. In case of discrepancy between the two versions, the French version prevails.",
@@ -549,5 +550,685 @@
       "title": "Questions",
       "body": "If you are unsure whether a part qualifies, or if you want to contribute in bulk (for example, as a Repair Café importing a set of validated models), contact us at <mail>{email}</mail>."
     }
+  },
+  "Validation": {
+    "field": "{field}: {message}",
+    "required": "Required",
+    "invalidRequest": "Invalid request",
+    "invalidJson": "Invalid request body: expected JSON",
+    "invalidJsonValue": "Not valid JSON",
+    "uuid": "Invalid identifier",
+    "httpUrl": "Must be an http(s) URL",
+    "duplicateIds": "Each item can be listed only once",
+    "nothingToUpdate": "Nothing to update",
+    "pathCharacters": "Must not contain a slash, a backslash or two dots in a row",
+    "letterOrDigit": "Needs at least one letter or digit",
+    "attestationRequired": "Must be confirmed to start an upload",
+    "forbiddenUploadField": "\"{field}\" cannot be set through the upload flow: it publishes original parts hosted here. Parts from another platform go through curation.",
+    "curatedHosted": "A part published elsewhere is always referenced: its files stay at the source. Set it to 'link_out' or omit it.",
+    "invalidHostingType": "Invalid file hosting type"
+  },
+  "Fields": {
+    "title": "Title",
+    "description": "Description",
+    "instructions": "Instructions",
+    "tags": "Tags",
+    "material": "Material",
+    "color": "Color",
+    "dimensions": "Dimensions",
+    "length": "Length",
+    "width": "Width",
+    "height": "Height",
+    "unit": "Unit",
+    "print_settings": "Print settings",
+    "layer_height": "Layer height",
+    "infill": "Infill",
+    "supports": "Supports",
+    "estimated_print_time": "Print time",
+    "estimated_material_usage": "Material usage",
+    "productIds": "Compatible products",
+    "productId": "Product",
+    "categoryId": "Category",
+    "licenseId": "License",
+    "brandId": "Brand",
+    "sourceUrl": "Source URL",
+    "url": "URL",
+    "originalAuthor": "Original author",
+    "originalAuthorUrl": "Original author URL",
+    "sourcePlatform": "Source platform",
+    "fileHostingType": "File hosting",
+    "checklist": "Checklist",
+    "legalReviewJustification": "Justification",
+    "reason": "Reason",
+    "failedCriteria": "Failed criteria",
+    "attested": "Originality declaration",
+    "files": "Files",
+    "originalName": "File name",
+    "filename": "File name",
+    "size": "File size",
+    "comment": "Comment",
+    "result": "Result",
+    "name": "Name",
+    "releaseYear": "Release year",
+    "imageUrl": "Image",
+    "value": "Reference",
+    "rawQuery": "Search term",
+    "pageUrl": "Page URL"
+  },
+  "Api": {
+    "signInRequired": "Sign in to continue",
+    "forbidden": "You do not have access to this part",
+    "serverError": "Something went wrong on our side. Please try again.",
+    "loadFailed": "Could not load the data. Please try again.",
+    "partNotFound": "Part not found",
+    "draftNotFound": "Draft not found",
+    "fileNotFound": "File not found",
+    "productNotFound": "Product not found",
+    "invalidSlug": "Invalid part address",
+    "invalidFileId": "Invalid file identifier",
+    "invalidLicense": "Choose a license from the list",
+    "invalidCategory": "Choose a category from the list",
+    "invalidProducts": "One or more selected products no longer exist",
+    "sourceInRegistry": "This source URL is already in the registry",
+    "sourceClaimed": "This source URL is already claimed by another draft",
+    "onlyDraftsImportImages": "Images can only be imported into a draft",
+    "imagesAlreadyRegistered": "Images are already registered for this draft",
+    "imageImportUnavailable": "Image import is not available for this source: it needs a Printables model or Thingiverse Thing URL, and Thingiverse import must be enabled on the server",
+    "imageImportFailed": "The images could not be imported. Please try again.",
+    "alreadyPublished": "This part is already published",
+    "publicationBlocked": "Publication blocked: complete the items listed",
+    "onlyDraftsEditable": "Only drafts can be edited",
+    "curatedHasModelFiles": "Model files are already uploaded: a part published elsewhere does not host files. Remove them first.",
+    "sourcePlatformRequired": "Choose the platform the part is published on",
+    "unknownSourcePlatform": "Unknown source platform",
+    "justificationRequired": "A justification is required when flagging for legal review",
+    "noFiles": "No files available for download",
+    "tooManyArchiveFiles": "This part has more than {max} files: download them one by one",
+    "filesUnavailable": "Files are unavailable at the moment. Please try again later.",
+    "downloadFailed": "The download could not be prepared. Please try again.",
+    "bucketMismatch": "Storage bucket mismatch for the {category} files",
+    "fileTooLarge": "{name} is too large (max {max} MB)",
+    "extensionNotAllowed": "The .{extension} extension is not allowed for {category} files",
+    "extensionMismatch": "The .{extension} extension does not match the file name {filename}",
+    "pathMismatch": "The file path does not match your account, the part and the file name",
+    "totalSizeExceeded": "These files exceed the total upload size limit",
+    "tooManyModelFiles": "Too many model files (max {max})",
+    "tooManyThumbnails": "Too many photos (max {max})",
+    "modelFilesLimit": "Adding {count, plural, one {# model file} other {# model files}} would exceed the limit of {max} ({existing} already registered)",
+    "thumbnailsLimit": "Adding {count, plural, one {# photo} other {# photos}} would exceed the limit of {max} ({existing} already registered)",
+    "curatedNoModelFiles": "A part published elsewhere does not host model files: its files stay at the source. Upload photos only.",
+    "registerFailed": "The uploaded files could not be registered. Please try again.",
+    "registeredWithoutUpdate": "The files were registered, but the part could not be updated",
+    "fileNotDownloadable": "This file is not available for download",
+    "likeFailed": "Your like could not be saved. Please try again.",
+    "trackingFailed": "The visit could not be recorded",
+    "referenceNeedsLetter": "The reference needs at least one letter or digit",
+    "invalidProductImage": "Invalid product image: upload the image to your own product image folder first",
+    "productExists": "A product with this name already exists for this brand",
+    "productCreateFailed": "The product could not be created. Please try again.",
+    "hostingLicense": "Hosting requires a license allowing commercial use and modification (no NC or ND restriction)",
+    "accountDeletionUnavailable": "Automated account deletion is not available yet. To delete your account, email contact@commonparts.org.",
+    "accountDeletionFailed": "Your account could not be deleted right now. Please try again, or email contact@commonparts.org if it keeps failing.",
+    "reportPartNotLinked": "Report failed: this part is not published or not linked to that product",
+    "reportInvalidReference": "Report failed: the reference does not belong to that product",
+    "reportRateLimited": "Too many reports from this session, try again in an hour",
+    "reportSessionFailed": "Report failed: your session could not be verified. Please try again.",
+    "reportFailed": "Report failed: please try again",
+    "sourcePlatformMismatch": "The source URL is not on the selected platform",
+    "invalidSourceUrl": "Invalid source URL",
+    "blockers": {
+      "title": "Give the part a title",
+      "category": "Choose a category",
+      "license": "Choose the license you publish under",
+      "attestation": "Confirm the originality declaration",
+      "modelFile": "Upload at least one model file",
+      "product": "Link at least one compatible product: without it the part cannot be found by product",
+      "licenseUnverified": "The selected license could not be verified",
+      "criteria": "Unchecked blocking criteria: {criteria}",
+      "legalReview": "This part is flagged for legal review and cannot be published until it is cleared",
+      "hosted": "A part published elsewhere is always referenced, never hosted: save the Origin step again to reference it at its source",
+      "sourceLicense": "Choose the license at the source",
+      "removeModelFiles": "Remove the uploaded model files: a part published elsewhere does not host them",
+      "productsUnverified": "The linked products could not be verified",
+      "productWithoutBrand": "Every linked product must belong to a brand: the part is browsed by brand, then product"
+    }
+  },
+  "PublishSteps": {
+    "label": "Publish steps",
+    "origin": "Origin",
+    "files": "Files",
+    "details": "Details",
+    "compatibility": "Compatibility",
+    "review": "Review",
+    "goTo": "Go to {step}"
+  },
+  "PublishTracks": {
+    "elsewhere": {
+      "answer": "It's already published elsewhere",
+      "detail": "Printables, Thingiverse, GitHub, or another platform, including my own.",
+      "badge": "Published elsewhere"
+    },
+    "original": {
+      "answer": "I designed it",
+      "detail": "I'm publishing it here for the first time.",
+      "badge": "Original"
+    }
+  },
+  "OrientationQuestion": {
+    "title": "Where does this part come from?",
+    "recommended": "Recommended",
+    "fixed": "This answer is fixed once the draft is created. To change it afterwards, delete the draft and start again: you can change your mind freely until then."
+  },
+  "StepNav": {
+    "back": "Back",
+    "saveAndExit": "Save and exit",
+    "saving": "Saving…",
+    "continue": "Continue"
+  },
+  "ChecklistRollup": {
+    "title": "Before publishing",
+    "allConfirmed": "All checks confirmed",
+    "remaining": "{count} of {total} still to confirm",
+    "allConfirmedDetail": "Every check is confirmed. Publishing runs the same checks again on the server."
+  },
+  "CurationCriteria": {
+    "eligibility": {
+      "label": "Eligible part",
+      "description": "Functional spare part for a real product: within registry scope, not decorative or generic."
+    },
+    "product_target": {
+      "label": "Product target identified",
+      "description": "The part targets an identifiable product; the product record is linked in this session."
+    },
+    "license": {
+      "label": "License verified",
+      "description": "SPDX license identified, among the licenses Common Parts lists. The part is referenced at its source, so NC and ND terms are accepted; a license that forbids sharing the model is not."
+    },
+    "file": {
+      "label": "Valid file",
+      "description": "STL, 3MF or STEP file present (uploaded here, or checked at the source for a referenced part) that opens correctly in a viewer or slicer."
+    },
+    "attribution": {
+      "label": "Attribution complete",
+      "description": "Original author, source URL and the license at the source captured on the record."
+    },
+    "duplicate": {
+      "label": "No duplicate",
+      "description": "The source and the part are not already in the registry (source URL checked)."
+    }
+  },
+  "CurationFlags": {
+    "needs_verification": {
+      "label": "Print verified",
+      "description": "The part has been printed and fits; otherwise the record is flagged as needing verification."
+    },
+    "needs_print_settings": {
+      "label": "Print settings provided",
+      "description": "Material, orientation or slicer settings are documented."
+    },
+    "needs_photo": {
+      "label": "Photo of the printed part",
+      "description": "At least one photo of the physical print is included."
+    },
+    "needs_instructions": {
+      "label": "Instructions provided",
+      "description": "Installation or replacement instructions are present."
+    },
+    "needs_category": {
+      "label": "Category confirmed",
+      "description": "The category assignment is certain, not a best guess."
+    }
+  },
+  "PublishBlockers": {
+    "title": "Give the part a title",
+    "category": "Choose a category",
+    "license": "Choose the license you publish under",
+    "attestation": "Confirm the originality declaration",
+    "modelFile": "Upload at least one model file",
+    "product": "Link at least one compatible product",
+    "criterion": "Confirm: {criterion}",
+    "hosted": "Save this step again: a part published elsewhere is referenced at its source, never hosted",
+    "sourceLicense": "Choose the license at the source",
+    "sourcePlatform": "Name the platform the part is published on",
+    "removeModelFiles": "Remove the uploaded model files: this part is referenced at its source",
+    "legalReview": "This part is flagged for legal review and cannot be published until it is cleared"
+  },
+  "ReviewStep": {
+    "title": "Review: the page as it will appear",
+    "blocked": "Publication blocked:",
+    "stillNeeded": "Still needed before publishing",
+    "dataLicense": "The data you enter here (compatible products, print settings, structured fields) is published under <licenseLink>{license}</licenseLink>. Files, and content taken from the source, keep their author’s license. See <terms>section 4.2 of the Terms of use</terms>.",
+    "back": "Back",
+    "saveAsDraft": "Save as draft",
+    "publishing": "Publishing…",
+    "publish": "Publish"
+  },
+  "RegisteredImages": {
+    "summary": "{count, plural, one {# image is on the draft} other {# images are on the draft, in slideshow order: the first is the thumbnail}}.",
+    "thumbnail": "Thumbnail",
+    "image": "Image {position}"
+  },
+  "RejectionRecorder": {
+    "title": "Not a fit?",
+    "intro": "If this part cannot meet one of the checks, record why. Anything left unconfirmed is traced automatically, so the decision stays reviewable.",
+    "placeholder": "Why is this part turned down?",
+    "reasonLabel": "Reason for turning down this part",
+    "recording": "Recording…",
+    "record": "Record and stop"
+  },
+  "LegalReviewEscalation": {
+    "title": "Something looks wrong?",
+    "flag": "Flag for legal review",
+    "flagDetail": "The declared license is ambiguous, or the context is suspicious. The part stays saved but cannot be published until it is cleared.",
+    "justification": "Justification (required)",
+    "justificationPlaceholder": "What is unclear about this part's license or origin?"
+  },
+  "DemandPanel": {
+    "title": "Captured demand",
+    "openRequests": "{count, plural, one {# open request} other {# open requests}}",
+    "loading": "Loading demand…",
+    "empty": "No open part requests for the selected products.",
+    "selectedProduct": "Selected product"
+  },
+  "CompatibilityStep": {
+    "title": "What does it fit?",
+    "intro": "A spare part is found by the device it repairs: visitors browse brand, then product, then parts. At least one product is required to publish. Add products from as many brands as the part fits: the part is listed under each of them.",
+    "brand": "Brand",
+    "loadingBrands": "Loading brands…",
+    "searchBrands": "Search brands",
+    "noMatchingBrands": "No matching brands",
+    "noBrands": "No brands found",
+    "brandHint": "Narrows the product list below. Switch it to add products from another brand: the ones already linked are kept. Brands are maintained by Common Parts; if yours is missing, send feedback.",
+    "products": "Compatible products *",
+    "loadingProducts": "Loading products…",
+    "brandFirst": "Select a brand first",
+    "productLimit": "Maximum {max} products reached",
+    "searchProducts": "Search and add a product",
+    "createProduct": "Create product: {name}",
+    "noMatchingProducts": "No matching products",
+    "noProducts": "No products found",
+    "product": "Product",
+    "removeProduct": "Remove {name}"
+  },
+  "FilesStep": {
+    "title": "Files",
+    "modelFileCount": "{count, plural, one {# part file} other {# part files}}",
+    "imageCount": "{count, plural, one {# image} other {# images}}",
+    "referencedLabel": "Model files",
+    "referenced": "The model files stay where they are published and are never uploaded here. Check at <source>the source</source> that they open correctly.",
+    "modelFiles": "Model files (STL / 3MF / STEP)",
+    "selected": "Selected: {names}",
+    "photos": "Photos of the printed part",
+    "importing": "Importing images from the source…",
+    "uploading": "Uploading…",
+    "upload": "Upload selected files",
+    "preparing": "Preparing the upload session…",
+    "afterImport": "Upload is available once the image import ends.",
+    "help": "Files are stored as soon as you upload them: you can leave and come back."
+  },
+  "DetailsStep": {
+    "details": "Part details",
+    "description": "Short description",
+    "descriptionPlaceholder": "What the part is and what it fixes",
+    "instructions": "Instructions",
+    "instructionsPlaceholder": "How to print it, and how to fit it to the product",
+    "tags": "Tags",
+    "tagPlaceholder": "Enter a tag and press Enter",
+    "addTag": "Add",
+    "removeTag": "Remove {tag}",
+    "printMetadata": "Print metadata",
+    "material": "Material",
+    "materialPlaceholder": "e.g. PLA, PETG, ABS",
+    "color": "Color",
+    "colorPlaceholder": "e.g. Black, White, Any",
+    "dimensions": "Dimensions",
+    "length": "Length",
+    "width": "Width",
+    "height": "Height",
+    "unit": "Unit",
+    "units": {
+      "mm": "mm",
+      "cm": "cm",
+      "in": "in"
+    },
+    "printSettings": "Print settings",
+    "layerHeight": "Layer height (mm)",
+    "layerHeightPlaceholder": "e.g. 0.2",
+    "infill": "Infill (%)",
+    "infillPlaceholder": "e.g. 20",
+    "supports": "Supports",
+    "supportsUnset": "Not specified",
+    "supportTypes": {
+      "none": "None",
+      "buildplate_only": "Build plate only",
+      "everywhere": "Everywhere"
+    },
+    "printTime": "Estimated print time (minutes)",
+    "printTimePlaceholder": "e.g. 120",
+    "materialUsage": "Estimated material usage (grams)",
+    "materialUsagePlaceholder": "e.g. 45"
+  },
+  "Attestation": {
+    "title": "Originality declaration",
+    "clauses": {
+      "authorship": "I designed this part myself. It is not a copy, a re-upload, or a derivative of someone else’s part.",
+      "rights": "I hold the rights to publish it, and I grant Common Parts Access the right to host and distribute the files under the license I selected.",
+      "hosting": "The files are published here, not linked from another platform. A part already published elsewhere, including on your own site or repository, is published through the elsewhere track instead, with you credited as the original author."
+    },
+    "summary": "I created this part and hold the right to publish it here under the selected license.",
+    "recordedOn": "The declaration was recorded on {date}, when this draft was created.",
+    "recorded": "The declaration was recorded when this draft was created."
+  },
+  "PublishFlow": {
+    "loadFailed": "The draft could not be loaded. Please try again.",
+    "saveFailed": "The draft could not be saved. Please try again.",
+    "createFailed": "The draft could not be created. Please try again.",
+    "registerFailed": "The uploaded files could not be registered. Please try again.",
+    "uploadFailedFile": "{name} could not be uploaded. Please try again.",
+    "uploadFailed": "The upload failed. Please try again.",
+    "publishFailed": "Publication failed. Please try again.",
+    "loadingDraft": "Loading your draft…",
+    "title": "Part title *",
+    "titlePlaceholder": "e.g. Dishwasher rack wheel clip",
+    "category": "Category *",
+    "loadingCategories": "Loading categories…",
+    "selectCategory": "Select category",
+    "refineCategory": "Refine (optional)",
+    "license": "License *",
+    "loadingLicenses": "Loading licenses…",
+    "licenseOption": "{shortName} — {name}",
+    "exit": "Exit",
+    "saveAndContinue": "Save and continue",
+    "createAndContinue": "Create draft and continue",
+    "prefilled": "Pre-filled"
+  },
+  "OriginalTrack": {
+    "selectLicense": "Select the license you publish under",
+    "licenseHint": "Common Parts hosts and redistributes your files, so the license must allow commercial use and modification. Licenses with NC or ND restrictions cannot be offered on this track."
+  },
+  "ElsewhereTrack": {
+    "rejectFailed": "The decision could not be recorded. Please try again.",
+    "rejected": "Decision recorded for this source.",
+    "rejectedDetail": "The reason and the unconfirmed checks are traced in the log. The draft, if one was created, remains available in your drafts.",
+    "backToDrafts": "Back to drafts",
+    "sourceUrl": "Where is it published? *",
+    "sourceUrlPlaceholder": "https://www.thingiverse.com/thing:…",
+    "checkingSource": "Checking the registry…",
+    "sourceFixed": "The source is fixed once the draft exists.",
+    "duplicatePublished": "This source is already in the registry: <part>{name}</part>. A second record cannot be created.",
+    "duplicateDraft": "This source is already in the registry: <part>{name} (draft)</part>. A second record cannot be created.",
+    "noDuplicate": "The registry has no part with this source URL.",
+    "platform": "Platform *",
+    "selectPlatform": "Select platform",
+    "category": "Category",
+    "attribution": "Attribution",
+    "author": "Original author *",
+    "authorPlaceholder": "Author name on the source platform",
+    "authorUrl": "Author URL",
+    "authorUrlPlaceholder": "https://…",
+    "licenseAndFiles": "License and files",
+    "license": "License at the source *",
+    "selectLicense": "Select the license declared at the source",
+    "licenseHint": "The part keeps the license its designer chose. It is referenced at its source, so NC and ND licenses are allowed.",
+    "linkOut": "Common Parts will link to the source; the files stay where they are published.",
+    "scope": "Scope",
+    "eligibilityHint": "A functional spare part for a real product: not a decoration, not a tool.",
+    "filesHelp": "Open the files in a slicer before confirming the file check: whether they open is a human judgement.",
+    "printConfirmation": "Print confirmation"
+  },
+  "AuthForms": {
+    "email": "Email",
+    "emailPlaceholder": "m@example.com",
+    "password": "Password"
+  },
+  "AuthErrors": {
+    "invalidCredentials": "Incorrect email or password",
+    "emailNotConfirmed": "Confirm your email address first: open the link in the email we sent you",
+    "userExists": "An account already exists for this email address",
+    "usernameTaken": "This username is already taken",
+    "weakPassword": "This password is too weak: choose a longer one",
+    "samePassword": "The new password must differ from the current one",
+    "invalidEmail": "Enter a valid email address",
+    "rateLimited": "Too many attempts. Please wait a few minutes and try again.",
+    "generic": "Something went wrong. Please try again."
+  },
+  "LoginForm": {
+    "title": "Sign in",
+    "description": "Enter your email below to sign in to your account",
+    "forgotPassword": "Forgot your password?",
+    "submitting": "Signing in…",
+    "submit": "Sign in",
+    "noAccount": "Don’t have an account?",
+    "signUp": "Sign up"
+  },
+  "SignUpForm": {
+    "title": "Sign up",
+    "description": "Create a new account",
+    "username": "Username",
+    "repeatPassword": "Repeat password",
+    "passwordsDiffer": "Passwords do not match",
+    "usernameRequired": "Username is required",
+    "usernameTooShort": "Username must be at least {min} characters long",
+    "usernameCharacters": "Username can only contain letters, numbers, underscores and hyphens",
+    "submitting": "Creating your account…",
+    "submit": "Sign up",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "ForgotPasswordForm": {
+    "sentTitle": "Check your email",
+    "sentDescription": "Password reset instructions sent",
+    "sentBody": "If you registered using your email and password, you will receive a password reset email.",
+    "title": "Reset your password",
+    "description": "Type in your email and we’ll send you a link to reset your password",
+    "submitting": "Sending…",
+    "submit": "Send reset email",
+    "haveAccount": "Already have an account?",
+    "signIn": "Sign in"
+  },
+  "UpdatePasswordForm": {
+    "title": "Reset your password",
+    "description": "Please enter your new password below.",
+    "password": "New password",
+    "submitting": "Saving…",
+    "submit": "Save new password"
+  },
+  "DeleteAccountPage": {
+    "title": "Delete your account",
+    "description": "This permanently deletes your account and your personal data. This action cannot be undone.",
+    "scope": "Your profile, collections and unpublished parts are deleted. Parts you published stay available, no longer attributed to you, and your likes are kept anonymously.",
+    "publishedParts": "To have your published parts removed as well, email contact@commonparts.org before deleting your account. If you proceed, you will be signed out immediately.",
+    "continue": "Continue to confirmation",
+    "cancel": "Cancel"
+  },
+  "DeleteAccountForm": {
+    "title": "Confirm deletion",
+    "description": "This action is permanent. Type {word} to remove your account.",
+    "confirmWord": "DELETE",
+    "label": "Type {word} to confirm",
+    "typeToConfirm": "Please type {word} to confirm.",
+    "failed": "Your account could not be deleted right now. Please try again.",
+    "submitting": "Deleting…",
+    "submit": "Delete my account"
+  },
+  "DeleteAccountSuccessPage": {
+    "title": "Account deleted",
+    "description": "Your account has been removed. Thanks for being part of Common Parts Access.",
+    "home": "Return home",
+    "signUp": "Create a new account"
+  },
+  "AuthErrorPage": {
+    "title": "Authentication error",
+    "confirmationTitle": "Link expired or invalid",
+    "confirmationDescription": "Your confirmation link could not be processed.",
+    "confirmationError": "The confirmation link is invalid or has expired.",
+    "whatYouCanDo": "What you can do:",
+    "requestNewEmail": "Return to <link>sign-up</link> and request a new confirmation email",
+    "checkSpam": "Check your spam folder for the confirmation link",
+    "linkExpiry": "Confirmation links expire after 24 hours",
+    "signUpAgain": "Sign up again",
+    "signIn": "Sign in",
+    "unspecified": "An unspecified error occurred during authentication.",
+    "home": "Return home"
+  },
+  "LogoutSuccessPage": {
+    "title": "Signed out",
+    "description": "You’ve signed out of Common Parts Access. Your session ended securely and your data remains safe.",
+    "home": "Return home",
+    "signIn": "Sign in again",
+    "thanks": "Thank you for being part of Common Parts Access. We’re here whenever you need to find or publish repair parts."
+  },
+  "SignUpSuccessPage": {
+    "title": "Thank you for signing up!",
+    "description": "Check your email to confirm",
+    "body": "You’ve successfully signed up. Please check your email to confirm your account before signing in."
+  },
+  "SignOutPage": {
+    "title": "Signing you out",
+    "description": "Hang tight while we close your session. If you are not redirected, return to the home page.",
+    "home": "Return home"
+  },
+  "DashboardPages": {
+    "dashboard": {
+      "title": "Dashboard",
+      "description": "Overview of your maker activity and insights.",
+      "comingSoon": "Dashboard content coming soon."
+    },
+    "downloads": {
+      "title": "Downloads",
+      "description": "See the parts you have downloaded and track activity.",
+      "comingSoon": "Downloads view coming soon."
+    },
+    "notifications": {
+      "title": "Notifications",
+      "description": "Stay updated on part activity and messages.",
+      "comingSoon": "Notifications view coming soon."
+    },
+    "settings": {
+      "title": "Settings",
+      "description": "Update your account and preferences.",
+      "comingSoon": "Settings view coming soon."
+    },
+    "account": {
+      "title": "Account settings",
+      "comingSoon": "Account settings will be implemented here"
+    },
+    "preferences": {
+      "title": "Preferences",
+      "comingSoon": "User preferences will be implemented here"
+    },
+    "profile": {
+      "title": "Profile settings",
+      "comingSoon": "Profile settings will be implemented here"
+    },
+    "drafts": {
+      "title": "Draft parts",
+      "comingSoon": "Your draft parts will be displayed here"
+    },
+    "published": {
+      "title": "Published parts",
+      "comingSoon": "Your published parts will be displayed here"
+    },
+    "myParts": {
+      "title": "My parts",
+      "description": "Manage your published parts."
+    }
+  },
+  "MyPartsList": {
+    "deleteFailed": "The part could not be deleted. Please try again.",
+    "emptyPage": "No published parts on this page.",
+    "empty": "You have no published parts yet.",
+    "page": "Page {page}",
+    "uploaded": "Uploaded {date}",
+    "uploadDateUnknown": "Upload date unknown",
+    "deletePart": "Delete {name}",
+    "deleteTitle": "Delete part",
+    "deleteConfirm": "Are you sure you want to delete “{name}”? This action cannot be undone.",
+    "delete": "Delete",
+    "deleting": "Deleting…"
+  },
+  "PublishPage": {
+    "title": "Publish a part",
+    "description": "Add a spare part to the Common Parts Index. Your progress is saved at every step, so you can stop and come back.",
+    "loadFailed": "Your drafts could not be loaded. Please try again.",
+    "deleteFailed": "The draft could not be deleted. Please try again.",
+    "inProgress": "In progress",
+    "loading": "Loading drafts…",
+    "empty": "Nothing in progress. Answer the question above to start a part.",
+    "lastEdited": "Last edited {time}",
+    "draft": "Draft",
+    "resume": "Resume",
+    "deleteDraft": "Delete {name}",
+    "deleteTitle": "Delete draft",
+    "deleteConfirm": "Are you sure you want to delete the draft “{name}”? Any files you uploaded are removed. This action cannot be undone.",
+    "delete": "Delete",
+    "deleting": "Deleting…"
+  },
+  "SearchDemandPage": {
+    "title": "Search demand",
+    "description": "Searches that found no part, and the references visitors suggested from them.",
+    "misses": "Most frequent misses",
+    "missesIntro": "Last {days} days. A search is a miss unless a part, or a product with a published part, matches it fully. Spellings that normalize alike are counted together; a search counts once per day (UTC), however many times it was logged that day, and the outcome is the latest one.",
+    "filterLabel": "Filter misses by outcome",
+    "allOutcomes": "All outcomes",
+    "outcomes": {
+      "no_results": "No results",
+      "approximate": "Close matches only",
+      "no_parts": "Product without parts"
+    },
+    "search": "Search",
+    "outcome": "Outcome",
+    "days": "Days",
+    "lastSeen": "Last seen",
+    "noMissesWithOutcome": "No missed search with the outcome “{outcome}” in this window.",
+    "noMisses": "No missed search in this window.",
+    "pending": "Pending references",
+    "pendingIntro": "Set <code>status</code> to <code>validated</code> or <code>rejected</code> on the row in <code>product_references</code> to review a suggestion.",
+    "reference": "Reference",
+    "product": "Product",
+    "type": "Type",
+    "region": "Region",
+    "suggested": "Suggested",
+    "referenceTypes": {
+      "manufacturer_ref": "Model reference",
+      "commercial_name": "Commercial name",
+      "ean": "Barcode"
+    },
+    "noPending": "No reference awaiting review."
+  },
+  "CreateProductModal": {
+    "title": "Create new product",
+    "description": "Prefilled from your current brand and category selections.",
+    "cancel": "Cancel",
+    "name": "Product name *",
+    "namePlaceholder": "Enter product name",
+    "brand": "Brand *",
+    "selectBrand": "Select brand",
+    "category": "Category *",
+    "selectCategory": "Select category",
+    "productDescription": "Description",
+    "descriptionPlaceholder": "Briefly describe the product",
+    "releaseYear": "Release year",
+    "releaseYearPlaceholder": "e.g. 2023",
+    "image": "Product image (optional)",
+    "selected": "Selected: {name}",
+    "creating": "Creating…",
+    "submit": "Create product",
+    "signInToUpload": "Sign in to upload a product image",
+    "imageUploadFailed": "The product image could not be uploaded. Please try again.",
+    "createFailed": "The product could not be created. Please try again."
+  },
+  "ConfirmationDialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "FileUploader": {
+    "prompt": "Drag and drop your files here, or <browse>browse</browse>",
+    "maxSize": "Max file size: {size} MB"
+  },
+  "Combobox": {
+    "placeholder": "Type to search…",
+    "empty": "No options found",
+    "create": "Create: {value}"
   }
 }

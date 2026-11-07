@@ -93,7 +93,7 @@ The `curation_checklist` / `originality_attested` separation is deliberately pre
 
 Both tools used to resume at a hardcoded step (Files for upload, Checklist for curation). Unified rule: **a resumed draft opens at the first step containing an unmet publish blocker**, falling back to Review when none remain.
 
-`lib/publish/blockers.ts` mirrors both gates as pure functions returning blockers tagged with the step that owns them, so the resume step and the "still needed before publishing" list are one derivation. It is a mirror only — no server change, and the gates stay the authority.
+`lib/publish/blockers.ts` mirrors both gates as pure functions returning blockers tagged with the step that owns them, so the resume step and the "still needed before publishing" list are one derivation. A blocker carries a `reason` (and, for an unmet criterion, the `criterion`), which the Review step words with the `PublishBlockers` messages. It is a mirror only — no server change, and the gates stay the authority.
 
 ## Publish gates
 

@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,30 +35,28 @@ export function RejectionRecorder({
   sourceUrl,
   className,
 }: RejectionRecorderProps) {
+  const t = useTranslations('RejectionRecorder')
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-base">Not a fit?</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-sm">
-        <p className="text-sm text-text-secondary">
-          If this part cannot meet one of the checks, record why. Anything left unconfirmed is traced
-          automatically, so the decision stays reviewable.
-        </p>
+        <p className="text-sm text-text-secondary">{t('intro')}</p>
         <Textarea
           rows={2}
           value={reason}
           onChange={(e) => onReasonChange(e.target.value)}
-          placeholder="Why is this part turned down?"
+          placeholder={t('placeholder')}
           maxLength={REASON_MAX_LENGTH}
-          aria-label="Reason for turning down this part"
+          aria-label={t('reasonLabel')}
         />
         <Button
           variant="outline"
           onClick={onRecord}
           disabled={recording || !reason.trim() || !sourceUrl.trim()}
         >
-          {recording ? 'Recording…' : 'Record and stop'}
+          {recording ? t('recording') : t('record')}
         </Button>
       </CardContent>
     </Card>

@@ -4,6 +4,7 @@ import { isPartNotFoundError } from '@/lib/utils/errors'
 import { isValidSlug } from '@/lib/utils/slug'
 import { parseJsonBody } from '@/lib/api/parse'
 import { sourceClickSchema } from '@/lib/schemas/parts'
+import { getApiTranslations } from '@/lib/api/translations'
 
 /**
  * POST /api/parts/[slug]/source-click - Records an anonymous click on the
@@ -17,12 +18,13 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   const { slug } = await params
   if (!isValidSlug(slug)) {
-    return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+    return NextResponse.json({ error: t('invalidSlug') }, { status: 400 })
   }
 
-  const body = await parseJsonBody(request, sourceClickSchema, 'Invalid JSON body')
+  const body = await parseJsonBody(request, sourceClickSchema)
   if (!body.ok) return body.response
 
   try {
@@ -30,9 +32,9 @@ export async function POST(
     return NextResponse.json({ success: true })
   } catch (error) {
     if (isPartNotFoundError(error)) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
     console.error('Source click tracking error:', error)
-    return NextResponse.json({ error: 'Failed to track source click' }, { status: 500 })
+    return NextResponse.json({ error: t('trackingFailed') }, { status: 500 })
   }
 }

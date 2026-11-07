@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server'
 import { fetchFeaturedPartCards } from '@/lib/supabase/queries/part'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // GET /api/parts/featured - Get the most recently added parts
-export async function GET() {
+export async function GET(request: Request) {
+  const t = await getApiTranslations(request)
   try {
     const parts = await fetchFeaturedPartCards(8)
 
@@ -14,7 +16,7 @@ export async function GET() {
   } catch (error) {
     console.error('Unexpected error fetching featured parts:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: t('serverError') },
       { status: 500 }
     )
   }

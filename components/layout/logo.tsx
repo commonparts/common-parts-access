@@ -37,6 +37,9 @@ export function Symbol({
   );
 }
 
+/** The wordmark: the institution's name, a proper noun in every locale. */
+const INSTITUTION_NAME = "Common Parts";
+
 type LogoProps = {
   className?: string;
   asLink?: boolean;
@@ -58,7 +61,7 @@ export function Logo({
     <span className={cn("flex items-center gap-xs", className)}>
       <Symbol size={24} bodyColor="var(--color-text-primary)" />
       <span className="text-subtitle font-medium tracking-snug text-text-primary">
-        Common Parts
+        {INSTITUTION_NAME}
         {showInterface && (
           <span className="font-regular text-text-secondary">
             {" "}

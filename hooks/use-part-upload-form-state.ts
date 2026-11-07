@@ -1,4 +1,4 @@
-import { useLocale } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import * as React from "react"
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { VALIDATION_LIMITS } from "@/lib/utils/constants"
@@ -125,6 +125,7 @@ export function usePartUploadFormState({
   preselectFirstLicense = true,
 }: UsePartUploadFormStateOptions = {}) {
   const locale = useLocale()
+  const t = useTranslations("CreateProductModal")
   const [formData, setFormData] = React.useState<PartFormData>({
     title: "",
     description: "",
@@ -469,7 +470,9 @@ export function usePartUploadFormState({
         const supabase = await createClient()
         const { data: userData, error: userError } = await supabase.auth.getUser()
         if (userError || !userData?.user?.id) {
-          throw new Error("You must be logged in to upload images")
+          setCreateProductError(t("signInToUpload"))
+          setCreatingProduct(false)
+          return
         }
 
         const userId = userData.user.id
@@ -487,10 +490,8 @@ export function usePartUploadFormState({
         // public URL when it is read (#56).
         imageUrl = toStorageReference(STORAGE_BUCKETS.PRODUCT_THUMBNAILS, path)
       } catch (uploadErr) {
-        const fallback = "Failed to upload image"
-        const message = uploadErr instanceof Error ? uploadErr.message : fallback
         console.error("Product image upload failed", uploadErr)
-        setCreateProductError(message)
+        setCreateProductError(t("imageUploadFailed"))
         setCreatingProduct(false)
         return
       }
@@ -518,7 +519,7 @@ export function usePartUploadFormState({
       // A 409 carrying a product means an equivalent one already exists for
       // this brand — fall through and link it instead of surfacing an error.
       if (!res.ok && !(res.status === 409 && product?.id)) {
-        setCreateProductError(json?.error || "Failed to create product")
+        setCreateProductError(json?.error || t("createFailed"))
         return
       }
 
@@ -551,8 +552,8 @@ export function usePartUploadFormState({
         setPendingProductName("")
         setCreateProductData(emptyCreateProduct)
       }
-    } catch (err) {
-      setCreateProductError(err instanceof Error ? err.message : "Failed to create product")
+    } catch {
+      setCreateProductError(t("createFailed"))
     } finally {
       setCreatingProduct(false)
     }

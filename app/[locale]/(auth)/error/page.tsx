@@ -1,18 +1,19 @@
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AuthShell } from "@/components/layout/auth-shell";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
+import { CONFIRMATION_ERROR } from "@/lib/utils/auth-errors";
 
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  const params = await searchParams;
-  const error = params?.error;
-
-  // Determine if this is a confirmation link error
-  const isConfirmationError = error?.includes('confirmation link') || error?.includes('expired');
+  const t = await getTranslations("AuthErrorPage");
+  // The email confirmation callback (/confirm) sends `error=confirmation`
+  // when the link is missing its token, invalid or expired.
+  const isConfirmationError = (await searchParams).error === CONFIRMATION_ERROR;
 
   return (
     <AuthShell>
@@ -20,48 +21,48 @@ export default async function Page({
         <Card>
           <CardHeader>
             <CardTitle className="text-2xl">
-              {isConfirmationError ? "Link Expired or Invalid" : "Authentication Error"}
+              {isConfirmationError ? t("confirmationTitle") : t("title")}
             </CardTitle>
             {isConfirmationError && (
-              <CardDescription>
-                Your confirmation link could not be processed.
-              </CardDescription>
+              <CardDescription>{t("confirmationDescription")}</CardDescription>
             )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {error ? (
+            {isConfirmationError ? (
               <>
-                <p className="text-sm text-status-errorText">
-                  {error}
-                </p>
-                {isConfirmationError && (
-                  <div className="space-y-3 pt-2">
-                    <p className="text-sm text-text-secondary">
-                      <strong>What you can do:</strong>
-                    </p>
-                    <ul className="text-sm text-text-secondary list-disc list-inside space-y-2">
-                      <li>Return to <Link href="/sign-up" className="text-action-primary hover:underline">sign-up</Link> and request a new confirmation email</li>
-                      <li>Check your email spam folder for the confirmation link</li>
-                      <li>Confirmation links expire after 24 hours</li>
-                    </ul>
-                    <div className="pt-4 flex gap-3">
-                      <Button asChild>
-                        <Link href="/sign-up">Sign Up Again</Link>
-                      </Button>
-                      <Button variant="secondary" asChild>
-                        <Link href="/login">Log In</Link>
-                      </Button>
-                    </div>
+                <p className="text-sm text-status-errorText">{t("confirmationError")}</p>
+                <div className="space-y-3 pt-2">
+                  <p className="text-sm text-text-secondary">
+                    <strong>{t("whatYouCanDo")}</strong>
+                  </p>
+                  <ul className="text-sm text-text-secondary list-disc list-inside space-y-2">
+                    <li>
+                      {t.rich("requestNewEmail", {
+                        link: (chunks) => (
+                          <Link href="/sign-up" className="text-action-primary hover:underline">
+                            {chunks}
+                          </Link>
+                        ),
+                      })}
+                    </li>
+                    <li>{t("checkSpam")}</li>
+                    <li>{t("linkExpiry")}</li>
+                  </ul>
+                  <div className="pt-4 flex gap-3">
+                    <Button asChild>
+                      <Link href="/sign-up">{t("signUpAgain")}</Link>
+                    </Button>
+                    <Button variant="secondary" asChild>
+                      <Link href="/login">{t("signIn")}</Link>
+                    </Button>
                   </div>
-                )}
+                </div>
               </>
             ) : (
               <>
-                <p className="text-sm text-status-errorText">
-                  An unspecified error occurred during authentication.
-                </p>
+                <p className="text-sm text-status-errorText">{t("unspecified")}</p>
                 <Button asChild>
-                  <Link href="/">Return Home</Link>
+                  <Link href="/">{t("home")}</Link>
                 </Button>
               </>
             )}

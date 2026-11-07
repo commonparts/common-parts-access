@@ -52,6 +52,16 @@ async function cleanupUploadedFiles(
   }
 }
 
+/** A file the browser could not upload to Storage; the interface names it. */
+export class StorageUploadError extends Error {
+  constructor(
+    readonly fileName: string,
+    cause: unknown,
+  ) {
+    super(`Failed to upload ${fileName}`, { cause })
+  }
+}
+
 /**
  * Uploads a single file directly from the browser to Supabase Storage.
  * Bypasses the API route body-size limit by going straight to storage.
@@ -81,9 +91,7 @@ async function uploadFileToStorage(params: {
     .from(bucket)
     .upload(path, params.file, { upsert: false, contentType })
 
-  if (error) {
-    throw new Error(`Failed to upload ${params.file.name}: ${error.message}`)
-  }
+  if (error) throw new StorageUploadError(params.file.name, error)
 
   return {
     bucket,

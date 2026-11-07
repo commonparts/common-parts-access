@@ -3,19 +3,21 @@ import { createClient } from '@/lib/supabase/server'
 import { findPartBySourceUrl } from '@/lib/supabase/queries/curation'
 import { parseSearchParams } from '@/lib/api/parse'
 import { sourceUrlQuerySchema } from '@/lib/schemas/curation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // GET /api/curation/source-check?url=… — immediate duplicate check on
 // parts.source_url before a curation session invests any time in a source.
 // Returns the existing part (id, name, slug, status) or null.
 export async function GET(request: NextRequest) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
-    const query = parseSearchParams(request.nextUrl.searchParams, sourceUrlQuerySchema)
+    const query = await parseSearchParams(request, sourceUrlQuerySchema)
     if (!query.ok) return query.response
     const { url } = query.data
 
@@ -23,6 +25,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ duplicate })
   } catch (error) {
     console.error('Curation source check failed', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

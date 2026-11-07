@@ -1,5 +1,6 @@
 import { verifyOtp } from "@/lib/supabase/queries/auth.server";
 import { isSafeRedirect } from "@/lib/utils/validation";
+import { CONFIRMATION_ERROR } from "@/lib/utils/auth-errors";
 import { type EmailOtpType } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
 import { type NextRequest } from "next/server";
@@ -19,12 +20,12 @@ export async function GET(request: NextRequest) {
       // redirect user to specified redirect URL or root of app
       redirect(next);
     } else {
-      // redirect the user to an error page with some instructions
-      redirect(`/error?error=${encodeURIComponent(error?.message || 'Verification failed')}`);
+      // The error page explains, in the visitor's locale, what to do next.
+      redirect(`/error?error=${CONFIRMATION_ERROR}`);
     }
   }
 
-  // If token_hash or type is missing, redirect to error page with clear message.
-  // This usually indicates a misconfigured redirect URL in Supabase Auth settings.
-  redirect(`/error?error=${encodeURIComponent('Invalid or expired confirmation link. Please request a new sign-up email.')}`);
+  // A missing token_hash or type usually indicates a misconfigured redirect
+  // URL in the Supabase Auth settings.
+  redirect(`/error?error=${CONFIRMATION_ERROR}`);
 }

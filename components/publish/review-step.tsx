@@ -1,13 +1,14 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { PartDetails } from '@/components/part/part-details'
 import { DATA_LICENSE, TERMS_LICENSES_SECTION_HREF } from '@/lib/utils/licenses'
-import { PUBLISH_STEP_LABELS, type PublishBlocker, type PublishStepIndex } from '@/lib/publish/steps'
+import { PUBLISH_STEP_NAMES, type PublishBlocker, type PublishStepIndex } from '@/lib/publish/steps'
 
 interface ReviewStepProps {
   /** The draft's slug — the preview renders the real part page against it. */
@@ -46,11 +47,15 @@ export function ReviewStep({
   onJumpTo,
   children,
 }: ReviewStepProps) {
+  const t = useTranslations('ReviewStep')
+  const steps = useTranslations('PublishSteps')
+  const reasons = useTranslations('PublishBlockers')
+  const criteria = useTranslations('CurationCriteria')
   return (
     <div className="space-y-md">
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Review — the page as it will appear</CardTitle>
+          <CardTitle className="text-base">{t('title')}</CardTitle>
         </CardHeader>
         <CardContent>
           <PartDetails slug={slug} />
@@ -61,7 +66,7 @@ export function ReviewStep({
 
       {serverBlockers.length > 0 && (
         <Alert>
-          <p className="font-medium">Publication blocked:</p>
+          <p className="font-medium">{t('blocked')}</p>
           <ul className="mt-2xs list-disc pl-md">
             {serverBlockers.map((blocker) => (
               <li key={blocker}>{blocker}</li>
@@ -73,18 +78,22 @@ export function ReviewStep({
       {blockers.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Still needed before publishing</CardTitle>
+            <CardTitle className="text-base">{t('stillNeeded')}</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2xs">
               {blockers.map((blocker) => (
                 <li
-                  key={`${blocker.step}-${blocker.message}`}
+                  key={`${blocker.step}-${blocker.reason}-${blocker.criterion}`}
                   className="flex flex-wrap items-center justify-between gap-2xs"
                 >
-                  <span className="text-sm text-text-primary">{blocker.message}</span>
+                  <span className="text-sm text-text-primary">
+                    {blocker.criterion
+                      ? reasons('criterion', { criterion: criteria(`${blocker.criterion}.label`) })
+                      : reasons(blocker.reason)}
+                  </span>
                   <Button variant="link" onClick={() => onJumpTo(blocker.step)}>
-                    Go to {PUBLISH_STEP_LABELS[blocker.step]}
+                    {steps('goTo', { step: steps(PUBLISH_STEP_NAMES[blocker.step]) })}
                   </Button>
                 </li>
               ))}
@@ -96,27 +105,31 @@ export function ReviewStep({
       {/* Data license notice (#476): what the contributor writes here is index
           data under CC BY-SA 4.0; files and source content keep their own. */}
       <p className="text-sm text-text-secondary">
-        The data you enter here (compatible products, print settings, structured fields) is published under{' '}
-        <a href={DATA_LICENSE.url} className="underline" target="_blank" rel="noopener noreferrer">
-          {DATA_LICENSE.shortName}
-        </a>
-        . Files, and content taken from the source, keep their author&rsquo;s license. See{' '}
-        <Link href={TERMS_LICENSES_SECTION_HREF} className="underline" target="_blank" rel="noopener noreferrer">
-          section 4.2 of the Terms of use
-        </Link>
-        .
+        {t.rich('dataLicense', {
+          license: DATA_LICENSE.shortName,
+          licenseLink: (chunks) => (
+            <a href={DATA_LICENSE.url} className="underline" target="_blank" rel="noopener noreferrer">
+              {chunks}
+            </a>
+          ),
+          terms: (chunks) => (
+            <Link href={TERMS_LICENSES_SECTION_HREF} className="underline" target="_blank" rel="noopener noreferrer">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
 
       <div className="flex justify-between">
         <Button variant="outline" onClick={onBack} disabled={saving || publishing}>
-          Back
+          {t('back')}
         </Button>
         <div className="flex gap-sm">
           <Button variant="ghost" onClick={onSaveAsDraft} disabled={saving || publishing}>
-            Save as draft
+            {t('saveAsDraft')}
           </Button>
           <Button onClick={onPublish} disabled={publishing || saving || blockers.length > 0}>
-            {publishing ? 'Publishing…' : 'Publish'}
+            {publishing ? t('publishing') : t('publish')}
           </Button>
         </div>
       </div>

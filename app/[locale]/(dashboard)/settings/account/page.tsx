@@ -1,9 +1,12 @@
-export default function AccountSettingsPage() {
+import { getTranslations } from "next-intl/server"
+
+export default async function AccountSettingsPage() {
+  const t = await getTranslations('DashboardPages.account')
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Account Settings</h1>
+      <h1 className="text-3xl font-bold mb-6">{t('title')}</h1>
       <div className="bg-white p-6 rounded-lg shadow-sm">
-        <p className="text-gray-600">Account settings will be implemented here</p>
+        <p className="text-gray-600">{t('comingSoon')}</p>
       </div>
     </div>
   )

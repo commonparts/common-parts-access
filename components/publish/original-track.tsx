@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useFormatter, useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Alert } from '@/components/ui/alert'
@@ -17,12 +18,12 @@ import { FilesStep } from '@/components/publish/files-step'
 import { ReviewStep } from '@/components/publish/review-step'
 import { StepNav } from '@/components/publish/step-nav'
 import { usePartUploadFormState } from '@/hooks/use-part-upload-form-state'
-import { uploadFilesFromClient } from '@/lib/storage/client-upload'
-import { ATTESTATION_CLAUSES, ATTESTATION_SUMMARY } from '@/lib/upload/attestation'
+import { StorageUploadError, uploadFilesFromClient } from '@/lib/storage/client-upload'
+import { ATTESTATION_CLAUSES } from '@/lib/upload/attestation'
 import { originalTrackBlockers } from '@/lib/publish/blockers'
 import {
   PUBLISH_STEPS,
-  PUBLISH_STEP_LABELS,
+  PUBLISH_STEP_NAMES,
   firstBlockedStep,
   type PublishStepIndex,
 } from '@/lib/publish/steps'
@@ -51,6 +52,11 @@ const numToStr = (value: number | null | undefined): string =>
  * the upload endpoints reject a payload that tries to set any of them.
  */
 export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrackProps) {
+  const t = useTranslations('OriginalTrack')
+  const flow = useTranslations('PublishFlow')
+  const steps = useTranslations('PublishSteps')
+  const attestation = useTranslations('Attestation')
+  const format = useFormatter()
   const router = useRouter()
   const form = usePartUploadFormState()
   const { formData, setFormData } = form
@@ -94,7 +100,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
         const res = await fetch(`/api/upload/drafts/${initialDraftId}`)
         const json = await res.json().catch(() => ({}))
         if (!res.ok || !json.draft) {
-          if (!cancelled) setError(json.error || 'Failed to load the draft')
+          if (!cancelled) setError(json.error || flow('loadFailed'))
           return
         }
         if (cancelled) return
@@ -148,7 +154,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
           ),
         )
       } catch {
-        if (!cancelled) setError('Failed to load the draft')
+        if (!cancelled) setError(flow('loadFailed'))
       } finally {
         if (!cancelled) setHydrating(false)
       }
@@ -183,12 +189,12 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        setError(json.error || 'Failed to save the draft')
+        setError(json.error || flow('saveFailed'))
         return false
       }
       return true
     },
-    [draftId],
+    [draftId, flow],
   )
 
   /** Persists the data owned by the given step. Returns false on failure. */
@@ -217,7 +223,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
           })
           const json = await res.json().catch(() => ({}))
           if (!res.ok) {
-            setError(json.error || 'Failed to create the draft')
+            setError(json.error || flow('createFailed'))
             return false
           }
           setDraftId(json.draft.id)
@@ -245,13 +251,13 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
         return true
       } catch {
-        setError('Failed to save the draft')
+        setError(flow('saveFailed'))
         return false
       } finally {
         setSaving(false)
       }
     },
-    [draftId, formData, attested, patchDraft],
+    [draftId, formData, attested, patchDraft, flow],
   )
 
   const goTo = async (nextStep: PublishStepIndex) => {
@@ -285,14 +291,14 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
       })
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
-        setError(json.error || 'Failed to register uploaded files')
+        setError(json.error || flow('registerFailed'))
         return
       }
       setModelFileCount((count) => count + uploads.modelFiles.length)
       if (Array.isArray(json.images)) setImageUrls(json.images)
       setFormData((prev) => ({ ...prev, files: [], thumbnails: [] }))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'File upload failed')
+      setError(err instanceof StorageUploadError ? flow('uploadFailedFile', { name: err.fileName }) : flow('uploadFailed'))
     } finally {
       setUploadingFiles(false)
     }
@@ -312,12 +318,12 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
       const json = await res.json().catch(() => ({}))
       if (!res.ok) {
         if (Array.isArray(json.blockers)) setPublishBlockers(json.blockers)
-        setError(json.error || 'Publication failed')
+        setError(json.error || flow('publishFailed'))
         return
       }
       router.push(`/parts/${json.slug}`)
     } catch {
-      setError('Publication failed')
+      setError(flow('publishFailed'))
     } finally {
       setPublishing(false)
     }
@@ -351,12 +357,12 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
     attested
 
   if (hydrating) {
-    return <p className="text-sm text-text-secondary">Loading your draft…</p>
+    return <p className="text-sm text-text-secondary">{flow('loadingDraft')}</p>
   }
 
   return (
     <div className="space-y-md">
-      <Stepper labels={PUBLISH_STEP_LABELS} current={step} ariaLabel="Publish steps" />
+      <Stepper labels={PUBLISH_STEP_NAMES.map((name) => steps(name))} current={step} ariaLabel={steps('label')} />
 
       {error && (
         <Alert>
@@ -368,23 +374,23 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
         <div className="space-y-md">
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Origin</CardTitle>
+              <CardTitle className="text-base">{steps('origin')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-md">
               <div className="space-y-2xs">
-                <Label htmlFor="original-title">Part title *</Label>
+                <Label htmlFor="original-title">{flow('title')}</Label>
                 <Input
                   id="original-title"
                   value={formData.title}
                   onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="e.g. Dishwasher rack wheel clip"
+                  placeholder={flow('titlePlaceholder')}
                   maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
                   required
                 />
               </div>
 
               <div className="space-y-2xs">
-                <Label>Category *</Label>
+                <Label>{flow('category')}</Label>
                 <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
                   {form.categoryLevels.map((level, idx) => (
                     <NativeSelect
@@ -396,10 +402,10 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                     >
                       <option value="">
                         {form.loadingMeta
-                          ? 'Loading categories…'
+                          ? flow('loadingCategories')
                           : idx === 0
-                            ? 'Select category'
-                            : 'Refine (optional)'}
+                            ? flow('selectCategory')
+                            : flow('refineCategory')}
                       </option>
                       {level.options.map((cat) => (
                         <option key={cat.id} value={cat.id}>
@@ -412,7 +418,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
               </div>
 
               <div className="space-y-2xs">
-                <Label htmlFor="original-license">License *</Label>
+                <Label htmlFor="original-license">{flow('license')}</Label>
                 <NativeSelect
                   id="original-license"
                   value={formData.licenseId}
@@ -421,33 +427,29 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                   required
                 >
                   <option value="">
-                    {form.loadingMeta ? 'Loading licenses…' : 'Select the license you publish under'}
+                    {form.loadingMeta ? flow('loadingLicenses') : t('selectLicense')}
                   </option>
                   {hostableLicenses.map((license) => (
                     <option key={license.id} value={license.id}>
-                      {license.shortName} — {license.name}
+                      {flow('licenseOption', { shortName: license.shortName, name: license.name })}
                     </option>
                   ))}
                 </NativeSelect>
-                <p className="text-sm text-text-secondary">
-                  Common Parts hosts and redistributes your files, so the license must allow
-                  commercial use and modification. Licenses with NC or ND restrictions cannot be
-                  offered on this track.
-                </p>
+                <p className="text-sm text-text-secondary">{t('licenseHint')}</p>
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Originality declaration</CardTitle>
+              <CardTitle className="text-base">{attestation('title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-sm">
               <ul className="space-y-2xs text-sm text-text-secondary">
                 {ATTESTATION_CLAUSES.map((clause) => (
-                  <li key={clause.key} className="flex gap-2xs">
-                    <span aria-hidden="true">—</span>
-                    <span>{clause.text}</span>
+                  <li key={clause} className="flex gap-2xs">
+                    <span aria-hidden="true">{'—'}</span>
+                    <span>{attestation(`clauses.${clause}`)}</span>
                   </li>
                 ))}
               </ul>
@@ -457,17 +459,17 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
                   checked={attested}
                   onCheckedChange={(checked) => setAttested(Boolean(checked))}
                   disabled={Boolean(draftId)}
-                  aria-label={ATTESTATION_SUMMARY}
+                  aria-label={attestation('summary')}
                 />
                 <Label htmlFor="original-attested" className="text-text-primary">
-                  {ATTESTATION_SUMMARY}
+                  {attestation('summary')}
                 </Label>
               </div>
               {draftId && (
                 <p className="text-sm text-text-secondary">
                   {attestedAt
-                    ? `The declaration was recorded on ${new Date(attestedAt).toLocaleDateString()}, when this draft was created.`
-                    : 'The declaration was recorded when this draft was created.'}
+                    ? attestation('recordedOn', { date: format.dateTime(new Date(attestedAt), { dateStyle: 'long' }) })
+                    : attestation('recorded')}
                 </p>
               )}
             </CardContent>
@@ -475,10 +477,10 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
           <StepNav
             onBack={onExit}
-            backLabel="Exit"
+            backLabel={flow('exit')}
             onSaveAndExit={draftId ? saveAndExit : undefined}
             onContinue={() => goTo(PUBLISH_STEPS.FILES)}
-            continueLabel={draftId ? 'Save and continue' : 'Create draft and continue'}
+            continueLabel={draftId ? flow('saveAndContinue') : flow('createAndContinue')}
             continueDisabled={!originStepReady}
             saving={saving}
           />
@@ -524,7 +526,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
             onBack={() => goTo(PUBLISH_STEPS.DETAILS)}
             onSaveAndExit={saveAndExit}
             onContinue={() => goTo(PUBLISH_STEPS.REVIEW)}
-            continueLabel="Review"
+            continueLabel={steps('review')}
             saving={saving}
           />
         </div>

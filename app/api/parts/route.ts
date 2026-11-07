@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { parseSearchParams } from '@/lib/api/parse'
 import { partListQuerySchema } from '@/lib/schemas/parts'
 import { fetchPartCards } from '@/lib/supabase/queries/part'
+import { getApiTranslations } from '@/lib/api/translations'
 
 // GET /api/parts - List all parts with pagination, sorting, and search
 export async function GET(request: NextRequest) {
+  const t = await getApiTranslations(request)
   try {
-    const query = parseSearchParams(request.nextUrl.searchParams, partListQuerySchema)
+    const query = await parseSearchParams(request, partListQuerySchema)
     if (!query.ok) return query.response
     const { page, limit, sortBy, sortOrder, search, productId, brandId, categoryId } = query.data
 
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Unexpected error fetching parts:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: t('serverError') },
       { status: 500 }
     )
   }

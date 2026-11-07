@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
+import type { Locale, Messages } from 'next-intl'
+import { getLocale, getTranslations } from 'next-intl/server'
 import { z } from 'zod'
+import { requestLocale } from '@/lib/utils/locale'
 
 /**
- * Request validation for the API routes (issue #483).
+ * Request validation for the API routes and Server Actions (#483), in the
+ * locale of the calling page (#500).
  *
  * Every route parses its JSON body and its query parameters through a Zod
  * schema with these helpers, and answers a 400 naming the invalid field when
@@ -16,33 +20,63 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 /** Result of a parse: the validated value, or the 400 response to return as is. */
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; response: NextResponse }
 
-const defaultMessage = z.locales.en().localeError
+/**
+ * A message of the `Validation` namespace. A schema that needs more than
+ * Zod's default message writes one of these keys as its `error`, and passes
+ * the message's arguments as the issue's `params`.
+ */
+type ValidationKey = keyof Messages['Validation']
+
+type FieldKey = keyof Messages['Fields']
 
 /**
- * Error map for the fields that carry no message of their own: Zod's default
- * message, prefixed with the path of the field, so every 400 names what to
- * fix (`dimensions.unit: Invalid option: expected one of "mm"|"cm"|"in"`).
- * A message written in a schema is kept as is: those name their field already.
+ * Validates `input` against `schema` in `locale`. Returns the parsed value, or
+ * the message of the first issue: the `Validation` message its key names, or
+ * Zod's default message in `locale`, after the label of the field when the
+ * issue has one (`Unité : Option invalide : une valeur parmi "mm"|"cm" attendue`).
+ * A path segment without a `Fields` label is shown as is.
  */
-const fieldErrorMap: z.core.$ZodErrorMap = (issue) => {
-  const fallback = defaultMessage(issue)
-  const message = typeof fallback === 'string' ? fallback : fallback?.message
-  if (!message) return undefined
-  return issue.path && issue.path.length > 0 ? `${issue.path.join('.')}: ${message}` : message
+async function validateIn<Schema extends z.ZodType>(
+  schema: Schema,
+  input: unknown,
+  locale: Locale,
+): Promise<Result<z.output<Schema>>> {
+  const defaultMessage = z.locales[locale]().localeError
+  // A field missing where one is expected reads "Required" rather than
+  // Zod's "expected string, received undefined".
+  const result = schema.safeParse(input, {
+    error: (issue) =>
+      issue.code === 'invalid_type' && issue.input == null && issue.path?.length ? 'required' : defaultMessage(issue),
+  })
+  if (result.success) return { ok: true, data: result.data }
+
+  const [t, fields] = await Promise.all([
+    getTranslations({ locale, namespace: 'Validation' }),
+    getTranslations({ locale, namespace: 'Fields' }),
+  ])
+  const issue = result.error.issues[0]
+  if (!issue) return { ok: false, error: t('invalidRequest') }
+
+  // A message written in a schema is a key (see ValidationKey); any other is
+  // Zod's default. Path segments are the field names the schemas chose.
+  const key = issue.message as ValidationKey
+  const message = t.has(key) ? t(key, issue.code === 'custom' ? issue.params : undefined) : issue.message
+  const field = issue.path
+    .filter((segment) => typeof segment === 'string')
+    .map((segment) => (fields.has(segment as FieldKey) ? fields(segment as FieldKey) : segment))
+    .join(' › ')
+  return { ok: false, error: field ? t('field', { field, message }) : message }
 }
 
 /**
- * Validates `input` against `schema`. Returns the parsed value, or the message
- * of the first issue. Does not throw. Server Actions call it directly;
- * routes use the helpers below.
+ * Validates the argument of a Server Action, in the locale of the page that
+ * called it. Does not throw.
  */
-export function validate<Schema extends z.ZodType>(
+export async function validate<Schema extends z.ZodType>(
   schema: Schema,
   input: unknown,
-): Result<z.output<Schema>> {
-  const result = schema.safeParse(input, { error: fieldErrorMap })
-  if (result.success) return { ok: true, data: result.data }
-  return { ok: false, error: result.error.issues[0]?.message ?? 'Invalid request' }
+): Promise<Result<z.output<Schema>>> {
+  return validateIn(schema, input, await getLocale())
 }
 
 function badRequest(error: string): NextResponse {
@@ -50,34 +84,38 @@ function badRequest(error: string): NextResponse {
 }
 
 /**
- * Parses the JSON body of a request against `schema`. A body that is not JSON
- * answers `invalidJsonMessage`; a body that does not match the schema answers
- * the message of the first issue. Both are 400s.
+ * Parses the JSON body of a request against `schema`, in the locale of the
+ * calling page. A body that is not JSON answers the `invalidJson` message; a
+ * body that does not match the schema answers the message of the first
+ * issue. Both are 400s.
  */
 export async function parseJsonBody<Schema extends z.ZodType>(
   request: Request,
   schema: Schema,
-  invalidJsonMessage = 'Invalid request body: expected JSON',
 ): Promise<ParseResult<z.output<Schema>>> {
+  const locale = requestLocale(request)
   let body: unknown
   try {
     body = await request.json()
   } catch {
-    return { ok: false, response: badRequest(invalidJsonMessage) }
+    const t = await getTranslations({ locale, namespace: 'Validation' })
+    return { ok: false, response: badRequest(t('invalidJson')) }
   }
-  const result = validate(schema, body)
+  const result = await validateIn(schema, body, locale)
   return result.ok ? result : { ok: false, response: badRequest(result.error) }
 }
 
 /**
- * Parses the query parameters of a request against `schema`. Each parameter
- * reaches the schema as a string (the last value when it is repeated), and an
- * absent one as undefined, so defaults are declared in the schema.
+ * Parses the query parameters of a request against `schema`, in the locale of
+ * the calling page. Each parameter reaches the schema as a string (the last
+ * value when it is repeated), and an absent one as undefined, so defaults are
+ * declared in the schema.
  */
-export function parseSearchParams<Schema extends z.ZodType>(
-  searchParams: URLSearchParams,
+export async function parseSearchParams<Schema extends z.ZodType>(
+  request: Request,
   schema: Schema,
-): ParseResult<z.output<Schema>> {
-  const result = validate(schema, Object.fromEntries(searchParams))
+): Promise<ParseResult<z.output<Schema>>> {
+  const query = Object.fromEntries(new URL(request.url).searchParams)
+  const result = await validateIn(schema, query, requestLocale(request))
   return result.ok ? result : { ok: false, response: badRequest(result.error) }
 }

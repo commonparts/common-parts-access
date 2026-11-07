@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -32,14 +33,15 @@ export function ConfirmationDialog({
   open,
   title,
   description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   loadingLabel,
   onConfirm,
   onCancel,
   loading = false,
   className,
 }: ConfirmationDialogProps) {
+  const t = useTranslations('ConfirmationDialog')
   const containerRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<Element | null>(null)
   const dialogId = useId()
@@ -144,7 +146,7 @@ export function ConfirmationDialog({
             onClick={onCancel}
             disabled={loading}
           >
-            {cancelLabel}
+            {cancelLabel ?? t('cancel')}
           </Button>
           <Button
             variant="default"
@@ -152,7 +154,7 @@ export function ConfirmationDialog({
             onClick={onConfirm}
             disabled={loading}
           >
-            {loading ? (loadingLabel ?? confirmLabel) : confirmLabel}
+            {loading ? (loadingLabel ?? confirmLabel ?? t('confirm')) : (confirmLabel ?? t('confirm'))}
           </Button>
         </div>
       </div>

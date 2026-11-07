@@ -85,7 +85,7 @@ export function Footer() {
         {/* Bottom bar */}
         <div className="flex flex-col items-start justify-between gap-sm border-t border-border-default pt-md md:flex-row md:items-center">
           <div className="flex flex-wrap items-center gap-x-sm gap-y-3xs font-mono text-micro text-text-tertiary">
-            <p>© {new Date().getFullYear()} Common Parts</p>
+            <p>{t("copyright", { year: new Date().getFullYear() })}</p>
             <p>
               {t.rich("licenses", {
                 codeLicense: CODE_LICENSE.shortName,

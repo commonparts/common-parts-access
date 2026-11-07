@@ -53,7 +53,7 @@ Extraction runs **server-side only** and is not exposed publicly. Implemented vi
 
 ### 2. Blocking checklist
 
-The six criteria of **curation checklist v1**, defined once in `lib/curation/checklist.ts` (`CURATION_BLOCKING_CRITERIA`) and shared by the UI and the publish gate so they can never drift:
+The six criteria of **curation checklist v1**, defined once in `lib/curation/checklist.ts` (`CURATION_BLOCKING_CRITERIA`) and shared by the UI and the publish gate so they can never drift. Their labels and descriptions are the `CurationCriteria` messages, keyed by criterion:
 
 | Key | Label | Meaning |
 |-----|-------|---------|
@@ -79,7 +79,7 @@ Every criterion must be explicitly checked to publish. Checklist state is stored
 
 ### 4. Non-blocking flags & files
 
-- **Completeness flags**, defined in `CURATION_FLAGS` and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
+- **Completeness flags**, defined in `CURATION_FLAGS` (worded by the `CurationFlags` messages) and rendered inline beside their subject (`lib/publish/placement.ts`): `needs_verification`, `needs_print_settings`, `needs_photo`, `needs_instructions`, `needs_category`. Each is a **positive confirmation** in the UI; leaving it unchecked sets the matching `needs_*` column. None block publication. A fresh curated draft initializes all five to `true` (nothing confirmed yet).
 - **Files:** a curated part uploads no model files (they stay at the source). Photos go through the three-phase client-upload pipeline (`lib/storage/client-upload.ts` → `POST /api/parts/[slug]/files`), which bypasses the Vercel body-size limit.
 - **Image previews.** Registered images (imported or uploaded) are shown as a thumbnail grid in canonical order, the first tagged as the thumbnail — so it is obvious the gallery is in place rather than an opaque count. Both `POST /api/parts/[slug]/files` and the import endpoint return the part's `images` list so the grid updates without a refetch.
 
