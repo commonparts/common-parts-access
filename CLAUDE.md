@@ -288,6 +288,7 @@ components/
   feedback/       # Feedback widget (form + floating button)
   forms/          # Complex forms — part upload, brand, product
   layout/         # Structural components — navbar, footer, hero, shells
+  legal/          # Shell of the legal pages (per-locale content stays next to each page)
   part/           # Part display — card, grid, details, file list
   ui/             # Primitive components — Button, Input, Card, Badge, etc.
   user/           # User profile components

@@ -108,6 +108,21 @@
     },
     "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>."
   },
+  "LegalPages": {
+    "governingLanguage": "Ce texte est publié en français et en anglais. En cas de divergence entre les deux versions, la version française prévaut.",
+    "terms": {
+      "title": "Conditions d'utilisation",
+      "description": "Conditions d'utilisation de Common Parts Access"
+    },
+    "privacy": {
+      "title": "Politique de confidentialité",
+      "description": "Politique de confidentialité de Common Parts Access"
+    },
+    "legalNotice": {
+      "title": "Mentions légales",
+      "description": "Mentions légales de Common Parts Access"
+    }
+  },
   "UserMenu": {
     "open": "Ouvrir le menu du profil",
     "myParts": "Mes pièces",
