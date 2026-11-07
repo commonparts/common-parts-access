@@ -30,7 +30,7 @@ Every page URL carries a locale prefix (`/fr/...`, `/en/...`). Canonical URLs, O
 
 ## Sitemap and robots (#257)
 
-- `/sitemap.xml` (`app/sitemap.ts`) lists only what public navigation shows: brand pages, category pages, brand-scoped category listings, product pages and part pages, once per locale (`buildSitemap()` in `lib/utils/sitemap.ts`). Rendered dynamically, since it reads the catalog through the cookie-based server client.
+- `/sitemap.xml` (`app/sitemap.ts`) lists only what public navigation shows: brand pages, category pages, brand-scoped category listings, product pages and part pages, plus the home, `/browse` and `/contributing`, once per locale (`buildSitemap()` in `lib/utils/sitemap.ts`). The legal pages are not listed. Rendered dynamically, since it reads the catalog through the cookie-based server client.
 - `/robots.txt` (`app/robots.ts`) allows everything and points to the sitemap. Nothing is disallowed, on purpose: crawlers must fetch `/search` pages to read their `noindex` tag, and part pages render their details client-side from `/api/parts/[slug]/details`, so blocking `/api/` would keep crawlers from rendering them.
 - Absolute URLs of pages are built with `localizedUrl()` (`lib/utils/seo.ts`), other absolute URLs with `absoluteAppUrl()` (`lib/utils/validation.ts`).
 

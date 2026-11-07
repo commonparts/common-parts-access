@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic'
 /**
  * /sitemap.xml (issue #257): brand pages, category pages, brand-scoped
  * category listings, product pages and part pages — only what public
- * navigation shows, once per locale. Referenced from /robots.txt.
+ * navigation shows — and the contributor guide, once per locale. Referenced from /robots.txt.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, parts] = await Promise.all([fetchSitemapProducts(), fetchSitemapParts()])

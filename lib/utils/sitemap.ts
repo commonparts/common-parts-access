@@ -1,8 +1,8 @@
 /**
  * Sitemap URL derivation (issue #257). The sitemap lists only what public
  * navigation shows: listed products (products.is_listed), the brands and
- * categories holding one, and published parts, once per locale. /search is
- * never listed — its pages are noindex.
+ * categories holding one, published parts and the contributor guide, once per
+ * locale. /search is never listed — its pages are noindex.
  */
 
 import type { MetadataRoute } from 'next'
@@ -20,8 +20,11 @@ import {
 /** The sitemap protocol's limit on URLs per file (sitemaps.org). */
 const SITEMAP_MAX_URLS = 50_000
 
-/** Navigation roots always listed, ahead of the derived entity pages. */
-const SITEMAP_STATIC_PATHS = ['/', '/browse'] as const
+/**
+ * Pages always listed, ahead of the derived entity pages: the navigation roots
+ * and the contributor guide. The legal pages are left out.
+ */
+const SITEMAP_STATIC_PATHS = ['/', '/browse', '/contributing'] as const
 
 /** A listed product with the navigation it places itself in. */
 export interface SitemapProduct {

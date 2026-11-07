@@ -33,10 +33,11 @@ describe('buildSitemap', () => {
       .map(({ url }) => url.slice(root.length) || '/')
   }
 
-  it('lists roots, category ancestors, brand, brand-category, product and part', () => {
+  it('lists roots, contributor guide, category ancestors, brand, brand-category, product and part', () => {
     expect(pathsOf(buildSitemap([product()], [{ slug: 'knob', updatedAt: null }]))).toEqual([
       '/',
       '/browse',
+      '/contributing',
       '/categories/appliances',
       '/categories/kitchen-machine',
       '/brands/bosch',
@@ -52,7 +53,9 @@ describe('buildSitemap', () => {
       { url: absoluteAppUrl('/fr/parts/knob'), lastModified: '2026-09-01T00:00:00Z' },
     ])
     expect(buildSitemap([], []).map((entry) => entry.url)).toEqual(
-      ['/en', '/fr', '/en/browse', '/fr/browse'].map((path) => absoluteAppUrl(path)),
+      ['/en', '/fr', '/en/browse', '/fr/browse', '/en/contributing', '/fr/contributing'].map((path) =>
+        absoluteAppUrl(path),
+      ),
     )
   })
 
