@@ -2,7 +2,6 @@ import { z } from 'zod'
 import { MAX_FILENAME_LENGTH } from '@/constants/app'
 import { boundedIntParam, optionalUuidParam, pageParam, uuid } from '@/lib/schemas/common'
 import { SOURCE_CLICK_CONTEXTS } from '@/lib/utils/source-clicks'
-import { PART_STATUSES } from '@/types/database'
 
 /** Request schemas of the part endpoints (`/api/parts/**`). */
 
@@ -20,12 +19,6 @@ export const partListQuerySchema = z.object({
   productId: optionalUuidParam,
   brandId: optionalUuidParam,
   categoryId: optionalUuidParam,
-})
-
-/** GET /api/parts/mine — the owner's dashboard list. */
-export const myPartsQuerySchema = z.object({
-  page: pageParam,
-  status: z.enum(PART_STATUSES).default('published'),
 })
 
 /** POST /api/parts/[slug]/download — the file whose download is counted. */
