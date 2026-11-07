@@ -116,7 +116,7 @@ Triggered on:
 Steps:
 1. Install dependencies (`npm ci`)
 2. TypeScript check (`tsc --noEmit`) — excludes `supabase/` (Deno runtime)
-3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433)
+3. Lint (`npm run lint`, which runs `eslint . --max-warnings=0`): any warning fails the job, as any error does (#433). It includes `react/jsx-no-literals`, which refuses interface text written in JSX instead of the message files (#500, see [I18N.md](./I18N.md#messages))
 4. Unused code and dependencies (`npm run knip`): any unused file, dependency or export fails the job. The exceptions are listed in `knip.json`: `supabase/functions/**` (Deno Edge Functions, outside the Node.js module graph), the shadcn sub-components of `components/ui/card.tsx`, `components/ui/command.tsx`, `components/ui/dropdown-menu.tsx` and `components/ui/popover.tsx`, kept so the files stay close to upstream (#482, #484), and `types/supabase.ts` (generated, see [Generated types](#generated-types)) (#483)
 5. Unit tests with coverage threshold (`npm run test:coverage`, Vitest)
 
@@ -553,18 +553,24 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   ├── commit-msg                  # Commitlint hook
 │   └── pre-push                    # Block direct push to main/staging
 ├── instrumentation.ts              # Validates the server environment at startup
+├── proxy.ts                        # Session refresh, protected routes, locale routing
 ├── app/
-│   ├── (auth)/                     # Sign-up, login, password, account deletion
-│   ├── (dashboard)/                # Protected: dashboard, my parts, publish, settings
-│   ├── (legal)/                    # Privacy, terms, legal notice
-│   ├── (public)/                   # Browse, brands, categories, product, parts, search
+│   ├── [locale]/                   # Every page, under its locale prefix (/fr, /en)
+│   │   ├── (auth)/                 # Sign-up, login, password, account deletion
+│   │   ├── (dashboard)/            # Protected: dashboard, my parts, publish, settings
+│   │   ├── (legal)/                # Privacy, terms, legal notice
+│   │   ├── (public)/               # Browse, brands, categories, product, parts, search
+│   │   └── layout.tsx              # Document root: <html lang>, metadata, NextIntlClientProvider, FeedbackButton
+│   ├── (auth)/confirm/             # Email confirmation callback, not localized
 │   ├── api/                        # API routes: downloads, redirects, binary responses, webhooks, external callers
 │   ├── globals.css                 # Design tokens (@theme) and global styles (edit tokens only with approval)
-│   ├── layout.tsx                  # FeedbackButton mounted here
+│   ├── layout.tsx                  # Pass-through root layout
 │   ├── robots.ts / sitemap.ts      # Crawler entry points
 ├── components/                     # UI by domain (ui/, browse/, part/, publish/, search/, …)
 ├── constants/
 ├── hooks/
+├── i18n/                           # next-intl routing, navigation helpers, request config, message types
+├── messages/                       # Interface strings: en.json (source), fr.json
 ├── lib/
 │   ├── actions/                    # Server Actions for mutations from our own UI, one file per domain
 │   ├── api/parse.ts                # Input validation with Zod: Result type for actions, 400 for routes

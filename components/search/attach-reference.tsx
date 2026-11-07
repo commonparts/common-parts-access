@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -25,6 +26,7 @@ export interface AttachReferenceProps {
  * reference pending; it reaches search only once validated.
  */
 export function AttachReference({ reference, initialCandidates }: AttachReferenceProps) {
+  const t = useTranslations("AttachReference")
   const [candidates, setCandidates] = React.useState(initialCandidates)
   const [productQuery, setProductQuery] = React.useState("")
   const [selectedId, setSelectedId] = React.useState("")
@@ -93,7 +95,7 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
   if (state === "done") {
     return (
       <div className="rounded-lg border border-border-subtle bg-bg-subtle p-lg text-sm text-text-primary">
-        Thanks. We check each suggestion before &ldquo;{reference}&rdquo; is added to search.
+        {t("done", { reference })}
       </div>
     )
   }
@@ -110,8 +112,8 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
           setSelectedId("")
           setIsSearching(e.target.value.trim() !== "")
         }}
-        aria-label="Search for the product by brand or name"
-        placeholder="Search by brand or product name…"
+        aria-label={t("searchLabel")}
+        placeholder={t("searchPlaceholder")}
       />
 
       {!isSearching && candidates.length > 0 ? (
@@ -121,7 +123,7 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
             setSelectedId(value)
             if (state === "failed") setState("idle")
           }}
-          aria-label="Product this reference belongs to"
+          aria-label={t("productLabel")}
           className="gap-xs"
         >
           {candidates.map((candidate) => {
@@ -141,21 +143,17 @@ export function AttachReference({ reference, initialCandidates }: AttachReferenc
         </RadioGroup>
       ) : (
         <p className="text-caption text-text-secondary">
-          {isSearching
-            ? "Searching…"
-            : productQuery.trim()
-            ? "No product matches that search."
-            : "Search for the brand or name of your device."}
+          {t(isSearching ? "searching" : productQuery.trim() ? "noMatch" : "prompt")}
         </p>
       )}
 
       {state === "failed" && (
         <p role="alert" className="text-sm text-status-errorText">
-          Something went wrong sending your suggestion. Please try again.
+          {t("failed")}
         </p>
       )}
       <Button type="submit" variant="outline" disabled={!hasSelection || state === "submitting"}>
-        {state === "submitting" ? "Sending…" : "Suggest this product"}
+        {t(state === "submitting" ? "sending" : "submit")}
       </Button>
     </form>
   )

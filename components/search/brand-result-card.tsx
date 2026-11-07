@@ -1,11 +1,12 @@
-import Link from "next/link"
+import { useTranslations } from "next-intl"
+import { Link } from "@/i18n/navigation"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { pluralize } from "@/lib/utils/formatters"
 import type { SearchBrandResult } from "@/types/search"
 
 // Brand card for the /search results page: initial avatar (or logo), name,
 // product count. Links to the brand page.
 export function BrandResultCard({ brand }: { brand: SearchBrandResult }) {
+  const counts = useTranslations("Counts")
   return (
     <Link
       href={`/brands/${brand.slug}`}
@@ -25,7 +26,7 @@ export function BrandResultCard({ brand }: { brand: SearchBrandResult }) {
           {brand.name}
         </div>
         <div className="truncate text-caption text-text-secondary">
-          {pluralize(brand.product_count, "product")}
+          {counts("products", { count: brand.product_count })}
         </div>
       </div>
     </Link>

@@ -1,7 +1,9 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
 
 import { Pagination } from '@/components/browse/pagination'
 import { resolveSortKey, SortOptions, SortOptionsDropdown } from '@/components/browse/sort-options'
@@ -34,12 +36,13 @@ interface PartsResponse {
  * to /search (Flow P2 strict separation).
  */
 export function BrowsePartsGrid() {
+  const t = useTranslations('BrowsePartsGrid')
   const router = useRouter()
   const searchParams = useSearchParams()
 
   const [parts, setParts] = useState<PartCardData[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     limit: 20,
@@ -79,7 +82,7 @@ export function BrowsePartsGrid() {
   const fetchParts = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
+      setError(false)
 
       const params = new URLSearchParams({
         page: currentPage.toString(),
@@ -106,7 +109,7 @@ export function BrowsePartsGrid() {
       setPagination(data.pagination)
     } catch (err) {
       console.error('Error fetching parts:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load parts')
+      setError(true)
     } finally {
       setLoading(false)
     }
@@ -130,10 +133,10 @@ export function BrowsePartsGrid() {
           </svg>
         </div>
         <div className="space-y-xs">
-          <h3 className="text-heading-sm font-semibold text-text-primary">Unable to load parts</h3>
-          <p role="alert" className="text-body text-status-errorText">{error}</p>
+          <h3 className="text-heading-sm font-semibold text-text-primary">{t('errorTitle')}</h3>
+          <p role="alert" className="text-body text-status-errorText">{t('errorDescription')}</p>
         </div>
-        <Button onClick={() => fetchParts()}>Try again</Button>
+        <Button onClick={() => fetchParts()}>{t('retry')}</Button>
       </div>
     )
   }

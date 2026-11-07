@@ -12,7 +12,7 @@ import { createPartRequest } from '@/lib/supabase/queries/part-requests'
  * no GitHub issue is created.
  */
 export async function requestPart(input: z.input<typeof partRequestSchema>): Promise<Result<null>> {
-  const parsed = validate(partRequestSchema, input)
+  const parsed = await validate(partRequestSchema, input)
   if (!parsed.ok) return parsed
 
   await createPartRequest(parsed.data)

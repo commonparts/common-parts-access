@@ -1,8 +1,8 @@
 import { z } from 'zod'
 import { uuid } from '@/lib/schemas/common'
 import { partDraftFields } from '@/lib/schemas/part-fields'
-import { hasFields, NOTHING_TO_UPDATE, partDraftFieldsSchema } from '@/lib/schemas/drafts'
-import { findForbiddenField, forbiddenFieldError } from '@/lib/upload/payload'
+import { hasFields, partDraftFieldsSchema } from '@/lib/schemas/drafts'
+import { findForbiddenField } from '@/lib/upload/payload'
 
 /**
  * Request schemas of the public upload flow (`/api/upload/drafts`, issue
@@ -11,15 +11,13 @@ import { findForbiddenField, forbiddenFieldError } from '@/lib/upload/payload'
  * naming it, before any other check: see lib/upload/payload.ts.
  */
 
-const INVALID_BODY = 'Invalid request body'
-
 /** Wraps `schema` with the refusal of the fields the upload flow does not expose. */
 function refusingForbiddenFields<Schema extends z.ZodObject>(schema: Schema) {
   return z
-    .record(z.string(), z.unknown(), { error: INVALID_BODY })
+    .record(z.string(), z.unknown())
     .superRefine((payload, ctx) => {
       const field = findForbiddenField(payload)
-      if (field) ctx.addIssue({ code: 'custom', message: forbiddenFieldError(field) })
+      if (field) ctx.addIssue({ code: 'custom', message: 'forbiddenUploadField', params: { field } })
     })
     .pipe(schema)
 }
@@ -30,9 +28,9 @@ export const createUploadDraftSchema = refusingForbiddenFields(
     title: partDraftFields.title,
     // An explicit true: a missing or truthy-ish value is not someone claiming
     // authorship of a design.
-    attested: z.literal(true, { error: 'The originality declaration must be confirmed to start an upload' }),
-    categoryId: uuid('A category is required'),
-    licenseId: uuid('A license is required'),
+    attested: z.literal(true, { error: 'attestationRequired' }),
+    categoryId: uuid,
+    licenseId: uuid,
   }),
 )
 
@@ -44,8 +42,8 @@ export const createUploadDraftSchema = refusingForbiddenFields(
 export const updateUploadDraftSchema = refusingForbiddenFields(
   partDraftFieldsSchema
     .extend({
-      categoryId: uuid('A category is required').optional(),
-      licenseId: uuid('A license is required').optional(),
+      categoryId: uuid.optional(),
+      licenseId: uuid.optional(),
     })
-    .refine(hasFields, { error: NOTHING_TO_UPDATE }),
+    .refine(hasFields, { error: 'nothingToUpdate' }),
 )

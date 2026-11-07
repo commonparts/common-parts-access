@@ -36,9 +36,12 @@ export async function getSourcePlatformBySlug(slug: string): Promise<SourcePlatf
   return data ?? null
 }
 
+/** The `Api` message of each refusal of validateSourceUrlMatchesPlatform. */
+type SourcePlatformUrlError = 'serverError' | 'unknownSourcePlatform' | 'sourcePlatformMismatch' | 'invalidSourceUrl'
+
 export type SourcePlatformUrlCheck =
   | { ok: true }
-  | { ok: false; error: string; status: 400 | 500 }
+  | { ok: false; error: SourcePlatformUrlError; status: 400 | 500 }
 
 /**
  * Verifies that the platform exists and that the source URL's host matches
@@ -58,20 +61,20 @@ export async function validateSourceUrlMatchesPlatform(
     platform = await getSourcePlatformBySlug(platformSlug)
   } catch (error) {
     console.error('validateSourceUrlMatchesPlatform: platform lookup failed', error)
-    return { ok: false, error: 'Failed to validate source platform', status: 500 }
+    return { ok: false, error: 'serverError', status: 500 }
   }
 
-  if (!platform) return { ok: false, error: 'Unknown source platform', status: 400 }
+  if (!platform) return { ok: false, error: 'unknownSourcePlatform', status: 400 }
   if (!platform.base_url) return { ok: true }
 
   try {
     const sourceHost = new URL(sourceUrl).hostname.replace(/^www\./, '')
     const platformHost = new URL(platform.base_url).hostname.replace(/^www\./, '')
     if (sourceHost !== platformHost) {
-      return { ok: false, error: 'Source URL domain does not match the selected platform', status: 400 }
+      return { ok: false, error: 'sourcePlatformMismatch', status: 400 }
     }
     return { ok: true }
   } catch {
-    return { ok: false, error: 'Invalid source URL format', status: 400 }
+    return { ok: false, error: 'invalidSourceUrl', status: 400 }
   }
 }

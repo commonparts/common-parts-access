@@ -21,7 +21,7 @@ const publishableOriginal: OriginalTrackState = {
 }
 
 const allCriteriaMet: CurationChecklist = Object.fromEntries(
-  CURATION_BLOCKING_CRITERIA.map((c) => [c.key, true]),
+  CURATION_BLOCKING_CRITERIA.map((criterion) => [criterion, true]),
 )
 
 /** A referenced part that satisfies every condition of the elsewhere gate. */
@@ -83,8 +83,8 @@ describe('elsewhereTrackBlockers', () => {
     const blockers = elsewhereTrackBlockers({ ...publishableElsewhere, checklist: {} })
     expect(blockers).toHaveLength(CURATION_BLOCKING_CRITERIA.length)
     for (const criterion of CURATION_BLOCKING_CRITERIA) {
-      const match = blockers.find((b) => b.message.includes(criterion.label.toLowerCase()))
-      expect(match?.step).toBe(CRITERION_STEP[criterion.key])
+      const match = blockers.find((b) => b.criterion === criterion)
+      expect(match).toMatchObject({ reason: 'criterion', step: CRITERION_STEP[criterion] })
     }
   })
 

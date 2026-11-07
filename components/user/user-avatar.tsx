@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Link, useRouter } from "@/i18n/navigation";
 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { CurrentUserAvatar } from "@/components/user/current-user-profile";
@@ -10,6 +10,7 @@ import { signOut } from "@/lib/supabase/queries/auth.client";
 import { useCurrentUserName } from "@/hooks/use-current-user-name";
 
 export function UserProfileMenu() {
+	const t = useTranslations("UserMenu");
 	const router = useRouter();
 	const name = useCurrentUserName();
 
@@ -28,7 +29,7 @@ export function UserProfileMenu() {
 				<button
 					type="button"
 					className="rounded-full focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface"
-					aria-label="Open profile menu"
+					aria-label={t("open")}
 				>
 					<CurrentUserAvatar className="h-lg w-lg" name={name} />
 				</button>
@@ -54,7 +55,7 @@ export function UserProfileMenu() {
 							<DropdownMenuItem key={item.key} asChild>
 								<Link href={item.href} className="flex w-full items-center gap-md">
 									<Icon className="h-4 w-4" />
-									<span>{item.label}</span>
+									<span>{t(item.label)}</span>
 								</Link>
 							</DropdownMenuItem>
 						);
@@ -78,7 +79,7 @@ export function UserProfileMenu() {
 							}}
 						>
 							<Icon className="h-4 w-4" />
-							<span>{item.label}</span>
+							<span>{t(item.label)}</span>
 						</DropdownMenuItem>
 					);
 				})}

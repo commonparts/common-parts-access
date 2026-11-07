@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import Image from 'next/image'
+import { useFormatter, useNow, useTranslations } from 'next-intl'
 import { Trash2 } from 'lucide-react'
 import { DashboardShell } from '@/components/layout/dashboard-shell'
 import { Alert } from '@/components/ui/alert'
@@ -13,8 +14,7 @@ import { ElsewhereTrack } from '@/components/publish/elsewhere-track'
 import { OrientationQuestion } from '@/components/publish/orientation-question'
 import { OriginalTrack } from '@/components/publish/original-track'
 import { mergeDraftLists, type PublishDraft } from '@/lib/publish/drafts'
-import { publishTrackDefinition, type PublishTrack } from '@/lib/publish/tracks'
-import { formatRelativeTime } from '@/lib/utils/formatters'
+import type { PublishTrack } from '@/lib/publish/tracks'
 
 /** Rendered width of a draft thumbnail: the `2xl` spacing token (64px). */
 const DRAFT_THUMBNAIL_SIZES = '64px'
@@ -42,6 +42,10 @@ interface PublishPageProps {
  * see the other's rows.
  */
 export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
+  const t = useTranslations('PublishPage')
+  const tracks = useTranslations('PublishTracks')
+  const format = useFormatter()
+  const now = useNow()
   const [session, setSession] = React.useState<Session>({ mode: 'idle' })
   const [drafts, setDrafts] = React.useState<PublishDraft[]>([])
   const [loading, setLoading] = React.useState(true)
@@ -61,7 +65,7 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
       const elsewhereJson = await elsewhereRes.json().catch(() => ({}))
 
       if (!originalRes.ok || !elsewhereRes.ok) {
-        setError(originalJson.error || elsewhereJson.error || 'Failed to load drafts')
+        setError(originalJson.error || elsewhereJson.error || t('loadFailed'))
         return
       }
 
@@ -72,11 +76,11 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
         ),
       )
     } catch {
-      setError('Failed to load drafts')
+      setError(t('loadFailed'))
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [t])
 
   React.useEffect(() => {
     if (session.mode === 'idle') {
@@ -100,11 +104,11 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
       })
       if (!res.ok) {
         const json = await res.json().catch(() => ({}))
-        throw new Error(json.error || 'Delete failed. Please try again.')
+        throw new Error(json.error || t('deleteFailed'))
       }
       setDrafts((current) => current.filter((draft) => draft.id !== target.id))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed. Please try again.')
+      setError(err instanceof Error ? err.message : t('deleteFailed'))
     } finally {
       setPendingDelete(null)
       setDeleting(false)
@@ -113,8 +117,8 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
 
   return (
     <DashboardShell
-      title="Publish a part"
-      description="Add a spare part to the Common Parts Index. Your progress is saved at every step, so you can stop and come back."
+      title={t('title')}
+      description={t('description')}
     >
       {session.mode === 'idle' && (
         <div className="space-y-lg">
@@ -127,16 +131,14 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
           <OrientationQuestion onChoose={(track) => setSession({ mode: 'new', track })} />
 
           <div className="space-y-md">
-            <h2 className="font-heading text-heading-sm font-semibold text-text-primary">In progress</h2>
+            <h2 className="font-heading text-heading-sm font-semibold text-text-primary">{t('inProgress')}</h2>
 
             {loading ? (
-              <p className="text-sm text-text-secondary">Loading drafts…</p>
+              <p className="text-sm text-text-secondary">{t('loading')}</p>
             ) : drafts.length === 0 ? (
               <Card>
                 <CardContent className="pt-md">
-                  <p className="text-sm text-text-secondary">
-                    Nothing in progress. Answer the question above to start a part.
-                  </p>
+                  <p className="text-sm text-text-secondary">{t('empty')}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -145,7 +147,7 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
                   <Card key={draft.id}>
                     <CardHeader className="flex flex-row items-center justify-between gap-sm space-y-0">
                       <CardTitle className="text-base">{draft.name}</CardTitle>
-                      <Badge variant="outline">{publishTrackDefinition(draft.track).badge}</Badge>
+                      <Badge variant="outline">{tracks(`${draft.track}.badge`)}</Badge>
                     </CardHeader>
                     <CardContent className="flex items-center justify-between gap-sm">
                       <div className="flex min-w-0 items-center gap-sm">
@@ -162,8 +164,8 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
                         )}
                         <p className="min-w-0 truncate text-sm text-text-secondary">
                           {draft.updatedAt
-                            ? `Last edited ${formatRelativeTime(draft.updatedAt)}`
-                            : (draft.sourceUrl ?? 'Draft')}
+                            ? t('lastEdited', { time: format.relativeTime(new Date(draft.updatedAt), now) })
+                            : (draft.sourceUrl ?? t('draft'))}
                         </p>
                       </div>
                       <div className="flex shrink-0 items-center gap-2xs">
@@ -173,12 +175,12 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
                             setSession({ mode: 'resume', track: draft.track, draftId: draft.id })
                           }
                         >
-                          Resume
+                          {t('resume')}
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          aria-label={`Delete ${draft.name}`}
+                          aria-label={t('deleteDraft', { name: draft.name })}
                           onClick={() => setPendingDelete(draft)}
                         >
                           <Trash2 />
@@ -210,10 +212,10 @@ export function PublishPage({ imageImportPlatforms }: PublishPageProps) {
 
       <ConfirmationDialog
         open={pendingDelete !== null}
-        title="Delete draft"
-        description={`Are you sure you want to delete the draft "${pendingDelete?.name}"? Any files you uploaded are removed. This action cannot be undone.`}
-        confirmLabel="Delete"
-        loadingLabel="Deleting…"
+        title={t('deleteTitle')}
+        description={t('deleteConfirm', { name: pendingDelete?.name ?? '' })}
+        confirmLabel={t('delete')}
+        loadingLabel={t('deleting')}
         onConfirm={handleConfirmDelete}
         onCancel={() => {
           if (!deleting) setPendingDelete(null)

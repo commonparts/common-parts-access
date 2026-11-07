@@ -5,6 +5,7 @@ import { STORAGE_BUCKETS } from '@/constants/app'
 import { toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { getApiTranslations } from '@/lib/api/translations'
 
 export const runtime = 'nodejs'
 
@@ -18,9 +19,10 @@ const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles * 10
 // GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
 // Anonymous: no account required, only an anonymous download row is recorded (issue #250).
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { slug } = await params
@@ -33,7 +35,7 @@ export async function GET(
       .single()
 
     if (partError || !part) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
     const { data: files, error: filesError } = await supabase
@@ -46,17 +48,17 @@ export async function GET(
 
     if (filesError) {
       console.error('Failed to fetch model files:', filesError)
-      return NextResponse.json({ error: 'Failed to load files' }, { status: 500 })
+      return NextResponse.json({ error: t('loadFailed') }, { status: 500 })
     }
 
     if (!files || files.length === 0) {
-      return NextResponse.json({ error: 'No files available for download' }, { status: 404 })
+      return NextResponse.json({ error: t('noFiles') }, { status: 404 })
     }
 
     if (files.length > MAX_ARCHIVE_FILES) {
       console.error('Archive refused: part has more model files than the archive ceiling', part.id)
       return NextResponse.json(
-        { error: `This part has more than ${MAX_ARCHIVE_FILES} files: download them one by one` },
+        { error: t('tooManyArchiveFiles', { max: MAX_ARCHIVE_FILES }) },
         { status: 422 },
       )
     }
@@ -98,7 +100,7 @@ export async function GET(
     }
 
     if (addedFiles === 0) {
-      return NextResponse.json({ error: 'Files are unavailable at the moment' }, { status: 503 })
+      return NextResponse.json({ error: t('filesUnavailable') }, { status: 503 })
     }
 
     const zipBuffer = await zip.generateAsync({
@@ -123,6 +125,6 @@ export async function GET(
     })
   } catch (error) {
     console.error('Archive download failed:', error)
-    return NextResponse.json({ error: 'Failed to prepare download' }, { status: 500 })
+    return NextResponse.json({ error: t('downloadFailed') }, { status: 500 })
   }
 }

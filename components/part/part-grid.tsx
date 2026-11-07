@@ -1,4 +1,5 @@
 import * as React from "react"
+import { useTranslations } from "next-intl"
 
 import { Grid } from "@/components/layout/grid"
 import { cn } from "@/lib/utils"
@@ -18,6 +19,7 @@ export function PartGrid({
   columns,
   className,
 }: PartGridProps) {
+  const t = useTranslations("PartGrid")
   const gridColumns = columns ?? 12
 
   const itemSpans =
@@ -51,8 +53,8 @@ export function PartGrid({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
           </svg>
         </div>
-        <h3 className="text-heading-sm font-semibold text-text-primary">No parts found</h3>
-        <p className="text-body text-text-secondary">Try adjusting your search or filters</p>
+        <h3 className="text-heading-sm font-semibold text-text-primary">{t("emptyTitle")}</h3>
+        <p className="text-body text-text-secondary">{t("emptyDescription")}</p>
       </div>
     )
   }

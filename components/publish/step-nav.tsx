@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -28,28 +29,29 @@ interface StepNavProps {
  */
 export function StepNav({
   onBack,
-  backLabel = 'Back',
+  backLabel,
   onSaveAndExit,
-  saveAndExitLabel = 'Save and exit',
+  saveAndExitLabel,
   onContinue,
-  continueLabel = 'Continue',
+  continueLabel,
   continueDisabled = false,
   saving,
   className,
 }: StepNavProps) {
+  const t = useTranslations('StepNav')
   return (
     <div className={cn('flex justify-between', className)}>
       <Button variant="outline" onClick={onBack} disabled={saving}>
-        {backLabel}
+        {backLabel ?? t('back')}
       </Button>
       <div className="flex gap-sm">
         {onSaveAndExit && (
           <Button variant="ghost" onClick={onSaveAndExit} disabled={saving}>
-            {saveAndExitLabel}
+            {saveAndExitLabel ?? t('saveAndExit')}
           </Button>
         )}
         <Button onClick={onContinue} disabled={saving || continueDisabled}>
-          {saving ? 'Saving…' : continueLabel}
+          {saving ? t('saving') : (continueLabel ?? t('continue'))}
         </Button>
       </div>
     </div>

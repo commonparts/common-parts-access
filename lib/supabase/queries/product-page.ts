@@ -1,8 +1,10 @@
+import { getLocale } from 'next-intl/server'
 import { cache } from 'react'
 import { createClient } from '@/lib/supabase/server'
 import type { ProductReference } from '@/lib/utils/product-references'
 import { toEvidenceLevel, type EvidenceLevel } from '@/lib/utils/evidence-level'
 import { firstEmbedded } from '@/lib/utils/supabase-embed'
+import { localizeCategory } from '@/lib/utils/locale'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination'
 import {
@@ -69,7 +71,7 @@ export const fetchProductPageBySlug = cache(
         `
         id, name, slug, release_year, discontinued, image_url,
         brands(id, name, slug),
-        categories(id, name, slug),
+        categories(id, name, name_fr, slug),
         product_references(id, value, type, region, language)
       `,
       )
@@ -91,7 +93,7 @@ export const fetchProductPageBySlug = cache(
       discontinued: Boolean(row.discontinued),
       image_url: resolveStorageUrl(row.image_url),
       brand: firstEmbedded(row.brands),
-      category: firstEmbedded(row.categories),
+      category: localizeCategory(firstEmbedded(row.categories), await getLocale()),
     }
 
     // Cast: product_references.type has a CHECK constraint allowing exactly

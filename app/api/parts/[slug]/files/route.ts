@@ -7,6 +7,7 @@ import { partFileBucket, toStorageReference } from '@/lib/storage/path-utils'
 import { resolveStorageUrls } from '@/lib/storage/url'
 import { parseJsonBody } from '@/lib/api/parse'
 import { registerFilesSchema } from '@/lib/schemas/parts'
+import { getApiTranslations } from '@/lib/api/translations'
 
 export const runtime = 'nodejs'
 
@@ -41,18 +42,19 @@ export async function POST(
   request: NextRequest,
   context: { params: Promise<{ slug: string }> },
 ) {
+  const t = await getApiTranslations(request)
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+      return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
     }
 
     const { slug } = await context.params
 
     if (!slug || slug.length > 200) {
-      return NextResponse.json({ error: 'Invalid slug' }, { status: 400 })
+      return NextResponse.json({ error: t('invalidSlug') }, { status: 400 })
     }
 
     // Look up the part by slug — include images fields for merge on update
@@ -63,18 +65,18 @@ export async function POST(
       .single()
 
     if (partError || !part) {
-      return NextResponse.json({ error: 'Part not found' }, { status: 404 })
+      return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
     if (part.user_id !== user.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
+      return NextResponse.json({ error: t('forbidden') }, { status: 403 })
     }
 
     const partId = part.id
 
     // Shape is checked by the schema; the rules that depend on the category,
     // the owner and the part are checked per file below.
-    const body = await parseJsonBody(request, REGISTER_FILES_SCHEMA, 'Invalid JSON body')
+    const body = await parseJsonBody(request, REGISTER_FILES_SCHEMA)
     if (!body.ok) return body.response
     const { files } = body.data
 
@@ -96,7 +98,7 @@ export async function POST(
       // Validate the bucket of the category before applying category-specific limits
       const expectedBucket = partFileBucket(category)
       if (bucket !== expectedBucket) {
-        return NextResponse.json({ error: `Bucket mismatch for category "${category}"` }, { status: 400 })
+        return NextResponse.json({ error: t('bucketMismatch', { category }) }, { status: 400 })
       }
 
       // Enforce per-file size limits matching phase-1 validation
@@ -105,7 +107,7 @@ export async function POST(
         : PART_UPLOAD_LIMITS.maxThumbnailSize
       if (size > maxFileSize) {
         return NextResponse.json(
-          { error: `File ${originalName.slice(0, 50)} exceeds size limit (${Math.round(maxFileSize / (1024 * 1024))}MB)` },
+          { error: t('fileTooLarge', { name: originalName.slice(0, 50), max: Math.round(maxFileSize / (1024 * 1024)) }) },
           { status: 400 },
         )
       }
@@ -116,19 +118,19 @@ export async function POST(
       const normalizedExtension = extension.replace(/^\./, '')
       const allowedExtensions = category === 'model' ? MODEL_EXTENSIONS : IMAGE_EXTENSIONS
       if (!allowedExtensions.has(extWithDot)) {
-        return NextResponse.json({ error: `Extension "${extension}" not allowed for category "${category}"` }, { status: 400 })
+        return NextResponse.json({ error: t('extensionNotAllowed', { extension, category }) }, { status: 400 })
       }
 
       // Verify extension matches the filename
       if (!filename.toLowerCase().endsWith(extWithDot)) {
-        return NextResponse.json({ error: `Extension "${extension}" does not match filename "${filename.slice(0, 50)}"` }, { status: 400 })
+        return NextResponse.json({ error: t('extensionMismatch', { extension, filename: filename.slice(0, 50) }) }, { status: 400 })
       }
 
       // Verify the path exactly matches the expected structure
       const expectedFolder = CATEGORY_FOLDER_MAP[category]
       const expectedPath = `${user.id}/${partId}/${expectedFolder}/${filename}`
       if (path !== expectedPath) {
-        return NextResponse.json({ error: 'File path does not match authenticated user, part, and filename' }, { status: 403 })
+        return NextResponse.json({ error: t('pathMismatch') }, { status: 403 })
       }
 
       // The gallery stores a relative reference derived from the validated
@@ -151,7 +153,7 @@ export async function POST(
     // Enforce total size limit across all files in this request
     const newBatchSize = fileRows.reduce((sum, f) => sum + f.file_size, 0)
     if (newBatchSize > PART_UPLOAD_LIMITS.maxTotalSize) {
-      return NextResponse.json({ error: 'Total upload size exceeds limit' }, { status: 400 })
+      return NextResponse.json({ error: t('totalSizeExceeded') }, { status: 400 })
     }
 
     // Enforce per-category counts within this request
@@ -160,13 +162,13 @@ export async function POST(
 
     if (modelFileCount > PART_UPLOAD_LIMITS.maxModelFiles) {
       return NextResponse.json(
-        { error: `Too many model files (max ${PART_UPLOAD_LIMITS.maxModelFiles})` },
+        { error: t('tooManyModelFiles', { max: PART_UPLOAD_LIMITS.maxModelFiles }) },
         { status: 400 },
       )
     }
     if (imageCount > PART_UPLOAD_LIMITS.maxThumbnailFiles) {
       return NextResponse.json(
-        { error: `Too many thumbnails (max ${PART_UPLOAD_LIMITS.maxThumbnailFiles})` },
+        { error: t('tooManyThumbnails', { max: PART_UPLOAD_LIMITS.maxThumbnailFiles }) },
         { status: 400 },
       )
     }
@@ -175,7 +177,7 @@ export async function POST(
     // at the source and are never hosted here (#396). Only photos are accepted.
     if (part.origin_type === 'curated' && modelFileCount > 0) {
       return NextResponse.json(
-        { error: 'A part published elsewhere does not host model files: its files stay at the source. Upload photos only.' },
+        { error: t('curatedNoModelFiles') },
         { status: 400 },
       )
     }
@@ -205,7 +207,7 @@ export async function POST(
 
     if (modelFileCountError || imageCountError || existingSizeError) {
       console.error('Failed to check existing file counts', modelFileCountError ?? imageCountError ?? existingSizeError)
-      return NextResponse.json({ error: 'Failed to validate file limits' }, { status: 500 })
+      return NextResponse.json({ error: t('serverError') }, { status: 500 })
     }
 
     const existingModelFileCount = existingModelFileCountRaw ?? 0
@@ -213,13 +215,13 @@ export async function POST(
 
     if (existingModelFileCount + modelFileCount > PART_UPLOAD_LIMITS.maxModelFiles) {
       return NextResponse.json(
-        { error: `Adding ${modelFileCount} model file(s) would exceed the limit of ${PART_UPLOAD_LIMITS.maxModelFiles} (${existingModelFileCount} already registered)` },
+        { error: t('modelFilesLimit', { count: modelFileCount, max: PART_UPLOAD_LIMITS.maxModelFiles, existing: existingModelFileCount }) },
         { status: 400 },
       )
     }
     if (existingImageCount + imageCount > PART_UPLOAD_LIMITS.maxThumbnailFiles) {
       return NextResponse.json(
-        { error: `Adding ${imageCount} thumbnail(s) would exceed the limit of ${PART_UPLOAD_LIMITS.maxThumbnailFiles} (${existingImageCount} already registered)` },
+        { error: t('thumbnailsLimit', { count: imageCount, max: PART_UPLOAD_LIMITS.maxThumbnailFiles, existing: existingImageCount }) },
         { status: 400 },
       )
     }
@@ -227,14 +229,14 @@ export async function POST(
     // Enforce cumulative total size across existing + new files
     const existingTotalSize = (existingSizeData ?? []).reduce((sum, f) => sum + f.file_size, 0)
     if (existingTotalSize + newBatchSize > PART_UPLOAD_LIMITS.maxTotalSize) {
-      return NextResponse.json({ error: 'Adding these files would exceed the total upload size limit' }, { status: 400 })
+      return NextResponse.json({ error: t('totalSizeExceeded') }, { status: 400 })
     }
 
     // Insert file rows
     const { error: insertError } = await supabase.from('part_files').insert(fileRows)
     if (insertError) {
       console.error('Failed to insert part_files rows', insertError)
-      return NextResponse.json({ error: 'Failed to register uploaded files' }, { status: 500 })
+      return NextResponse.json({ error: t('registerFailed') }, { status: 500 })
     }
 
     // Update the part's gallery when photos were registered
@@ -254,7 +256,7 @@ export async function POST(
       if (updateError) {
         console.error('Failed to update part after file registration', updateError)
         return NextResponse.json(
-          { registered: fileRows.length, images: resolveStorageUrls(existingImages), warning: 'Files were registered, but the part could not be updated' },
+          { registered: fileRows.length, images: resolveStorageUrls(existingImages), warning: t('registeredWithoutUpdate') },
           { status: 201 },
         )
       }
@@ -263,6 +265,6 @@ export async function POST(
     return NextResponse.json({ registered: fileRows.length, images: resolveStorageUrls(images) }, { status: 201 })
   } catch (error) {
     console.error('File registration failed', error)
-    return NextResponse.json({ error: 'Unexpected error while registering files' }, { status: 500 })
+    return NextResponse.json({ error: t('serverError') }, { status: 500 })
   }
 }

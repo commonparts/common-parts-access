@@ -1,9 +1,10 @@
 'use client'
 
 import * as React from 'react'
+import { useTranslations } from 'next-intl'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PUBLISH_TRACKS, type PublishTrack } from '@/lib/publish/tracks'
+import { PUBLISH_TRACKS, RECOMMENDED_TRACK, type PublishTrack } from '@/lib/publish/tracks'
 import { cn } from '@/lib/utils'
 
 interface OrientationQuestionProps {
@@ -21,18 +22,20 @@ interface OrientationQuestionProps {
  * published elsewhere" and is credited as the original author there.
  */
 export function OrientationQuestion({ onChoose, className }: OrientationQuestionProps) {
+  const t = useTranslations('OrientationQuestion')
+  const tracks = useTranslations('PublishTracks')
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle className="text-base">Where does this part come from?</CardTitle>
+        <CardTitle className="text-base">{t('title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-md">
         <div className="grid grid-cols-1 gap-sm md:grid-cols-2">
-          {PUBLISH_TRACKS.map((definition) => (
+          {PUBLISH_TRACKS.map((track) => (
             <button
-              key={definition.track}
+              key={track}
               type="button"
-              onClick={() => onChoose(definition.track)}
+              onClick={() => onChoose(track)}
               className={cn(
                 'flex flex-col gap-2xs rounded-lg border border-border-default bg-bg-surface p-md text-left',
                 'hover:bg-bg-hover',
@@ -40,17 +43,14 @@ export function OrientationQuestion({ onChoose, className }: OrientationQuestion
               )}
             >
               <span className="flex flex-wrap items-center gap-2xs">
-                <span className="font-medium text-text-primary">{definition.answer}</span>
-                {definition.recommended && <Badge tone="accent">Recommended</Badge>}
+                <span className="font-medium text-text-primary">{tracks(`${track}.answer`)}</span>
+                {track === RECOMMENDED_TRACK && <Badge tone="accent">{t('recommended')}</Badge>}
               </span>
-              <span className="text-sm text-text-secondary">{definition.detail}</span>
+              <span className="text-sm text-text-secondary">{tracks(`${track}.detail`)}</span>
             </button>
           ))}
         </div>
-        <p className="text-sm text-text-secondary">
-          This answer is fixed once the draft is created. To change it afterwards, delete the draft
-          and start again — you can change your mind freely until then.
-        </p>
+        <p className="text-sm text-text-secondary">{t('fixed')}</p>
       </CardContent>
     </Card>
   )

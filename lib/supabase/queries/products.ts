@@ -121,11 +121,13 @@ export async function fetchProducts(params: FetchProductsParams = {}): Promise<P
  * Products of *different* brands are expected, not an error: one part
  * legitimately fits a Bosch machine and a Siemens one.
  *
- * Returns the blocker to report, or null when the links are sound. Lives here
+ * Returns the `Api.blockers` message to report, or null when the links are sound. Lives here
  * rather than in `lib/publish/blockers.ts` so the two server gates share it
  * without that pure, client-imported module gaining a database call.
  */
-export async function findProductLinkBlocker(productIds: string[]): Promise<string | null> {
+export async function findProductLinkBlocker(
+  productIds: string[],
+): Promise<'productsUnverified' | 'productWithoutBrand' | null> {
   const uniqueIds = [...new Set(productIds)]
   if (uniqueIds.length === 0) return null
 
@@ -138,11 +140,11 @@ export async function findProductLinkBlocker(productIds: string[]): Promise<stri
   // A failed read must not pass for "links are fine" — publishing on an
   // unverified list is exactly what this gate exists to prevent.
   if (error || !data || data.length !== uniqueIds.length) {
-    return 'The linked products could not be verified'
+    return 'productsUnverified'
   }
 
   if (data.some((product) => !product.brand_id)) {
-    return 'Every linked product must belong to a brand — the part is browsed by brand, then product'
+    return 'productWithoutBrand'
   }
 
   return null

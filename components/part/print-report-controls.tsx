@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { reportPrint } from "@/lib/actions/print-reports"
 import { cn } from "@/lib/utils"
 import {
@@ -29,10 +30,11 @@ interface PrintReportControlsProps {
   className?: string
 }
 
-const RESULT_OPTIONS: { result: PrintReportResult; label: string; count: (stats: PrintReportStats) => number }[] = [
-  { result: "works", label: "Works", count: (s) => s.works },
-  { result: "works_with_adjustments", label: "Works with adjustments", count: (s) => s.worksWithAdjustments },
-  { result: "does_not_work", label: "Doesn't work", count: (s) => s.doesNotWork },
+// Each result is labelled by the `PrintReport.results` message of the same key.
+const RESULT_OPTIONS: { result: PrintReportResult; count: (stats: PrintReportStats) => number }[] = [
+  { result: "works", count: (s) => s.works },
+  { result: "works_with_adjustments", count: (s) => s.worksWithAdjustments },
+  { result: "does_not_work", count: (s) => s.doesNotWork },
 ]
 
 /**
@@ -50,6 +52,7 @@ export function PrintReportControls({
   onStatsChange,
   className,
 }: PrintReportControlsProps) {
+  const t = useTranslations("PrintReport")
   const [reportedResult, setReportedResult] = React.useState<PrintReportResult | null>(null)
   const [comment, setComment] = React.useState("")
   const [referenceId, setReferenceId] = React.useState("")
@@ -80,7 +83,7 @@ export function PrintReportControls({
       setMessage(successMessage)
       return true
     } catch {
-      setMessage("Report failed: check your connection and try again")
+      setMessage(t("failed"))
       return false
     } finally {
       setPending(false)
@@ -91,17 +94,17 @@ export function PrintReportControls({
     event.preventDefault()
     if (!reportedResult) return
     // Keep the form open on failure so the comment is not lost.
-    if (await submit(reportedResult, "Details saved. Thank you.")) setDetailsOpen(false)
+    if (await submit(reportedResult, t("detailsSaved"))) setDetailsOpen(false)
   }
 
   return (
     <div className={cn("space-y-xs", className)}>
       <div
         role="group"
-        aria-label={`Report whether this part works on ${productName}`}
+        aria-label={t("groupLabel", { product: productName })}
         className="flex flex-wrap gap-xs"
       >
-        {RESULT_OPTIONS.map(({ result, label, count }) => (
+        {RESULT_OPTIONS.map(({ result, count }) => (
           <Button
             key={result}
             type="button"
@@ -109,10 +112,10 @@ export function PrintReportControls({
             variant={reportedResult === result ? "default" : "outline"}
             aria-pressed={reportedResult === result}
             disabled={pending}
-            onClick={() => submit(result, "Report recorded. Thank you.")}
+            onClick={() => submit(result, t("recorded"))}
           >
-            {label}
-            <span className="tabular-nums" aria-label={`${count(stats)} reports`}>
+            {t(`results.${result}`)}
+            <span className="tabular-nums" aria-label={t("reportCount", { count: count(stats) })}>
               {count(stats)}
             </span>
           </Button>
@@ -127,32 +130,32 @@ export function PrintReportControls({
 
       {reportedResult && !detailsOpen && (
         <Button type="button" variant="link" size="sm" className="px-0" onClick={() => setDetailsOpen(true)}>
-          Add a comment or reference
+          {t("addDetails")}
         </Button>
       )}
 
       {reportedResult && detailsOpen && (
         <form onSubmit={handleSaveDetails} className="space-y-xs">
           <div className="space-y-2xs">
-            <Label htmlFor={`${idPrefix}-comment`}>Comment (optional)</Label>
+            <Label htmlFor={`${idPrefix}-comment`}>{t("commentLabel")}</Label>
             <Textarea
               id={`${idPrefix}-comment`}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               maxLength={MAX_PRINT_REPORT_COMMENT_LENGTH}
               rows={2}
-              placeholder="Material, settings, what you adjusted"
+              placeholder={t("commentPlaceholder")}
             />
           </div>
           {references.length > 0 && (
             <div className="space-y-2xs">
-              <Label htmlFor={`${idPrefix}-reference`}>Your product reference (optional)</Label>
+              <Label htmlFor={`${idPrefix}-reference`}>{t("referenceLabel")}</Label>
               <NativeSelect
                 id={`${idPrefix}-reference`}
                 value={referenceId}
                 onChange={(e) => setReferenceId(e.target.value)}
               >
-                <option value="">Not specified</option>
+                <option value="">{t("referenceNone")}</option>
                 {references.map((reference) => (
                   <option key={reference.id} value={reference.id}>
                     {reference.value}
@@ -163,10 +166,10 @@ export function PrintReportControls({
           )}
           <div className="flex gap-xs">
             <Button type="submit" size="sm" disabled={pending}>
-              Save details
+              {t("save")}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setDetailsOpen(false)}>
-              Cancel
+              {t("cancel")}
             </Button>
           </div>
         </form>

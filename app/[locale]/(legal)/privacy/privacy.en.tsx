@@ -1,0 +1,270 @@
+export default function PrivacyEn() {
+  return (
+    <>
+      <section>
+        <h2>1. Introduction</h2>
+        <p>
+          Common Parts Access (accessible at access.commonparts.org) is an open platform for publishing and accessing
+          digital spare parts. It is an official interface of the Common Parts Infrastructure.
+        </p>
+        <p>
+          This Privacy Policy explains what personal data is collected when you use Common Parts Access, how it is used,
+          and what rights you have regarding your data.
+        </p>
+        <p>
+          Common Parts acts as the data controller for all personal data processed through Common Parts Access. You may
+          contact us at any time at contact@commonparts.org.
+        </p>
+      </section>
+
+      <section>
+        <h2>2. Data Controller</h2>
+        <p>Common Parts</p>
+        <p>contact@commonparts.org</p>
+        <p>access.commonparts.org</p>
+        <p>
+          As Common Parts is currently operating as an unincorporated project, the natural person responsible for data
+          processing may be identified upon request via the contact address above.
+        </p>
+      </section>
+
+      <section>
+        <h2>3. Data We Collect</h2>
+        <h3>3.1 Account data</h3>
+        <p>When you create an account on Common Parts Access, we collect:</p>
+        <ul>
+          <li>Email address</li>
+          <li>Username and display name (as provided by you)</li>
+          <li>Password (stored in hashed form - we never store your password in plain text)</li>
+          <li>Profile information you choose to add (bio, avatar)</li>
+        </ul>
+
+        <h3>3.2 Content data</h3>
+        <p>When you publish spare parts or other content to the platform, we collect:</p>
+        <ul>
+          <li>3D model files and associated metadata (title, description, material, print settings)</li>
+          <li>Tags, categories, and other classification data you provide</li>
+        </ul>
+
+        <h3>3.3 Usage data</h3>
+        <p>When you use Common Parts Access, we automatically record:</p>
+        <ul>
+          <li>Collections and likes you create</li>
+          <li>Date and time of actions performed on the platform</li>
+        </ul>
+        <p>
+          Part views, file downloads and clicks on the link to a part&apos;s source are counted anonymously. Each one is
+          recorded with the part and the time only (for a click on a source link, also whether it was made on the part
+          page or on a part card) - never with your account, your IP address (in any form, hashed or not), or your
+          browser details.
+        </p>
+
+        <h3>3.4 Technical data</h3>
+        <p>For technical operation of the service, we process:</p>
+        <ul>
+          <li>Session data stored in cookies (see Section 5)</li>
+          <li>
+            Request logs of our hosting provider: Railway records, for each request to Common Parts Access, your IP
+            address, your browser&apos;s user agent, the page requested and the time. These logs are used only to
+            operate and secure the service, and are kept for 7 days (see{' '}
+            <a href="https://docs.railway.com/observability/logs#log-retention">Railway&apos;s log retention</a> and{' '}
+            <a href="https://railway.com/legal/privacy">privacy policy</a>).
+          </li>
+          <li>
+            Request logs of our database and authentication provider: Supabase records the IP address and the user agent
+            of the requests your browser sends to it directly, such as signing in or sending feedback, for the same
+            purposes and for the period set by Supabase.
+          </li>
+          <li>
+            Sign-in sessions: when you sign in, our authentication provider (Supabase) stores the IP address and the
+            user agent of your device with the session, to secure your account. They are deleted when you sign out of
+            that session or delete your account.
+          </li>
+        </ul>
+
+        <h3>3.5 Feedback</h3>
+        <p>
+          When you send feedback with the feedback button, we store its type, title and description, the address of the
+          page you were on, the time, and, if you are signed in, a link to your account. To handle it:
+        </p>
+        <ul>
+          <li>its type, title, description, page address and time are sent to Mistral AI, which classifies it;</li>
+          <li>
+            it is published, with its type, title, description, page address and time, as a public issue in the
+            platform&apos;s GitHub repository. The issue states whether the sender was signed in, never who they are.
+          </li>
+        </ul>
+        <p>
+          Do not include personal information in your feedback. We process feedback on the basis of our legitimate
+          interest in improving the service (Art. 6(1)(f) GDPR). Feedback records are kept to follow up the issues they
+          raise; if you delete your account, they are kept without the link to your account.
+        </p>
+
+        <h3>3.6 Authors of referenced parts</h3>
+        <p>
+          Some parts on Common Parts Access are referenced: their files stay on the platform where their author
+          published them (the source), and Common Parts Access links to it. For each referenced part, we store, from its
+          public page at the source:
+        </p>
+        <ul>
+          <li>The name or pseudonym under which the author published it</li>
+          <li>The link to the author&apos;s public profile at the source</li>
+          <li>The link to the original publication, its publication date and its licence</li>
+        </ul>
+        <p>
+          This information is shown on the part page to credit the author, as the licences of the parts and the rules of
+          the platform require. We process it on the basis of our legitimate interest in crediting authors and
+          respecting their licences (Art. 6(1)(f) GDPR). If you are the author of a referenced part, you can ask for
+          this information to be corrected, or for the part to be removed, at contact@commonparts.org.
+        </p>
+      </section>
+
+      <section>
+        <h2>4. Legal Basis and Purpose</h2>
+        <p>
+          We process your personal data on the following legal bases under the General Data Protection Regulation
+          (GDPR):
+        </p>
+        <ul>
+          <li>
+            Performance of a contract (Art. 6(1)(b) GDPR): account creation, authentication, and delivery of the
+            services you request.
+          </li>
+          <li>
+            Legitimate interests (Art. 6(1)(f) GDPR): maintaining security and integrity of the platform, preventing
+            abuse.
+          </li>
+          <li>
+            Consent (Art. 6(1)(a) GDPR): where we ask for your explicit agreement, such as for optional profile
+            information.
+          </li>
+        </ul>
+      </section>
+
+      <section>
+        <h2>5. Cookies</h2>
+        <p>
+          Common Parts Access uses cookies strictly for authentication, session management, abuse protection on print
+          reports and the interface language. No advertising, tracking, or analytics cookies are used.
+        </p>
+        <ul>
+          <li>Cookie name: Supabase authentication token cookie (sb-*-auth-token pattern)</li>
+          <li>Purpose: Stores your authenticated session to keep you logged in.</li>
+          <li>
+            Type: Strictly necessary. This cookie is essential for the service to function and does not require your
+            consent.
+          </li>
+          <li>Provider: Supabase, Inc. (our authentication infrastructure provider).</li>
+          <li>Duration: Session and short-term persistence (expires upon logout or session timeout).</li>
+        </ul>
+        <ul>
+          <li>Cookie name: cpa_reporter</li>
+          <li>
+            Purpose: Holds a random identifier, set only when you submit a print report without an account, so a
+            repeated report replaces your earlier one and reports can be rate-limited. Only a one-way hash of it is
+            stored with your report; no IP address is stored.
+          </li>
+          <li>Type: Strictly necessary for the print report feature you request.</li>
+          <li>Provider: Common Parts Access (first party).</li>
+          <li>Duration: 12 months.</li>
+        </ul>
+        <ul>
+          <li>Cookie name: NEXT_LOCALE</li>
+          <li>
+            Purpose: Holds the interface language you last used (&quot;en&quot; or &quot;fr&quot;), so a link without a
+            language in its address opens in that language. It holds no identifier.
+          </li>
+          <li>Type: Strictly necessary to display the service in the language you chose.</li>
+          <li>Provider: Common Parts Access (first party).</li>
+          <li>Duration: Session (deleted when you close your browser).</li>
+        </ul>
+        <p>
+          You may delete cookies at any time through your browser settings. Doing so will log you out of your account.
+        </p>
+      </section>
+
+      <section>
+        <h2>6. Third-Party Processors</h2>
+        <p>We use the following sub-processors to operate Common Parts Access.</p>
+        <ul>
+          <li>
+            Supabase, Inc. - Database, authentication, and file storage infrastructure, including its request logs and
+            sign-in sessions (see Section 3.4). Supabase is SOC 2 Type II compliant.
+          </li>
+          <li>
+            Railway - Application hosting. Receives every request to Common Parts Access and keeps request logs (see
+            Section 3.4).
+          </li>
+          <li>
+            Mistral AI - Classification of feedback. Receives the type, title, description, page address and time of
+            each feedback (see Section 3.5).
+          </li>
+          <li>
+            GitHub - Hosting of the platform&apos;s public repository, where feedback is published as issues with its
+            type, title, description, page address and time (see Section 3.5).
+          </li>
+        </ul>
+        <p>
+          We do not sell, rent, or share your personal data with any third party for marketing or advertising purposes.
+        </p>
+      </section>
+
+      <section>
+        <h2>7. Data Retention</h2>
+        <p>
+          We retain your personal data for as long as your account remains active. If you delete your account, your
+          personal data will be deleted immediately, except where retention is required by law or necessary to resolve
+          disputes.
+        </p>
+        <p>
+          Content you have published to the platform (spare parts and their files and metadata) will be anonymized and
+          remain available after account deletion, unless you request full removal.
+        </p>
+      </section>
+
+      <section>
+        <h2>8. Your Rights</h2>
+        <p>Under the GDPR, you have the following rights regarding your personal data:</p>
+        <ul>
+          <li>Right of access: obtain a copy of the personal data we hold about you.</li>
+          <li>Right to rectification: correct inaccurate or incomplete data.</li>
+          <li>Right to erasure: request deletion of your personal data (subject to legal retention obligations).</li>
+          <li>Right to restriction: request that we limit processing of your data.</li>
+          <li>Right to data portability: receive your data in a structured, machine-readable format.</li>
+          <li>Right to object: object to processing based on legitimate interests.</li>
+          <li>
+            Right to withdraw consent: where processing is based on consent, withdraw it at any time without affecting
+            prior processing.
+          </li>
+        </ul>
+        <p>
+          To exercise any of these rights, contact us at contact@commonparts.org. We will respond within 30 days. If you
+          believe your rights have not been respected, you have the right to lodge a complaint with your national data
+          protection authority.
+        </p>
+      </section>
+
+      <section>
+        <h2>9. Security</h2>
+        <p>
+          Common Parts Access implements industry-standard security measures, including encrypted data transmission
+          (TLS), hashed password storage, and session-based authentication managed by Supabase. No system is fully
+          secure; we encourage you to use a strong, unique password for your account.
+        </p>
+      </section>
+
+      <section>
+        <h2>10. Contact</h2>
+        <p>
+          For any questions, requests, or concerns regarding this Privacy Policy or the processing of your personal
+          data:
+        </p>
+        <p>Common Parts</p>
+        <p>
+          <a href="mailto:contact@commonparts.org">contact@commonparts.org</a>
+        </p>
+        <p>access.commonparts.org</p>
+      </section>
+    </>
+  )
+}

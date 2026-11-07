@@ -89,8 +89,8 @@ const { data } = await supabase.from('parts').select('*')
 - Return 401 immediately if `user` is null on protected routes. A protected Server Action returns `{ ok: false, error }` instead: it is a public endpoint like a route.
 
 **Input validation**
-- Validate every request body and query parameter with a Zod schema: type, length, allowed values. Schemas live in `lib/schemas/[domain].ts`; routes parse with `parseJsonBody(request, schema)` and `parseSearchParams(searchParams, schema)` from `lib/api/parse.ts`, which answer a 400 naming the invalid field. A Server Action parses its argument with `validate(schema, input)` from the same file and returns the failure as is.
-- Give each field the message the interface should show, naming the field in words (`'Title must be between 3 and 200 characters'`). A field without its own message gets Zod's, prefixed with its path.
+- Validate every request body and query parameter with a Zod schema: type, length, allowed values. Schemas live in `lib/schemas/[domain].ts`; routes parse with `await parseJsonBody(request, schema)` and `await parseSearchParams(request, schema)` from `lib/api/parse.ts`, which answer a 400 naming the invalid field in the locale of the calling page. A Server Action parses its argument with `await validate(schema, input)` from the same file and returns the failure as is.
+- Write no message in a schema when Zod's default says what to fix: `lib/api/parse.ts` shows Zod's default message in the page's locale, after the field's label from the `Fields` messages (add the label of a new field there). When the default does not say what to fix (a `refine`, a literal, a cross-field rule), the `error` is a key of the `Validation` messages (`{ error: 'httpUrl' }`), with its arguments as the issue's `params`. Never write an English sentence in a schema (see API and validation messages in `docs/I18N.md`).
 - Derive the TypeScript type of a payload from its schema (`z.output<typeof schema>`); never declare it a second time by hand. Never write `typeof` shape checks in a route.
 - Keep business rules that are not shape validation (ownership, license hostability, publish blockers) out of the schema, in the route or in `lib/`.
 - Never interpolate user input into raw SQL strings.
@@ -113,10 +113,11 @@ const { data } = await supabase.from('parts').select('*')
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const t = await getApiTranslations(request)
+  if (!user) return NextResponse.json({ error: t('signInRequired') }, { status: 401 })
 
   // createPartSchema (lib/schemas/parts.ts):
-  //   z.object({ title: z.string().trim().min(1).max(MAX_TITLE_LENGTH, { error: 'Title must be at most 200 characters' }) })
+  //   z.object({ title: z.string().trim().min(1).max(MAX_TITLE_LENGTH) })
   const body = await parseJsonBody(request, createPartSchema)
   if (!body.ok) return body.response
 
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
     .select('id, slug')
     .single()
 
-  if (error) return NextResponse.json({ error: 'Insert failed' }, { status: 500 })
+  if (error) return NextResponse.json({ error: t('serverError') }, { status: 500 })
   return NextResponse.json({ part: data }, { status: 201 })
 }
 
@@ -153,7 +154,7 @@ const ALLOWED_FILE_TYPES = ['.stl', '.obj', '.stp', '.step'] as const
 
 /** POST /api/parts — the fields a part is created with. */
 export const createPartSchema = z.object({
-  title: z.string().trim().max(MAX_TITLE_LENGTH, { error: `Title must be at most ${MAX_TITLE_LENGTH} characters` }),
+  title: z.string().trim().max(MAX_TITLE_LENGTH),
 })
 export type CreatePartInput = z.output<typeof createPartSchema>
 
@@ -226,7 +227,7 @@ Never open a PR without this reference — the issue must be traceable to the co
 
 The repository is public: commit messages, PR titles and descriptions, and code comments are readable by anyone. Describe what the change does and why it is needed for the product; keep internal context (operations, tooling, private documents) out of them.
 
-Never include links to claude.ai sessions (`claude.ai/code/session_…`) in commit messages, PR descriptions, PR or issue comments, or release notes. Attribution lines such as `Co-Authored-By` are fine. Some tools append a footer with a session link when they create a PR: read the description once the PR is open and remove such a link.
+Never include links to claude.ai sessions (`claude.ai/code/session_…`) in commit messages, PR descriptions, PR or issue comments, or release notes. Some tools append a footer with a session link when they create a PR: read the description once the PR is open and remove such a link.
 
 Example PR description:
 ```
@@ -274,10 +275,11 @@ List the documents updated, one line each, or state `Docs: no change needed` wit
 
 ```
 app/
-  (auth)/         # Unauthenticated pages — login, sign-up, password reset
-  (dashboard)/    # Protected pages — upload, collections, settings
-  (public)/       # Public pages — browse, part detail, user profiles
-  api/            # API route handlers
+  [locale]/       # Every page, under its locale prefix (/fr, /en); layout.tsx is the document root
+    (auth)/       # Unauthenticated pages — login, sign-up, password reset
+    (dashboard)/  # Protected pages — upload, collections, settings
+    (public)/     # Public pages — browse, part detail, user profiles
+  api/            # API route handlers (not localized)
   globals.css     # Design tokens (@theme): do not modify the tokens without instruction
   layout.tsx      # Root layout — do not modify without instruction
 
@@ -287,6 +289,7 @@ components/
   feedback/       # Feedback widget (form + floating button)
   forms/          # Complex forms — part upload, brand, product
   layout/         # Structural components — navbar, footer, hero, shells
+  legal/          # Shell of the legal pages (per-locale content stays next to each page)
   part/           # Part display — card, grid, details, file list
   ui/             # Primitive components — Button, Input, Card, Badge, etc.
   user/           # User profile components
@@ -305,6 +308,8 @@ lib/
   storage/        # File upload and download utilities
   utils/          # Shared utilities (cn, slug, constants)
 
+i18n/             # next-intl routing, navigation helpers (Link, redirect, useRouter, usePathname), request config
+messages/         # Interface strings: en.json (source), fr.json, see docs/I18N.md
 types/            # supabase.ts (generated by npm run db:types), database.ts (row aliases, column domains), view models
 docs/             # Technical documentation — index in docs/README.md; read DESIGN_SYSTEM.md before building UI
 supabase/
@@ -385,12 +390,13 @@ Follow `lib/actions/print-reports.ts` as the canonical example. An action is a p
 - Put `'use server'` at the top of `lib/actions/[domain].ts`; export only async functions from it.
 - Type the argument as the schema's input (`z.input<typeof schema>`) so the component is checked at compile time, then validate it with `validate(schema, input)` before anything else.
 - Verify the user with `auth.getUser()` before any write. An action open to anonymous visitors still resolves the user the same way, to record who acted.
-- Return a `Result<T>` from `lib/api/parse.ts`: `{ ok: true, data }` or `{ ok: false, error }` with the message the interface shows. Expected failures are returned, never thrown: Next.js replaces the message of an error thrown from an action in production.
+- Return a `Result<T>` from `lib/api/parse.ts`: `{ ok: true, data }` or `{ ok: false, error }` with the message the interface shows, from the `Api` messages (`getTranslations('Api')`). Expected failures are returned, never thrown: Next.js replaces the message of an error thrown from an action in production.
 - Return only what the component needs, never a database row.
 
 ```typescript
 'use server'
 
+import { getTranslations } from 'next-intl/server'
 import type { z } from 'zod'
 import { validate, type Result } from '@/lib/api/parse'
 import { exampleSchema } from '@/lib/schemas/example'
@@ -398,12 +404,13 @@ import { createClient } from '@/lib/supabase/server'
 import { createExample } from '@/lib/supabase/queries/example'
 
 export async function addExample(input: z.input<typeof exampleSchema>): Promise<Result<{ id: string }>> {
-  const parsed = validate(exampleSchema, input)
+  const parsed = await validate(exampleSchema, input)
   if (!parsed.ok) return parsed
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return { ok: false, error: 'Sign in to add an example' }
+  const t = await getTranslations('Api')
+  if (!user) return { ok: false, error: t('signInRequired') }
 
   return { ok: true, data: await createExample(parsed.data, user.id) }
 }
@@ -532,6 +539,16 @@ Standard page structure for public pages:
   </Container>
 </Section>
 ```
+
+### Internationalization
+
+Read `docs/I18N.md` before adding a page, a link or an interface string.
+
+- Import `Link`, `redirect`, `useRouter` and `usePathname` from `@/i18n/navigation`, never from `next/link` or `next/navigation`, for every internal path.
+- Put new interface strings in `messages/en.json` and `messages/fr.json` in the same PR, namespaced by page or component; read them with `getTranslations` (server) or `useTranslations` (client). JSX text is never a literal: the `react/jsx-no-literals` lint rule allows only punctuation and symbols.
+- An API route answers in the locale of the calling page: read its messages with `getApiTranslations(request)` (`lib/api/translations.ts`), the `Api` namespace. A Server Action reads `getTranslations('Api')`.
+- Read the active locale with next-intl's `getLocale()` / `useLocale()`; do not wrap them.
+- Format dates, relative times and numbers with next-intl's `useFormatter()` / `getFormatter()`, and counts in a sentence with an ICU plural; never with a hand-written formatter or a hard-coded locale.
 
 ### Server vs client components
 

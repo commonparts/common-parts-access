@@ -98,7 +98,7 @@ All four columns are server-owned: clients may only write `part_id` and `product
 `id`, `name`, `slug`, `description`, `logo_url`, `website_url`, `founded_year`, `country`, `verified`. Read-only in the app: brands are curated in the Supabase dashboard.
 
 ### `categories`
-A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/kitchen/cooker/`), used for subtree prefix checks. Also `name`, `slug`, `description`, `icon`.
+A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/kitchen/cooker/`), used for subtree prefix checks. Also `name` (English), `name_fr` (French, nullable, never blank: `categories_name_fr_not_blank`; #502), `slug` (the same in every locale), `description`, `icon`. See [I18N.md](./I18N.md#category-names).
 
 ### `licenses`
 `spdx_id`, `name`, `short_name`, `url`, and the flags `allows_redistribution`, `requires_attribution`, `allows_commercial`, `is_copyleft`, which drive hosting eligibility (`isHostableLicense` in `lib/utils/licenses.ts`).
@@ -179,6 +179,7 @@ On account deletion (#178), foreign keys to `user_profiles` behave as follows:
 | `submit_print_report` | The only write path for print reports | [PRODUCT_COMPATIBILITY.md](./PRODUCT_COMPATIBILITY.md) |
 | `release_storage_ownership` | Clears Storage ownership before an account is deleted (service role only) | [ACCOUNT_DELETION_POLICY.md](./ACCOUNT_DELETION_POLICY.md) |
 | `normalize_product_reference`, `fold_search_text` | Shared normalization rules | [SEARCH.md](./SEARCH.md) |
+| `localized_name` | A category name in a locale, used by the navigation and search functions | [I18N.md](./I18N.md#category-names) |
 
 ---
 
@@ -205,7 +206,7 @@ The Data API (PostgREST, supabase-js) reaches a table or function only when the 
 
 The privileges that every table received under the former defaults (for example `DELETE` on `brands` for `anon`) were not revoked by #131, nor was the `UPDATE` on `part_products (part_id, product_id)` granted in #317. They remain on the tables created before #131 and are filtered by RLS, which has no policy for them.
 
-Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage` in its two forms, `search_typo_match`) are executable by `anon`, `authenticated` and `service_role`. `search_typo_match` calls `levenshtein_less_equal()` from the `fuzzystrmatch` extension, installed in the `extensions` schema (#452); `generate_slug`, run by the product slug trigger, by `public` (see the table below).
+Each RPC called by the app is granted `EXECUTE` explicitly to the roles that call it, in the migration that defines it (`search_product_candidates` since #131). The helpers that run with the caller's privileges inside RPCs and generated columns (`fold_search_text`, `normalize_product_reference`, `search_token_coverage` in its two forms, `search_typo_match`, `localized_name`) are executable by `anon`, `authenticated` and `service_role`. `search_typo_match` calls `levenshtein_less_equal()` from the `fuzzystrmatch` extension, installed in the `extensions` schema (#452); `generate_slug`, run by the product slug trigger, by `public` (see the table below).
 
 Functions reviewed against the Supabase security advisor (#435):
 

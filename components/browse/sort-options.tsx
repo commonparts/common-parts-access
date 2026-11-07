@@ -1,15 +1,13 @@
 'use client'
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 
-type SortOption = {
-  key: string
-  label: string
-  description?: string
-}
+/** The sorts of /api/parts; each has a label and a description in the `SortOptions` messages. */
+type SortKey = "newest" | "likes" | "views"
 
 interface SortOptionsProps {
   value: string
@@ -17,60 +15,45 @@ interface SortOptionsProps {
   className?: string
 }
 
-const allSortOptions: SortOption[] = [
-  {
-    key: 'newest',
-    label: 'Newest first',
-    description: 'Recently uploaded'
-  },
-  {
-    key: 'likes',
-    label: 'Most liked',
-    description: 'Community favorites'
-  },
-  {
-    key: 'views',
-    label: 'Most viewed',
-    description: 'Trending parts'
-  }
-]
+const allSortKeys: SortKey[] = ['newest', 'likes', 'views']
 
 /** "Most liked" is a social feature (issue #322) and is hidden along with likes. */
-const sortOptions: SortOption[] = SOCIAL_FEATURES_ENABLED
-  ? allSortOptions
-  : allSortOptions.filter((option) => option.key !== 'likes')
+const sortKeys: SortKey[] = SOCIAL_FEATURES_ENABLED
+  ? allSortKeys
+  : allSortKeys.filter((key) => key !== 'likes')
 
-const DEFAULT_SORT_KEY = 'newest'
+const DEFAULT_SORT_KEY: SortKey = 'newest'
 
 /**
  * Resolves the sortBy URL param to an offered sort, so a stale link to a
  * hidden sort (e.g. ?sortBy=likes) falls back to the default instead of
  * sorting by something the controls cannot show.
  */
-export function resolveSortKey(raw: string | null): string {
-  return sortOptions.find((option) => option.key === raw)?.key ?? DEFAULT_SORT_KEY
+export function resolveSortKey(raw: string | null): SortKey {
+  return sortKeys.find((key) => key === raw) ?? DEFAULT_SORT_KEY
 }
 
 export function SortOptions({ value, onChange, className }: SortOptionsProps) {
+  const t = useTranslations("SortOptions")
   return (
     <div className={cn("flex flex-wrap gap-2", className)}>
       <span className="text-sm font-medium text-text-secondary self-center mr-2">
-        Sort by:
+        {t("label")}
       </span>
-      {sortOptions.map((option) => (
+      {sortKeys.map((key) => (
         <Button
-          key={option.key}
-          variant={value === option.key ? "default" : "outline"}
+          key={key}
+          variant={value === key ? "default" : "outline"}
           size="sm"
-          onClick={() => onChange(option.key)}
+          onClick={() => onChange(key)}
           className={cn(
             "text-sm transition-colors",
-            value === option.key 
+            value === key 
               ? "border border-border-default"
               : "hover:bg-bg-hover"
           )}
         >
-          {option.label}
+          {t(`${key}.label`)}
         </Button>
       ))}
     </div>
@@ -78,8 +61,9 @@ export function SortOptions({ value, onChange, className }: SortOptionsProps) {
 }
 
 export function SortOptionsDropdown({ value, onChange, className }: SortOptionsProps) {
+  const t = useTranslations("SortOptions")
   const [isOpen, setIsOpen] = React.useState(false)
-  const currentOption = sortOptions.find(option => option.key === value) || sortOptions[0]
+  const currentKey = resolveSortKey(value)
 
   return (
     <div className={cn("relative", className)}>
@@ -88,7 +72,7 @@ export function SortOptionsDropdown({ value, onChange, className }: SortOptionsP
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-2"
       >
-        <span className="text-sm">Sort: {currentOption.label}</span>
+        <span className="text-sm">{t("current", { sort: t(`${currentKey}.label`) })}</span>
         <svg 
           className={cn("w-4 h-4 transition-transform", isOpen && "rotate-180")} 
           fill="none" 
@@ -103,22 +87,20 @@ export function SortOptionsDropdown({ value, onChange, className }: SortOptionsP
         <>
           <div className="absolute top-full left-0 mt-1 bg-bg-surface border border-border-subtle rounded-lg shadow-none z-50 min-w-56">
             <div className="py-xs">
-              {sortOptions.map((option) => (
+              {sortKeys.map((key) => (
                 <button
-                  key={option.key}
+                  key={key}
                   onClick={() => {
-                    onChange(option.key)
+                    onChange(key)
                     setIsOpen(false)
                   }}
                   className={cn(
                     "w-full px-md py-sm text-left text-sm text-text-primary transition-colors hover:bg-bg-hover",
-                    value === option.key && "bg-bg-subtle"
+                    value === key && "bg-bg-subtle"
                   )}
                 >
-                  <div className="font-medium">{option.label}</div>
-                  {option.description && (
-                    <div className="text-xs text-text-secondary">{option.description}</div>
-                  )}
+                  <div className="font-medium">{t(`${key}.label`)}</div>
+                  <div className="text-xs text-text-secondary">{t(`${key}.description`)}</div>
                 </button>
               ))}
             </div>

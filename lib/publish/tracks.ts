@@ -12,18 +12,6 @@
 
 export type PublishTrack = 'original' | 'elsewhere'
 
-export interface PublishTrackDefinition {
-  track: PublishTrack
-  /** The answer as the contributor reads it. */
-  answer: string
-  /** What that answer commits them to. */
-  detail: string
-  /** Short label on a draft row. */
-  badge: string
-  /** Marked "Recommended" in the orientation question. */
-  recommended?: boolean
-}
-
 /**
  * The orientation question is the only conscious branching decision in the
  * flow, and it asks about a fact rather than a judgement.
@@ -36,26 +24,10 @@ export interface PublishTrackDefinition {
  *
  * The order is the display order: referencing a part where it is already
  * published comes first, ahead of uploading a model here, and is marked
- * recommended.
+ * recommended. The answer, its detail and the badge of a draft row are the
+ * `PublishTracks` messages, keyed by track.
  */
-export const PUBLISH_TRACKS: readonly PublishTrackDefinition[] = [
-  {
-    track: 'elsewhere',
-    answer: "It's already published elsewhere",
-    detail: 'Printables, Thingiverse, GitHub, or another platform — including my own.',
-    badge: 'Published elsewhere',
-    recommended: true,
-  },
-  {
-    track: 'original',
-    answer: 'I designed it',
-    detail: "I'm publishing it here for the first time.",
-    badge: 'Original',
-  },
-] as const
+export const PUBLISH_TRACKS = ['elsewhere', 'original'] as const satisfies readonly PublishTrack[]
 
-export function publishTrackDefinition(track: PublishTrack): PublishTrackDefinition {
-  const definition = PUBLISH_TRACKS.find((t) => t.track === track)
-  // The union has exactly two members, both present above.
-  return definition ?? PUBLISH_TRACKS[0]
-}
+/** The track marked "Recommended" in the orientation question. */
+export const RECOMMENDED_TRACK: PublishTrack = 'elsewhere'

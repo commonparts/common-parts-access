@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatLocaleTag, parseAcceptLanguage } from './locale'
+import { formatLocaleTag, localizeCategory, parseAcceptLanguage } from './locale'
 
 describe('parseAcceptLanguage', () => {
   it('reads language and region from a single tag', () => {
@@ -49,5 +49,25 @@ describe('formatLocaleTag', () => {
 
   it('returns null without a language', () => {
     expect(formatLocaleTag({ language: null, region: null })).toBeNull()
+  })
+})
+
+describe('localizeCategory', () => {
+  const vacuum = { slug: 'vacuum-cleaner', name: 'Vacuum Cleaner', name_fr: 'Aspirateur' }
+
+  it('names the category in French on a French page, without name_fr', () => {
+    expect(localizeCategory(vacuum, 'fr')).toEqual({ slug: 'vacuum-cleaner', name: 'Aspirateur' })
+  })
+
+  it('keeps the English name on an English page', () => {
+    expect(localizeCategory(vacuum, 'en')).toEqual({ slug: 'vacuum-cleaner', name: 'Vacuum Cleaner' })
+  })
+
+  it('falls back to the English name when the French one is missing', () => {
+    expect(localizeCategory({ ...vacuum, name_fr: null }, 'fr').name).toBe('Vacuum Cleaner')
+  })
+
+  it('passes a missing category through', () => {
+    expect(localizeCategory(null, 'fr')).toBeNull()
   })
 })

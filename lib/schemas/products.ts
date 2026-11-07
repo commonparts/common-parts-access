@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import { boundedIntParam, optionalUuidParam, uuid } from '@/lib/schemas/common'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { isValidUuid, normalizeEntityName } from '@/lib/utils/validation'
+import { normalizeEntityName } from '@/lib/utils/validation'
 
 /** Request schemas of `/api/products`. */
 
@@ -26,10 +26,10 @@ const PRODUCT_NAME_MAX_LENGTH = 200
  * than truncates for the same reason.
  */
 export const productListQuerySchema = z.object({
-  brandId: optionalUuidParam('brandId'),
-  categoryId: optionalUuidParam('categoryId'),
+  brandId: optionalUuidParam,
+  categoryId: optionalUuidParam,
   includeDescendants: z
-    .enum(['true', 'false'], { error: 'includeDescendants must be true or false' })
+    .enum(['true', 'false'])
     .default('false')
     .transform((value) => value === 'true'),
   search: z
@@ -37,16 +37,11 @@ export const productListQuerySchema = z.object({
     .trim()
     .transform((value) => value || undefined)
     .optional(),
-  limit: boundedIntParam('limit', PRODUCT_LIST_MAX_LIMIT, PRODUCT_LIST_DEFAULT_LIMIT),
+  limit: boundedIntParam(PRODUCT_LIST_MAX_LIMIT, PRODUCT_LIST_DEFAULT_LIMIT),
   ids: z
     .string()
     .transform((value) => value.split(',').map((id) => id.trim()))
-    .pipe(
-      z
-        .array(z.string())
-        .max(PRODUCTS_MAX_COUNT, { error: `Too many product ids (max ${PRODUCTS_MAX_COUNT})` })
-        .refine((ids) => ids.every(isValidUuid), { error: 'Invalid product ids' }),
-    )
+    .pipe(z.array(uuid).max(PRODUCTS_MAX_COUNT))
     .optional(),
 })
 
@@ -54,33 +49,25 @@ export const productListQuerySchema = z.object({
  * POST /api/products — a product created from the publish tools. The image is
  * a storage reference whose ownership the route checks against the session.
  */
-export const createProductSchema = z.object(
-  {
-    // Checked after the normalization createProduct() stores, so the limit
-    // applies to the name as the database receives it.
-    name: z
-      .string({ error: 'Name is required' })
-      .transform(normalizeEntityName)
-      .pipe(
-        z
-          .string()
-          .min(1, { error: 'Name is required' })
-          .max(PRODUCT_NAME_MAX_LENGTH, { error: `Name must be at most ${PRODUCT_NAME_MAX_LENGTH} characters` }),
-      ),
-    brandId: uuid('Brand is required'),
-    categoryId: uuid('Category is required'),
-    description: z.string({ error: 'Description must be a string' }).optional(),
-    releaseYear: z
-      .number({ error: 'Release year must be a whole number' })
-      .int({ error: 'Release year must be a whole number' })
-      .nullish()
-      .transform((value) => value ?? null),
-    imageUrl: z
-      .string({ error: 'Invalid product image' })
-      .trim()
-      .transform((value) => value || undefined)
-      .optional(),
-    discontinued: z.boolean({ error: 'discontinued must be a boolean' }).default(false),
-  },
-  { error: 'Invalid request body' },
-)
+export const createProductSchema = z.object({
+  // Checked after the normalization createProduct() stores, so the limit
+  // applies to the name as the database receives it.
+  name: z
+    .string()
+    .transform(normalizeEntityName)
+    .pipe(z.string().min(1, { error: 'required' }).max(PRODUCT_NAME_MAX_LENGTH)),
+  brandId: uuid,
+  categoryId: uuid,
+  description: z.string().optional(),
+  releaseYear: z
+    .number()
+    .int()
+    .nullish()
+    .transform((value) => value ?? null),
+  imageUrl: z
+    .string()
+    .trim()
+    .transform((value) => value || undefined)
+    .optional(),
+  discontinued: z.boolean().default(false),
+})

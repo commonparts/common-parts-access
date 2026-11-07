@@ -39,8 +39,7 @@ export type PartRequestCount = RpcRow<'fetch_part_request_counts'>;
 // CHECK constraint of its column in supabase/migrations/.
 // ============================================================================
 
-export const PART_STATUSES = ['draft', 'published', 'archived'] as const;
-export type PartStatus = (typeof PART_STATUSES)[number];
+export type PartStatus = 'draft' | 'published' | 'archived';
 
 export type PartOriginType = 'original' | 'curated' | 'manufacturer';
 export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';

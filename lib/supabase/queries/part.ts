@@ -1,3 +1,4 @@
+import { getLocale } from 'next-intl/server';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS } from '@/constants/app';
@@ -6,6 +7,7 @@ import { resolveStorageUrl } from '@/lib/storage/url';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import { distinctBrands } from '@/lib/utils/catalog';
+import { localizeCategory } from '@/lib/utils/locale';
 import { isValidHttpUrl } from '@/lib/utils/validation';
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination';
 import type { PartStatus } from '@/types/database';
@@ -353,7 +355,7 @@ const PART_SEO_SELECT = `
   original_author_url,
   user_profiles(username, display_name),
   licenses!parts_license_id_fkey(name, url),
-  part_products(products(name, slug, brands(name, slug), categories(name, slug)))
+  part_products(products(name, slug, brands(name, slug), categories(name, name_fr, slug)))
 `;
 
 /**
@@ -365,7 +367,7 @@ const PART_SEO_SELECT = `
  * RLS: covered by the public read policy on published parts.
  */
 export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoData | null> => {
-  const supabase = await createClient();
+  const [supabase, locale] = await Promise.all([createClient(), getLocale()]);
 
   const { data, error } = await supabase
     .from('parts')
@@ -395,12 +397,11 @@ export const fetchPartSeoBySlug = cache(async (slug: string): Promise<PartSeoDat
     .filter((p): p is NonNullable<typeof p> => p !== null)
     .map((p) => {
       const brand = firstEmbedded(p.brands);
-      const category = firstEmbedded(p.categories);
       return {
         name: p.name,
         slug: p.slug,
         brand: brand ? { name: brand.name, slug: brand.slug } : null,
-        category: category ? { name: category.name, slug: category.slug } : null,
+        category: localizeCategory(firstEmbedded(p.categories), locale),
       };
     });
 

@@ -1,14 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { useState, useTransition } from "react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-const CONFIRMATION_PHRASE = "DELETE";
-
 export function DeleteAccountForm() {
+  const t = useTranslations("DeleteAccountForm");
+  // The word the user types to confirm, in the language of the page.
+  const confirmWord = t("confirmWord");
   const router = useRouter();
   const [confirmText, setConfirmText] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -18,8 +20,8 @@ export function DeleteAccountForm() {
     event.preventDefault();
     setError(null);
 
-    if (confirmText.trim().toUpperCase() !== CONFIRMATION_PHRASE) {
-      setError('Please type "DELETE" to confirm.');
+    if (confirmText.trim().toUpperCase() !== confirmWord) {
+      setError(t("typeToConfirm", { word: confirmWord }));
       return;
     }
 
@@ -29,14 +31,14 @@ export function DeleteAccountForm() {
         const body = await response.json().catch(() => ({}));
 
         if (!response.ok) {
-          setError(body?.error ?? "Unable to delete your account right now.");
+          setError(body?.error ?? t("failed"));
           return;
         }
 
         router.replace("/delete-account/success");
       } catch (err) {
         console.error(err);
-        setError("Something went wrong. Please try again.");
+        setError(t("failed"));
       }
     });
   };
@@ -45,13 +47,13 @@ export function DeleteAccountForm() {
     <form onSubmit={onSubmit} className="space-y-sm">
       <div className="space-y-xs">
         <label className="text-sm font-semibold text-text-primary" htmlFor="confirm-text">
-          Type DELETE to confirm
+          {t("label", { word: confirmWord })}
         </label>
         <Input
           id="confirm-text"
           value={confirmText}
           onChange={(event) => setConfirmText(event.target.value)}
-          placeholder="DELETE"
+          placeholder={confirmWord}
           autoComplete="off"
           disabled={isPending}
         />
@@ -60,7 +62,7 @@ export function DeleteAccountForm() {
       {error ? <p role="alert" className="text-sm text-status-errorText">{error}</p> : null}
 
       <Button type="submit" variant="outline" className="w-full" disabled={isPending}>
-        {isPending ? "Deleting..." : "Delete my account"}
+        {isPending ? t("submitting") : t("submit")}
       </Button>
     </form>
   );
