@@ -276,10 +276,6 @@ export default function TermsFr() {
           conviennent de rechercher d’abord une solution amiable en écrivant à contact@commonparts.org. Si le litige ne
           peut être résolu dans un délai de 30 jours, il est soumis aux tribunaux français compétents.
         </p>
-        <p>
-          Si vous êtes un consommateur résidant dans l’Union européenne, vous pouvez également recourir à la plateforme
-          de règlement en ligne des litiges de la Commission européenne, à l’adresse https://ec.europa.eu/consumers/odr.
-        </p>
       </section>
 
       <section>

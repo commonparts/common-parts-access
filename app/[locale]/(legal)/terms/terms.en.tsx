@@ -258,10 +258,6 @@ export default function TermsEn() {
           first attempt to resolve the dispute informally by contacting contact@commonparts.org. If the dispute cannot
           be resolved within 30 days, it shall be submitted to the competent courts of France.
         </p>
-        <p>
-          If you are a consumer resident in the European Union, you may also use the European Commission&rsquo;s Online
-          Dispute Resolution platform at https://ec.europa.eu/consumers/odr.
-        </p>
       </section>
 
       <section>
