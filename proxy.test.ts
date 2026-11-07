@@ -43,9 +43,11 @@ describe('locale routing', () => {
     expect(response.headers.get('location')).toBe('https://access.test/en/browse?page=2')
   })
 
-  it('falls back to French when Accept-Language names no supported locale', async () => {
-    const response = await proxy(request('/', { 'accept-language': 'de-DE' }))
-    expect(response.headers.get('location')).toBe('https://access.test/fr')
+  it('falls back to English when Accept-Language is missing or names no supported locale', async () => {
+    for (const unsupported of [request('/', { 'accept-language': 'de-DE' }), request('/')]) {
+      const response = await proxy(unsupported)
+      expect(response.headers.get('location')).toBe('https://access.test/en')
+    }
   })
 
   it('prefers the locale cookie set by the language switcher over Accept-Language', async () => {

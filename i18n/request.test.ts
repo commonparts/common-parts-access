@@ -18,16 +18,16 @@ function keyPaths(tree: object, prefix = ''): string[] {
 
 describe('request locale (read by getLocale and useLocale)', () => {
   it('is the locale of the URL prefix, with its messages', async () => {
-    const config = await requestConfig({ requestLocale: Promise.resolve('en') })
-    expect(config.locale).toBe('en')
-    expect(config.messages).toEqual(en)
+    const config = await requestConfig({ requestLocale: Promise.resolve('fr') })
+    expect(config.locale).toBe('fr')
+    expect(config.messages).toEqual(fr)
   })
 
-  it('falls back to French for an unknown or missing locale', async () => {
+  it('falls back to English for an unknown or missing locale', async () => {
     for (const requested of ['de', undefined]) {
       const config = await requestConfig({ requestLocale: Promise.resolve(requested) })
-      expect(config.locale).toBe('fr')
-      expect(config.messages).toEqual(fr)
+      expect(config.locale).toBe('en')
+      expect(config.messages).toEqual(en)
     }
   })
 })

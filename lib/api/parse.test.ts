@@ -62,7 +62,7 @@ describe('parseJsonBody', () => {
   })
 
   it('answers in the default locale when the request names none', async () => {
-    expect(await errorOf(parseJsonBody(post('{'), schema))).toBe('Corps de requête invalide : JSON attendu')
+    expect(await errorOf(parseJsonBody(post('{'), schema))).toBe('Invalid request body: expected JSON')
   })
 
   it('answers in the locale of the locale cookie', async () => {
