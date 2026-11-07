@@ -17,25 +17,25 @@ export default async function Page({
 
   return (
     <AuthShell>
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-md">
         <Card>
           <CardHeader>
-            <CardTitle className="text-2xl">
+            <CardTitle className="text-heading-sm">
               {isConfirmationError ? t("confirmationTitle") : t("title")}
             </CardTitle>
             {isConfirmationError && (
               <CardDescription>{t("confirmationDescription")}</CardDescription>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-sm">
             {isConfirmationError ? (
               <>
                 <p className="text-sm text-status-errorText">{t("confirmationError")}</p>
-                <div className="space-y-3 pt-2">
+                <div className="space-y-xs pt-2xs">
                   <p className="text-sm text-text-secondary">
                     <strong>{t("whatYouCanDo")}</strong>
                   </p>
-                  <ul className="text-sm text-text-secondary list-disc list-inside space-y-2">
+                  <ul className="text-sm text-text-secondary list-disc list-inside space-y-2xs">
                     <li>
                       {t.rich("requestNewEmail", {
                         link: (chunks) => (
@@ -48,7 +48,7 @@ export default async function Page({
                     <li>{t("checkSpam")}</li>
                     <li>{t("linkExpiry")}</li>
                   </ul>
-                  <div className="pt-4 flex gap-3">
+                  <div className="flex gap-xs pt-sm">
                     <Button asChild>
                       <Link href="/sign-up">{t("signUpAgain")}</Link>
                     </Button>

@@ -8,6 +8,8 @@ import { isChecklistComplete, missingCriteria } from '@/lib/curation/checklist'
 import { CURATED_FILE_HOSTING_TYPE } from '@/lib/curation/hosting'
 import { isValidUuid } from '@/lib/utils/validation'
 import { getApiTranslations } from '@/lib/api/translations'
+import { getTranslations } from 'next-intl/server'
+import { requestLocale } from '@/lib/utils/locale'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -52,7 +54,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const blockers: string[] = []
 
     if (!isChecklistComplete(draft.curation_checklist)) {
-      const missing = missingCriteria(draft.curation_checklist)
+      const labels = await getTranslations({ locale: requestLocale(request), namespace: 'CurationCriteria' })
+      const missing = missingCriteria(draft.curation_checklist).map((criterion) => labels(`${criterion}.label`))
       blockers.push(t('blockers.criteria', { criteria: missing.join(', ') }))
     }
 
