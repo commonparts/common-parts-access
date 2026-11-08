@@ -3,8 +3,8 @@ import JSZip from 'jszip'
 import licenseTexts from '@/assets/license-texts.json'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
-const { from, download, recordDownload } = vi.hoisted(() => ({
-  from: vi.fn(), download: vi.fn(), recordDownload: vi.fn(),
+const { from, select, eq, order, limit, download, recordDownload } = vi.hoisted(() => ({
+  from: vi.fn(), select: vi.fn(), eq: vi.fn(), order: vi.fn(), limit: vi.fn(), download: vi.fn(), recordDownload: vi.fn(),
 }))
 vi.mock('@/lib/supabase/server', () => ({
   createClient: async () => ({ from, storage: { from: () => ({ download }) } }),
@@ -13,16 +13,14 @@ vi.mock('@/lib/supabase/queries/part-metrics', () => ({ recordPartDownloadForPar
 
 const { GET } = await import('./route')
 const license = { name: 'Creative Commons Attribution 4.0 International', spdx_id: 'CC-BY-4.0', url: 'https://creativecommons.org/licenses/by/4.0/' }
+const file = { id: 'file-1', original_filename: 'handle.stl', filename: 'handle.stl', upload_path: 'user/part-1/files/handle.stl' }
 const part = {
   id: 'part-1', name: 'Replacement handle', original_author: 'Original maker',
   original_author_url: 'https://example.org/maker', source_url: 'https://example.org/part',
-  user_profiles: { display_name: 'Contributor', username: 'contributor' }, licenses: license,
+  user_profiles: { display_name: 'Contributor', username: 'contributor' }, licenses: license, part_files: [file],
 }
-const file = { id: 'file-1', original_filename: 'handle.stl', filename: 'handle.stl', upload_path: 'user/part-1/files/handle.stl' }
 type PartFixture = Omit<typeof part, 'licenses'> & { licenses: typeof license | null }
 let partResult: { data: PartFixture | null; error: Error | null }
-let filesResult: { data: typeof file[]; error: Error | null }
-let limit: ReturnType<typeof vi.fn>
 
 async function request(): Promise<Response> {
   return GET(new Request('https://example.org/api/parts/handle/files/archive'), { params: Promise.resolve({ slug: 'handle' }) })
@@ -42,15 +40,9 @@ describe('part archive with license', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     partResult = { data: { ...part }, error: null }
-    filesResult = { data: [{ ...file }], error: null }
-    limit = vi.fn(async () => filesResult)
-    from.mockImplementation(() => {
-      const builder = {
-        select: () => builder, eq: () => builder, order: () => builder,
-        maybeSingle: async () => partResult, limit,
-      }
-      return builder
-    })
+    const builder = { select, eq, order, limit, maybeSingle: async () => partResult }
+    from.mockReturnValue(builder)
+    for (const method of [select, eq, order, limit]) method.mockReturnValue(builder)
     download.mockResolvedValue({ data: new Blob(['model bytes']), error: null })
     recordDownload.mockResolvedValue(undefined)
     vi.spyOn(console, 'error').mockImplementation(() => {})
@@ -68,7 +60,11 @@ describe('part archive with license', () => {
     expect(notice).toContain(licenseTexts['CC-BY-4.0'])
     expect(notice).not.toContain('Contributor')
     expect(await zip.file('Replacement-handle/files/handle.stl')!.async('string')).toBe('model bytes')
-    expect(limit).toHaveBeenCalledWith(PART_UPLOAD_LIMITS.maxModelFiles * 10 + 1)
+    expect(from).toHaveBeenCalledExactlyOnceWith('parts')
+    expect(select).toHaveBeenCalledWith(expect.stringContaining('part_files(id, original_filename, filename, upload_path)'))
+    expect(eq.mock.calls).toEqual([['slug', 'handle'], ['status', 'published'], ['part_files.file_category', 'model']])
+    expect(order).toHaveBeenCalledExactlyOnceWith('created_at', { referencedTable: 'part_files', ascending: true })
+    expect(limit).toHaveBeenCalledExactlyOnceWith(PART_UPLOAD_LIMITS.maxModelFiles * 10 + 1, { referencedTable: 'part_files' })
     expect(recordDownload).toHaveBeenCalledExactlyOnceWith('part-1', null)
   })
 
@@ -91,10 +87,10 @@ describe('part archive with license', () => {
   })
 
   it.each(['LICENSE.txt', 'LICENSE.txt/notice.txt', 'license.TXT', 'license.TXT/notice.txt'])('preserves uploaded %s and chooses an unused notice path', async (path) => {
-    filesResult.data = [
+    partResult.data = { ...part, part_files: [
       { ...file, upload_path: `user/part-1/${path}` },
       { ...file, id: 'file-2', upload_path: 'user/part-1/_LICENSE.txt' },
-    ]
+    ] }
     const zip = await archive()
     expect(await zip.file(`Replacement-handle/${path}`)!.async('string')).toBe('model bytes')
     expect(await zip.file('Replacement-handle/_LICENSE.txt')!.async('string')).toBe('model bytes')
@@ -118,22 +114,22 @@ describe('part archive with license', () => {
     expect(notice).toContain('The full license text is not bundled')
   })
 
-  it('returns 404 for an unpublished/missing part without fetching files or logging', async () => {
+  it('returns 404 for an unpublished/missing part without downloading or logging', async () => {
     partResult.data = null
     expect((await request()).status).toBe(404)
-    expect(limit).not.toHaveBeenCalled()
+    expect(from).toHaveBeenCalledExactlyOnceWith('parts')
     expect(download).not.toHaveBeenCalled()
     expect(recordDownload).not.toHaveBeenCalled()
   })
 
   it('returns 404 when no model files exist', async () => {
-    filesResult.data = []
+    partResult.data = { ...part, part_files: [] }
     expect((await request()).status).toBe(404)
     expect(recordDownload).not.toHaveBeenCalled()
   })
 
   it('refuses overflow instead of truncating the archive', async () => {
-    filesResult.data = Array.from({ length: PART_UPLOAD_LIMITS.maxModelFiles * 10 + 1 }, () => file)
+    partResult.data = { ...part, part_files: Array.from({ length: PART_UPLOAD_LIMITS.maxModelFiles * 10 + 1 }, () => file) }
     expect((await request()).status).toBe(422)
     expect(download).not.toHaveBeenCalled()
     expect(recordDownload).not.toHaveBeenCalled()
@@ -146,7 +142,7 @@ describe('part archive with license', () => {
   })
 
   it('returns 500 on database failures', async () => {
-    filesResult.error = new Error('Database unavailable')
+    partResult.error = new Error('Database unavailable')
     expect((await request()).status).toBe(500)
     expect(download).not.toHaveBeenCalled()
     expect(recordDownload).not.toHaveBeenCalled()

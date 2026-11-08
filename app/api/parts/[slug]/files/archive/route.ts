@@ -6,7 +6,7 @@ import { toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { getApiTranslations } from '@/lib/api/translations'
-import { getArchivePart, getArchiveFiles } from '@/lib/supabase/queries/part-archive'
+import { getArchivePart } from '@/lib/supabase/queries/part-archive'
 import { archiveLicenseText } from '@/lib/storage/archive-license'
 
 export const runtime = 'nodejs'
@@ -28,13 +28,13 @@ export async function GET(
     const supabase = await createClient()
     const { slug } = await params
 
-    const part = await getArchivePart(supabase, slug)
+    const part = await getArchivePart(supabase, slug, MAX_ARCHIVE_FILES + 1)
 
     if (!part) {
       return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
-    const files = await getArchiveFiles(supabase, part.id, MAX_ARCHIVE_FILES + 1)
+    const { files } = part
 
     if (files.length === 0) {
       return NextResponse.json({ error: t('noFiles') }, { status: 404 })
