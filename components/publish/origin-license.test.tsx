@@ -27,6 +27,7 @@ const capture = vi.fn<(form: PartUploadFormState) => void>()
 let container: HTMLDivElement
 let root: Root
 let resolveLicenses: (response: Response) => void
+let platformResponse: Promise<Response>
 
 /** Exercises the real form hook and selects while catalog requests are pending. */
 function Harness({ track, visible = true }: { track: PublishFormContext['track']; visible?: boolean }) {
@@ -69,8 +70,10 @@ beforeEach(() => {
   save.mockReset().mockResolvedValue({ ok: true, data: null })
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const pendingLicenses = new Promise<Response>((resolve) => { resolveLicenses = resolve })
+  platformResponse = Promise.resolve(Response.json({ platforms: [] }))
   vi.stubGlobal('fetch', vi.fn(async (url: string) =>
-    url === '/api/licenses' ? pendingLicenses : Response.json({})))
+    url === '/api/licenses' ? pendingLicenses
+      : url === '/api/source-platforms' ? platformResponse : Response.json({})))
   container = document.createElement('div')
   document.body.appendChild(container)
   root = createRoot(container)
@@ -124,5 +127,31 @@ describe('license selection with asynchronous options', () => {
     await loadLicenses()
     expect(form().getValues('licenseId')).toBe('')
     expect(select().value).toBe('')
+  })
+
+  it.each(['reset', 'prefill'] as const)('shows the %s source platform when options arrive later', async (method) => {
+    let resolvePlatforms!: (response: Response) => void
+    platformResponse = new Promise<Response>((resolve) => { resolvePlatforms = resolve })
+    await render('elsewhere')
+    await act(async () => {
+      if (method === 'reset') form().reset({ ...EMPTY_PUBLISH_FORM, sourcePlatform: 'printables' })
+      else form().setValue('sourcePlatform', 'printables')
+    })
+    await loadLicenses()
+    await act(async () => { resolvePlatforms(Response.json({ platforms: [
+      { slug: 'printables', name: 'Printables' },
+      { slug: 'thingiverse', name: 'Thingiverse' },
+    ] })) })
+    const platform = container.querySelector<HTMLSelectElement>('select[name="sourcePlatform"]')!
+    expect(form().getValues('sourcePlatform')).toBe('printables')
+    expect(platform.value).toBe('printables')
+    await act(async () => {
+      platform.value = 'thingiverse'
+      platform.dispatchEvent(new Event('change', { bubbles: true }))
+    })
+    expect(form().getValues('sourcePlatform')).toBe('thingiverse')
+    await render('elsewhere', false)
+    await render('elsewhere')
+    expect(container.querySelector<HTMLSelectElement>('select[name="sourcePlatform"]')!.value).toBe('thingiverse')
   })
 })

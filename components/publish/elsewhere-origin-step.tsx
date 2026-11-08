@@ -92,6 +92,7 @@ export function ElsewhereOriginStep({ form, draftId, duplicate, checkingSource, 
               <NativeSelect
                 id="elsewhere-platform"
                 {...form.register('sourcePlatform')}
+                value={formData.sourcePlatform}
                 required
               >
                 <option value="">{t('selectPlatform')}</option>
