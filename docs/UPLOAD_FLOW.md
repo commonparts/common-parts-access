@@ -48,15 +48,13 @@ Registered images are shown as a thumbnail grid in canonical order, the first ta
 
 ### 3. Details
 
-Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` — the same serializer curation uses — and validated server-side by the shared Zod schemas of `lib/schemas/part-fields.ts` (#483).
+Short description, instructions, tags, and print metadata (material, colour, dimensions, print settings, print-time and material-usage estimates). Serialized by the shared `serializePartMetadata` in `lib/utils/part-metadata.ts` — the same serializer curation uses — and validated on the client and server by the shared Zod schemas of `lib/schemas/part-fields.ts` (#483).
 
 ### 4. Compatibility
 
 Brand autocomplete (read-only list — brands are curated directly in the DB) and product autocomplete scoped to the brand, reusing `components/ui/combobox.tsx` and `components/forms/create-product-modal.tsx`. Product creation is dedup-guarded (issue #253).
 
-**A brand and at least one product are required to publish.** Flow P2 descends brand → product → part, so a part missing either is published and unfindable. Brand comes first in the UI and gates the product picker: products are scoped to the brand, and changing the brand clears the selection, so offering the picker earlier would only invite choices the next click throws away.
-
-The gate additionally checks that every linked product **belongs to the selected brand**. The UI cannot produce a mismatch on its own — changing the brand clears the products — but a brand changed after the fact through the API could, and a part filed under one brand while fitting another's products sits at the wrong place in the browse tree.
+**At least one linked product with a brand is required to publish.** Flow P2 descends brand → product → part. Brand is a picker filter, not a part column (#315): changing it preserves the products already selected, so one part may link to products of several brands. The gate checks that every linked product exists and belongs to a brand.
 
 The curator-facing demand panel is deliberately absent — open part-request counts steer curation priorities, and are not a contributor's concern.
 
@@ -66,53 +64,49 @@ The review screen renders the **actual part page** (`components/part/part-detail
 
 ## Publish gate
 
-`POST /api/upload/drafts/[id]/publish` re-validates **everything server-side** — the client cannot bypass it. Publication is blocked (HTTP 422 with `blockers[]`) unless all hold:
+`publishPublication({ track: 'original', id })` (`lib/actions/publish.ts`, #485) re-validates **everything server-side** — the client cannot bypass it. The action returns `{ ok: false, error, blockers }` unless all hold:
 
 1. A title.
 2. A category.
 3. The originality declaration is recorded.
 4. A license is set and it is hostable (commercial + modification, no NC/ND).
 5. At least one registered model file.
-6. A brand is set.
-7. At least one linked product, and every one of them belongs to that brand.
+6. At least one linked product, and every one of them exists and belongs to a brand.
 
-When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` only registers files and updates the gallery: it never changes the status (#403).
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it returns a failure if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` only registers files and updates the gallery: it never changes the status (#403).
 
-The review step also mirrors the file, brand and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
+The review step also mirrors the file and product conditions locally so a blocked publish can be explained before the round trip — the server stays the authority.
 
 ## Flow narrowing
 
-`lib/upload/payload.ts` lists the request-body keys the upload endpoints refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them is a **400** naming the field, checked by the request schemas of `lib/schemas/upload.ts` before any other check and any database work (#483).
+`lib/upload/payload.ts` lists the request-body keys the upload actions refuse: `originType`, `fileHostingType`, `verificationStatus`, `sourceUrl`, `sourcePlatform`, `originalAuthor`, `originalAuthorUrl` — each in both camelCase and snake_case. A payload carrying any of them returns a validation failure naming the field, checked by the request schemas of `lib/schemas/upload.ts` before any other check and any database work (#483).
 
 Two decisions worth keeping explicit:
 
 - **Rejected, not stripped.** Silently ignoring a field a caller deliberately sent hides the real answer ("this flow cannot do that") behind a record that quietly isn't what was asked for.
 - **Presence, not value.** An explicit `fileHostingType: 'hosted'` is still refused: it is a caller driving a control this flow does not expose, and today's forced value is not a contract.
 
-The narrowing is also expressed in the types — `UploadDraftPatch` has no key for any of these columns — so a route cannot set one even by mistake. `createUploadDraft` sets `origin_type = 'original'`, `file_hosting_type = 'hosted'` and `verification_status = 'unverified'` explicitly rather than relying on column defaults, because the premise of the flow is that these three are not the contributor's to choose. The database holds the same line for any caller using the public API keys: a part is inserted as an unverified draft, and `status`, `verification_status` and `origin_type` cannot be changed afterwards (#422, see [DATA_MODEL.md](DATA_MODEL.md)).
+The narrowing is also expressed in the types — `UploadDraftPatch` has no key for any of these columns — so an action cannot set one even by mistake. `createUploadDraft` sets `origin_type = 'original'`, `file_hosting_type = 'hosted'` and `verification_status = 'unverified'` explicitly rather than relying on column defaults, because the premise of the flow is that these three are not the contributor's to choose. The database holds the same line for any caller using the public API keys: a part is inserted as an unverified draft, and `status`, `verification_status` and `origin_type` cannot be changed afterwards (#422, see [DATA_MODEL.md](DATA_MODEL.md)).
 
 Covered by `lib/upload/payload.test.ts` and `lib/schemas/drafts.test.ts`.
 
 ## Persistent drafts
 
 - A draft is a `parts` row with `origin_type = 'original'` and `status = 'draft'`.
-- Created on the Part step; every later step transition sends a partial `PATCH /api/upload/drafts/[id]` (autosave). Only fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
+- Created on Origin by `savePublication({ operation: 'createOriginal', fields })`; later step transitions use `updateOriginal` with `{ id, fields }`. Only fields present in the payload are written. Metadata fields must be strings when present, so a malformed payload is refused rather than silently clearing a column. React Hook Form retains values between steps; resume restores them with `reset` (#485).
 - The drafts list (`GET /api/upload/drafts`) shows the contributor's open drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, metadata and registered images from `GET /api/upload/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review.
 - **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/parts/[slug]` — it removes the row and cleans up storage.
 
-Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated'` scoping in `queries/curation.ts`. That single filter is what keeps the flows apart: **upload endpoints cannot mutate a curation draft, and curation endpoints cannot mutate an upload draft**, in either direction and regardless of who owns the row.
+Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated'` scoping in `queries/curation.ts`. That single filter is what keeps the flows apart: **original actions cannot mutate a curation draft, and elsewhere actions cannot mutate an upload draft**, in either direction and regardless of who owns the row.
 
 ## API endpoints
 
-All require an authenticated session (401 otherwise). Files live under `app/api/upload/`.
+The reads below require an authenticated session (401 otherwise). Mutations use `savePublication` (`createOriginal` / `updateOriginal`) and `publishPublication` (`track: 'original'`) in `lib/actions/publish.ts`, with the shared schemas of `lib/schemas/publish.ts`. An action returns `{ ok: true, data }` or `{ ok: false, error }`, plus named `blockers` on a failed publication gate. The replaced POST/PATCH handlers and publish route are removed (#485).
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/upload/drafts` | GET | List the caller's open upload drafts (resume). |
-| `/api/upload/drafts` | POST | Create a draft (title + category + hostable license + declaration). |
 | `/api/upload/drafts/[id]` | GET | Full draft state for resume (owner only; `user_id` stripped from the response). |
-| `/api/upload/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. |
-| `/api/upload/drafts/[id]/publish` | POST | Publication gate; 422 with `blockers[]` on failure. |
 
 File registration reuses `POST /api/parts/[slug]/files`; deletion reuses `DELETE /api/parts/[slug]`. Neither is upload-specific.
 

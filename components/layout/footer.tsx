@@ -41,7 +41,7 @@ const footerColumns: FooterColumn[] = [
   },
 ];
 
-const licenseLinkClassName =
+const footerLinkClassName =
   "rounded-sm underline transition-colors duration-fast hover:text-text-primary focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-subtle";
 
 export function Footer() {
@@ -91,12 +91,21 @@ export function Footer() {
                 codeLicense: CODE_LICENSE.shortName,
                 dataLicense: DATA_LICENSE.shortName,
                 code: (chunks) => (
-                  <a href={CODE_LICENSE.url} className={licenseLinkClassName}>
+                  <a href={CODE_LICENSE.url} className={footerLinkClassName}>
                     {chunks}
                   </a>
                 ),
                 data: (chunks) => (
-                  <a href={DATA_LICENSE.url} className={licenseLinkClassName}>
+                  <a href={DATA_LICENSE.url} className={footerLinkClassName}>
+                    {chunks}
+                  </a>
+                ),
+              })}
+            </p>
+            <p className="basis-full">
+              {t.rich("ords", {
+                standard: (chunks) => (
+                  <a href="https://standard.openrepair.org/" className={footerLinkClassName}>
                     {chunks}
                   </a>
                 ),

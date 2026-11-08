@@ -60,7 +60,7 @@ export function DetailsStep({
   flags,
 }: DetailsStepProps) {
   const t = useTranslations('DetailsStep')
-  const { formData, setFormData } = form
+  const { formData } = form
   const isPrefilled = (field: string) => prefilledFields?.has(field) === true
 
   const handleTagKeyDown = (e: React.KeyboardEvent) => {
@@ -84,8 +84,7 @@ export function DetailsStep({
             <Textarea
               id={`${idPrefix}-description`}
               rows={3}
-              value={formData.description}
-              onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
+              {...form.register('description')}
               placeholder={t('descriptionPlaceholder')}
               maxLength={VALIDATION_LIMITS.PART.DESCRIPTION_MAX_LENGTH}
             />
@@ -103,8 +102,7 @@ export function DetailsStep({
             <Textarea
               id={`${idPrefix}-instructions`}
               rows={6}
-              value={formData.instructions}
-              onChange={(e) => setFormData((prev) => ({ ...prev, instructions: e.target.value }))}
+              {...form.register('instructions')}
               placeholder={t('instructionsPlaceholder')}
               maxLength={VALIDATION_LIMITS.PART.INSTRUCTIONS_MAX_LENGTH}
             />
@@ -167,8 +165,7 @@ export function DetailsStep({
               </FieldLabel>
               <Input
                 id={`${idPrefix}-material`}
-                value={formData.material}
-                onChange={(e) => setFormData((prev) => ({ ...prev, material: e.target.value }))}
+                {...form.register('material')}
                 placeholder={t('materialPlaceholder')}
                 maxLength={MATERIAL_MAX_LENGTH}
               />
@@ -177,8 +174,7 @@ export function DetailsStep({
               <Label htmlFor={`${idPrefix}-color`}>{t('color')}</Label>
               <Input
                 id={`${idPrefix}-color`}
-                value={formData.color}
-                onChange={(e) => setFormData((prev) => ({ ...prev, color: e.target.value }))}
+                {...form.register('color')}
                 placeholder={t('colorPlaceholder')}
                 maxLength={COLOR_MAX_LENGTH}
               />
@@ -195,8 +191,7 @@ export function DetailsStep({
                   type="number"
                   min="0"
                   step="0.1"
-                  value={formData.dimensionsLength}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsLength: e.target.value }))}
+                  {...form.register('dimensionsLength')}
                   placeholder="0"
                 />
               </div>
@@ -207,8 +202,7 @@ export function DetailsStep({
                   type="number"
                   min="0"
                   step="0.1"
-                  value={formData.dimensionsWidth}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsWidth: e.target.value }))}
+                  {...form.register('dimensionsWidth')}
                   placeholder="0"
                 />
               </div>
@@ -219,8 +213,7 @@ export function DetailsStep({
                   type="number"
                   min="0"
                   step="0.1"
-                  value={formData.dimensionsHeight}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsHeight: e.target.value }))}
+                  {...form.register('dimensionsHeight')}
                   placeholder="0"
                 />
               </div>
@@ -228,8 +221,7 @@ export function DetailsStep({
                 <Label htmlFor={`${idPrefix}-dim-unit`}>{t('unit')}</Label>
                 <NativeSelect
                   id={`${idPrefix}-dim-unit`}
-                  value={formData.dimensionsUnit}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, dimensionsUnit: e.target.value }))}
+                  {...form.register('dimensionsUnit')}
                 >
                   {DIMENSION_UNITS.map((unit) => (
                     <option key={unit} value={unit}>
@@ -253,8 +245,7 @@ export function DetailsStep({
                   type="number"
                   min="0"
                   step="0.01"
-                  value={formData.layerHeight}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, layerHeight: e.target.value }))}
+                  {...form.register('layerHeight')}
                   placeholder={t('layerHeightPlaceholder')}
                 />
               </div>
@@ -266,8 +257,7 @@ export function DetailsStep({
                   min="0"
                   max="100"
                   step="1"
-                  value={formData.infill}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, infill: e.target.value }))}
+                  {...form.register('infill')}
                   placeholder={t('infillPlaceholder')}
                 />
               </div>
@@ -275,8 +265,7 @@ export function DetailsStep({
                 <Label htmlFor={`${idPrefix}-supports`}>{t('supports')}</Label>
                 <NativeSelect
                   id={`${idPrefix}-supports`}
-                  value={formData.supports}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, supports: e.target.value }))}
+                  {...form.register('supports')}
                 >
                   <option value="">{t('supportsUnset')}</option>
                   {SUPPORT_TYPES.map((support) => (
@@ -299,8 +288,7 @@ export function DetailsStep({
                 type="number"
                 min="0"
                 step="1"
-                value={formData.estimatedPrintTime}
-                onChange={(e) => setFormData((prev) => ({ ...prev, estimatedPrintTime: e.target.value }))}
+                {...form.register('estimatedPrintTime')}
                 placeholder={t('printTimePlaceholder')}
               />
             </div>
@@ -316,10 +304,7 @@ export function DetailsStep({
                 type="number"
                 min="0"
                 step="0.1"
-                value={formData.estimatedMaterialUsage}
-                onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, estimatedMaterialUsage: e.target.value }))
-                }
+                {...form.register('estimatedMaterialUsage')}
                 placeholder={t('materialUsagePlaceholder')}
               />
             </div>

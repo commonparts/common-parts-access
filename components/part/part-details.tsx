@@ -8,7 +8,7 @@ import { Link } from "@/i18n/navigation"
 import { cn } from "@/lib/utils"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 import { isValidHttpUrl } from "@/lib/utils/validation"
-import { splitPrintTime } from "@/lib/utils/formatters"
+import { formatPrintSetting, splitPrintTime } from "@/lib/utils/formatters"
 import { sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
@@ -781,7 +781,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
                     {typeof part.printSettings === 'object' && Object.entries(part.printSettings).map(([key, value]) => (
                       <div key={key} className="flex justify-between items-center text-sm">
                         <span className="text-text-secondary capitalize">{key.replace(/_/g, ' ')}</span>
-                        <Badge variant="outline">{String(value)}</Badge>
+                        <Badge variant="outline">{formatPrintSetting(key, value, format.number)}</Badge>
                       </div>
                     ))}
                   </div>

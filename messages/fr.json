@@ -107,6 +107,7 @@
       "legalNotice": "Mentions légales"
     },
     "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>.",
+    "ords": "Utilise l’<standard>Open Repair Data Standard (ORDS)</standard> pour la correspondance des catégories de produits.",
     "copyright": "© {year} Common Parts"
   },
   "LegalPages": {

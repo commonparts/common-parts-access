@@ -18,7 +18,7 @@ interface ReviewStepProps {
    * before the round trip. The server-side gate stays the authority.
    */
   blockers: readonly PublishBlocker[]
-  /** Blockers returned by the gate's 422, when one came back. */
+  /** Blockers returned by the server-side publication gate. */
   serverBlockers: readonly string[]
   publishing: boolean
   saving: boolean

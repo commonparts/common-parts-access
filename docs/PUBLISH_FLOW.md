@@ -1,20 +1,20 @@
 # Unified Publish Flow
 
-> **Status: implemented.** Issues #301 (vocabulary), #302 (step harmonization), #303 (unified entry). The engine documents [UPLOAD_FLOW.md](UPLOAD_FLOW.md) and [CURATION_TOOL.md](CURATION_TOOL.md) remain authoritative for everything server-side; this document owns the entry point, the vocabulary and the step structure shared by both.
+> **Status: implemented.** Issues #301 (vocabulary), #302 (step harmonization), #303 (unified entry), #485 (form state and Server Actions). The engine documents [UPLOAD_FLOW.md](UPLOAD_FLOW.md) and [CURATION_TOOL.md](CURATION_TOOL.md) remain authoritative for everything server-side; this document owns the entry point, the vocabulary and the step structure shared by both.
 
 ## Overview
 
 The upload flow and the curation tool are one public publication path behind one entry point: **Publish a part**. One orientation question routes the contributor onto one of two tracks that share the same five-step structure, the same components, and the same UX conventions.
 
-What merged is the **entry, the vocabulary, and the step structure**. What did not merge is the **engines**: the `/api/upload/**` and `/api/curation/**` endpoint families, their publish gates, their payload narrowing, and the `origin_type` query scoping all remain exactly as documented. This is a frontend unification over two unchanged backends.
+Both tracks keep their creation minimums, publish gates, payload narrowing and `origin_type` query scoping. Mutations from the form use the `savePublication` and `publishPublication` Server Actions in `lib/actions/publish.ts` (#485). Their discriminated payload schemas select the existing original or elsewhere schema; each branch calls only its track-scoped queries. Choosing an operation never changes the origin of a stored draft.
 
-The reason for keeping the engines apart is inherited from `UPLOAD_FLOW.md` (Flow narrowing): a single endpoint accepting both shapes is the removed `POST /api/parts/upload` reintroduced. The scoping (`origin_type = 'original'` vs `'curated'` on every query) is the integrity property that makes cross-track mutation impossible; it is load-bearing and stays.
+The draft lists and resume reads keep their `/api/upload/drafts` and `/api/curation/drafts` GET routes. Their POST/PATCH handlers and the two `/drafts/[id]/publish` routes are removed. File registration, source-gallery import and rejection recording keep their existing endpoints.
 
 **Access.** Any authenticated user may publish on either track. The curation tool's "internal" framing was a test-phase convention, never a technical restriction (decision 2026-07-17: no curator role; `curation_rejections` RLS already grants insert/read to all authenticated users).
 
 ## Vocabulary
 
-Database values, column names, API routes and code paths **do not change**. Only user-facing copy does. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`, which returns the kind), and the badge and description of each kind are the `Publication` messages, so the part page, the tools and the drafts list cannot describe the same record differently.
+The vocabulary follows the stored origin/hosting pair; the form-state refactor (#485) preserves all interface strings and translation keys. The words *curation*, *curated*, *link-out* and *hosting type* never appear in the UI. The mapping lives in `lib/utils/publication.ts` (`describePublication`, which returns the kind), and the badge and description of each kind are the `Publication` messages, so the part page, the tools and the drafts list cannot describe the same record differently.
 
 | Storage (unchanged) | UI term | Part-page badge |
 |---|---|---|
@@ -22,7 +22,7 @@ Database values, column names, API routes and code paths **do not change**. Only
 | `origin_type = 'curated'`, `file_hosting_type = 'hosted'` | "Published elsewhere — files hosted on Common Parts" | **Hosted** |
 | `origin_type = 'curated'`, `file_hosting_type = 'link_out'` | "Published elsewhere — files at the source" | **Referenced** |
 
-The elsewhere track only produces the **Referenced** pair (#396). The **Hosted** row remains in the mapping because the column keeps the value, but no curated part carries it: the curation routes refuse to create a hosted draft, to set `hosted` on one, or to publish one.
+The elsewhere track only produces the **Referenced** pair (#396). The **Hosted** row remains in the mapping because the column keeps the value, but no curated part carries it: the curation schemas and Server Actions refuse to create a hosted draft, to set `hosted` on one, or to publish one.
 
 Track names in copy: the **original track** and the **elsewhere track** ("published elsewhere"). *Referenced* is reserved for the outcome of the elsewhere track, never used as the track name — one word for both would recreate the ambiguity this rename removes.
 
@@ -49,7 +49,7 @@ Authorship alone does not decide the track: a designer whose files live on their
 
 ## Step structure
 
-Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same names, same order. Every step transition autosaves via the track's own `PATCH` endpoint.
+Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same names, same order. Every step transition saves the fields owned by that step through `savePublication`.
 
 | # | Step | Original track | Elsewhere track |
 |---|------|----------------|-----------------|
@@ -59,7 +59,15 @@ Both tracks render the same five-step stepper (`lib/publish/steps.ts`), same nam
 | 4 | **Compatibility** | Brand + products, inline product creation, dedup-guarded. | Same, plus the demand panel. |
 | 5 | **Review** | Real part page rendered against the draft; a notice that the data entered is published under CC BY-SA 4.0 while files and source content keep their author's license, linking to section 4.2 of the Terms of use (#476); publish or save as draft. | Same, plus the checklist roll-up, `needs_legal_review`, and the rejection recorder. |
 
-Shared step components live in `components/publish/`; each track keeps its own orchestrator (`original-track.tsx`, `elsewhere-track.tsx`) because the endpoints, creation minimums and publish calls differ.
+Shared step components live in `components/publish/`; each track keeps its own orchestrator (`original-track.tsx`, `elsewhere-track.tsx`) because their source handling, creation minimums and publication conditions differ. Their Origin fields live in `original-origin-step.tsx` and `elsewhere-origin-step.tsx`; `curation-judgements.tsx` renders the existing criteria and completeness confirmations on their assigned steps.
+
+### Form state and validation
+
+`usePublishForm` uses React Hook Form (`useForm`, `useWatch`, `register`, `setValue`, `reset`, `handleSubmit`) and `@hookform/resolvers/zod`. Values stay registered when a step unmounts. React Hook Form owns field errors, the server error and the save's pending state. `usePartUploadFormState` adds the publication catalog, category tree and product picker/creation behavior.
+
+`lib/publish/form.ts` converts flat UI values to the current step's payload. Its resolver validates that payload with `lib/schemas/publish.ts`, the same schema the Server Action passes to `validate`. Shared field schemas stay in `lib/schemas/upload.ts`, `curation.ts` and `part-fields.ts`. Only the active step is validated: incomplete later steps never prevent saving a draft. Business rules remain in their existing owners, including `blockers.ts`, `tracks.ts` and `lib/curation/checklist.ts`.
+
+Client and server share `lib/utils/validation-messages.ts`: Zod's localized defaults, `Fields` labels and existing `Validation` keys. The resolver maps wire metadata paths back to their flat input names. Resuming a draft uses `draftFormValues` and `reset` to restore metadata, product links, attestation and curation judgements together; the first-blocked-step rule is unchanged.
 
 ### A part published elsewhere is always referenced
 
@@ -81,11 +89,11 @@ The dedicated Checklist step is gone **as a step**. The six blocking criteria ar
 | `product_target` | Step 4 | The linked-products list |
 | *(roll-up of all six)* | Step 5 | The publish button, with jump links to any unmet criterion |
 
-Step 1 renders four criteria but creates the draft at its end, so criteria ticked before the draft exists are held in client state and flushed by a follow-up `PATCH` immediately after creation, together with the category.
+Step 1 renders four criteria but creates the draft at its end, so criteria ticked before the draft exists are held in client state and flushed by a follow-up `savePublication` immediately after creation, together with the category.
 
 The **rejection recorder** (`POST /api/curation/rejections`) is reachable from Step 1 onward — the early-rejection property is preserved even though the step it lived on is gone.
 
-The **non-blocking completeness flags** (`CURATION_FLAGS`) likewise stop being a panel: each positive confirmation renders next to its subject. `placement.ts` drives both the rendering and the per-step `PATCH`, so a flag cannot be shown on one step and saved by another. Initialization (all five unconfirmed on a fresh draft) and column semantics are unchanged.
+The **non-blocking completeness flags** (`CURATION_FLAGS`) likewise stop being a panel: each positive confirmation renders next to its subject. `placement.ts` drives both the rendering and the per-step save, so a flag cannot be shown on one step and saved by another. Initialization (all five unconfirmed on a fresh draft) and column semantics are unchanged.
 
 The `curation_checklist` / `originality_attested` separation is deliberately preserved: one records a third party's judgement of someone else's part, the other a contributor's declaration about their own work.
 
@@ -97,11 +105,11 @@ Both tools used to resume at a hardcoded step (Files for upload, Checklist for c
 
 ## Publish gates
 
-Unchanged by the unification, both of them — including HTTP 422 with `blockers[]`, server-side re-validation of everything, and the payload narrowing (400 on any narrowed key, presence-based, rejected not stripped). Since #396 the elsewhere gate also blocks a curated draft that is not `link_out` — see [CURATION_TOOL.md](CURATION_TOOL.md#publish-gate).
+Both gates revalidate the stored draft server-side in `publishPublication`. The action returns `{ ok: false, error, blockers }` on unmet conditions and `{ ok: true, data: { slug } }` on success. Draft saves return a `Result` as well; forbidden original-track fields are still rejected by presence rather than stripped. Since #396 the elsewhere gate also blocks a curated draft that is not `link_out` — see [CURATION_TOOL.md](CURATION_TOOL.md#publish-gate).
 
 ## What this deliberately does not do
 
-- **No merged API.** Two endpoint families, two gates, two scoped query sets.
+- **Two scoped engines.** Shared action entry points dispatch to separate original/elsewhere schemas, queries and publication checks.
 - **No bulk import, no auto-publish.** The elsewhere track stays unitary and judged; the review screen stays in the path.
 - **No curator role.** Any authenticated user, both tracks. Quality is enforced by the server gates, not by access control.
 - **No change to `origin_type` semantics.** In particular, no `(original, link_out)` combination.
@@ -117,6 +125,9 @@ components/publish/
   orientation-question.tsx                 The one branching decision
   original-track.tsx                        Original-track orchestrator
   elsewhere-track.tsx                       Elsewhere-track orchestrator
+  original-origin-step.tsx,                Track-specific Origin screens
+  elsewhere-origin-step.tsx
+  curation-judgements.tsx                   Criteria and completeness confirmations
   files-step.tsx, details-step.tsx,         Steps shared by both tracks
   compatibility-step.tsx, review-step.tsx
   step-nav.tsx, registered-images.tsx       Shared step furniture
@@ -125,7 +136,13 @@ components/publish/
   legal-review-escalation.tsx               needs_legal_review + justification
   rejection-recorder.tsx                    Rejection traceability
   demand-panel.tsx                          Aggregate part-request counts
+hooks/use-publish-form.ts                 React Hook Form state and step submission
+hooks/use-part-upload-form-state.ts       Catalog and product selection/creation
+lib/actions/publish.ts                    Draft saves and publication gates
+lib/schemas/publish.ts                    Shared client/server payload validation
 lib/publish/
+  form.ts                                   UI values and per-step payload mapping
+  hydration.ts                              Saved draft → form defaults
   steps.ts                                  Labels, indices, resume rule
   placement.ts                              Which step renders which judgement
   blockers.ts                               Local mirrors of both publish gates
@@ -136,7 +153,7 @@ lib/utils/publication.ts                    Storage pair → reader vocabulary
 
 ## References
 
-- `docs/UPLOAD_FLOW.md` — original track engine (unchanged)
-- `docs/CURATION_TOOL.md` — elsewhere track engine (unchanged)
+- `docs/UPLOAD_FLOW.md` — original track engine
+- `docs/CURATION_TOOL.md` — elsewhere track engine
 - `docs/user-flows.md` — Flows P2, P3
 - Issues #301, #302, #303 (this flow), #293 (upload flow), #254 (curation tool), #299 (author card label)
