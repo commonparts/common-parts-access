@@ -100,6 +100,12 @@ All four columns are server-owned: clients may only write `part_id` and `product
 ### `categories`
 A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/kitchen/cooker/`), used for subtree prefix checks. Also `name` (English), `name_fr` (French, nullable, never blank: `categories_name_fr_not_blank`; #502), `slug` (the same in every locale), `description`, `icon`. See [I18N.md](./I18N.md#category-names).
 
+`ords_category_id` is a nullable integer holding the [Open Repair Data Standard v0.3 product category ID](https://standard.openrepair.org/standard.html#product-category-values) (#323). The migration `20261108150930_category_ords_identifiers.sql` only adds and documents the column; it contains no category mappings or taxonomy coverage guard. ORDS assignments are category data maintained directly in the database. All 140 existing categories have been reviewed, regardless of visibility or part count: 101 carry an ORDS identifier and 39 stay null. Mappings never depend on whether a category contains parts and are never inherited from a parent. Existing category read policies and grants cover the column.
+
+Specific ORDS classes take precedence over aggregate classes: lawnmowers and fitness machines use Large home electrical (17), tool batteries/chargers use Battery/charger/adapter (2), and lighting under Furniture uses Lamp (15). Broad electrical-only groups spanning several ORDS classes use Misc (18), including generic cameras that do not distinguish compact cameras from DSLR/video cameras. Cars, bikes, non-electrical products, mixed electrical/non-electrical groupings and unspecified product types stay null; electrical children are mapped explicitly. Every category added later needs the same scope review and closest ORDS class, including when it has no parts.
+
+Future data exports must include `ords_category_id` alongside the local category name/slug, preserving explicit nulls rather than replacing them with ORDS Misc (18), which is reserved for electrical products. No data export endpoint is implemented.
+
 ### `licenses`
 `spdx_id`, `name`, `short_name`, `url`, and the flags `allows_redistribution`, `requires_attribution`, `allows_commercial`, `is_copyleft`, which drive hosting eligibility (`isHostableLicense` in `lib/utils/licenses.ts`).
 

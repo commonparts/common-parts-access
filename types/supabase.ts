@@ -65,6 +65,7 @@ export type Database = {
           level: number | null
           name: string
           name_fr: string | null
+          ords_category_id: number | null
           parent_id: string | null
           path: string | null
           slug: string
@@ -77,6 +78,7 @@ export type Database = {
           level?: number | null
           name: string
           name_fr?: string | null
+          ords_category_id?: number | null
           parent_id?: string | null
           path?: string | null
           slug: string
@@ -89,6 +91,7 @@ export type Database = {
           level?: number | null
           name?: string
           name_fr?: string | null
+          ords_category_id?: number | null
           parent_id?: string | null
           path?: string | null
           slug?: string

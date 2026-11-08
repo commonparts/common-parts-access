@@ -45,7 +45,7 @@ export function CompatibilityStep({
   judgements,
 }: CompatibilityStepProps) {
   const t = useTranslations('CompatibilityStep')
-  const { formData, setFormData } = form
+  const { formData } = form
 
   const atProductLimit = formData.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT
 
@@ -67,7 +67,7 @@ export function CompatibilityStep({
               searchTerm={form.brandSearch}
               onSearchChange={form.setBrandSearch}
               onSelect={(option) => {
-                setFormData((prev) => ({ ...prev, brandId: option.id }))
+                form.setValue('brandId', option.id)
                 form.setBrandSearch(option.name)
               }}
               isOpen={form.brandOpen}

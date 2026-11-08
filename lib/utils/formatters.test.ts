@@ -1,5 +1,37 @@
 import { describe, expect, it } from 'vitest'
-import { fileSizeUnit, formatRegionName, htmlToPlainText, splitPrintTime } from './formatters'
+import { createFormatter } from 'next-intl'
+import { fileSizeUnit, formatPrintSetting, formatRegionName, htmlToPlainText, splitPrintTime } from './formatters'
+
+describe('formatPrintSetting', () => {
+  const en = createFormatter({ locale: 'en' }).number
+  const fr = createFormatter({ locale: 'fr' }).number
+
+  it('displays layer height in millimeters and infill as percentage points', () => {
+    expect(formatPrintSetting('layer_height', 0.2, en)).toBe('0.2 mm')
+    expect(formatPrintSetting('infill', 15, en)).toBe('15%')
+    expect(formatPrintSetting('infill', 0, en)).toBe('0%')
+    expect(formatPrintSetting('infill', 100, en)).toBe('100%')
+  })
+
+  it('uses the active locale for decimal separators and unit spacing', () => {
+    expect(formatPrintSetting('layer_height', 0.2, fr)).toBe('0,2\u202fmm')
+    expect(formatPrintSetting('infill', 15.5, fr)).toBe('15,5\u00a0%')
+  })
+
+  it('preserves text, including values that already contain a unit', () => {
+    expect(formatPrintSetting('supports', 'none', en)).toBe('none')
+    expect(formatPrintSetting('layer_height', '0.2 mm', en)).toBe('0.2 mm')
+    expect(formatPrintSetting('infill', '15%', en)).toBe('15%')
+  })
+
+  it('adds no unit to unknown settings or nonnumeric values', () => {
+    expect(formatPrintSetting('custom_setting', 1.5, fr)).toBe('1,5')
+    expect(formatPrintSetting('custom_setting', 'custom', en)).toBe('custom')
+    expect(formatPrintSetting('supports', false, en)).toBe('false')
+    expect(formatPrintSetting('layer_height', null, en)).toBe('null')
+    expect(formatPrintSetting('layer_height', Number.NaN, en)).toBe('NaN')
+  })
+})
 
 describe('splitPrintTime', () => {
   it('splits whole hours, minutes, and mixed durations', () => {

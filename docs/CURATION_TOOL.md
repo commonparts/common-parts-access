@@ -97,15 +97,15 @@ The endpoint resolves the gallery from the draft's source URL (`resolveSourceGal
 ### 5. Review & publish
 
 - The review screen renders the **actual part page** (`components/part/part-details.tsx`) against the draft. The part-details API serves the owner their own draft so the preview is faithful.
-- **Publish** calls `POST /api/curation/drafts/[id]/publish`, the single publication gate (see below). On success the part flips to `published` and the curator is redirected to `/parts/[slug]`. On failure it returns **422** with a list of named blockers.
+- **Publish** calls `publishPublication({ track: 'elsewhere', id })` in `lib/actions/publish.ts` (#485), the single publication gate (see below). On success the part flips to `published` and the curator is redirected to `/parts/[slug]`. On failure it returns `{ ok: false, error, blockers }` with a list of named blockers.
 - **Save as draft** exits without publishing; the draft appears in the drafts list for resume.
 
 ## File hosting: always link-out
 
-A part published elsewhere is always referenced (#396): `file_hosting_type = 'link_out'`, the files stay on the source platform, and Common Parts links to them. Hosting files is reserved for parts published here for the first time, through the [upload flow](UPLOAD_FLOW.md). The `file_hosting_type` column keeps its two values; the rule is enforced by the database (check `parts_curated_link_out`, #422) and by the curation routes, from `lib/curation/hosting.ts`:
+A part published elsewhere is always referenced (#396): `file_hosting_type = 'link_out'`, the files stay on the source platform, and Common Parts links to them. Hosting files is reserved for parts published here for the first time, through the [upload flow](UPLOAD_FLOW.md). The `file_hosting_type` column keeps its two values; the rule is enforced by the database (check `parts_curated_link_out`, #422) and by the curation schemas and Server Actions, from `lib/curation/hosting.ts`:
 
 - The tool offers no hosting choice and saves every draft as `link_out`.
-- `POST /api/curation/drafts` creates the draft as `link_out` (the default when `fileHostingType` is omitted) and returns **400** when `fileHostingType` is `hosted`. `PATCH /api/curation/drafts/[id]` does the same, and sending `link_out` moves a draft saved as `hosted` before the rule to it.
+- `savePublication` with `createElsewhere` creates the draft as `link_out` (the default when `fileHostingType` is omitted) and refuses `hosted`. `updateElsewhere` does the same, and sending `link_out` moves a draft saved as `hosted` before the rule to it.
 - The publish gate blocks a curated draft that is not `link_out`.
 - `POST /api/parts/[slug]/files` returns **400** when model files are registered for a curated part; photos are accepted.
 
@@ -113,7 +113,7 @@ Any license of the `licenses` table is accepted, NC and ND included, because the
 
 ## Publish gate
 
-`POST /api/curation/drafts/[id]/publish` re-validates **everything server-side** — the client cannot bypass it. Publication is blocked (HTTP 422 with `blockers[]`) unless all hold:
+`publishPublication({ track: 'elsewhere', id })` re-validates **everything server-side** — the client cannot bypass it. The action returns `{ ok: false, error, blockers }` unless all hold:
 
 1. All six checklist criteria explicitly checked.
 2. `needs_legal_review` is not set.
@@ -122,28 +122,25 @@ Any license of the `licenses` table is accepted, NC and ND included, because the
 5. A source platform is set, and **no** model files are registered.
 6. ≥ 1 linked product (`product_target` made concrete).
 
-When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it answers **409** if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` never changes the status (#403).
+When every condition holds, the gate sets `status = 'published'` with the service role (`publishDraftPart` in `lib/supabase/queries/publish.ts`), scoped to the part, its owner and `status = 'draft'`; it returns a failure if the part is no longer a draft. The database refuses a status change made with the user's session (`parts_guard_owner_writes`, #422), so the gate is the only way to publish. `POST /api/parts/[slug]/files` never changes the status (#403).
 
 ## Persistent drafts
 
 - A draft is a `parts` row with `origin_type = 'curated'` and `status = 'draft'`.
-- Created on the Source step; every later step transition sends a partial `PATCH /api/curation/drafts/[id]` (autosave). Only the fields present in the payload are written — metadata fields must be strings when present, so a malformed payload returns 400 rather than silently clearing a column.
+- Created on Origin by `savePublication({ operation: 'createElsewhere', fields })`; later saves use `updateElsewhere` with `{ id, fields }`. The category and judgements made before creation are flushed by a second save. Only provided fields are written; malformed metadata is refused rather than silently clearing a column. React Hook Form retains values between steps and restores all fields and judgements with `reset` on resume (#485).
 - The drafts list (`GET /api/curation/drafts`) shows the curator's open curated drafts, most-recently-touched first, for **Resume**. A resumed session hydrates all form state, checklist, flags, metadata and registered images from `GET /api/curation/drafts/[id]`, then opens at the first step holding an unmet publish blocker (`lib/publish/blockers.ts`), falling back to Review. A draft saved as `hosted` before #396 opens on Origin, whose save references it.
 - **Delete.** Each draft has a bin action (confirmation-gated) that reuses the owner-scoped `DELETE /api/parts/[slug]` — it removes the row and cleans up storage, and frees the source URL for a new session (issue #288).
 
 ## API endpoints
 
-All require an authenticated session (401 otherwise). Files live under `app/api/curation/`.
+The endpoints below require an authenticated session (401 otherwise). Draft creation, partial saving and publication use `savePublication` (`createElsewhere` / `updateElsewhere`) and `publishPublication` (`track: 'elsewhere'`) in `lib/actions/publish.ts`, returning a `Result` rather than an HTTP status. Their payloads are validated by `lib/schemas/publish.ts` on both the client and the server. The replaced POST/PATCH handlers and publish route are removed (#485).
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
 | `/api/curation/source-check?url=` | GET | Duplicate check on `source_url`; returns the existing part or `null`. |
 | `/api/curation/prefill?url=` | GET | Best-effort pre-fill (platform, author, license, print metadata, texts); null fields on any failure, never an error. |
 | `/api/curation/drafts` | GET | List the caller's open curated drafts (resume). |
-| `/api/curation/drafts` | POST | Create a draft (title + source URL + author + `licenseId`, the license at the source + source platform), always `link_out`. 409 on duplicate source URL; 400 if `fileHostingType` is `hosted`. |
 | `/api/curation/drafts/[id]` | GET | Full draft state for resume (owner only; `user_id` stripped from the response). |
-| `/api/curation/drafts/[id]` | PATCH | Partial autosave of any subset of editable fields. 400 if `fileHostingType` is `hosted`, or if `licenseId` is sent empty: a curated part cannot be saved without a license. |
-| `/api/curation/drafts/[id]/publish` | POST | Publication gate; 422 with `blockers[]` on failure. |
 | `/api/curation/drafts/[id]/import-images` | POST | Import the source gallery into the draft (Printables; Thingiverse when `THINGIVERSE_APP_TOKEN` is set); best-effort, idempotent. |
 | `/api/curation/rejections` | POST | Record a rejection (source URL, reason, failed criteria). |
 | `/api/curation/demand?productId=` | GET | Aggregate open part-request counts for a product. |
@@ -189,6 +186,8 @@ app/[locale]/(dashboard)/publish/page.tsx           Server entry: resolves the i
 components/publish/
   publish-page.tsx                          Drafts list + session launcher (both tracks)
   elsewhere-track.tsx                       The 5-step stepper orchestrator
+  elsewhere-origin-step.tsx                 Source fields, attribution, license and scope
+  curation-judgements.tsx                   Criteria and completeness confirmations
   legal-review-escalation.tsx               Legal-review flag + justification
   checklist-rollup.tsx                      Review roll-up of the six criteria
   judgement-checkbox.tsx                    One criterion or flag, rendered inline
@@ -212,6 +211,9 @@ lib/supabase/queries/curation.ts           Draft CRUD, rejections, source lookup
 lib/supabase/queries/publish.ts            draft -> published transition of both gates (service role)
 lib/supabase/queries/licenses.ts           License lookup by SPDX id / id (for pre-fill + gates)
 lib/utils/part-metadata.ts                 Shared metadata serializer and column limits (also used by upload)
+lib/actions/publish.ts                    Draft-save actions and publication gates
+lib/schemas/publish.ts                    Shared client/server submission envelope
+hooks/use-publish-form.ts                 React Hook Form values, validation and saves
 lib/schemas/curation.ts                    Zod schemas of the curation request bodies and queries
 lib/schemas/part-fields.ts                 Zod schemas of the fields shared with upload
 lib/utils/licenses.ts                       isHostableLicense (NC/ND exclusion), shared by tool + gates

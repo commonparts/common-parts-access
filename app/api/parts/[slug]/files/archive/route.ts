@@ -6,18 +6,19 @@ import { toZipSafeName, buildZipEntryPath } from '@/lib/storage/path-utils'
 import { recordPartDownloadForPart } from '@/lib/supabase/queries/part-metrics'
 import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import { getApiTranslations } from '@/lib/api/translations'
+import { getArchivePart } from '@/lib/supabase/queries/part-archive'
+import { archiveLicenseText } from '@/lib/storage/archive-license'
 
 export const runtime = 'nodejs'
 
-// The archive holds the part's model files only. The upload flow caps them at
+// The upload flow caps model files at
 // PART_UPLOAD_LIMITS.maxModelFiles per part, but its count check and its insert
 // are not atomic, so concurrent registrations can exceed that cap. The read is
 // bounded by a ceiling well above it, and a part over the ceiling gets an
 // explicit error rather than an archive that silently omits files.
 const MAX_ARCHIVE_FILES = PART_UPLOAD_LIMITS.maxModelFiles * 10
 
-// GET /api/parts/[slug]/files/archive - Download all model files as a ZIP.
-// Anonymous: no account required, only an anonymous download row is recorded (issue #250).
+/** Downloads model files and their license as a ZIP, recording one anonymous download. */
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -27,31 +28,15 @@ export async function GET(
     const supabase = await createClient()
     const { slug } = await params
 
-    const { data: part, error: partError } = await supabase
-      .from('parts')
-      .select('id, name, status')
-      .eq('slug', slug)
-      .eq('status', 'published')
-      .single()
+    const part = await getArchivePart(supabase, slug, MAX_ARCHIVE_FILES + 1)
 
-    if (partError || !part) {
+    if (!part) {
       return NextResponse.json({ error: t('partNotFound') }, { status: 404 })
     }
 
-    const { data: files, error: filesError } = await supabase
-      .from('part_files')
-      .select('id, original_filename, filename, upload_path')
-      .eq('part_id', part.id)
-      .eq('file_category', 'model')
-      .order('created_at', { ascending: true })
-      .limit(MAX_ARCHIVE_FILES + 1)
+    const { files } = part
 
-    if (filesError) {
-      console.error('Failed to fetch model files:', filesError)
-      return NextResponse.json({ error: t('loadFailed') }, { status: 500 })
-    }
-
-    if (!files || files.length === 0) {
+    if (files.length === 0) {
       return NextResponse.json({ error: t('noFiles') }, { status: 404 })
     }
 
@@ -102,6 +87,13 @@ export async function GET(
     if (addedFiles === 0) {
       return NextResponse.json({ error: t('filesUnavailable') }, { status: 503 })
     }
+
+    // Keep an uploaded LICENSE.txt intact if one already exists at the root.
+    let licensePath = 'LICENSE.txt'
+    while (folder.filter((path) => path.split('/')[0].toLowerCase() === licensePath.toLowerCase()).length) {
+      licensePath = `_${licensePath}`
+    }
+    folder.file(licensePath, archiveLicenseText(part))
 
     const zipBuffer = await zip.generateAsync({
       type: 'nodebuffer',

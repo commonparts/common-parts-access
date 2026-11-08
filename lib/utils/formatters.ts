@@ -2,6 +2,19 @@
  * Data formatting utilities
  */
 
+import type { NumberFormatOptions } from 'next-intl'
+
+/** Adds the known print-setting units, delegating number formatting to next-intl. */
+export function formatPrintSetting(
+  key: string,
+  value: string | number | boolean | null,
+  formatNumber: (value: number, options?: NumberFormatOptions) => string,
+): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return String(value)
+  const unit = key === 'layer_height' ? 'millimeter' : key === 'infill' ? 'percent' : undefined
+  return formatNumber(value, unit ? { style: 'unit', unit } : undefined)
+}
+
 /**
  * Splits a print-time duration given in minutes into whole hours and minutes,
  * for the `printTime` message of the part card and the part page.

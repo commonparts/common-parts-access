@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
-import type { Locale, Messages } from 'next-intl'
+import type { Locale } from 'next-intl'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { z } from 'zod'
 import { requestLocale } from '@/lib/utils/locale'
+import { validationErrorMap, validationMessage } from '@/lib/utils/validation-messages'
 
 /**
  * Request validation for the API routes and Server Actions (#483), in the
@@ -21,15 +22,6 @@ export type Result<T> = { ok: true; data: T } | { ok: false; error: string }
 export type ParseResult<T> = { ok: true; data: T } | { ok: false; response: NextResponse }
 
 /**
- * A message of the `Validation` namespace. A schema that needs more than
- * Zod's default message writes one of these keys as its `error`, and passes
- * the message's arguments as the issue's `params`.
- */
-type ValidationKey = keyof Messages['Validation']
-
-type FieldKey = keyof Messages['Fields']
-
-/**
  * Validates `input` against `schema` in `locale`. Returns the parsed value, or
  * the message of the first issue: the `Validation` message its key names, or
  * Zod's default message in `locale`, after the label of the field when the
@@ -41,13 +33,7 @@ async function validateIn<Schema extends z.ZodType>(
   input: unknown,
   locale: Locale,
 ): Promise<Result<z.output<Schema>>> {
-  const defaultMessage = z.locales[locale]().localeError
-  // A field missing where one is expected reads "Required" rather than
-  // Zod's "expected string, received undefined".
-  const result = schema.safeParse(input, {
-    error: (issue) =>
-      issue.code === 'invalid_type' && issue.input == null && issue.path?.length ? 'required' : defaultMessage(issue),
-  })
+  const result = schema.safeParse(input, { error: validationErrorMap(locale) })
   if (result.success) return { ok: true, data: result.data }
 
   const [t, fields] = await Promise.all([
@@ -57,15 +43,7 @@ async function validateIn<Schema extends z.ZodType>(
   const issue = result.error.issues[0]
   if (!issue) return { ok: false, error: t('invalidRequest') }
 
-  // A message written in a schema is a key (see ValidationKey); any other is
-  // Zod's default. Path segments are the field names the schemas chose.
-  const key = issue.message as ValidationKey
-  const message = t.has(key) ? t(key, issue.code === 'custom' ? issue.params : undefined) : issue.message
-  const field = issue.path
-    .filter((segment) => typeof segment === 'string')
-    .map((segment) => (fields.has(segment as FieldKey) ? fields(segment as FieldKey) : segment))
-    .join(' › ')
-  return { ok: false, error: field ? t('field', { field, message }) : message }
+  return { ok: false, error: validationMessage(issue, t, fields) }
 }
 
 /**
