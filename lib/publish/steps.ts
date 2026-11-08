@@ -6,8 +6,8 @@ import type { CurationCriterionKey } from '@/types/database'
  * Both tracks render the same five steps in the same order, so the step names
  * (their labels are the `PublishSteps` messages) and indices are defined once
  * here rather than in each tool. The two
- * engines behind them are unchanged — `/api/upload/**` and `/api/curation/**`
- * keep their own endpoints, gates and `origin_type` scoping. This module is
+ * engines keep their own gates and `origin_type` scoping; draft saves and
+ * publication run through `lib/actions/publish.ts` (#485). This module is
  * about where things are *rendered*, never about what is *enforced*.
  */
 

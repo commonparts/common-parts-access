@@ -22,20 +22,22 @@ function refusingForbiddenFields<Schema extends z.ZodObject>(schema: Schema) {
     .pipe(schema)
 }
 
-/** POST /api/upload/drafts — the first step: title, category, license, declaration. */
+/** createOriginal — the first step: title, category, license, declaration. */
 export const createUploadDraftSchema = refusingForbiddenFields(
   z.object({
     title: partDraftFields.title,
     // An explicit true: a missing or truthy-ish value is not someone claiming
     // authorship of a design.
-    attested: z.literal(true, { error: 'attestationRequired' }),
+    attested: z.boolean({ error: 'attestationRequired' })
+      .refine((value) => value, { error: 'attestationRequired' })
+      .transform(() => true as const),
     categoryId: uuid,
     licenseId: uuid,
   }),
 )
 
 /**
- * PATCH /api/upload/drafts/[id] — any subset of the editable fields. Category
+ * updateOriginal — any subset of the editable fields. Category
  * and license are set at creation and stay required: unlike the curation
  * draft, neither can be cleared back to null.
  */

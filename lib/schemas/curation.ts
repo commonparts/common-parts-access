@@ -31,7 +31,7 @@ const originalAuthorUrl = z
   .transform((value) => value || null)
 
 /**
- * POST /api/curation/drafts — the source step: the DB minimum of a curated
+ * createElsewhere — the source step: the DB minimum of a curated
  * part (title, source URL, original author, license at the source) and, since
  * a part published elsewhere is always referenced (#396), the platform.
  */
@@ -46,7 +46,7 @@ export const createCurationDraftSchema = z.object({
 })
 
 /**
- * PATCH /api/curation/drafts/[id] — any subset of the editable fields. The
+ * updateElsewhere — any subset of the editable fields. The
  * cross-field rules (platform matching the source URL, justification of a
  * legal review flag) depend on the stored draft and stay in the route.
  */

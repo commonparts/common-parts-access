@@ -42,7 +42,7 @@ export type PartRequestCount = RpcRow<'fetch_part_request_counts'>;
 export type PartStatus = 'draft' | 'published' | 'archived';
 
 export type PartOriginType = 'original' | 'curated' | 'manufacturer';
-export type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
+type PartVerificationStatus = 'unverified' | 'author_tested' | 'community_validated' | 'certified';
 export type PartFileHostingType = 'hosted' | 'link_out';
 
 // The jsonb shapes are the output types of the schemas that validate them on

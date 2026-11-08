@@ -1,10 +1,11 @@
 import { useLocale, useTranslations } from "next-intl"
 import * as React from "react"
+import { usePublishForm } from '@/hooks/use-publish-form'
+import type { PublishFormContext } from '@/lib/publish/form'
 import { STORAGE_BUCKETS } from "@/constants/app"
 import { VALIDATION_LIMITS } from "@/lib/utils/constants"
 import { createClient } from "@/lib/supabase/client"
 import { toStorageReference } from "@/lib/storage/path-utils"
-import type { PartFileHostingType, PartOriginType, PartVerificationStatus } from "@/types/database"
 import type { SourcePlatform } from "@/types/database"
 
 export interface CategoryOption {
@@ -62,40 +63,6 @@ export interface CreateProductFormData {
   imageFile?: File | null
 }
 
-export interface PartFormData {
-  title: string
-  description: string
-  instructions: string
-  categoryId: string
-  tags: string[]
-  brandId?: string
-  productIds: string[]
-  files: File[]
-  thumbnails: File[]
-  isPublic: boolean
-  licenseId: string
-  // Attribution & License
-  originType: PartOriginType
-  sourceUrl: string
-  sourcePlatform: string
-  originalAuthor: string
-  originalAuthorUrl: string
-  verificationStatus: PartVerificationStatus
-  fileHostingType: PartFileHostingType
-  // Advanced — print metadata
-  material: string
-  color: string
-  dimensionsLength: string
-  dimensionsWidth: string
-  dimensionsHeight: string
-  dimensionsUnit: string
-  layerHeight: string
-  infill: string
-  supports: string
-  estimatedPrintTime: string
-  estimatedMaterialUsage: string
-}
-
 const emptyCreateProduct: CreateProductFormData = {
   name: "",
   brandId: "",
@@ -112,7 +79,7 @@ const emptyCreateProduct: CreateProductFormData = {
  */
 export type PartUploadFormState = ReturnType<typeof usePartUploadFormState>
 
-interface UsePartUploadFormStateOptions {
+interface UsePartUploadFormStateOptions extends PublishFormContext {
   /**
    * Selects the first license once the list loads, unless the form already
    * holds one. Off on the elsewhere track: the license at the source is
@@ -121,44 +88,15 @@ interface UsePartUploadFormStateOptions {
   preselectFirstLicense?: boolean
 }
 
+/** Loads the publication catalog and manages category/product selection and creation. */
 export function usePartUploadFormState({
   preselectFirstLicense = true,
-}: UsePartUploadFormStateOptions = {}) {
+  ...context
+}: UsePartUploadFormStateOptions) {
   const locale = useLocale()
   const t = useTranslations("CreateProductModal")
-  const [formData, setFormData] = React.useState<PartFormData>({
-    title: "",
-    description: "",
-    instructions: "",
-    categoryId: "",
-    tags: [],
-    brandId: "",
-    productIds: [],
-    files: [],
-    thumbnails: [],
-    isPublic: true,
-    licenseId: "",
-    // Attribution & License
-    originType: "original",
-    sourceUrl: "",
-    sourcePlatform: "",
-    originalAuthor: "",
-    originalAuthorUrl: "",
-    verificationStatus: "unverified",
-    fileHostingType: "hosted",
-    // Advanced — print metadata
-    material: "",
-    color: "",
-    dimensionsLength: "",
-    dimensionsWidth: "",
-    dimensionsHeight: "",
-    dimensionsUnit: "mm",
-    layerHeight: "",
-    infill: "",
-    supports: "",
-    estimatedPrintTime: "",
-    estimatedMaterialUsage: "",
-  })
+  const methods = usePublishForm(context)
+  const { formData, setValue, getValues } = methods
   const [tagInput, setTagInput] = React.useState("")
   const [categories, setCategories] = React.useState<CategoryOption[]>([])
   const [brands, setBrands] = React.useState<BrandOption[]>([])
@@ -173,7 +111,6 @@ export function usePartUploadFormState({
   const [productNames, setProductNames] = React.useState<Record<string, string>>({})
   const [loadingProducts, setLoadingProducts] = React.useState(false)
   const [loadingMeta, setLoadingMeta] = React.useState(true)
-  const [categoryPath, setCategoryPath] = React.useState<string[]>([])
   const [brandSearch, setBrandSearch] = React.useState("")
   const [productSearch, setProductSearch] = React.useState("")
   const [brandOpen, setBrandOpen] = React.useState(false)
@@ -193,6 +130,16 @@ export function usePartUploadFormState({
     })
     return map
   }, [categories])
+
+  const categoryPath = React.useMemo(() => {
+    const path: string[] = []
+    let id: string | null = formData.categoryId
+    while (id && !path.includes(id)) {
+      path.unshift(id)
+      id = categoryParentMap.get(id) ?? null
+    }
+    return path
+  }, [formData.categoryId, categoryParentMap])
 
   const categoryTreeByParent = React.useMemo(() => {
     const map = new Map<string | null, CategoryOption[]>()
@@ -236,13 +183,6 @@ export function usePartUploadFormState({
     }))
   }, [categories])
 
-  const effectiveCategoryId = React.useMemo(() => {
-    for (let i = categoryPath.length - 1; i >= 0; i -= 1) {
-      if (categoryPath[i]) return categoryPath[i]
-    }
-    return ""
-  }, [categoryPath])
-
   React.useEffect(() => {
     let cancelled = false
 
@@ -280,10 +220,7 @@ export function usePartUploadFormState({
             : []
           setLicenses(rawLicenses)
           if (preselectFirstLicense && rawLicenses.length > 0) {
-            setFormData(prev => ({
-              ...prev,
-              licenseId: prev.licenseId || rawLicenses[0].id,
-            }))
+            if (!getValues('licenseId')) setValue('licenseId', rawLicenses[0].id)
           }
         }
       } catch (error) {
@@ -303,7 +240,7 @@ export function usePartUploadFormState({
       cancelled = true
     }
     // Constant for the lifetime of a form, so the metadata loads once.
-  }, [preselectFirstLicense, locale])
+  }, [preselectFirstLicense, locale, getValues, setValue])
 
   React.useEffect(() => {
     let cancelled = false
@@ -340,24 +277,17 @@ export function usePartUploadFormState({
   }, [formData.brandId, formData.categoryId])
 
   React.useEffect(() => {
-    setFormData(prev => {
-      if (prev.categoryId === effectiveCategoryId) return prev
-      return { ...prev, categoryId: effectiveCategoryId }
-    })
-  }, [effectiveCategoryId])
-
-  React.useEffect(() => {
     if (showCreateProduct) {
       setCreateProductData(prev => ({
         ...prev,
         name: pendingProductName || prev.name,
         brandId: formData.brandId || prev.brandId,
-        categoryId: effectiveCategoryId || prev.categoryId,
+        categoryId: formData.categoryId || prev.categoryId,
       }))
       setCreateProductError(null)
       setCreatingProduct(false)
     }
-  }, [showCreateProduct, pendingProductName, formData.brandId, effectiveCategoryId])
+  }, [showCreateProduct, pendingProductName, formData.brandId, formData.categoryId])
 
   React.useEffect(() => {
     if (!formData.brandId) {
@@ -427,12 +357,8 @@ export function usePartUploadFormState({
   }, [formData.productIds, productNames])
 
   const handleCategorySelect = (level: number, value: string) => {
-    setCategoryPath(prev => {
-      const next = [...prev]
-      next[level] = value
-      return next.slice(0, level + 1)
-    })
-    setFormData(prev => ({ ...prev, productIds: [] }))
+    setValue('categoryId', value || categoryPath[level - 1] || '')
+    setValue('productIds', [])
   }
 
   const handleOpenCreateProduct = (name: string) => {
@@ -446,17 +372,7 @@ export function usePartUploadFormState({
   }
 
   const setCategoryPathFromCategoryId = (categoryId?: string | null) => {
-    if (!categoryId) return
-    const path: string[] = []
-    let current: string | null | undefined = categoryId
-    let safety = 0
-    while (current) {
-      path.push(current)
-      current = categoryParentMap.get(current) ?? null
-      safety += 1
-      if (safety > 50) break
-    }
-    setCategoryPath(path.reverse())
+    if (categoryId) setValue('categoryId', categoryId)
   }
 
   const handleCreateProductSubmit = async () => {
@@ -538,14 +454,10 @@ export function usePartUploadFormState({
           return next.sort((a, b) => a.name.localeCompare(b.name))
         })
 
-        setFormData(prev => ({
-          ...prev,
-          brandId: product.brand_id ?? prev.brandId,
-          categoryId: product.category_id ?? prev.categoryId,
-          productIds: prev.productIds.includes(product.id)
-            ? prev.productIds
-            : [...prev.productIds, product.id],
-        }))
+        setValue('brandId', product.brand_id ?? getValues('brandId'))
+        setValue('categoryId', product.category_id ?? getValues('categoryId'))
+        const linked = getValues('productIds')
+        if (!linked.includes(product.id)) setValue('productIds', [...linked, product.id])
 
         setCategoryPathFromCategoryId(product.category_id)
         setShowCreateProduct(false)
@@ -563,52 +475,22 @@ export function usePartUploadFormState({
     setCreateProductData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleFilesSelect = (files: File[]) => {
-    setFormData(prev => ({ ...prev, files }))
+  const addProduct = (id: string): void => {
+    const ids = getValues('productIds')
+    if (ids.length < VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT && !ids.includes(id)) setValue('productIds', [...ids, id])
+    setProductSearch('')
   }
 
-  const handleThumbnailsSelect = (thumbnails: File[]) => {
-    setFormData(prev => ({ ...prev, thumbnails }))
+  const removeProduct = (id: string): void => setValue('productIds', getValues('productIds').filter(pid => pid !== id))
+  const addTag = (tag: string): void => {
+    const tags = getValues('tags')
+    if (tag.trim() && !tags.includes(tag.trim())) setValue('tags', [...tags, tag.trim()])
+    setTagInput('')
   }
-
-  const addProduct = (id: string) => {
-    setFormData(prev => {
-      if (prev.productIds.length >= VALIDATION_LIMITS.PART.PRODUCTS_MAX_COUNT) return prev
-      return {
-        ...prev,
-        productIds: prev.productIds.includes(id) ? prev.productIds : [...prev.productIds, id],
-      }
-    })
-    setProductSearch("")
-  }
-
-  const removeProduct = (id: string) => {
-    setFormData(prev => ({
-      ...prev,
-      productIds: prev.productIds.filter(pid => pid !== id),
-    }))
-  }
-
-  const addTag = (tag: string) => {
-    if (tag.trim() && !formData.tags.includes(tag.trim())) {
-      setFormData(prev => ({
-        ...prev,
-        tags: [...prev.tags, tag.trim()],
-      }))
-    }
-    setTagInput("")
-  }
-
-  const removeTag = (tagToRemove: string) => {
-    setFormData(prev => ({
-      ...prev,
-      tags: prev.tags.filter(tag => tag !== tagToRemove),
-    }))
-  }
+  const removeTag = (tag: string): void => setValue('tags', getValues('tags').filter(value => value !== tag))
 
   return {
-    formData,
-    setFormData,
+    ...methods,
     tagInput,
     setTagInput,
     categories,
@@ -641,8 +523,6 @@ export function usePartUploadFormState({
     createProductError,
     creatingProduct,
     setCategoryPathFromCategoryId,
-    handleFilesSelect,
-    handleThumbnailsSelect,
     addProduct,
     removeProduct,
     addTag,
