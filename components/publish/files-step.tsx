@@ -116,7 +116,7 @@ export function FilesStep({
               <FileUploader
                 accept={FILE_TYPES.MODEL_FILES.join(',')}
                 multiple
-                onFilesSelect={form.handleFilesSelect}
+                onFilesSelect={(files) => form.setValue('files', files)}
               />
               {formData.files.length > 0 && (
                 <p className="text-sm text-text-secondary">
@@ -133,7 +133,7 @@ export function FilesStep({
               accept={FILE_TYPES.IMAGE_FILES.join(',')}
               multiple
               disabled={importingImages}
-              onFilesSelect={form.handleThumbnailsSelect}
+              onFilesSelect={(files) => form.setValue('thumbnails', files)}
             />
             {formData.thumbnails.length > 0 && (
               <p className="text-sm text-text-secondary">

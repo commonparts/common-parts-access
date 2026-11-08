@@ -1,16 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { useFormatter, useTranslations } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import { useRouter } from '@/i18n/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Alert } from '@/components/ui/alert'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
-import { NativeSelect } from '@/components/ui/native-select'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Stepper } from '@/components/ui/stepper'
+import { OriginalOriginStep } from '@/components/publish/original-origin-step'
 import { CreateProductModal } from '@/components/forms/create-product-modal'
 import { CompatibilityStep } from '@/components/publish/compatibility-step'
 import { DetailsStep } from '@/components/publish/details-step'
@@ -19,7 +15,6 @@ import { ReviewStep } from '@/components/publish/review-step'
 import { StepNav } from '@/components/publish/step-nav'
 import { usePartUploadFormState } from '@/hooks/use-part-upload-form-state'
 import { StorageUploadError, uploadFilesFromClient } from '@/lib/storage/client-upload'
-import { ATTESTATION_CLAUSES } from '@/lib/upload/attestation'
 import { originalTrackBlockers } from '@/lib/publish/blockers'
 import {
   PUBLISH_STEPS,
@@ -29,7 +24,8 @@ import {
 } from '@/lib/publish/steps'
 import { isHostableLicense } from '@/lib/utils/licenses'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
-import { serializePartMetadata } from '@/lib/utils/part-metadata'
+import { draftFormValues } from '@/lib/publish/hydration'
+import { publishPublication } from '@/lib/actions/publish'
 
 interface OriginalTrackProps {
   /** Existing draft to resume, or null to start a new part. */
@@ -37,10 +33,6 @@ interface OriginalTrackProps {
   /** Called when the session ends (published or saved for later). */
   onExit: () => void
 }
-
-/** Formats a nullable number from the draft into a form input string. */
-const numToStr = (value: number | null | undefined): string =>
-  value === null || value === undefined ? '' : String(value)
 
 /**
  * The original track (issue #293, restructured in #302): a contributor
@@ -52,33 +44,26 @@ const numToStr = (value: number | null | undefined): string =>
  * the upload endpoints reject a payload that tries to set any of them.
  */
 export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrackProps) {
-  const t = useTranslations('OriginalTrack')
   const flow = useTranslations('PublishFlow')
   const steps = useTranslations('PublishSteps')
-  const attestation = useTranslations('Attestation')
-  const format = useFormatter()
   const router = useRouter()
-  const form = usePartUploadFormState()
-  const { formData, setFormData } = form
-
   const [step, setStep] = React.useState<PublishStepIndex>(PUBLISH_STEPS.ORIGIN)
   const [draftId, setDraftId] = React.useState<string | null>(initialDraftId)
+  const form = usePartUploadFormState({ track: 'original', step, draftId, preselectFirstLicense: true })
+  const { formData, setValue, reset, setFormError: setError, error, saving } = form
   const [draftSlug, setDraftSlug] = React.useState<string | null>(null)
   const [userId, setUserId] = React.useState<string | null>(null)
   const [hydrating, setHydrating] = React.useState(Boolean(initialDraftId))
 
   // A draft only exists because the declaration was made, so a resumed
   // session starts attested and the checkbox is only live on a new part.
-  const [attested, setAttested] = React.useState(Boolean(initialDraftId))
+  const { attested } = formData
   const [attestedAt, setAttestedAt] = React.useState<string | null>(null)
 
   const [modelFileCount, setModelFileCount] = React.useState(0)
   // Registered image URLs in canonical order (index 0 is the thumbnail).
   const [imageUrls, setImageUrls] = React.useState<string[]>([])
   const [uploadingFiles, setUploadingFiles] = React.useState(false)
-
-  const [saving, setSaving] = React.useState(false)
-  const [error, setError] = React.useState<string | null>(null)
 
   const [publishing, setPublishing] = React.useState(false)
   const [publishBlockers, setPublishBlockers] = React.useState<string[]>([])
@@ -107,31 +92,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
         const draft = json.draft
         setDraftSlug(draft.slug)
-        setFormData((prev) => ({
-          ...prev,
-          title: draft.name ?? '',
-          description: draft.description ?? '',
-          instructions: draft.instructions ?? '',
-          categoryId: draft.category_id ?? '',
-          productIds: Array.isArray(draft.product_ids) ? draft.product_ids : [],
-          licenseId: draft.license_id ?? '',
-          tags: Array.isArray(draft.tags) ? draft.tags : [],
-          // The draft stores dimensions/print_settings as objects and the
-          // estimates as numbers; the form holds each as a flat string.
-          material: draft.material ?? '',
-          color: draft.color ?? '',
-          dimensionsLength: numToStr(draft.dimensions?.length),
-          dimensionsWidth: numToStr(draft.dimensions?.width),
-          dimensionsHeight: numToStr(draft.dimensions?.height),
-          dimensionsUnit: draft.dimensions?.unit ?? 'mm',
-          layerHeight: numToStr(draft.print_settings?.layer_height),
-          infill: numToStr(draft.print_settings?.infill),
-          supports: draft.print_settings?.supports ?? '',
-          estimatedPrintTime: numToStr(draft.estimated_print_time),
-          estimatedMaterialUsage: numToStr(draft.estimated_material_usage),
-        }))
-        form.setCategoryPathFromCategoryId(draft.category_id)
-        setAttested(draft.originality_attested === true)
+        reset(draftFormValues(draft))
         setAttestedAt(draft.originality_attested_at ?? null)
         setModelFileCount(draft.model_file_count ?? 0)
         const images = Array.isArray(draft.images)
@@ -175,98 +136,25 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
     if (!formData.licenseId || form.licenses.length === 0) return
     const license = form.licenses.find((l) => l.id === formData.licenseId)
     if (license && !isHostableLicense(license)) {
-      setFormData((prev) => ({ ...prev, licenseId: '' }))
+      setValue('licenseId', '')
     }
-  }, [formData.licenseId, form.licenses, setFormData])
+  }, [formData.licenseId, form.licenses, setValue])
 
-  const patchDraft = React.useCallback(
-    async (body: Record<string, unknown>): Promise<boolean> => {
-      if (!draftId) return false
-      const res = await fetch(`/api/upload/drafts/${draftId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      if (!res.ok) {
-        const json = await res.json().catch(() => ({}))
-        setError(json.error || flow('saveFailed'))
-        return false
-      }
-      return true
-    },
-    [draftId, flow],
-  )
-
-  /** Persists the data owned by the given step. Returns false on failure. */
-  const saveStep = React.useCallback(
-    async (stepIndex: PublishStepIndex): Promise<boolean> => {
-      setError(null)
-      setSaving(true)
-      try {
-        if (stepIndex === PUBLISH_STEPS.ORIGIN) {
-          if (draftId) {
-            return await patchDraft({
-              title: formData.title,
-              categoryId: formData.categoryId,
-              licenseId: formData.licenseId,
-            })
-          }
-          const res = await fetch('/api/upload/drafts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              title: formData.title,
-              categoryId: formData.categoryId,
-              licenseId: formData.licenseId,
-              attested,
-            }),
-          })
-          const json = await res.json().catch(() => ({}))
-          if (!res.ok) {
-            setError(json.error || flow('createFailed'))
-            return false
-          }
-          setDraftId(json.draft.id)
-          setDraftSlug(json.draft.slug)
-          return true
-        }
-
-        // The Files step writes through the file-registration endpoint at
-        // upload time, so there is nothing left to persist on transition.
-
-        if (stepIndex === PUBLISH_STEPS.DETAILS) {
-          return await patchDraft({
-            description: formData.description,
-            instructions: formData.instructions,
-            tags: formData.tags,
-            ...serializePartMetadata(formData),
-          })
-        }
-
-        if (stepIndex === PUBLISH_STEPS.COMPATIBILITY) {
-          return await patchDraft({
-            productIds: formData.productIds,
-          })
-        }
-
-        return true
-      } catch {
-        setError(flow('saveFailed'))
-        return false
-      } finally {
-        setSaving(false)
-      }
-    },
-    [draftId, formData, attested, patchDraft, flow],
-  )
+  const saveStep = async (): Promise<boolean> => {
+    const result = await form.submit((draft) => {
+      setDraftId(draft.id)
+      setDraftSlug(draft.slug)
+    })
+    return result.ok
+  }
 
   const goTo = async (nextStep: PublishStepIndex) => {
-    const ok = await saveStep(step)
+    const ok = await saveStep()
     if (ok) setStep(nextStep)
   }
 
   const saveAndExit = async () => {
-    const ok = await saveStep(step)
+    const ok = await saveStep()
     if (ok) onExit()
   }
 
@@ -296,7 +184,8 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
       }
       setModelFileCount((count) => count + uploads.modelFiles.length)
       if (Array.isArray(json.images)) setImageUrls(json.images)
-      setFormData((prev) => ({ ...prev, files: [], thumbnails: [] }))
+      setValue('files', [])
+      setValue('thumbnails', [])
     } catch (err) {
       setError(err instanceof StorageUploadError ? flow('uploadFailedFile', { name: err.fileName }) : flow('uploadFailed'))
     } finally {
@@ -311,28 +200,22 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
     setError(null)
     try {
       // Persist any pending step edits before the server-side gate runs.
-      const saved = await saveStep(step)
+      const saved = await saveStep()
       if (!saved) return
 
-      const res = await fetch(`/api/upload/drafts/${draftId}/publish`, { method: 'POST' })
-      const json = await res.json().catch(() => ({}))
-      if (!res.ok) {
-        if (Array.isArray(json.blockers)) setPublishBlockers(json.blockers)
-        setError(json.error || flow('publishFailed'))
+      const result = await publishPublication({ track: 'original', id: draftId })
+      if (!result.ok) {
+        setPublishBlockers(result.blockers ?? [])
+        setError(result.error)
         return
       }
-      router.push(`/parts/${json.slug}`)
+      router.push(`/parts/${result.data.slug}`)
     } catch {
       setError(flow('publishFailed'))
     } finally {
       setPublishing(false)
     }
   }
-
-  const hostableLicenses = React.useMemo(
-    () => form.licenses.filter(isHostableLicense),
-    [form.licenses],
-  )
 
   // The storage path needs the draft and the owner id, and the owner id
   // arrives from an async auth call — so there is a window on the Files step
@@ -372,108 +255,7 @@ export function OriginalTrack({ draftId: initialDraftId, onExit }: OriginalTrack
 
       {step === PUBLISH_STEPS.ORIGIN && (
         <div className="space-y-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{steps('origin')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-md">
-              <div className="space-y-2xs">
-                <Label htmlFor="original-title">{flow('title')}</Label>
-                <Input
-                  id="original-title"
-                  value={formData.title}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder={flow('titlePlaceholder')}
-                  maxLength={VALIDATION_LIMITS.PART.TITLE_MAX_LENGTH}
-                  required
-                />
-              </div>
-
-              <div className="space-y-2xs">
-                <Label>{flow('category')}</Label>
-                <div className="grid grid-cols-1 gap-sm md:grid-cols-3">
-                  {form.categoryLevels.map((level, idx) => (
-                    <NativeSelect
-                      key={level.parentId ?? `root-${idx}`}
-                      value={form.categoryPath[idx] ?? ''}
-                      onChange={(e) => form.handleCategorySelect(idx, e.target.value)}
-                      disabled={form.loadingMeta}
-                      required={idx === 0}
-                    >
-                      <option value="">
-                        {form.loadingMeta
-                          ? flow('loadingCategories')
-                          : idx === 0
-                            ? flow('selectCategory')
-                            : flow('refineCategory')}
-                      </option>
-                      {level.options.map((cat) => (
-                        <option key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </option>
-                      ))}
-                    </NativeSelect>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2xs">
-                <Label htmlFor="original-license">{flow('license')}</Label>
-                <NativeSelect
-                  id="original-license"
-                  value={formData.licenseId}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, licenseId: e.target.value }))}
-                  disabled={form.loadingMeta}
-                  required
-                >
-                  <option value="">
-                    {form.loadingMeta ? flow('loadingLicenses') : t('selectLicense')}
-                  </option>
-                  {hostableLicenses.map((license) => (
-                    <option key={license.id} value={license.id}>
-                      {flow('licenseOption', { shortName: license.shortName, name: license.name })}
-                    </option>
-                  ))}
-                </NativeSelect>
-                <p className="text-sm text-text-secondary">{t('licenseHint')}</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">{attestation('title')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-sm">
-              <ul className="space-y-2xs text-sm text-text-secondary">
-                {ATTESTATION_CLAUSES.map((clause) => (
-                  <li key={clause} className="flex gap-2xs">
-                    <span aria-hidden="true">{'—'}</span>
-                    <span>{attestation(`clauses.${clause}`)}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="flex items-start gap-sm">
-                <Checkbox
-                  id="original-attested"
-                  checked={attested}
-                  onCheckedChange={(checked) => setAttested(Boolean(checked))}
-                  disabled={Boolean(draftId)}
-                  aria-label={attestation('summary')}
-                />
-                <Label htmlFor="original-attested" className="text-text-primary">
-                  {attestation('summary')}
-                </Label>
-              </div>
-              {draftId && (
-                <p className="text-sm text-text-secondary">
-                  {attestedAt
-                    ? attestation('recordedOn', { date: format.dateTime(new Date(attestedAt), { dateStyle: 'long' }) })
-                    : attestation('recorded')}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+          <OriginalOriginStep form={form} draftId={draftId} attestedAt={attestedAt} />
 
           <StepNav
             onBack={onExit}

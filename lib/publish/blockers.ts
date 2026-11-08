@@ -7,8 +7,8 @@ import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 /**
  * Local mirrors of the two publish gates (issue #302).
  *
- * Neither of these enforces anything: `POST /api/upload/drafts/[id]/publish`
- * and `POST /api/curation/drafts/[id]/publish` re-validate everything
+ * Neither of these enforces anything: the `publishPublication` Server Action
+ * re-validates everything
  * server-side and remain the only authority. These functions exist so the tool
  * can say what is missing *before* the round trip, and — because each blocker
  * carries the step that owns it — so a resumed draft can open on the first

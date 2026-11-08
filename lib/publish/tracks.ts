@@ -3,9 +3,8 @@
  * (issue #303).
  *
  * The tracks map one-to-one onto the two unchanged engines: `original` onto
- * `/api/upload/**` (`origin_type = 'original'`), `elsewhere` onto
- * `/api/curation/**` (`origin_type = 'curated'`). Unifying the entry point
- * does not merge them — the scoping that keeps each set of endpoints unable to
+ * `origin_type = 'original'`, `elsewhere` onto `origin_type = 'curated'`. Unifying the entry point
+ * does not merge them — the scoping that keeps each set of queries unable to
  * touch the other's drafts is what makes cross-track mutation impossible, and
  * it stays.
  */
