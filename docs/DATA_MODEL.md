@@ -100,6 +100,10 @@ All four columns are server-owned: clients may only write `part_id` and `product
 ### `categories`
 A tree: `parent_id`, `level`, and a materialized `path` ending with a slash (`/kitchen/cooker/`), used for subtree prefix checks. Also `name` (English), `name_fr` (French, nullable, never blank: `categories_name_fr_not_blank`; #502), `slug` (the same in every locale), `description`, `icon`. See [I18N.md](./I18N.md#category-names).
 
+`ords_category_id` is a nullable integer holding the [Open Repair Data Standard v0.3 product category ID](https://standard.openrepair.org/standard.html#product-category-values) (#323). The migration maps categories containing published parts: vacuums and their subtypes → 34, headphones → 11, laptops → 16, clippers and shavers → 9, pressure washers → 24, and desk/work lamps → 15. Cars, bikes, non-electrical furniture, mixed navigation groupings and categories not yet mapped stay null; mappings are explicit, never inherited from a parent. Lamps are electrical products within ORDS scope even though they sit under Furniture. Existing category read policies and grants cover the column.
+
+Future data exports must include `ords_category_id` alongside the local category name/slug, preserving null for unmapped or out-of-scope categories rather than replacing it with ORDS Misc (18). No data export endpoint is implemented.
+
 ### `licenses`
 `spdx_id`, `name`, `short_name`, `url`, and the flags `allows_redistribution`, `requires_attribution`, `allows_commercial`, `is_copyleft`, which drive hosting eligibility (`isHostableLicense` in `lib/utils/licenses.ts`).
 

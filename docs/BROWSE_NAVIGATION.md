@@ -33,6 +33,7 @@ Navigation shows only what has something to offer (#312, #321):
 - **The hub degrades**: if the navigation function is unavailable, `/browse` renders an empty navigation (the sections hide themselves) and keeps the parts grid.
 - **Grid filters** (category, brand, product, sort) are exploration tools. The grid defaults to newest first; there is no download-based sort (#373). The "Most liked" sort is hidden with the social features flag (#322).
 - **Category names** are in the locale of the page: the navigation functions take `p_locale` and order names in that locale, and the brand listings localize the embedded category (#502, see [I18N.md](./I18N.md#category-names)). Slugs do not change with the locale.
+- **ORDS mappings** (#323): product categories containing parts within the standard's scope carry `categories.ords_category_id` (see [DATA_MODEL.md](./DATA_MODEL.md#categories)). The shared footer links to the Open Repair Data Standard in English and French and states its use for category mappings; this does not claim compliance with the full repair-event standard.
 - All navigation functions are `SECURITY INVOKER` and filter on `parts.status = 'published'`, so anonymous and signed-in visitors see identical counts.
 
 ## Key files
