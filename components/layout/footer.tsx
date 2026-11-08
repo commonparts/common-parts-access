@@ -102,7 +102,7 @@ export function Footer() {
                 ),
               })}
             </p>
-            <p>
+            <p className="basis-full">
               {t.rich("ords", {
                 standard: (chunks) => (
                   <a href="https://standard.openrepair.org/" className={footerLinkClassName}>
