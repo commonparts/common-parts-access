@@ -182,6 +182,7 @@ export function ElsewhereOriginStep({ form, draftId, duplicate, checkingSource, 
             <NativeSelect
               id="elsewhere-license"
               {...form.register('licenseId')}
+              value={formData.licenseId}
               required
             >
               <option value="">

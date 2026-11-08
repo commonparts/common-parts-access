@@ -79,6 +79,7 @@ export function OriginalOriginStep({ form, draftId, attestedAt }: OriginalOrigin
             <NativeSelect
               id="original-license"
               {...form.register('licenseId')}
+              value={formData.licenseId}
               disabled={form.loadingMeta}
               required
             >

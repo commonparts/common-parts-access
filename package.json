@@ -47,6 +47,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.2.1",
     "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
     "knip": "^6.44.1",
     "postcss": "^8",
     "tailwindcss": "^4.3.4",
