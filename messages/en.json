@@ -104,7 +104,8 @@
       "contact": "Contact",
       "privacy": "Privacy policy",
       "terms": "Terms of use",
-      "legalNotice": "Legal notice"
+      "legalNotice": "Legal notice",
+      "support": "Support hosting"
     },
     "licenses": "Code under <code>{codeLicense}</code>. Data under <data>{dataLicense}</data>.",
     "ords": "Uses the <standard>Open Repair Data Standard (ORDS)</standard> for product category mappings.",
@@ -1231,5 +1232,20 @@
     "placeholder": "Type to search…",
     "empty": "No options found",
     "create": "Create: {value}"
+  },
+  "SupportPage": {
+    "title": "Support Common Parts",
+    "intro": "Help keep spare parts accessible and everyday objects in use. Contributions help cover the operating costs of Common Parts.",
+    "donate": "Support on Leetchi",
+    "pending": "The Leetchi fundraiser is not available yet. Please check back soon.",
+    "budget": "Monthly operating budget",
+    "forecast": "An estimate of the monthly costs to keep Common Parts running, in euros.",
+    "railway": "Railway · usage forecast",
+    "supabase": "Supabase · monthly cost",
+    "domain": "Domain · annual cost ÷ 12",
+    "total": "Estimated monthly total",
+    "unavailable": "Unavailable",
+    "method": "Railway projects usage through the end of its current billing period, refreshed hourly and converted from USD using a manually maintained exchange rate. Supabase and domain costs are entered manually.",
+    "exclusions": "This is a usage budget, not an invoice or a donation target. Railway subscription fees, credits and taxes are excluded. The total is unavailable until every cost is known."
   }
 }

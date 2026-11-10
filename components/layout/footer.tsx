@@ -9,6 +9,7 @@ type FooterLinkKey =
   | "commonParts"
   | "github"
   | "contribute"
+  | "support"
   | "contact"
   | "privacy"
   | "terms"
@@ -33,6 +34,7 @@ const footerColumns: FooterColumn[] = [
     title: "resources",
     links: [
       { key: "contribute", href: "/contributing" },
+      { key: "support", href: "/support" },
       { key: "contact", href: "mailto:contact@commonparts.org" },
       { key: "privacy", href: "/privacy" },
       { key: "terms", href: "/terms" },

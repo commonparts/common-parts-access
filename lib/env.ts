@@ -23,6 +23,8 @@ const optionalString = z
   .optional()
   .transform((value) => value || undefined)
 
+const optionalAmount = optionalString.pipe(z.coerce.number<string>().finite().nonnegative().optional())
+
 const serverEnvSchema = publicEnvSchema.extend({
   /**
    * Secret key acting as the service role. Optional: without it the features
@@ -34,6 +36,15 @@ const serverEnvSchema = publicEnvSchema.extend({
   CURATOR_USER_IDS: optionalString,
   /** Thingiverse app token; unset disables the extractor and the image import. */
   THINGIVERSE_APP_TOKEN: optionalString,
+  RAILWAY_API_TOKEN: optionalString,
+  RAILWAY_PROJECT_ID: optionalString,
+  SUPPORT_USD_TO_EUR: optionalString.pipe(z.coerce.number<string>().finite().positive().optional()),
+  SUPPORT_SUPABASE_MONTHLY_EUR: optionalAmount,
+  SUPPORT_DOMAIN_ANNUAL_EUR: optionalAmount,
+  SUPPORT_LEETCHI_URL: optionalString.pipe(z.url().refine((value) => {
+    const url = new URL(value)
+    return url.protocol === 'https:' && ['leetchi.com', 'www.leetchi.com'].includes(url.hostname)
+  }).optional()),
 })
 
 type ServerEnv = z.infer<typeof serverEnvSchema>
@@ -48,7 +59,7 @@ export function serverEnv<Name extends keyof ServerEnv>(name: Name): ServerEnv[N
   // Cast: `shape[name]` is the schema whose output is `ServerEnv[name]` by
   // construction, but TypeScript cannot relate an indexed schema to the
   // indexed output of the same key.
-  const schema = serverEnvSchema.shape[name] as z.ZodType<ServerEnv[Name]>
+  const schema = serverEnvSchema.shape[name] as unknown as z.ZodType<ServerEnv[Name]>
   const result = schema.safeParse(process.env[name])
   if (!result.success) {
     throw new Error(`Invalid environment configuration: set ${name} (${result.error.issues[0]?.message})`)
