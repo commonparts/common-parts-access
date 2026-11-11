@@ -1017,6 +1017,9 @@
     "signIn": "Sign in"
   },
   "ForgotPasswordForm": {
+    "rejectedLinkTitle": "This password reset link is expired or invalid",
+    "rejectedLinkDescription": "Enter your email address to receive a new link.",
+    "resend": "Send a new link",
     "sentTitle": "Check your email",
     "sentDescription": "Password reset instructions sent",
     "sentBody": "If you registered using your email and password, you will receive a password reset email.",

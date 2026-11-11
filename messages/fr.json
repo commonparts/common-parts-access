@@ -1017,6 +1017,9 @@
     "signIn": "Se connecter"
   },
   "ForgotPasswordForm": {
+    "rejectedLinkTitle": "Ce lien de réinitialisation a expiré ou est invalide",
+    "rejectedLinkDescription": "Saisissez votre adresse e-mail pour recevoir un nouveau lien.",
+    "resend": "Envoyer un nouveau lien",
     "sentTitle": "Consultez vos e-mails",
     "sentDescription": "Instructions de réinitialisation envoyées",
     "sentBody": "Si vous vous êtes inscrit avec votre e-mail et un mot de passe, vous recevrez un e-mail de réinitialisation du mot de passe.",

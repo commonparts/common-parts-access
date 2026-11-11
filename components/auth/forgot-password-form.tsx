@@ -17,10 +17,19 @@ import { authErrorKey } from "@/lib/utils/auth-errors";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 
+interface ForgotPasswordFormProps extends React.ComponentPropsWithoutRef<"div"> {
+  rejectedLink?: boolean;
+}
+
+/**
+ * Requests a password reset email. Set `rejectedLink` after an expired or invalid
+ * reset link so the form explains the rejection and offers a new link.
+ */
 export function ForgotPasswordForm({
   className,
+  rejectedLink = false,
   ...props
-}: React.ComponentPropsWithoutRef<"div">) {
+}: ForgotPasswordFormProps): React.JSX.Element {
   const t = useTranslations("ForgotPasswordForm");
   const auth = useTranslations("AuthForms");
   const errors = useTranslations("AuthErrors");
@@ -61,8 +70,8 @@ export function ForgotPasswordForm({
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
-            <CardDescription>{t("description")}</CardDescription>
+            <CardTitle className="text-heading-sm">{t(rejectedLink ? "rejectedLinkTitle" : "title")}</CardTitle>
+            <CardDescription>{t(rejectedLink ? "rejectedLinkDescription" : "description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleForgotPassword}>
@@ -80,7 +89,7 @@ export function ForgotPasswordForm({
                 </div>
                 {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? t("submitting") : t("submit")}
+                  {isLoading ? t("submitting") : t(rejectedLink ? "resend" : "submit")}
                 </Button>
               </div>
               <div className="mt-md text-center text-caption">
