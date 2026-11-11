@@ -21,6 +21,10 @@ interface ForgotPasswordFormProps extends React.ComponentPropsWithoutRef<"div"> 
   rejectedLink?: boolean;
 }
 
+/**
+ * Requests a password reset email. Set `rejectedLink` after an expired or invalid
+ * reset link so the form explains the rejection and offers a new link.
+ */
 export function ForgotPasswordForm({
   className,
   rejectedLink = false,
