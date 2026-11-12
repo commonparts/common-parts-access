@@ -56,13 +56,11 @@ export async function getSupportBudget(): Promise<{
   railway: number | null
   supabase: number | null
   total: number
-  leetchiUrl: string | undefined
 }> {
   const railway = await railwayForecast()
   const supabase = serverEnv('SUPPORT_SUPABASE_MONTHLY_EUR') ?? null
   return {
     railway, supabase,
     total: (railway ?? 0) + (supabase ?? 0),
-    leetchiUrl: serverEnv('SUPPORT_LEETCHI_URL'),
   }
 }

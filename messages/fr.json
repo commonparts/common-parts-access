@@ -1233,6 +1233,7 @@
     "create": "Créer : {value}"
   },
   "SupportPage": {
+    "loading": "Chargement du budget…",
     "title": "Soutenir Common Parts",
     "intro": "Aidez à rendre les pièces détachées accessibles et à prolonger la vie des objets du quotidien. Les contributions participent aux frais de fonctionnement de Common Parts.",
     "donate": "Soutenir sur Leetchi",

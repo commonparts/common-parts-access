@@ -83,7 +83,7 @@ describe('support configuration', () => {
   })
 
   it('accepts only HTTPS Leetchi fundraiser URLs', () => {
-    for (const url of ['javascript:alert(1)', 'https://leetchi.com.evil.test/fund', 'http://leetchi.com/fund']) {
+    for (const url of ['not-a-url', 'https://', 'javascript:alert(1)', 'https://leetchi.com.evil.test/fund', 'http://leetchi.com/fund']) {
       vi.stubEnv('SUPPORT_LEETCHI_URL', url)
       expect(() => serverEnv('SUPPORT_LEETCHI_URL')).toThrow(/SUPPORT_LEETCHI_URL/)
     }

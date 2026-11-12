@@ -2,7 +2,7 @@
 
 `/en/support` and `/fr/support` are accessible by direct URL only, with no footer link, and carry noindex/nofollow metadata while hidden. They show a Leetchi donation button when `SUPPORT_LEETCHI_URL` is set to an HTTPS Leetchi URL; otherwise they explain that the fundraiser is not yet available. No payment is handled by Common Parts.
 
-The monthly budget is fetched in a Server Component, with no database writes or new API route. Configure these server-only variables:
+The monthly budget streams within a Suspense boundary with a localized loading message, so external API calls do not delay the fundraiser link. It is fetched in a Server Component, with no database writes or new API route. Configure these server-only variables:
 
 | Variable | Value |
 |---|---|

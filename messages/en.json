@@ -1233,6 +1233,7 @@
     "create": "Create: {value}"
   },
   "SupportPage": {
+    "loading": "Loading budget…",
     "title": "Support Common Parts",
     "intro": "Help keep spare parts accessible and everyday objects in use. Contributions help cover the operating costs of Common Parts.",
     "donate": "Support on Leetchi",

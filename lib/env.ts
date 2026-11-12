@@ -39,10 +39,7 @@ const serverEnvSchema = publicEnvSchema.extend({
   RAILWAY_API_TOKEN: optionalString,
   RAILWAY_PROJECT_ID: optionalString,
   SUPPORT_SUPABASE_MONTHLY_EUR: optionalAmount,
-  SUPPORT_LEETCHI_URL: optionalString.pipe(z.url().refine((value) => {
-    const url = new URL(value)
-    return url.protocol === 'https:' && ['leetchi.com', 'www.leetchi.com'].includes(url.hostname)
-  }).optional()),
+  SUPPORT_LEETCHI_URL: optionalString.pipe(z.url({ protocol: /^https$/, hostname: /^(www\.)?leetchi\.com$/ }).optional()),
 })
 
 type ServerEnv = z.infer<typeof serverEnvSchema>
