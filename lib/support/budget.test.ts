@@ -39,7 +39,7 @@ describe('support budget', () => {
   ])('keeps unavailable forecasts out of the total: %j', async (body) => {
     configure()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body)))
-    expect(await getSupportBudget()).toMatchObject({ railway: null, total: null, supabase: 25 })
+    expect(await getSupportBudget()).toMatchObject({ railway: null, total: 25, supabase: 25 })
   })
 
   it('keeps the euro forecast unavailable when conversion fails', async () => {
@@ -47,14 +47,30 @@ describe('support budget', () => {
     vi.mocked(getUsdToEurRate).mockResolvedValueOnce(null)
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
-    expect(await getSupportBudget()).toMatchObject({ railway: null, total: null, supabase: 25 })
+    expect(await getSupportBudget()).toMatchObject({ railway: null, total: 25, supabase: 25 })
     expect(fetcher).not.toHaveBeenCalled()
   })
 
   it('handles network failure without losing manual costs', async () => {
     configure()
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('timeout')))
-    expect(await getSupportBudget()).toMatchObject({ railway: null, total: null })
+    expect(await getSupportBudget()).toMatchObject({ railway: null, total: 25 })
+  })
+
+  it('totals Railway when Supabase is unavailable', async () => {
+    configure()
+    vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ data: { estimatedUsage: [
+      { measurement: 'CPU_USAGE', estimatedValue: 43200 },
+    ] } })))
+    expect(await getSupportBudget()).toMatchObject({ railway: 18, supabase: null, total: 18 })
+  })
+
+  it('totals zero when both costs are unavailable', async () => {
+    configure()
+    vi.stubEnv('RAILWAY_API_TOKEN', '')
+    vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '')
+    expect(await getSupportBudget()).toMatchObject({ railway: null, supabase: null, total: 0 })
   })
 
   it('does not request Railway without credentials and distinguishes blank from zero', async () => {
@@ -63,7 +79,7 @@ describe('support budget', () => {
     vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '0')
     const fetcher = vi.fn()
     vi.stubGlobal('fetch', fetcher)
-    expect(await getSupportBudget()).toMatchObject({ railway: null, supabase: 0, total: null })
+    expect(await getSupportBudget()).toMatchObject({ railway: null, supabase: 0, total: 0 })
     expect(fetcher).not.toHaveBeenCalled()
   })
 })

@@ -1244,6 +1244,6 @@
     "total": "Estimated monthly total",
     "unavailable": "Unavailable",
     "method": "Railway projects usage through the end of its current billing period, refreshed hourly and converted from USD using Frankfurter’s daily reference rate (cached for 24 hours). Supabase costs are entered manually.",
-    "exclusions": "This is a usage budget, not an invoice or a donation target. The total is unavailable until every cost is known."
+    "exclusions": "This is a usage budget, not an invoice or a donation target."
   }
 }
