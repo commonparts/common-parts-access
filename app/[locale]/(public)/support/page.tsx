@@ -33,7 +33,7 @@ export default async function SupportPage() {
               {(['railway', 'supabase', 'total'] as const).map((key) => (
                 <div key={key} className="flex flex-wrap justify-between gap-sm border-b border-border-subtle pb-sm">
                   <dt>{t(key)}</dt>
-                  <dd className="font-mono">{budget[key] === null ? t('unavailable') : format.number(budget[key], { style: 'currency', currency: 'EUR' })}</dd>
+                  <dd className="font-mono">{budget[key] === null ? t('unavailable') : `${format.number(budget[key], { minimumFractionDigits: 2, maximumFractionDigits: 2 })}\u00a0€`}</dd>
                 </div>
               ))}
             </dl>
