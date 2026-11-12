@@ -1243,7 +1243,7 @@
     "supabase": "Supabase · coût mensuel",
     "total": "Total mensuel estimé",
     "unavailable": "Indisponible",
-    "method": "Railway prévoit l’utilisation jusqu’à la fin de sa période de facturation en cours. Cette prévision est actualisée chaque heure et convertie depuis le dollar avec un taux de change maintenu manuellement. Les coûts Supabase sont saisis manuellement.",
+    "method": "Railway prévoit l’utilisation jusqu’à la fin de sa période de facturation en cours. Cette prévision est actualisée chaque heure et convertie depuis le dollar avec le taux de référence quotidien de Frankfurter (mis en cache pendant 24 heures). Les coûts Supabase sont saisis manuellement.",
     "exclusions": "Ce budget d’utilisation n’est ni une facture ni un objectif de collecte. Le total reste indisponible tant que tous les coûts ne sont pas connus."
   }
 }

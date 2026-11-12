@@ -1,14 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getSupportBudget } from './budget'
+import { getUsdToEurRate } from './exchange-rate'
 
 vi.mock('server-only', () => ({}))
+vi.mock('./exchange-rate', () => ({ getUsdToEurRate: vi.fn(async () => 0.9) }))
 
 afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
 
 function configure(): void {
   vi.stubEnv('RAILWAY_API_TOKEN', 'secret-test-token')
   vi.stubEnv('RAILWAY_PROJECT_ID', 'test-project')
-  vi.stubEnv('SUPPORT_USD_TO_EUR', '0.9')
   vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '25')
 }
 
@@ -39,6 +40,15 @@ describe('support budget', () => {
     configure()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body)))
     expect(await getSupportBudget()).toMatchObject({ railway: null, total: null, supabase: 25 })
+  })
+
+  it('keeps the euro forecast unavailable when conversion fails', async () => {
+    configure()
+    vi.mocked(getUsdToEurRate).mockResolvedValueOnce(null)
+    const fetcher = vi.fn()
+    vi.stubGlobal('fetch', fetcher)
+    expect(await getSupportBudget()).toMatchObject({ railway: null, total: null, supabase: 25 })
+    expect(fetcher).not.toHaveBeenCalled()
   })
 
   it('handles network failure without losing manual costs', async () => {

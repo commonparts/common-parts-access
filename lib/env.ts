@@ -38,7 +38,6 @@ const serverEnvSchema = publicEnvSchema.extend({
   THINGIVERSE_APP_TOKEN: optionalString,
   RAILWAY_API_TOKEN: optionalString,
   RAILWAY_PROJECT_ID: optionalString,
-  SUPPORT_USD_TO_EUR: optionalString.pipe(z.coerce.number<string>().finite().positive().optional()),
   SUPPORT_SUPABASE_MONTHLY_EUR: optionalAmount,
   SUPPORT_LEETCHI_URL: optionalString.pipe(z.url().refine((value) => {
     const url = new URL(value)

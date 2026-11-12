@@ -1,6 +1,7 @@
 import 'server-only'
 import { z } from 'zod'
 import { serverEnv } from '@/lib/env'
+import { getUsdToEurRate } from './exchange-rate'
 
 const MINUTES_PER_MONTH = 43_200
 // Railway CLI usage.rs pricing, in USD per resource unit (November 2026).
@@ -25,8 +26,9 @@ const forecastSchema = z.object({
 async function railwayForecast(): Promise<number | null> {
   const token = serverEnv('RAILWAY_API_TOKEN')
   const projectId = serverEnv('RAILWAY_PROJECT_ID')
-  const rate = serverEnv('SUPPORT_USD_TO_EUR')
-  if (!token || !projectId || !rate) return null
+  if (!token || !projectId) return null
+  const rate = await getUsdToEurRate()
+  if (rate === null) return null
   try {
     const response = await fetch('https://backboard.railway.com/graphql/v2', {
       method: 'POST',

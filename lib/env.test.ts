@@ -77,11 +77,9 @@ describe('validateServerEnv', () => {
 })
 
 describe('support configuration', () => {
-  it('rejects negative costs and invalid exchange rates', () => {
+  it('rejects negative costs', () => {
     vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '-1')
-    vi.stubEnv('SUPPORT_USD_TO_EUR', '0')
     expect(() => serverEnv('SUPPORT_SUPABASE_MONTHLY_EUR')).toThrow(/SUPPORT_SUPABASE_MONTHLY_EUR/)
-    expect(() => serverEnv('SUPPORT_USD_TO_EUR')).toThrow(/SUPPORT_USD_TO_EUR/)
   })
 
   it('accepts only HTTPS Leetchi fundraiser URLs', () => {
