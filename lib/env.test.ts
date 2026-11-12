@@ -75,3 +75,19 @@ describe('validateServerEnv', () => {
     )
   })
 })
+
+describe('support configuration', () => {
+  it('rejects negative costs', () => {
+    vi.stubEnv('SUPPORT_SUPABASE_MONTHLY_EUR', '-1')
+    expect(() => serverEnv('SUPPORT_SUPABASE_MONTHLY_EUR')).toThrow(/SUPPORT_SUPABASE_MONTHLY_EUR/)
+  })
+
+  it('accepts only HTTPS Leetchi fundraiser URLs', () => {
+    for (const url of ['not-a-url', 'https://', 'javascript:alert(1)', 'https://leetchi.com.evil.test/fund', 'http://leetchi.com/fund']) {
+      vi.stubEnv('SUPPORT_LEETCHI_URL', url)
+      expect(() => serverEnv('SUPPORT_LEETCHI_URL')).toThrow(/SUPPORT_LEETCHI_URL/)
+    }
+    vi.stubEnv('SUPPORT_LEETCHI_URL', 'https://www.leetchi.com/fr/c/test')
+    expect(serverEnv('SUPPORT_LEETCHI_URL')).toBe('https://www.leetchi.com/fr/c/test')
+  })
+})

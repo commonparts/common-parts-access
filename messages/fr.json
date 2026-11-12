@@ -1234,5 +1234,20 @@
     "placeholder": "Tapez pour rechercher…",
     "empty": "Aucune option trouvée",
     "create": "Créer : {value}"
+  },
+  "SupportPage": {
+    "loading": "Chargement du budget…",
+    "title": "Soutenir Common Parts",
+    "intro": "Aidez à rendre les pièces détachées accessibles et à prolonger la vie des objets du quotidien. Les contributions participent aux frais de fonctionnement de Common Parts.",
+    "donate": "Soutenir sur Leetchi",
+    "pending": "La cagnotte Leetchi n’est pas encore disponible. Revenez prochainement.",
+    "budget": "Budget mensuel de fonctionnement",
+    "forecast": "Une estimation des frais mensuels pour faire fonctionner Common Parts, en euros.",
+    "railway": "Railway · prévision d’utilisation",
+    "supabase": "Supabase · coût mensuel",
+    "total": "Total mensuel estimé",
+    "unavailable": "Indisponible",
+    "method": "Railway prévoit l’utilisation jusqu’à la fin de sa période de facturation en cours. Cette prévision est actualisée chaque heure et convertie depuis le dollar avec le taux de référence quotidien de Frankfurter (mis en cache pendant 24 heures). Les coûts Supabase sont saisis manuellement.",
+    "exclusions": "Ce budget d’utilisation n’est ni une facture ni un objectif de collecte."
   }
 }
