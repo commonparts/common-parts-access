@@ -9,7 +9,7 @@ import { localizedPageMetadata } from '@/lib/utils/seo'
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations('SupportPage')
-  return { title: t('title'), description: t('intro'), ...localizedPageMetadata('/support', await getLocale()) }
+  return { robots: { index: false, follow: false }, title: t('title'), description: t('intro'), ...localizedPageMetadata('/support', await getLocale()) }
 }
 
 /** Donations and the monthly operating budget share a public, localized page. */
@@ -30,7 +30,7 @@ export default async function SupportPage() {
           <CardContent className="space-y-md">
             <p className="text-text-secondary">{t('forecast')}</p>
             <dl className="space-y-sm">
-              {(['railway', 'supabase', 'domain', 'total'] as const).map((key) => (
+              {(['railway', 'supabase', 'total'] as const).map((key) => (
                 <div key={key} className="flex flex-wrap justify-between gap-sm border-b border-border-subtle pb-sm">
                   <dt>{t(key)}</dt>
                   <dd className="font-mono">{budget[key] === null ? t('unavailable') : format.number(budget[key], { style: 'currency', currency: 'EUR' })}</dd>

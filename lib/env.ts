@@ -40,7 +40,6 @@ const serverEnvSchema = publicEnvSchema.extend({
   RAILWAY_PROJECT_ID: optionalString,
   SUPPORT_USD_TO_EUR: optionalString.pipe(z.coerce.number<string>().finite().positive().optional()),
   SUPPORT_SUPABASE_MONTHLY_EUR: optionalAmount,
-  SUPPORT_DOMAIN_ANNUAL_EUR: optionalAmount,
   SUPPORT_LEETCHI_URL: optionalString.pipe(z.url().refine((value) => {
     const url = new URL(value)
     return url.protocol === 'https:' && ['leetchi.com', 'www.leetchi.com'].includes(url.hostname)

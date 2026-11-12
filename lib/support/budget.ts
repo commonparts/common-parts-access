@@ -53,17 +53,14 @@ async function railwayForecast(): Promise<number | null> {
 export async function getSupportBudget(): Promise<{
   railway: number | null
   supabase: number | null
-  domain: number | null
   total: number | null
   leetchiUrl: string | undefined
 }> {
   const railway = await railwayForecast()
   const supabase = serverEnv('SUPPORT_SUPABASE_MONTHLY_EUR') ?? null
-  const annualDomain = serverEnv('SUPPORT_DOMAIN_ANNUAL_EUR')
-  const domain = annualDomain === undefined ? null : annualDomain / 12
   return {
-    railway, supabase, domain,
-    total: railway === null || supabase === null || domain === null ? null : railway + supabase + domain,
+    railway, supabase,
+    total: railway === null || supabase === null ? null : railway + supabase,
     leetchiUrl: serverEnv('SUPPORT_LEETCHI_URL'),
   }
 }

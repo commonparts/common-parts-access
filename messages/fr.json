@@ -104,8 +104,7 @@
       "contact": "Contact",
       "privacy": "Politique de confidentialité",
       "terms": "Conditions d'utilisation",
-      "legalNotice": "Mentions légales",
-      "support": "Soutenir l’hébergement"
+      "legalNotice": "Mentions légales"
     },
     "licenses": "Code sous <code>{codeLicense}</code>. Données sous <data>{dataLicense}</data>.",
     "ords": "Utilise l’<standard>Open Repair Data Standard (ORDS)</standard> pour la correspondance des catégories de produits.",
@@ -1242,10 +1241,9 @@
     "forecast": "Une estimation des frais mensuels pour faire fonctionner Common Parts, en euros.",
     "railway": "Railway · prévision d’utilisation",
     "supabase": "Supabase · coût mensuel",
-    "domain": "Domaine · coût annuel ÷ 12",
     "total": "Total mensuel estimé",
     "unavailable": "Indisponible",
-    "method": "Railway prévoit l’utilisation jusqu’à la fin de sa période de facturation en cours. Cette prévision est actualisée chaque heure et convertie depuis le dollar avec un taux de change maintenu manuellement. Les coûts Supabase et du domaine sont saisis manuellement.",
-    "exclusions": "Ce budget d’utilisation n’est ni une facture ni un objectif de collecte. Il exclut l’abonnement Railway, les crédits et les taxes. Le total reste indisponible tant que tous les coûts ne sont pas connus."
+    "method": "Railway prévoit l’utilisation jusqu’à la fin de sa période de facturation en cours. Cette prévision est actualisée chaque heure et convertie depuis le dollar avec un taux de change maintenu manuellement. Les coûts Supabase sont saisis manuellement.",
+    "exclusions": "Ce budget d’utilisation n’est ni une facture ni un objectif de collecte. Le total reste indisponible tant que tous les coûts ne sont pas connus."
   }
 }
