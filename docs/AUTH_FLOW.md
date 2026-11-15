@@ -28,6 +28,10 @@ A server-side sign-in handler that sets the cookies and answers with a redirect 
 ## Sign-up and email confirmation
 `components/auth/sign-up-form.tsx` sends the validated `redirect` to Supabase as part of the confirmation link: `/confirm?next=<redirect>`. `/confirm` carries no locale prefix, so the redirect URLs allowed in the Supabase Auth settings are unchanged; its redirects to `next` or to `/error` are resolved to the visitor's locale by the proxy. `app/(auth)/confirm/route.ts` validates `next` again with `isSafeRedirect` on the server, since anyone can request `/confirm` directly, verifies the token and redirects to `next`, or to `/` when it is missing or unsafe. A failed verification, or a link without its token, redirects to `/error?error=confirmation`, where the error page explains what to do next. Sign-up stores `username` and the interface `locale` in the user metadata; the Supabase Auth email templates can read the locale (see [I18N.md](./I18N.md#auth-errors-and-emails)).
 
+## Password reset
+
+`/forgot-password` requests a reset email through Supabase Auth with `/update-password` as the return path. The home and password update pages check the query string and the browser fragment for `error=access_denied` and `error_code=otp_expired`. When either contains both codes, the visitor is redirected to `/forgot-password?error=password-reset-link` in the active locale. The form explains that the link expired or is invalid and lets the visitor request a new one.
+
 ## Manual QA checklist
 Run on a preview or staging deployment after any change to the login form, the proxy, or the redirect helpers.
 

@@ -188,6 +188,19 @@
   }
 }
 
+/* Heading recipes are utilities so descendant and responsive variants work. */
+@utility text-h1 {
+  @apply font-heading text-heading-lg font-semibold leading-tight;
+}
+
+@utility text-h3 {
+  @apply font-heading text-heading-sm font-semibold leading-snug;
+}
+
+@utility text-h4 {
+  @apply font-heading text-subtitle font-semibold leading-snug;
+}
+
 /* Utilities of the same name set the font size; these add the rest. */
 @layer components {
   .text-body {
