@@ -2,10 +2,23 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { getSupportBudget } from './budget'
 import { getUsdToEurRate } from './exchange-rate'
 
+const { cachedResults } = vi.hoisted(() => ({ cachedResults: new Map<string, unknown>() }))
+
 vi.mock('server-only', () => ({}))
+vi.mock('next/cache', () => ({
+  unstable_cache: (read: () => Promise<unknown>, keyParts: string[]) => async (): Promise<unknown> => {
+    const key = JSON.stringify(keyParts)
+    if (!cachedResults.has(key)) cachedResults.set(key, await read())
+    return cachedResults.get(key)
+  },
+}))
 vi.mock('./exchange-rate', () => ({ getUsdToEurRate: vi.fn(async () => 0.9) }))
 
-afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals() })
+afterEach(() => {
+  cachedResults.clear()
+  vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
+})
 
 function configure(): void {
   vi.stubEnv('RAILWAY_API_TOKEN', 'secret-test-token')
@@ -40,6 +53,24 @@ describe('support budget', () => {
     configure()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(body)))
     expect(await getSupportBudget()).toMatchObject({ railway: null, total: 25, supabase: 25 })
+  })
+
+  it('retries an HTTP 200 GraphQL error and caches the successful forecast', async () => {
+    configure()
+    const data = { estimatedUsage: [{ measurement: 'CPU_USAGE', estimatedValue: 43200 }] }
+    const fetcher = vi.fn()
+      .mockResolvedValueOnce(Response.json({ data, errors: [{ message: 'Temporary error' }] }))
+      .mockResolvedValueOnce(Response.json({ data }))
+    vi.stubGlobal('fetch', fetcher)
+
+    expect(await getSupportBudget()).toMatchObject({ railway: null, total: 25 })
+    expect(await getSupportBudget()).toMatchObject({ railway: 18, total: 43 })
+    expect(await getSupportBudget()).toMatchObject({ railway: 18, total: 43 })
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    for (const [, options] of fetcher.mock.calls) {
+      expect(options).toMatchObject({ cache: 'no-store' })
+      expect(options).not.toHaveProperty('next.revalidate')
+    }
   })
 
   it('keeps the euro forecast unavailable when conversion fails', async () => {
