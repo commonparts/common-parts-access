@@ -1,4 +1,5 @@
 import 'server-only'
+import { unstable_cache } from 'next/cache'
 import { z } from 'zod'
 import { serverEnv } from '@/lib/env'
 import { getUsdToEurRate } from './exchange-rate'
@@ -14,6 +15,7 @@ const PRICES = {
 } as const
 const TIMEOUT_MS = 5000
 const CACHE_SECONDS = 3600
+const MEASUREMENTS = Object.keys(PRICES)
 const forecastSchema = z.object({
   data: z.object({ estimatedUsage: z.array(z.object({
     measurement: z.enum(Object.keys(PRICES) as [keyof typeof PRICES, ...(keyof typeof PRICES)[]]),
@@ -21,6 +23,27 @@ const forecastSchema = z.object({
   })).min(1) }),
   errors: z.array(z.unknown()).optional(),
 })
+type EstimatedUsage = z.output<typeof forecastSchema>['data']['estimatedUsage']
+
+/** Rejects failed forecasts so Next.js can retry without caching an error. */
+async function fetchRailwayUsage(projectId: string, token: string): Promise<EstimatedUsage> {
+  const response = await fetch('https://backboard.railway.com/graphql/v2', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      query: `query SupportForecast($projectId: String!, $measurements: [MetricMeasurement!]!) {
+        estimatedUsage(projectId: $projectId, measurements: $measurements) { measurement estimatedValue }
+      }`,
+      variables: { projectId, measurements: MEASUREMENTS },
+    }),
+    cache: 'no-store',
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  })
+  if (!response.ok) throw new Error(`Railway forecast request failed with HTTP ${response.status}`)
+  const parsed = forecastSchema.safeParse(await response.json())
+  if (!parsed.success || parsed.data.errors?.length) throw new Error('Invalid Railway forecast response')
+  return parsed.data.data.estimatedUsage
+}
 
 /** Reads only this project's forecast; failures never become a misleading zero cost. */
 async function railwayForecast(): Promise<number | null> {
@@ -30,22 +53,12 @@ async function railwayForecast(): Promise<number | null> {
   const rate = await getUsdToEurRate()
   if (rate === null) return null
   try {
-    const response = await fetch('https://backboard.railway.com/graphql/v2', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        query: `query SupportForecast($projectId: String!, $measurements: [MetricMeasurement!]!) {
-          estimatedUsage(projectId: $projectId, measurements: $measurements) { measurement estimatedValue }
-        }`,
-        variables: { projectId, measurements: Object.keys(PRICES) },
-      }),
-      next: { revalidate: CACHE_SECONDS },
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    })
-    if (!response.ok) return null
-    const parsed = forecastSchema.safeParse(await response.json())
-    if (!parsed.success || parsed.data.errors?.length) return null
-    return parsed.data.data.estimatedUsage.reduce((sum, item) => sum + item.estimatedValue * PRICES[item.measurement], 0) * rate
+    const usage = await unstable_cache(
+      () => fetchRailwayUsage(projectId, token),
+      ['railway-estimated-usage', projectId, ...MEASUREMENTS],
+      { revalidate: CACHE_SECONDS },
+    )()
+    return usage.reduce((sum, item) => sum + item.estimatedValue * PRICES[item.measurement], 0) * rate
   } catch {
     return null
   }
