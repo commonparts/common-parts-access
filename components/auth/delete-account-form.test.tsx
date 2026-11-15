@@ -129,7 +129,7 @@ describe('account deletion', () => {
   })
 
   it('shows an error and keeps the form usable if deletion fails', async () => {
-    mocks.deleteAuthUser.mockRejectedValueOnce(new Error('Test failure'))
+    mocks.deleteAuthUser.mockRejectedValueOnce({ code: 'unexpected_failure', status: 500, details: 'private' })
 
     await submitConfirmation('en', 'delete')
 
@@ -137,6 +137,14 @@ describe('account deletion', () => {
     expect(container.querySelector('button')?.disabled).toBe(false)
     expect(mocks.signOut).not.toHaveBeenCalled()
     expect(mocks.replace).not.toHaveBeenCalled()
+    expect(console.error).toHaveBeenCalledWith('Account deletion failed', 'auth_user', { code: 'unexpected_failure', status: 500 })
+  })
+
+  it('logs the admin configuration error when deletion is unavailable', async () => {
+    const message = 'Missing Supabase admin configuration: set SUPABASE_SECRET_KEY'
+    mocks.createAdminClient.mockImplementationOnce(() => { throw new Error(message) })
+    expect(await deleteOwnAccount('DELETE')).toEqual({ ok: false, error: en.Api.accountDeletionUnavailable })
+    expect(console.error).toHaveBeenCalledWith('Account deletion: admin client unavailable', message)
   })
 
   it('clears only the account cookies if Auth returns a sign-out error after deletion', async () => {

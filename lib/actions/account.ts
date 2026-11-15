@@ -35,7 +35,9 @@ export async function deleteOwnAccount(input: z.input<typeof accountDeletionConf
     })
     return { ok: true, data: null }
   } catch (error) {
-    console.error('Account deletion failed', error instanceof AccountDeletionError ? error.stage : 'unknown')
+    const failure = error instanceof AccountDeletionError ? error : undefined
+    const { code, status, statusCode } = (failure?.cause ?? error ?? {}) as { code?: string; status?: number; statusCode?: string }
+    console.error('Account deletion failed', failure?.stage ?? 'unknown', { code, status: status ?? statusCode })
     return { ok: false, error: t('accountDeletionFailed') }
   }
 }
@@ -43,8 +45,8 @@ export async function deleteOwnAccount(input: z.input<typeof accountDeletionConf
 function accountDeletionSteps() {
   try {
     return createAccountDeletionSteps(createAdminClient())
-  } catch {
-    console.error('Account deletion: admin client unavailable')
+  } catch (error) {
+    console.error('Account deletion: admin client unavailable', error instanceof Error ? error.message : undefined)
     return null
   }
 }
