@@ -987,7 +987,7 @@
     "emailNotConfirmed": "Confirmez d’abord votre adresse e-mail : ouvrez le lien de l’e-mail que nous vous avons envoyé",
     "userExists": "Un compte existe déjà pour cette adresse e-mail",
     "usernameTaken": "Ce nom d’utilisateur est déjà pris",
-    "weakPassword": "Ce mot de passe est trop faible : choisissez-en un plus long",
+    "weakPassword": "Ce mot de passe ne répond pas aux exigences de sécurité. Choisissez-en un autre.",
     "samePassword": "Le nouveau mot de passe doit être différent de l’actuel",
     "invalidEmail": "Saisissez une adresse e-mail valide",
     "rateLimited": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
@@ -1007,6 +1007,17 @@
     "description": "Créer un compte",
     "username": "Nom d’utilisateur",
     "repeatPassword": "Confirmer le mot de passe",
+    "passwordRules": {
+      "length": "Au moins {min} caractères",
+      "lowercase": "Une lettre minuscule",
+      "uppercase": "Une lettre majuscule",
+      "digit": "Un chiffre",
+      "symbol": "Un symbole, comme !, @ ou #",
+      "met": "Critère respecté",
+      "unmet": "Critère à respecter"
+    },
+    "passwordRequirementsUnmet": "Respectez les critères restants pour le mot de passe.",
+    "passwordCompromised": "Ce mot de passe a été exposé dans une fuite de données. Choisissez-en un autre.",
     "passwordsDiffer": "Les mots de passe ne correspondent pas",
     "usernameRequired": "Le nom d’utilisateur est obligatoire",
     "usernameTooShort": "Le nom d’utilisateur doit comporter au moins {min} caractères",
@@ -1083,7 +1094,7 @@
     "thanks": "Merci de participer à Common Parts Access. Nous sommes là dès que vous avez besoin de trouver ou de publier des pièces de réparation."
   },
   "SignUpSuccessPage": {
-    "title": "Merci pour votre inscription !",
+    "title": "Merci pour votre inscription !",
     "description": "Consultez vos e-mails pour confirmer",
     "body": "Votre inscription est enregistrée. Consultez vos e-mails pour confirmer votre compte avant de vous connecter."
   },

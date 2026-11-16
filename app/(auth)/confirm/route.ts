@@ -1,4 +1,4 @@
-import { verifyOtp } from "@/lib/supabase/queries/auth.server";
+import { exchangeConfirmationCode, verifyOtp } from "@/lib/supabase/queries/auth.server";
 import { isSafeRedirect } from "@/lib/utils/validation";
 import { CONFIRMATION_ERROR } from "@/lib/utils/auth-errors";
 import { type EmailOtpType } from "@supabase/supabase-js";
@@ -7,6 +7,7 @@ import { type NextRequest } from "next/server";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
+  const code = searchParams.get("code");
   const token_hash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
   // Validate next server-side — client-side validation alone is not enough
@@ -19,13 +20,14 @@ export async function GET(request: NextRequest) {
     if (!error) {
       // redirect user to specified redirect URL or root of app
       redirect(next);
-    } else {
-      // The error page explains, in the visitor's locale, what to do next.
-      redirect(`/error?error=${CONFIRMATION_ERROR}`);
+    }
+  } else if (code) {
+    const { data, error } = await exchangeConfirmationCode(code);
+    if (!error && data.session) {
+      redirect(next);
     }
   }
 
-  // A missing token_hash or type usually indicates a misconfigured redirect
-  // URL in the Supabase Auth settings.
+  // The error page explains, in the visitor's locale, what to do next.
   redirect(`/error?error=${CONFIRMATION_ERROR}`);
 }
