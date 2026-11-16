@@ -4,8 +4,8 @@
 # Local identifier used by the CLI (not the hosted project reference).
 project_id = "common-parts-access"
 
-# Local Auth sends the signup code to Mailpit. The hosted template is switched
-# separately after the confirmation page is live (docs/AUTH_FLOW.md).
+# Local Auth sends the signup code to Mailpit. Publish the hosted template
+# when the confirmation page goes live (docs/AUTH_FLOW.md).
 [auth.email]
 enable_confirmations = true
 

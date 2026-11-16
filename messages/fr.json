@@ -1074,20 +1074,6 @@
     "home": "Retour à l’accueil",
     "signUp": "Créer un nouveau compte"
   },
-  "AuthErrorPage": {
-    "title": "Erreur d’authentification",
-    "confirmationTitle": "Lien expiré ou invalide",
-    "confirmationDescription": "Votre lien de confirmation n’a pas pu être traité.",
-    "confirmationError": "Le lien de confirmation est invalide ou a expiré.",
-    "whatYouCanDo": "Ce que vous pouvez faire :",
-    "requestNewEmail": "Demandez un nouvel e-mail sur la page de confirmation",
-    "checkSpam": "Cherchez le lien de confirmation dans vos courriers indésirables",
-    "linkExpiry": "Les liens de confirmation expirent au bout de 24 heures",
-    "continueSignUp": "Poursuivre l’inscription",
-    "signIn": "Se connecter",
-    "unspecified": "Une erreur non précisée est survenue pendant l’authentification.",
-    "home": "Retour à l’accueil"
-  },
   "LogoutSuccessPage": {
     "title": "Déconnecté",
     "description": "Vous êtes déconnecté de Common Parts Access. Votre session s’est terminée en toute sécurité et vos données restent protégées.",
@@ -1104,8 +1090,7 @@
     "verifying": "Vérification…",
     "resend": "Envoyer un nouveau code",
     "resending": "Envoi…",
-    "resent": "Si une inscription est en attente pour cette adresse, vous recevrez un nouvel e-mail de confirmation.",
-    "existingLink": "Si votre e-mail de confirmation contient un lien, vous pouvez encore l’utiliser."
+    "resent": "Si une inscription est en attente pour cette adresse, vous recevrez un nouvel e-mail de confirmation."
   },
   "SignOutPage": {
     "title": "Déconnexion en cours",

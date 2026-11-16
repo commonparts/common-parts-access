@@ -561,7 +561,6 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 │   │   ├── (legal)/                # Privacy, terms, legal notice
 │   │   ├── (public)/               # Browse, brands, categories, product, parts, search
 │   │   └── layout.tsx              # Document root: <html lang>, metadata, NextIntlClientProvider, FeedbackButton
-│   ├── (auth)/confirm/             # Email confirmation callback, not localized
 │   ├── api/                        # API routes: downloads, redirects, binary responses, webhooks, external callers
 │   ├── globals.css                 # Design tokens (@theme) and global styles (edit tokens only with approval)
 │   ├── layout.tsx                  # Pass-through root layout

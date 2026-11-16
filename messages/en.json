@@ -1074,20 +1074,6 @@
     "home": "Return home",
     "signUp": "Create a new account"
   },
-  "AuthErrorPage": {
-    "title": "Authentication error",
-    "confirmationTitle": "Link expired or invalid",
-    "confirmationDescription": "Your confirmation link could not be processed.",
-    "confirmationError": "The confirmation link is invalid or has expired.",
-    "whatYouCanDo": "What you can do:",
-    "requestNewEmail": "Request a new email on the confirmation page",
-    "checkSpam": "Check your spam folder for the confirmation link",
-    "linkExpiry": "Confirmation links expire after 24 hours",
-    "continueSignUp": "Continue signing up",
-    "signIn": "Sign in",
-    "unspecified": "An unspecified error occurred during authentication.",
-    "home": "Return home"
-  },
   "LogoutSuccessPage": {
     "title": "Signed out",
     "description": "You’ve signed out of Common Parts Access. Your session ended securely and your data remains safe.",
@@ -1104,8 +1090,7 @@
     "verifying": "Verifying…",
     "resend": "Send a new code",
     "resending": "Sending…",
-    "resent": "If there’s a pending sign-up for this address, you’ll receive a new confirmation email.",
-    "existingLink": "If your confirmation email contains a link, you can still use it."
+    "resent": "If there’s a pending sign-up for this address, you’ll receive a new confirmation email."
   },
   "SignOutPage": {
     "title": "Signing you out",

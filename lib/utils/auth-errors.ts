@@ -5,9 +5,6 @@
 
 import { passwordResetLinkFailure } from '@/lib/schemas/auth'
 
-/** `error` query value the email confirmation callback sends to /error. */
-export const CONFIRMATION_ERROR = 'confirmation'
-
 /** Supabase uses this error pair for both invalid and expired email links. */
 export function isPasswordResetLinkFailure(params: URLSearchParams): boolean {
   return passwordResetLinkFailure.safeParse({

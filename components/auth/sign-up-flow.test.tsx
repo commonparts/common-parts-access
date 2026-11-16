@@ -3,36 +3,29 @@ import * as React from 'react'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { NextIntlClientProvider } from 'next-intl'
-import { NextRequest } from 'next/server'
 import { AuthWeakPasswordError } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SignUpForm } from '@/components/auth/sign-up-form'
 import { SignUpConfirmationForm } from '@/components/auth/sign-up-confirmation-form'
-import { GET } from '@/app/(auth)/confirm/route'
 import { setPendingSignUpEmail, takePendingSignUpEmail } from '@/lib/utils/sign-up-confirmation'
 import en from '@/messages/en.json'
 import fr from '@/messages/fr.json'
 
-const { push, signUp, exchangeConfirmationCode, verifyOtp, redirect, verifySignUpCode, resendSignUpConfirmation } = vi.hoisted(() => ({
+const { push, signUp, verifySignUpCode, resendSignUpConfirmation } = vi.hoisted(() => ({
   push: vi.fn(),
   signUp: vi.fn(),
-  exchangeConfirmationCode: vi.fn(),
-  verifyOtp: vi.fn(),
   verifySignUpCode: vi.fn(),
   resendSignUpConfirmation: vi.fn(),
-  redirect: vi.fn((destination: string): never => { throw new Error(destination) }),
 }))
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('redirect=%2Ffr%2Fpublish'),
-  redirect,
 }))
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   useRouter: () => ({ push }),
 }))
 vi.mock('@/lib/supabase/queries/auth.client', () => ({ signUp, verifySignUpCode, resendSignUpConfirmation }))
-vi.mock('@/lib/supabase/queries/auth.server', () => ({ exchangeConfirmationCode, verifyOtp }))
 
 describe('signup password requirements', () => {
   let container: HTMLElement
@@ -84,10 +77,7 @@ describe('signup password requirements', () => {
     expect(container.querySelector('[role=alert]')).toBeNull()
     await type('repeat-password', 'UnSecret1!')
     await act(async () => container.querySelector('form')?.requestSubmit())
-    expect(signUp).toHaveBeenCalledWith(
-      'qa@example.test', 'UnSecret1!', 'qa-541', 'fr',
-      `${window.location.origin}/confirm?next=%2Ffr%2Fpublish`,
-    )
+    expect(signUp).toHaveBeenCalledExactlyOnceWith('qa@example.test', 'UnSecret1!', 'qa-541', 'fr')
     expect(push).toHaveBeenCalledWith('/sign-up-success?redirect=%2Ffr%2Fpublish')
     expect(takePendingSignUpEmail()).toBe('qa@example.test')
   })
@@ -178,41 +168,10 @@ describe.each([{ locale: 'en', messages: en }, { locale: 'fr', messages: fr }] a
       await submit('', true)
       expect(container.querySelector('[role=alert]')?.textContent).toBe(messages.AuthErrors.rateLimited)
       await submit('', true)
-      expect(resendSignUpConfirmation).toHaveBeenLastCalledWith(
-        email, `${window.location.origin}/confirm?next=%2F%23confirmed`,
-      )
+      expect(resendSignUpConfirmation).toHaveBeenNthCalledWith(2, email)
       expect(container.querySelector('[role=status]')?.textContent).toBe(messages.SignUpSuccessPage.resent)
       expect(verifySignUpCode).not.toHaveBeenCalled()
       expect(window.location.hash).toBe('')
     })
   },
 )
-
-describe('signup confirmation callback', () => {
-  beforeEach(() => {
-    exchangeConfirmationCode.mockReset().mockResolvedValue({ data: { session: {} }, error: null })
-    verifyOtp.mockReset().mockResolvedValue({ error: null })
-    redirect.mockClear()
-  })
-
-  it('exchanges a code and returns to the requested same-site page', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?next=%2Ffr%2Fpublish&code=auth-code'))).rejects.toThrow('/fr/publish')
-    expect(exchangeConfirmationCode).toHaveBeenCalledExactlyOnceWith('auth-code')
-    expect(verifyOtp).not.toHaveBeenCalled()
-  })
-
-  it('rejects external destinations after a successful exchange', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?code=auth-code&next=%2F%2Fexample.test'))).rejects.toThrow(/^\/$/)
-  })
-
-  it('goes to the confirmation error page if the exchange fails', async () => {
-    exchangeConfirmationCode.mockResolvedValue({ data: { session: null }, error: new Error('Missing verifier') })
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?code=auth-code'))).rejects.toThrow('/error?error=confirmation')
-  })
-
-  it('still verifies a token-hash link', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?token_hash=hash&type=email&next=%2Ffr%2Fpublish'))).rejects.toThrow('/fr/publish')
-    expect(verifyOtp).toHaveBeenCalledExactlyOnceWith('email', 'hash')
-    expect(exchangeConfirmationCode).not.toHaveBeenCalled()
-  })
-})

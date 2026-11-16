@@ -22,8 +22,7 @@ export async function signUp(
   email: string,
   password: string,
   username: string,
-  locale: Locale,
-  redirectTo?: string
+  locale: Locale
 ) {
   const supabase = createClient();
   
@@ -47,7 +46,6 @@ export async function signUp(
     email,
     password,
     options: {
-      emailRedirectTo: redirectTo,
       data: {
         username: username,
         locale,
@@ -88,8 +86,8 @@ export async function verifySignUpCode(email: string, token: string): Promise<Au
   return createClient().auth.verifyOtp({ type: "signup", email, token });
 }
 
-export async function resendSignUpConfirmation(email: string, emailRedirectTo: string): Promise<AuthOtpResponse> {
-  return createClient().auth.resend({ type: "signup", email, options: { emailRedirectTo } });
+export async function resendSignUpConfirmation(email: string): Promise<AuthOtpResponse> {
+  return createClient().auth.resend({ type: "signup", email });
 }
 
 /**

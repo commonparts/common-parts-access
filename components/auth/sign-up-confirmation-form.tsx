@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { signUpConfirmationCode, signUpConfirmationEmail } from "@/lib/schemas/auth";
 import { resendSignUpConfirmation, verifySignUpCode } from "@/lib/supabase/queries/auth.client";
 import { authErrorKey } from "@/lib/utils/auth-errors";
-import { signUpConfirmationUrl, takePendingSignUpEmail } from "@/lib/utils/sign-up-confirmation";
+import { takePendingSignUpEmail } from "@/lib/utils/sign-up-confirmation";
 
 interface SignUpConfirmationFormProps {
   redirectPath: string | null;
@@ -52,8 +52,7 @@ export function SignUpConfirmationForm({ redirectPath }: SignUpConfirmationFormP
     setSubmission({ status: isResend ? "resend" : "verify" });
     try {
       if (!code) {
-        const confirmUrl = signUpConfirmationUrl(window.location.origin, redirectPath);
-        const { error } = await resendSignUpConfirmation(email.data, confirmUrl);
+        const { error } = await resendSignUpConfirmation(email.data);
         if (error) throw error;
         setSubmission({ status: "resent" });
         return;
@@ -114,7 +113,6 @@ export function SignUpConfirmationForm({ redirectPath }: SignUpConfirmationFormP
       >
         {status === "resend" ? t("resending") : t("resend")}
       </Button>
-      <p className="text-caption text-text-secondary">{t("existingLink")}</p>
     </form>
   );
 }

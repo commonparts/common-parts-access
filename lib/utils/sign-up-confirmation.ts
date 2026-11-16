@@ -16,10 +16,3 @@ export function signUpConfirmationPath(redirectPath: string | null): string {
     ? `/sign-up-success?redirect=${encodeURIComponent(redirectPath)}`
     : "/sign-up-success";
 }
-
-/** Signup and resend must keep sending working links before the template switch. */
-export function signUpConfirmationUrl(origin: string, redirectPath: string | null): string {
-  const url = new URL("/confirm", origin);
-  if (redirectPath) url.search = `next=${encodeURIComponent(redirectPath)}`;
-  return url.href;
-}

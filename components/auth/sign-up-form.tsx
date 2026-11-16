@@ -21,7 +21,7 @@ import { Check, Circle } from "lucide-react";
 import { VALIDATION_LIMITS } from "@/lib/utils/constants";
 import { parseRedirectParam } from "@/lib/utils/validation";
 import { authErrorKey } from "@/lib/utils/auth-errors";
-import { setPendingSignUpEmail, signUpConfirmationPath, signUpConfirmationUrl } from "@/lib/utils/sign-up-confirmation";
+import { setPendingSignUpEmail, signUpConfirmationPath } from "@/lib/utils/sign-up-confirmation";
 
 /** Shortest username accepted at sign-up. */
 const USERNAME_MIN_LENGTH = 3;
@@ -97,8 +97,7 @@ export function SignUpForm({
     }
 
     try {
-      const confirmUrl = signUpConfirmationUrl(window.location.origin, redirectPath);
-      const { error } = await signUp(email, password, username, locale, confirmUrl);
+      const { error } = await signUp(email, password, username, locale);
       if (error) throw error;
       setPendingSignUpEmail(email);
       router.push(signUpConfirmationPath(redirectPath));
