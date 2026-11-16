@@ -16,11 +16,17 @@ import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { isAuthWeakPasswordError } from "@supabase/supabase-js";
+import { Check, Circle } from "lucide-react";
+import { VALIDATION_LIMITS } from "@/lib/utils/constants";
 import { parseRedirectParam } from "@/lib/utils/validation";
 import { authErrorKey } from "@/lib/utils/auth-errors";
 
 /** Shortest username accepted at sign-up. */
 const USERNAME_MIN_LENGTH = 3;
+const { PASSWORD_MIN_LENGTH } = VALIDATION_LIMITS.USER;
+// Supabase's recommended password character sets use these ASCII symbols.
+const PASSWORD_SYMBOLS = "!@#$%^&*()_+-=[]{};'\\:\"|<>?,./`~";
 
 export function SignUpForm({
   className,
@@ -39,9 +45,28 @@ export function SignUpForm({
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectPath = parseRedirectParam(searchParams.get("redirect"));
+  const passwordCharacters = [...password];
+  const passwordRequirements = [
+    {
+      label: t("passwordRules.length", { min: PASSWORD_MIN_LENGTH }),
+      met: passwordCharacters.length >= PASSWORD_MIN_LENGTH,
+    },
+    { label: t("passwordRules.lowercase"), met: /[a-z]/.test(password) },
+    { label: t("passwordRules.uppercase"), met: /[A-Z]/.test(password) },
+    { label: t("passwordRules.digit"), met: /[0-9]/.test(password) },
+    {
+      label: t("passwordRules.symbol"),
+      met: passwordCharacters.some((character) => PASSWORD_SYMBOLS.includes(character)),
+    },
+  ];
+  const passwordMeetsRequirements = passwordRequirements.every(({ met }) => met);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordMeetsRequirements) {
+      setError(t("passwordRequirementsUnmet"));
+      return;
+    }
     setIsLoading(true);
     setError(null);
 
@@ -78,7 +103,9 @@ export function SignUpForm({
       if (error) throw error;
       router.push("/sign-up-success");
     } catch (error: unknown) {
-      setError(errors(authErrorKey(error)));
+      setError(isAuthWeakPasswordError(error) && error.reasons.includes("pwned")
+        ? t("passwordCompromised")
+        : errors(authErrorKey(error)));
     } finally {
       setIsLoading(false);
     }
@@ -126,9 +153,30 @@ export function SignUpForm({
                   id="password"
                   type="password"
                   required
+                  aria-describedby="password-requirements"
+                  aria-invalid={password.length > 0 && !passwordMeetsRequirements}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setError(null);
+                  }}
                 />
+                <ul id="password-requirements" aria-live="polite" className="space-y-2xs">
+                  {passwordRequirements.map(({ label, met }) => (
+                    <li
+                      key={label}
+                      className={cn("flex items-center gap-xs text-caption", met ? "text-status-successText" : "text-text-secondary")}
+                    >
+                      {met
+                        ? <Check className="size-sm shrink-0" aria-hidden="true" />
+                        : <Circle className="size-sm shrink-0" aria-hidden="true" />}
+                      <span>
+                        <span className="sr-only">{t(met ? "passwordRules.met" : "passwordRules.unmet")}{" "}</span>
+                        {label}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className="grid gap-sm">
                 <div className="flex items-center">
