@@ -21,6 +21,7 @@ import { Check, Circle } from "lucide-react";
 import { VALIDATION_LIMITS } from "@/lib/utils/constants";
 import { parseRedirectParam } from "@/lib/utils/validation";
 import { authErrorKey } from "@/lib/utils/auth-errors";
+import { setPendingSignUpEmail, signUpConfirmationPath, signUpConfirmationUrl } from "@/lib/utils/sign-up-confirmation";
 
 /** Shortest username accepted at sign-up. */
 const USERNAME_MIN_LENGTH = 3;
@@ -96,12 +97,11 @@ export function SignUpForm({
     }
 
     try {
-      const confirmUrl = redirectPath
-        ? `${window.location.origin}/confirm?next=${encodeURIComponent(redirectPath)}`
-        : `${window.location.origin}/confirm`;
+      const confirmUrl = signUpConfirmationUrl(window.location.origin, redirectPath);
       const { error } = await signUp(email, password, username, locale, confirmUrl);
       if (error) throw error;
-      router.push("/sign-up-success");
+      setPendingSignUpEmail(email);
+      router.push(signUpConfirmationPath(redirectPath));
     } catch (error: unknown) {
       setError(isAuthWeakPasswordError(error) && error.reasons.includes("pwned")
         ? t("passwordCompromised")

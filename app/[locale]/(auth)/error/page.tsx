@@ -36,21 +36,13 @@ export default async function Page({
                     <strong>{t("whatYouCanDo")}</strong>
                   </p>
                   <ul className="text-sm text-text-secondary list-disc list-inside space-y-2xs">
-                    <li>
-                      {t.rich("requestNewEmail", {
-                        link: (chunks) => (
-                          <Link href="/sign-up" className="text-action-primary hover:underline">
-                            {chunks}
-                          </Link>
-                        ),
-                      })}
-                    </li>
+                    <li>{t("requestNewEmail")}</li>
                     <li>{t("checkSpam")}</li>
                     <li>{t("linkExpiry")}</li>
                   </ul>
                   <div className="flex gap-xs pt-sm">
                     <Button asChild>
-                      <Link href="/sign-up">{t("signUpAgain")}</Link>
+                      <Link href="/sign-up-success">{t("continueSignUp")}</Link>
                     </Button>
                     <Button variant="secondary" asChild>
                       <Link href="/login">{t("signIn")}</Link>

@@ -984,12 +984,13 @@
   },
   "AuthErrors": {
     "invalidCredentials": "Incorrect email or password",
-    "emailNotConfirmed": "Confirm your email address first: open the link in the email we sent you",
+    "emailNotConfirmed": "Confirm your email address before signing in.",
     "userExists": "An account already exists for this email address",
     "usernameTaken": "This username is already taken",
     "weakPassword": "This password does not meet the security requirements. Choose a different one.",
     "samePassword": "The new password must differ from the current one",
     "invalidEmail": "Enter a valid email address",
+    "invalidConfirmationCode": "This code is incorrect, has expired or has already been used. Check the latest email or request a new code.",
     "rateLimited": "Too many attempts. Please wait a few minutes and try again.",
     "generic": "Something went wrong. Please try again."
   },
@@ -997,6 +998,7 @@
     "title": "Sign in",
     "description": "Enter your email below to sign in to your account",
     "forgotPassword": "Forgot your password?",
+    "continueSignUp": "Continue signing up",
     "submitting": "Signing in…",
     "submit": "Sign in",
     "noAccount": "Don’t have an account?",
@@ -1078,10 +1080,10 @@
     "confirmationDescription": "Your confirmation link could not be processed.",
     "confirmationError": "The confirmation link is invalid or has expired.",
     "whatYouCanDo": "What you can do:",
-    "requestNewEmail": "Return to <link>sign-up</link> and request a new confirmation email",
+    "requestNewEmail": "Request a new email on the confirmation page",
     "checkSpam": "Check your spam folder for the confirmation link",
     "linkExpiry": "Confirmation links expire after 24 hours",
-    "signUpAgain": "Sign up again",
+    "continueSignUp": "Continue signing up",
     "signIn": "Sign in",
     "unspecified": "An unspecified error occurred during authentication.",
     "home": "Return home"
@@ -1094,9 +1096,16 @@
     "thanks": "Thank you for being part of Common Parts Access. We’re here whenever you need to find or publish repair parts."
   },
   "SignUpSuccessPage": {
-    "title": "Thank you for signing up!",
-    "description": "Check your email to confirm",
-    "body": "You’ve successfully signed up. Please check your email to confirm your account before signing in."
+    "title": "Confirm your email address",
+    "description": "Enter the six-digit code from your confirmation email.",
+    "code": "Confirmation code",
+    "codeFormat": "Enter the six digits of your confirmation code.",
+    "verify": "Verify code",
+    "verifying": "Verifying…",
+    "resend": "Send a new code",
+    "resending": "Sending…",
+    "resent": "If there’s a pending sign-up for this address, you’ll receive a new confirmation email.",
+    "existingLink": "If your confirmation email contains a link, you can still use it."
   },
   "SignOutPage": {
     "title": "Signing you out",

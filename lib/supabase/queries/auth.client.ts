@@ -1,4 +1,4 @@
-import { AuthError } from "@supabase/supabase-js";
+import { AuthError, type AuthOtpResponse, type AuthResponse } from "@supabase/supabase-js";
 import type { Locale } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { checkUsernameAvailability, updateUserProfile } from "@/lib/supabase/queries/users";
@@ -81,6 +81,15 @@ export async function signUp(
 export async function signOut() {
   const supabase = createClient();
   return await supabase.auth.signOut();
+}
+
+/** Verify only signup confirmation codes. The browser client saves the session. */
+export async function verifySignUpCode(email: string, token: string): Promise<AuthResponse> {
+  return createClient().auth.verifyOtp({ type: "signup", email, token });
+}
+
+export async function resendSignUpConfirmation(email: string, emailRedirectTo: string): Promise<AuthOtpResponse> {
+  return createClient().auth.resend({ type: "signup", email, options: { emailRedirectTo } });
 }
 
 /**

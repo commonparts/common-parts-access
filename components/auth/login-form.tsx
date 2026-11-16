@@ -17,7 +17,8 @@ import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { parseRedirectParam } from "@/lib/utils/validation";
-import { authErrorKey } from "@/lib/utils/auth-errors";
+import { authErrorKey, type AuthErrorKey } from "@/lib/utils/auth-errors";
+import { setPendingSignUpEmail, signUpConfirmationPath } from "@/lib/utils/sign-up-confirmation";
 
 /** Where a user lands after signing in when no safe `redirect` param is set. */
 const DEFAULT_POST_LOGIN_PATH = "/";
@@ -31,7 +32,7 @@ export function LoginForm({
   const errors = useTranslations("AuthErrors");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AuthErrorKey | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const searchParams = useSearchParams();
   const redirectPath = parseRedirectParam(searchParams.get("redirect"));
@@ -53,7 +54,9 @@ export function LoginForm({
       window.location.replace(redirectPath ?? DEFAULT_POST_LOGIN_PATH);
     } catch (error: unknown) {
       console.error("[LoginForm] Login error:", error);
-      setError(errors(authErrorKey(error)));
+      const key = authErrorKey(error);
+      if (key === "emailNotConfirmed") setPendingSignUpEmail(email);
+      setError(key);
       // Reset only on failure: on success the button stays in its loading
       // state until the next document replaces this page.
       setIsLoading(false);
@@ -99,7 +102,12 @@ export function LoginForm({
                   onChange={(e) => setPassword(e.target.value)}
                 />
               </div>
-              {error && <p role="alert" className="text-sm text-status-errorText">{error}</p>}
+              {error && <p role="alert" className="text-sm text-status-errorText">{errors(error)}</p>}
+              {error === "emailNotConfirmed" && (
+                <Link href={signUpConfirmationPath(redirectPath)} className="text-sm underline">
+                  {t("continueSignUp")}
+                </Link>
+              )}
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? t("submitting") : t("submit")}
               </Button>
