@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import { type EmailOtpType } from "@supabase/supabase-js";
+import { type AuthTokenResponse, type EmailOtpType } from "@supabase/supabase-js";
 
 /**
  * Get current user (server-side)
@@ -18,4 +18,10 @@ export async function verifyOtp(type: EmailOtpType, token_hash: string) {
     type,
     token_hash,
   });
+}
+
+/** Exchanges the confirmation code using the verifier stored in the browser's cookies. */
+export async function exchangeConfirmationCode(code: string): Promise<AuthTokenResponse> {
+  const supabase = await createClient();
+  return supabase.auth.exchangeCodeForSession(code);
 }

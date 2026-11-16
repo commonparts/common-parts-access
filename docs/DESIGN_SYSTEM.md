@@ -15,6 +15,18 @@ Use this as a quick-reference for building or updating UI. It captures the curre
 - **Focus**: Use the shared focus recipe: `focus-visible:ring-2 focus-visible:ring-border-focus focus-visible:ring-offset-2 focus-visible:ring-offset-bg-surface` and `focus-visible:border-border-focus`.
 - **States**: Disabled elements should reflect `disabled:bg-bg-disabled disabled:text-text-disabled disabled:border-border-subtle disabled:cursor-not-allowed`. Hover states use semantic `hover:bg-bg-hover` or component-specific action hovers.
 
+## Heading styles
+
+The public contributor guide, legal pages and support page use these shared heading recipes (#537). Each uses `font-heading` and `font-semibold` (600), with the same scale on mobile and desktop:
+
+| Utility | Size token | Size | Line height |
+|---|---|---|---|
+| `text-h1` | `--text-heading-lg` | 32px | `--leading-tight` (1.15) |
+| `text-h3` | `--text-heading-sm` | 22px | `--leading-snug` (1.3) |
+| `text-h4` | `--text-subtitle` | 17px | `--leading-snug` (1.3) |
+
+These names describe visual styles, not HTML heading levels: the pages use `text-h1` on `h1`, `text-h3` on `h2` and `text-h4` on `h3`. They are registered with `@utility` in `app/globals.css`, so Tailwind also generates variants such as `[&_h2]:text-h3` and `[&_h3]:text-h4` in the legal-page shell. The existing `text-heading-*` size utilities keep their current behaviour.
+
 ## Controls (single source of truth)
 Refer to [CONTROL_SIZING.md](./CONTROL_SIZING.md) for the detailed control recipe. Highlights:
 - **Standard control size**: `px-md py-sm`, `text-sm`, `rounded-lg` across buttons, inputs, selects, combobox rows, and navbar/hero actions.

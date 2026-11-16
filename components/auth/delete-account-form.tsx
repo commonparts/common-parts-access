@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { deleteOwnAccount } from "@/lib/actions/account";
 
 export function DeleteAccountForm() {
   const t = useTranslations("DeleteAccountForm");
@@ -20,24 +21,16 @@ export function DeleteAccountForm() {
     event.preventDefault();
     setError(null);
 
-    if (confirmText.trim().toUpperCase() !== confirmWord) {
-      setError(t("typeToConfirm", { word: confirmWord }));
-      return;
-    }
-
     startTransition(async () => {
       try {
-        const response = await fetch("/api/users", { method: "DELETE" });
-        const body = await response.json().catch(() => ({}));
-
-        if (!response.ok) {
-          setError(body?.error ?? t("failed"));
+        const result = await deleteOwnAccount(confirmText);
+        if (!result.ok) {
+          setError(result.error);
           return;
         }
 
         router.replace("/delete-account/success");
-      } catch (err) {
-        console.error(err);
+      } catch {
         setError(t("failed"));
       }
     });
