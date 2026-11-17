@@ -3,31 +3,29 @@ import * as React from 'react'
 import { act } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { NextIntlClientProvider } from 'next-intl'
-import { NextRequest } from 'next/server'
 import { AuthWeakPasswordError } from '@supabase/supabase-js'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { SignUpForm } from '@/components/auth/sign-up-form'
-import { GET } from '@/app/(auth)/confirm/route'
+import { SignUpConfirmationForm } from '@/components/auth/sign-up-confirmation-form'
+import { setPendingSignUpEmail, takePendingSignUpEmail } from '@/lib/utils/sign-up-confirmation'
+import en from '@/messages/en.json'
 import fr from '@/messages/fr.json'
 
-const { push, signUp, exchangeConfirmationCode, verifyOtp, redirect } = vi.hoisted(() => ({
+const { push, signUp, verifySignUpCode, resendSignUpConfirmation } = vi.hoisted(() => ({
   push: vi.fn(),
   signUp: vi.fn(),
-  exchangeConfirmationCode: vi.fn(),
-  verifyOtp: vi.fn(),
-  redirect: vi.fn((destination: string): never => { throw new Error(destination) }),
+  verifySignUpCode: vi.fn(),
+  resendSignUpConfirmation: vi.fn(),
 }))
 
 vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams('redirect=%2Ffr%2Fpublish'),
-  redirect,
 }))
 vi.mock('@/i18n/navigation', () => ({
   Link: ({ children }: { children: React.ReactNode }) => children,
   useRouter: () => ({ push }),
 }))
-vi.mock('@/lib/supabase/queries/auth.client', () => ({ signUp }))
-vi.mock('@/lib/supabase/queries/auth.server', () => ({ exchangeConfirmationCode, verifyOtp }))
+vi.mock('@/lib/supabase/queries/auth.client', () => ({ signUp, verifySignUpCode, resendSignUpConfirmation }))
 
 describe('signup password requirements', () => {
   let container: HTMLElement
@@ -58,6 +56,7 @@ describe('signup password requirements', () => {
     await act(async () => root.unmount())
     container.remove()
     vi.unstubAllGlobals()
+    takePendingSignUpEmail()
   })
 
   it('shows the missing digit before confirmation and blocks submission until corrected', async () => {
@@ -78,11 +77,9 @@ describe('signup password requirements', () => {
     expect(container.querySelector('[role=alert]')).toBeNull()
     await type('repeat-password', 'UnSecret1!')
     await act(async () => container.querySelector('form')?.requestSubmit())
-    expect(signUp).toHaveBeenCalledWith(
-      'qa@example.test', 'UnSecret1!', 'qa-541', 'fr',
-      `${window.location.origin}/confirm?next=%2Ffr%2Fpublish`,
-    )
-    expect(push).toHaveBeenCalledWith('/sign-up-success')
+    expect(signUp).toHaveBeenCalledExactlyOnceWith('qa@example.test', 'UnSecret1!', 'qa-541', 'fr')
+    expect(push).toHaveBeenCalledWith('/sign-up-success?redirect=%2Ffr%2Fpublish')
+    expect(takePendingSignUpEmail()).toBe('qa@example.test')
   })
 
   it('reports a breached password using the structured server reason', async () => {
@@ -97,31 +94,84 @@ describe('signup password requirements', () => {
   })
 })
 
-describe('signup confirmation callback', () => {
-  beforeEach(() => {
-    exchangeConfirmationCode.mockReset().mockResolvedValue({ data: { session: {} }, error: null })
-    verifyOtp.mockReset().mockResolvedValue({ error: null })
-    redirect.mockClear()
-  })
+describe.each([{ locale: 'en', messages: en }, { locale: 'fr', messages: fr }] as const)(
+  'signup code in $locale',
+  ({ locale, messages }) => {
+    const email = 'qa@example.test'
+    let container: HTMLElement
+    let root: Root
 
-  it('exchanges a code and returns to the requested same-site page', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?next=%2Ffr%2Fpublish&code=auth-code'))).rejects.toThrow('/fr/publish')
-    expect(exchangeConfirmationCode).toHaveBeenCalledExactlyOnceWith('auth-code')
-    expect(verifyOtp).not.toHaveBeenCalled()
-  })
+    async function render(): Promise<void> {
+      await act(async () => {
+        root.render(
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <SignUpConfirmationForm redirectPath="/#confirmed" />
+          </NextIntlClientProvider>,
+        )
+      })
+    }
 
-  it('rejects external destinations after a successful exchange', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?code=auth-code&next=%2F%2Fexample.test'))).rejects.toThrow(/^\/$/)
-  })
+    async function submit(code: string, resend = false): Promise<void> {
+      const form = container.querySelector('form')!
+      form.querySelector<HTMLInputElement>('[name=code]')!.value = code
+      const button = form.querySelector<HTMLButtonElement>(resend ? '[value=resend]' : 'button')!
+      await act(async () => { form.requestSubmit(button) })
+    }
 
-  it('goes to the confirmation error page if the exchange fails', async () => {
-    exchangeConfirmationCode.mockResolvedValue({ data: { session: null }, error: new Error('Missing verifier') })
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?code=auth-code'))).rejects.toThrow('/error?error=confirmation')
-  })
+    beforeEach(() => {
+      verifySignUpCode.mockReset()
+      resendSignUpConfirmation.mockReset()
+      vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
+      container = document.createElement('div')
+      document.body.appendChild(container)
+      root = createRoot(container)
+      window.history.replaceState(null, '', '/')
+    })
 
-  it('still verifies a token-hash link', async () => {
-    await expect(GET(new NextRequest('https://staging.example.test/confirm?token_hash=hash&type=email&next=%2Ffr%2Fpublish'))).rejects.toThrow('/fr/publish')
-    expect(verifyOtp).toHaveBeenCalledExactlyOnceWith('email', 'hash')
-    expect(exchangeConfirmationCode).not.toHaveBeenCalled()
-  })
-})
+    afterEach(async () => {
+      await act(async () => root.unmount())
+      container.remove()
+      takePendingSignUpEmail()
+      vi.unstubAllGlobals()
+    })
+
+    it('accepts a pasted code with a leading zero in a fresh tab', async () => {
+      verifySignUpCode.mockResolvedValue({ data: { session: {} }, error: null })
+      await render()
+      const field = container.querySelector<HTMLInputElement>('[name=email]')!
+      expect(field.value).toBe('')
+      field.value = email
+      await submit(' 012345 ')
+      expect(verifySignUpCode).toHaveBeenCalledExactlyOnceWith(email, '012345')
+      expect(window.location.hash).toBe('#confirmed')
+    })
+
+    it('stays signed out after a malformed or rejected code', async () => {
+      verifySignUpCode.mockResolvedValue({ data: { session: null }, error: { code: 'otp_expired' } })
+      setPendingSignUpEmail(email)
+      await render()
+      await submit('12345')
+      expect(verifySignUpCode).not.toHaveBeenCalled()
+      expect(container.querySelector('[role=alert]')?.textContent).toBe(messages.SignUpSuccessPage.codeFormat)
+      await submit('654321')
+      expect(verifySignUpCode).toHaveBeenCalledExactlyOnceWith(email, '654321')
+      expect(container.querySelector('[role=alert]')?.textContent).toBe(messages.AuthErrors.invalidConfirmationCode)
+      expect(window.location.hash).toBe('')
+    })
+
+    it('lets the provider rate-limit a resend without submitting a code', async () => {
+      resendSignUpConfirmation
+        .mockResolvedValueOnce({ error: { code: 'over_email_send_rate_limit' } })
+        .mockResolvedValueOnce({ error: null })
+      setPendingSignUpEmail(email)
+      await render()
+      await submit('', true)
+      expect(container.querySelector('[role=alert]')?.textContent).toBe(messages.AuthErrors.rateLimited)
+      await submit('', true)
+      expect(resendSignUpConfirmation).toHaveBeenNthCalledWith(2, email)
+      expect(container.querySelector('[role=status]')?.textContent).toBe(messages.SignUpSuccessPage.resent)
+      expect(verifySignUpCode).not.toHaveBeenCalled()
+      expect(window.location.hash).toBe('')
+    })
+  },
+)

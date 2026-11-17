@@ -18,7 +18,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 ## Promote `dev` to `staging`
 
 1. `git fetch origin`, then list what will be promoted: `git log --oneline --no-merges origin/staging..origin/dev`. If the list is empty, stop and say so. If a PR in the list carries the `status:next-release` label, stop: it waits for a release that is not in production yet. Tell the human (see `docs/DEV_STRATEGY.md`, Follow-up PRs).
-2. **Documentation check.** Read the full diff, application code included: `git diff origin/staging...origin/dev`. For each behaviour, schema or convention change, check that the documents named in the Documentation section of `CLAUDE.md` describe it. When a document is missing or inaccurate, fix it first through a feature branch and a PR toward `dev` (`docs(scope): ...`), then restart from step 1. When unsure whether a change needs documenting, do not invent content: leave it and mention it to the human.
+2. **Documentation check.** Read the full diff, application code included: `git diff origin/staging...origin/dev`. For each behaviour, schema or convention change, check that the documents named in the Documentation section of `AGENTS.md` describe it. When a document is missing or inaccurate, fix it first through a feature branch and a PR toward `dev` (`docs(scope): ...`), then restart from step 1. When unsure whether a change needs documenting, do not invent content: leave it and mention it to the human.
 3. Open the PR `dev` → `staging`.
    - Title: `Promote dev to staging (#a, #b, …)`, listing the PR numbers being promoted.
    - Description: one line per promoted PR, stating its effect, then `No migration.` (or the migration files present in the diff, for information), then `Merge with a merge commit, per docs/DEV_STRATEGY.md.`
@@ -56,7 +56,7 @@ Write promotion PR descriptions and release notes from **commit subjects, PR tit
 6. When the human asks for the merge: merge with a merge commit. `.github/workflows/release.yml` then creates the tag and the GitHub Release on the merge commit. Check that the release exists and that the Railway `production` deployment succeeds. If the release PR names a destructive migration, check that it was applied (the schema no longer has what it removes); if it was not, tell the human. Never apply a migration yourself.
 7. **Follow-up PRs.** List the open PRs labelled `status:next-release`. For each one whose description names a PR (`Waits for #N in production`) that this release brought to `main`, update its branch from `dev`, check that its migration timestamp is later than every version in `supabase_migrations.schema_migrations` (rename it otherwise, #412), remove the label, mark it ready for review, and tell the human it can be merged into `dev` for the next release. List the others as still waiting.
 
-Claude Code sessions cannot create GitHub Releases themselves. If the workflow fails, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR. If no `Release` run appears after the merge, go straight to that manual run.
+Publish GitHub Releases through the Release workflow. If the workflow fails, read its log; the fix is either a rerun of the failed job or a manual run of the `Release` workflow (`workflow_dispatch`) with the number of the merged release PR. If no `Release` run appears after the merge, go straight to that manual run.
 
 ## Release workflow behaviour
 

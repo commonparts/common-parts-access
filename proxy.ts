@@ -10,8 +10,6 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Pages only. API routes and the /confirm auth callback are not localized
-  // and refresh the session through the server client; Next.js internals and
-  // files with an extension (robots.txt, sitemap.xml, images) are static.
-  matcher: ["/((?!api|confirm|_next|_vercel|.*\\..*).*)"],
+  // Pages only. Skip API routes, Next.js internals and files with an extension.
+  matcher: ["/((?!api|_next|_vercel|.*\\..*).*)"],
 };
