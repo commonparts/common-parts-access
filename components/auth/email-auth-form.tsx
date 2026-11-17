@@ -162,20 +162,20 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
             {!codeRequested && captchaSiteKey && (
               <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
             )}
-            <Button type="submit" className="w-full" disabled={codeRequested ? pending !== null : sendDisabled}>
-              {codeRequested
-                ? auth(pending === "verify" ? "verifying" : "verify")
-                : auth(pending === "send" ? "sending" : "send")}
-            </Button>
-            {codeRequested && (
-              <div className="flex flex-col gap-sm">
-                {captchaSiteKey && showResendCaptcha && (
-                  <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
-                )}
-                <div className="flex flex-wrap justify-center gap-sm">
+            <div className="grid gap-sm">
+              <Button type="submit" className="w-full" disabled={codeRequested ? pending !== null : sendDisabled}>
+                {codeRequested
+                  ? auth(pending === "verify" ? "verifying" : "verify")
+                  : auth(pending === "send" ? "sending" : "send")}
+              </Button>
+              {codeRequested && (
+                <>
+                  {captchaSiteKey && showResendCaptcha && (
+                    <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
+                  )}
                   <Button
                     type="button"
-                    variant="secondary"
+                    className="w-full"
                     disabled={pending !== null || (showResendCaptcha && sendDisabled)}
                     onClick={() => {
                       if (captchaSiteKey && !showResendCaptcha) setShowResendCaptcha(true);
@@ -186,7 +186,7 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   </Button>
                   <Button
                     type="button"
-                    variant="ghost"
+                    className="w-full"
                     disabled={pending !== null}
                     onClick={() => {
                       setCodeRequested(false);
@@ -197,9 +197,9 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   >
                     {auth("changeEmail")}
                   </Button>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </form>
           <div className="mt-md text-center text-caption">
             {t("alternatePrompt")}{" "}
