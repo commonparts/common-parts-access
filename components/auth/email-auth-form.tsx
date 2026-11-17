@@ -172,7 +172,7 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                 {captchaSiteKey && showResendCaptcha && (
                   <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
                 )}
-                <div className="flex flex-wrap gap-sm">
+                <div className="flex flex-wrap justify-center gap-sm">
                   <Button
                     type="button"
                     variant="secondary"
