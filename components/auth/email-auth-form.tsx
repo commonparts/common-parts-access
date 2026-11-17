@@ -172,10 +172,11 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                 {captchaSiteKey && showResendCaptcha && (
                   <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
                 )}
-                <div className="flex flex-wrap justify-center gap-sm">
+                <div className="grid gap-sm">
                   <Button
                     type="button"
                     variant="secondary"
+                    className="w-full"
                     disabled={pending !== null || (showResendCaptcha && sendDisabled)}
                     onClick={() => {
                       if (captchaSiteKey && !showResendCaptcha) setShowResendCaptcha(true);
@@ -187,6 +188,7 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   <Button
                     type="button"
                     variant="ghost"
+                    className="w-full"
                     disabled={pending !== null}
                     onClick={() => {
                       setCodeRequested(false);
