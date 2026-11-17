@@ -102,15 +102,15 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
     <div className={cn("flex flex-col gap-lg", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
-          <CardDescription aria-live="polite">
+          <CardTitle className="text-heading-sm font-heading">{t("title")}</CardTitle>
+          <CardDescription className="text-body" aria-live="polite">
             {codeRequested ? auth("checkInbox", { email }) : t("description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form method="post" className="flex flex-col gap-lg" onSubmit={submit}>
+          <form method="post" className="grid gap-md" onSubmit={submit}>
             {codeRequested ? (
-              <div className="grid gap-sm">
+              <div className="grid gap-xs">
                 <Label htmlFor="email-code">{auth("code")}</Label>
                 <Input
                   ref={codeInput}
@@ -126,7 +126,7 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
               </div>
             ) : (
               <>
-                <div className="grid gap-sm">
+                <div className="grid gap-xs">
                   <Label htmlFor="email">{auth("email")}</Label>
                   <Input
                     id="email"
@@ -140,7 +140,7 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   />
                 </div>
                 {signingUp && (
-                  <div className="grid gap-sm">
+                  <div className="grid gap-xs">
                     <Label htmlFor="username">{auth("username")}</Label>
                     <Input
                       id="username"
@@ -162,17 +162,17 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
             {!codeRequested && captchaSiteKey && (
               <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
             )}
-            <Button type="submit" className="w-full" disabled={codeRequested ? pending !== null : sendDisabled}>
-              {codeRequested
-                ? auth(pending === "verify" ? "verifying" : "verify")
-                : auth(pending === "send" ? "sending" : "send")}
-            </Button>
-            {codeRequested && (
-              <div className="flex flex-col gap-sm">
-                {captchaSiteKey && showResendCaptcha && (
-                  <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
-                )}
-                <div className="grid gap-sm">
+            <div className="grid gap-sm">
+              <Button type="submit" className="w-full" disabled={codeRequested ? pending !== null : sendDisabled}>
+                {codeRequested
+                  ? auth(pending === "verify" ? "verifying" : "verify")
+                  : auth(pending === "send" ? "sending" : "send")}
+              </Button>
+              {codeRequested && (
+                <>
+                  {captchaSiteKey && showResendCaptcha && (
+                    <AuthCaptcha key={captchaAttempt} siteKey={captchaSiteKey} onToken={setCaptchaToken} />
+                  )}
                   <Button
                     type="button"
                     variant="secondary"
@@ -199,9 +199,9 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   >
                     {auth("changeEmail")}
                   </Button>
-                </div>
-              </div>
-            )}
+                </>
+              )}
+            </div>
           </form>
           <div className="mt-md text-center text-caption">
             {t("alternatePrompt")}{" "}
