@@ -6,10 +6,10 @@ This implementation uses a PostgreSQL trigger to automatically create user profi
 
 ## How It Works
 
-1. **User signs up** with email, password, and username
+1. **User signs up** with an email code and username
 2. **Supabase creates auth user** in `auth.users` table
 3. **Database trigger fires automatically** and creates a profile in `user_profiles` table
-4. **Username is stored** in user metadata and then updated in the profile
+4. **Username is stored** in user metadata and copied to the profile by the trigger
 5. **User can update their profile** after sign-up (via RLS policy)
 
 ## Setup Instructions
@@ -39,33 +39,16 @@ CREATE POLICY "Users can update own profile" ON user_profiles
 ### Step 3: Test the Sign-Up Flow
 
 1. Navigate to `/sign-up` in your application
-2. Fill in email, username, and password
-3. Submit the form
+2. Fill in your email and username
+3. Request an email code and verify it on the form
 4. Check your Supabase dashboard → `user_profiles` table
 5. You should see a new row with the username you entered
 
 ## How the Code Works
 
-### Sign-Up Process (`lib/supabase/queries/auth.client.ts`)
+### Sign-Up Process
 
-```typescript
-// 1. Check username availability
-checkUsernameAvailability(username)
-
-// 2. Create auth user with username in metadata
-supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { username }  // Stored in user metadata
-  }
-})
-
-// 3. Trigger automatically creates user_profile
-
-// 4. Update profile with username (via RLS)
-updateUserProfile(userId, { username })
-```
+The form checks username availability, then requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The trigger copies the username metadata to the public profile; the email template uses the stored interface locale. See [AUTH_FLOW.md](./AUTH_FLOW.md).
 
 ### Database Trigger Flow
 

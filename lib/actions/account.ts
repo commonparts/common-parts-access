@@ -9,6 +9,7 @@ import { validate, type Result } from '@/lib/api/parse'
 import { getPublicEnv } from '@/lib/public-env'
 import { accountDeletionConfirmationSchema } from '@/lib/schemas/account'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { authCookieOptions } from '@/lib/supabase/auth-cookies'
 import { createAccountDeletionSteps } from '@/lib/supabase/queries/account-deletion'
 import { createClient } from '@/lib/supabase/server'
 
@@ -66,7 +67,7 @@ async function clearDeletedAccountSession(supabase: Awaited<ReturnType<typeof cr
   const cookieStore = await cookies()
   for (const { name } of cookieStore.getAll()) {
     if (isChunkLike(name, cookieKey)) {
-      cookieStore.set(name, '', { ...DEFAULT_COOKIE_OPTIONS, maxAge: 0 })
+      cookieStore.set(name, '', { ...DEFAULT_COOKIE_OPTIONS, ...authCookieOptions, maxAge: 0 })
     }
   }
 }

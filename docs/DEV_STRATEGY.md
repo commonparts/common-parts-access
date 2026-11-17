@@ -559,7 +559,7 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 ├── proxy.ts                        # Session refresh, protected routes, locale routing
 ├── app/
 │   ├── [locale]/                   # Every page, under its locale prefix (/fr, /en)
-│   │   ├── (auth)/                 # Sign-up, login, password, account deletion
+│   │   ├── (auth)/                 # Sign-up, login, account deletion
 │   │   ├── (dashboard)/            # Protected: dashboard, my parts, publish, settings
 │   │   ├── (legal)/                # Privacy, terms, legal notice
 │   │   ├── (public)/               # Browse, brands, categories, product, parts, search

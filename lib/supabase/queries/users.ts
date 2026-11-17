@@ -1,19 +1,4 @@
 import { createClient } from "@/lib/supabase/client";
-import type { TablesUpdate } from "@/types/supabase";
-
-/**
- * Update user profile
- */
-export async function updateUserProfile(userId: string, updates: TablesUpdate<"user_profiles">) {
-  const supabase = createClient();
-  
-  return await supabase
-    .from("user_profiles")
-    .update(updates)
-    .eq("id", userId)
-    .select()
-    .single();
-}
 
 /**
  * Check if username is available

@@ -129,6 +129,7 @@
     "open": "Open profile menu",
     "myParts": "My parts",
     "publish": "Publish a part",
+    "settings": "Settings",
     "logout": "Logout",
     "deleteAccount": "Delete account",
     "signOutFailed": "Sign out failed. Please try again."
@@ -979,76 +980,38 @@
   },
   "AuthForms": {
     "email": "Email",
-    "emailPlaceholder": "m@example.com",
-    "password": "Password"
+    "emailPlaceholder": "name@example.com",
+    "username": "Username",
+    "usernameCharacters": "Use only letters, numbers, hyphens and underscores.",
+    "checkInbox": "If a code was sent to {email}, enter it below. Check your spam folder if you don’t see the email.",
+    "code": "6-digit code",
+    "send": "Send a code",
+    "sending": "Sending…",
+    "verify": "Verify code",
+    "verifying": "Verifying…",
+    "resend": "Send a new code",
+    "changeEmail": "Change email address"
   },
   "AuthErrors": {
-    "invalidCredentials": "Incorrect email or password",
-    "emailNotConfirmed": "Confirm your email address before signing in.",
-    "userExists": "An account already exists for this email address",
-    "usernameTaken": "This username is already taken",
-    "weakPassword": "This password does not meet the security requirements. Choose a different one.",
-    "samePassword": "The new password must differ from the current one",
-    "invalidEmail": "Enter a valid email address",
-    "invalidConfirmationCode": "This code is incorrect, has expired or has already been used. Check the latest email or request a new code.",
-    "rateLimited": "Too many attempts. Please wait a few minutes and try again.",
+    "usernameTaken": "This username is already taken.",
+    "invalidEmail": "Enter a valid email address.",
+    "emailNotAuthorized": "This email address can’t receive a code.",
+    "invalidCode": "This code is invalid or has expired. Check the code or request a new one.",
+    "captcha": "The security check failed. Refresh the page or try again.",
+    "rateLimited": "Please wait a minute before trying again.",
     "generic": "Something went wrong. Please try again."
   },
   "LoginForm": {
     "title": "Sign in",
-    "description": "Enter your email below to sign in to your account",
-    "forgotPassword": "Forgot your password?",
-    "continueSignUp": "Continue signing up",
-    "submitting": "Signing in…",
-    "submit": "Sign in",
-    "noAccount": "Don’t have an account?",
-    "signUp": "Sign up"
+    "description": "Enter your email address to receive a sign-in code.",
+    "alternatePrompt": "New to Common Parts?",
+    "alternateAction": "Create an account"
   },
   "SignUpForm": {
-    "title": "Sign up",
-    "description": "Create a new account",
-    "username": "Username",
-    "repeatPassword": "Repeat password",
-    "passwordRules": {
-      "length": "At least {min} characters",
-      "lowercase": "A lowercase letter",
-      "uppercase": "An uppercase letter",
-      "digit": "A digit",
-      "symbol": "A symbol such as !, @ or #",
-      "met": "Met",
-      "unmet": "Still required"
-    },
-    "passwordRequirementsUnmet": "Complete the remaining password requirements.",
-    "passwordCompromised": "This password has appeared in a data breach. Choose a different one.",
-    "passwordsDiffer": "Passwords do not match",
-    "usernameRequired": "Username is required",
-    "usernameTooShort": "Username must be at least {min} characters long",
-    "usernameCharacters": "Username can only contain letters, numbers, underscores and hyphens",
-    "submitting": "Creating your account…",
-    "submit": "Sign up",
-    "haveAccount": "Already have an account?",
-    "signIn": "Sign in"
-  },
-  "ForgotPasswordForm": {
-    "rejectedLinkTitle": "This password reset link is expired or invalid",
-    "rejectedLinkDescription": "Enter your email address to receive a new link.",
-    "resend": "Send a new link",
-    "sentTitle": "Check your email",
-    "sentDescription": "Password reset instructions sent",
-    "sentBody": "If you registered using your email and password, you will receive a password reset email.",
-    "title": "Reset your password",
-    "description": "Type in your email and we’ll send you a link to reset your password",
-    "submitting": "Sending…",
-    "submit": "Send reset email",
-    "haveAccount": "Already have an account?",
-    "signIn": "Sign in"
-  },
-  "UpdatePasswordForm": {
-    "title": "Reset your password",
-    "description": "Please enter your new password below.",
-    "password": "New password",
-    "submitting": "Saving…",
-    "submit": "Save new password"
+    "title": "Create an account",
+    "description": "Choose a username and enter your email address to receive a confirmation code.",
+    "alternatePrompt": "Already have an account?",
+    "alternateAction": "Sign in"
   },
   "DeleteAccountPage": {
     "title": "Delete your account",
@@ -1081,21 +1044,16 @@
     "signIn": "Sign in again",
     "thanks": "Thank you for being part of Common Parts Access. We’re here whenever you need to find or publish repair parts."
   },
-  "SignUpSuccessPage": {
-    "title": "Confirm your email address",
-    "description": "Enter the six-digit code from your confirmation email.",
-    "code": "Confirmation code",
-    "codeFormat": "Enter the six digits of your confirmation code.",
-    "verify": "Verify code",
-    "verifying": "Verifying…",
-    "resend": "Send a new code",
-    "resending": "Sending…",
-    "resent": "If there’s a pending sign-up for this address, you’ll receive a new confirmation email."
-  },
   "SignOutPage": {
     "title": "Signing you out",
     "description": "Hang tight while we close your session. If you are not redirected, return to the home page.",
     "home": "Return home"
+  },
+  "SignOutEverywhere": {
+    "description": "End your Common Parts sessions on all devices, including this one.",
+    "action": "Sign out on all devices",
+    "pending": "Signing out…",
+    "failure": "Couldn’t sign out. Please try again."
   },
   "DashboardPages": {
     "dashboard": {
@@ -1115,8 +1073,7 @@
     },
     "settings": {
       "title": "Settings",
-      "description": "Update your account and preferences.",
-      "comingSoon": "Settings view coming soon."
+      "description": "Update your account and preferences."
     },
     "account": {
       "title": "Account settings",

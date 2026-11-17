@@ -1,13 +1,13 @@
 import { Suspense } from "react";
-import { LoginForm } from "@/components/auth/login-form";
+import { EmailAuthForm } from "@/components/auth/email-auth-form";
 import { AuthShell } from "@/components/layout/auth-shell";
 
 export default function Page() {
   return (
     <AuthShell>
-      {/* LoginForm reads useSearchParams(), which needs its own boundary. */}
+      {/* EmailAuthForm reads useSearchParams(), which needs its own boundary. */}
       <Suspense>
-        <LoginForm />
+        <EmailAuthForm mode="login" />
       </Suspense>
     </AuthShell>
   );

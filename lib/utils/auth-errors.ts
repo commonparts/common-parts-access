@@ -3,27 +3,13 @@
  * English, so the forms show the `AuthErrors` message of its error code.
  */
 
-import { passwordResetLinkFailure } from '@/lib/schemas/auth'
-
-/** Supabase uses this error pair for both invalid and expired email links. */
-export function isPasswordResetLinkFailure(params: URLSearchParams): boolean {
-  return passwordResetLinkFailure.safeParse({
-    error: params.get('error'),
-    error_code: params.get('error_code'),
-  }).success
-}
-
 /** Supabase Auth error codes the forms explain, and their `AuthErrors` message. */
 const AUTH_ERROR_MESSAGES = {
-  invalid_credentials: 'invalidCredentials',
-  email_not_confirmed: 'emailNotConfirmed',
-  user_already_exists: 'userExists',
-  email_exists: 'userExists',
   username_taken: 'usernameTaken',
-  weak_password: 'weakPassword',
-  same_password: 'samePassword',
   email_address_invalid: 'invalidEmail',
-  otp_expired: 'invalidConfirmationCode',
+  email_address_not_authorized: 'emailNotAuthorized',
+  otp_expired: 'invalidCode',
+  captcha_failed: 'captcha',
   over_email_send_rate_limit: 'rateLimited',
   over_request_rate_limit: 'rateLimited',
 } as const
