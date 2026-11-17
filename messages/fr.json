@@ -984,17 +984,19 @@
   },
   "AuthErrors": {
     "invalidCredentials": "E-mail ou mot de passe incorrect",
-    "emailNotConfirmed": "Confirmez d’abord votre adresse e-mail : ouvrez le lien de l’e-mail que nous vous avons envoyé",
+    "emailNotConfirmed": "Confirmez votre adresse e-mail avant de vous connecter.",
     "userExists": "Un compte existe déjà pour cette adresse e-mail",
     "usernameTaken": "Ce nom d’utilisateur est déjà pris",
     "weakPassword": "Ce mot de passe ne répond pas aux exigences de sécurité. Choisissez-en un autre.",
     "samePassword": "Le nouveau mot de passe doit être différent de l’actuel",
     "invalidEmail": "Saisissez une adresse e-mail valide",
+    "invalidConfirmationCode": "Ce code est incorrect, a expiré ou a déjà été utilisé. Consultez le dernier e-mail reçu ou demandez un nouveau code.",
     "rateLimited": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
     "generic": "Une erreur est survenue. Veuillez réessayer."
   },
   "LoginForm": {
     "title": "Connexion",
+    "continueSignUp": "Poursuivre l’inscription",
     "description": "Saisissez votre e-mail ci-dessous pour vous connecter à votre compte",
     "forgotPassword": "Mot de passe oublié ?",
     "submitting": "Connexion…",
@@ -1072,20 +1074,6 @@
     "home": "Retour à l’accueil",
     "signUp": "Créer un nouveau compte"
   },
-  "AuthErrorPage": {
-    "title": "Erreur d’authentification",
-    "confirmationTitle": "Lien expiré ou invalide",
-    "confirmationDescription": "Votre lien de confirmation n’a pas pu être traité.",
-    "confirmationError": "Le lien de confirmation est invalide ou a expiré.",
-    "whatYouCanDo": "Ce que vous pouvez faire :",
-    "requestNewEmail": "Revenez à l’<link>inscription</link> et demandez un nouvel e-mail de confirmation",
-    "checkSpam": "Cherchez le lien de confirmation dans vos courriers indésirables",
-    "linkExpiry": "Les liens de confirmation expirent au bout de 24 heures",
-    "signUpAgain": "S’inscrire de nouveau",
-    "signIn": "Se connecter",
-    "unspecified": "Une erreur non précisée est survenue pendant l’authentification.",
-    "home": "Retour à l’accueil"
-  },
   "LogoutSuccessPage": {
     "title": "Déconnecté",
     "description": "Vous êtes déconnecté de Common Parts Access. Votre session s’est terminée en toute sécurité et vos données restent protégées.",
@@ -1094,9 +1082,15 @@
     "thanks": "Merci de participer à Common Parts Access. Nous sommes là dès que vous avez besoin de trouver ou de publier des pièces de réparation."
   },
   "SignUpSuccessPage": {
-    "title": "Merci pour votre inscription !",
-    "description": "Consultez vos e-mails pour confirmer",
-    "body": "Votre inscription est enregistrée. Consultez vos e-mails pour confirmer votre compte avant de vous connecter."
+    "title": "Confirmez votre adresse e-mail",
+    "description": "Saisissez le code à six chiffres reçu dans l’e-mail de confirmation.",
+    "code": "Code de confirmation",
+    "codeFormat": "Saisissez les six chiffres de votre code de confirmation.",
+    "verify": "Vérifier le code",
+    "verifying": "Vérification…",
+    "resend": "Envoyer un nouveau code",
+    "resending": "Envoi…",
+    "resent": "Si une inscription est en attente pour cette adresse, vous recevrez un nouvel e-mail de confirmation."
   },
   "SignOutPage": {
     "title": "Déconnexion en cours",

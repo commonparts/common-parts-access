@@ -48,8 +48,8 @@ Last reviewed: v1.2.0 (October 2026).
 ## Elsewhere in the repository
 
 - `README.md`, `CONTRIBUTING.md`: public-facing project and contribution rules
-- `CLAUDE.md`: development conventions, loaded by every Claude Code session
-- `.claude/skills/release/SKILL.md`: promotion and release procedure
+- [`AGENTS.md`](../AGENTS.md): shared development conventions. Codex loads it directly; Claude Code imports it through [`.claude/CLAUDE.md`](../.claude/CLAUDE.md).
+- [`.claude/skills/release/SKILL.md`](../.claude/skills/release/SKILL.md): promotion and release procedure, also exposed to Codex through [`.agents/skills/release/SKILL.md`](../.agents/skills/release/SKILL.md).
 - `.github/workflows/release.yml`: publishes the GitHub Release when `staging` is merged into `main`
 - `.github/copilot-instructions.md`: code review rules
 - `supabase/migrations/`: each migration opens with a comment explaining what it does and why

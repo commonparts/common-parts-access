@@ -112,7 +112,7 @@ describe('matcher', () => {
     expect(unstable_doesMiddlewareMatch({ config, url })).toBe(true)
   })
 
-  it.each(['/api/parts', '/confirm?token_hash=abc', '/robots.txt', '/_next/static/chunk.js'])(
+  it.each(['/api/parts', '/robots.txt', '/_next/static/chunk.js'])(
     'skips %s',
     (url) => {
       expect(unstable_doesMiddlewareMatch({ config, url })).toBe(false)
