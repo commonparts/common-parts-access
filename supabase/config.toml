@@ -25,7 +25,7 @@ content_path = "./supabase/templates/email-code.html"
 
 [auth.email.template.magic_link]
 subject = '{{ if eq .Data.locale "fr" }}Votre code de connexion Common Parts Access{{ else }}Your Common Parts Access sign-in code{{ end }}'
-content_path = "./supabase/templates/email-code.html"
+content_path = "./supabase/templates/sign-in-code.html"
 
 [auth.hook.custom_access_token]
 enabled = true
