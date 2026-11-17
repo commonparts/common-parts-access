@@ -35,13 +35,13 @@ GitHub Issues (structured, labelled)
         ↓ generates gh CLI commands after human validation
 [ You ] — validate priorities and roadmap
         ↓
-[ Agent Dev ] — Claude Code
+[ Agent Dev ] — Codex or Claude Code
         ↓ reads issues via MCP, proposes approach, implements, opens PRs
         ↓ merges only when the human asks
 [ Agent QA ] — GitHub Copilot code review (automatic on every PR)
         ↓ inline comments + summary, never approves
         ↓
-[ Release ] — Claude Code following the `release` skill
+[ Release ] — Coding agent following the `release` skill
         ↓ dev → staging: documentation check, then promotion PR
         ↓ staging → main: release PR with the release notes in its description
         ↓
@@ -58,10 +58,10 @@ CI/CD Pipeline (GitHub Actions → Railway)
 | Feedback triage | Fully automatic | Supabase Edge Function + Mistral Small |
 | GitHub issue creation | Fully automatic | GitHub API via Edge Function |
 | PM prioritisation | Semi-automatic (human validates) | Claude Project in Claude.ai |
-| Dev (bugs & features) | Dialogue — agent proposes, human validates | Claude Code |
+| Dev (bugs & features) | Dialogue — agent proposes, human validates | Codex or Claude Code |
 | QA review | Fully automatic on every PR | GitHub Copilot code review |
 | Merge to staging/main | Always manual | Human |
-| Promotion & release notes | Agent prepares the PRs and the notes, human validates and merges | Claude Code following the `release` skill |
+| Promotion & release notes | Agent prepares the PRs and the notes, human validates and merges | Codex or Claude Code following the `release` skill |
 | GitHub Release | Fully automatic on merge to `main` | `.github/workflows/release.yml` |
 
 ---
@@ -92,7 +92,7 @@ ci(scope): short description
 
 Commit messages must reference the related issue number: `fix(ui): correct button variant (#42)`
 
-The repository is public: commit messages, PR descriptions, PR and issue comments, and release notes describe the change itself, carry no internal context and no links to claude.ai sessions (see `CLAUDE.md`).
+The repository is public: commit messages, PR descriptions, PR and issue comments, and release notes describe the change itself, carry no internal context and no links to claude.ai sessions (see `AGENTS.md`).
 
 Husky hooks:
 - `commit-msg` — rejects commits that don't match the convention
@@ -290,20 +290,20 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ### Agent Dev
 
-**Tool:** Claude Code
-**Trigger:** On-demand — human opens a Claude Code session on the repository and assigns an issue
-**Interface:** Claude Code session, directly in the codebase
+**Tool:** Codex or Claude Code
+**Trigger:** On demand, when the human assigns an issue in a session opened on the repository
+**Interface:** Coding session in the repository
 
 **Tools connected:**
 - **GitHub MCP** — reads issues, checks existing PRs, opens PRs
 - **Supabase MCP** — checks table schema, RLS policies, edge function logs
-- **Railway CLI** (no MCP) — reads runtime logs with `railway logs --environment <name>`
+- **Railway** — reads runtime logs through the connected tool or `railway logs --environment <name>`
 
-**Instructions file:** `CLAUDE.md` at the repository root, loaded automatically by every Claude Code session
+**Instructions file:** `AGENTS.md` at the repository root. Codex loads it directly; Claude Code imports it through `.claude/CLAUDE.md`.
 **What it does:**
 - Reads the issue directly via GitHub MCP — no copy-pasting
 - Proposes a technical approach before writing any code
-- Implements following all conventions in `CLAUDE.md`
+- Implements following all conventions in `AGENTS.md`
 - Updates the affected `docs/` files in the same PR as the code change
 - Runs self-review checklist (tsc + lint + knip + tests) before committing
 - Opens a PR toward `dev` via GitHub MCP
@@ -341,7 +341,7 @@ Labels are the shared language between humans and agents. All issues must carry 
 
 ### Release
 
-**Tool:** Claude Code session following the `release` skill (`.claude/skills/release/SKILL.md`), plus the `.github/workflows/release.yml` GitHub Action
+**Tool:** Codex or Claude Code following the `release` skill, plus the `.github/workflows/release.yml` GitHub Action. The procedure lives in `.claude/skills/release/SKILL.md`; `.agents/skills/release/SKILL.md` points Codex to it.
 **Trigger:** The skill is used whenever a session is asked to promote `dev` to `staging` or to prepare a release; the workflow runs when a PR from `staging` is merged into `main`
 
 **`dev` → `staging`:**
@@ -458,9 +458,9 @@ RLS: anyone can insert, users can read their own rows only.
 
 ### ✅ Agent Dev
 
-- Claude Code
-- Instructions in `CLAUDE.md`, loaded automatically by Claude Code
-- Connected to GitHub and Supabase via MCP; Railway logs via CLI
+- Codex or Claude Code
+- Shared instructions in `AGENTS.md`, loaded directly by Codex and through `.claude/CLAUDE.md` by Claude Code
+- Connected to GitHub and Supabase via MCP; Railway logs via the connected tool or CLI
 - Dialogue mode: proposes approach → human validates → implements → opens PR
 - Reads issues directly via GitHub MCP
 
@@ -513,8 +513,8 @@ Structural guarantee: the PM agent and human always have access to what the user
 **Why Claude Project for Agent PM?**
 The PM session requires genuine back-and-forth reasoning. A conversation interface is the right medium. No infrastructure, no deployment.
 
-**Why Claude Code for Agent Dev?**
-It works directly in the repository and the terminal, so it can run the project's checks, read Railway logs through the CLI, and use the GitHub and Supabase MCP connections. That gives the agent the context it needs without additional tooling. The same tool also prepares promotions and releases, following the `release` skill.
+**Why use a coding agent for Agent Dev?**
+Codex and Claude Code work directly in the repository and terminal. They can run the project's checks, inspect runtime logs, and use the GitHub and Supabase connections. Both also prepare promotions and releases using the same `release` procedure.
 
 **Why Copilot code review for Agent QA?**
 Native to GitHub, agentic architecture since March 2026, configurable via a single instructions file, automatic on every PR. Zero infrastructure to maintain.
@@ -540,9 +540,12 @@ Solo project. The goal of PR protection is forcing CI + Copilot review to run. T
 
 ```
 /
-├── CLAUDE.md                       # Development conventions, loaded by Claude Code
+├── AGENTS.md                       # Shared development conventions
+├── .agents/
+│   └── skills/release/SKILL.md     # Codex entry for the release skill
 ├── .claude/
-│   └── skills/release/SKILL.md     # Promotion and release procedure
+│   ├── CLAUDE.md                   # Imports the root AGENTS.md
+│   └── skills/release/SKILL.md     # Shared promotion and release procedure
 ├── .github/
 │   ├── copilot-instructions.md     # Agent QA instructions (Copilot review)
 │   └── workflows/
