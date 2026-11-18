@@ -35,9 +35,9 @@ export default function PrivacyFr() {
         <ul>
           <li>votre adresse e-mail&nbsp;;</li>
           <li>votre nom d’utilisateur et votre nom affiché (tels que vous les indiquez)&nbsp;;</li>
-          <li>votre mot de passe (conservé sous forme hachée&nbsp;: nous ne le conservons jamais en clair)&nbsp;;</li>
           <li>les informations de profil que vous choisissez d’ajouter (biographie, avatar).</li>
         </ul>
+        <p>Si vous aviez choisi un mot de passe pour votre compte, Supabase peut encore en conserver une version hachée.</p>
 
         <h3>3.2 Données de contenu</h3>
         <p>Lorsque vous publiez des pièces détachées ou d’autres contenus sur la plateforme, nous collectons&nbsp;:</p>
@@ -273,9 +273,8 @@ export default function PrivacyFr() {
         <h2>9. Sécurité</h2>
         <p>
           Common Parts Access met en œuvre des mesures de sécurité conformes aux pratiques du secteur, notamment le
-          chiffrement des données en transit (TLS), le stockage haché des mots de passe et une authentification par
-          session gérée par Supabase. Aucun système n’est parfaitement sûr&nbsp;: nous vous recommandons d’utiliser un
-          mot de passe robuste et unique pour votre compte.
+          chiffrement des données en transit (TLS), la connexion par code envoyé par e-mail et la gestion des
+          sessions par Supabase. Aucun système n’est parfaitement sûr.
         </p>
       </section>
 

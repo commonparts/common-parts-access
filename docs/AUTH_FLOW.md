@@ -1,59 +1,34 @@
-# Sign-in and Post-login Redirect
+# Sign-in and sessions
 
-## Overview
-This document describes how a visitor reaches a protected page, signs in, and returns to the page they asked for. Authentication uses Supabase Auth with email and password; the session is stored in `sb-*` cookies managed by `@supabase/ssr`.
+Common Parts uses six-digit email codes through Supabase Auth for sign-in and sign-up. An existing member signs in with the same email address and keeps their account, profile and parts. During sign-up, the database trigger creates a profile with a generated username. The visitor can correct their email address before verification and keep their chosen username. The app saves that username after email verification. If the name is already taken, the visitor can choose another without requesting a new code. Only sign-up can create accounts. The login form shows the same inbox instructions for known and unknown addresses.
 
-## Protected routes
-`proxy.ts` runs `updateSession` (`lib/supabase/middleware.ts`) on every page request, then the locale routing (see [I18N.md](./I18N.md#request-pipeline)). API routes are outside the proxy matcher and refresh the session through the server client. `updateSession` refreshes the session with `supabase.auth.getUser()` and protects the routes listed in `PROTECTED_ROUTE_PREFIXES`: `/publish`, `/dashboard`, `/downloads`, `/my-parts`, `/notifications`, `/settings` (each prefix and its sub-paths), under a locale prefix (`/fr/publish`, `/en/settings/profile`). An unprefixed URL is first redirected to its prefixed URL by the locale routing, then checked.
+After checking the code, Supabase writes the session cookies. The form uses `window.location.replace` to load the requested page with a fresh navbar and route cache (#110, #112). Code requests go directly from the browser to Supabase, which applies its rate limits without putting all users behind the application's server IP.
 
-An unauthenticated request to a protected route is redirected to the login page of the same locale, `/<locale>/login?redirect=<pathname>`, the pathname including its prefix. Only the pathname is kept: the original query string is dropped so protected-route parameters do not end up in the login URL, browser history or logs. Refreshed or cleared auth cookies are copied onto the redirect response.
+## Protected routes and redirects
 
-Other entry points build the same URL from the client, for example a like on a part page that returns `401` (`components/part/part-details.tsx`).
+`proxy.ts` calls `updateSession` before locale routing, refreshing the session and checking the user with `getUser()`. In each locale, `/publish`, `/dashboard`, `/downloads`, `/my-parts`, `/notifications` and `/settings` require a user. A signed-out visitor goes to `/<locale>/login?redirect=<pathname>`; only the pathname is preserved. API routes use the server client and check authorization separately.
 
-## The `redirect` parameter
-`parseRedirectParam` (`lib/utils/validation.ts`) reads the parameter and returns it only when `isSafeRedirect` accepts it; otherwise it returns `null` and the caller uses its default destination. `isSafeRedirect` accepts only a relative in-app path that starts with a single `/` and contains no whitespace, backslash or control character, checked both as written and after percent-decoding. This rejects absolute URLs, protocol-relative URLs (`//host`) and encoded bypasses such as `/%5c%5chost`.
+The login and sign-up forms preserve a valid `redirect` when switching between them. `parseRedirectParam` and `isSafeRedirect` only accept same-site paths and reject absolute or protocol-relative URLs, whitespace, backslashes and control characters, including after URL decoding. The fallback is `/`, which resolves to the visitor's locale.
 
-The login and sign-up forms pass a validated `redirect` to each other through their cross-links, so it survives a switch between the two forms.
+## Session policy
 
-## Sign-in
-`components/auth/login-form.tsx` signs in from the browser with `signInWithPassword` (`lib/supabase/queries/auth.client.ts`). On success it navigates with `window.location.replace` to the validated `redirect`, or to `/` when there is none. On failure it shows the error and re-enables the form; on success the button keeps its loading state until the next page loads. The auth forms show the message of the Supabase Auth error code in the locale of the page (`authErrorKey()`, see [I18N.md](./I18N.md#auth-errors-and-emails)).
+- Use the Supabase session defaults with no inactivity timeout or fixed session age. Keep refresh token rotation enabled and the access token at its existing short lifetime (Supabase default: one hour).
+- `@supabase/ssr` writes persistent `sb-*` cookies with a 400-day browser lifetime and `SameSite=Lax`. The app sets `Secure` in production for sign-in and refresh. Browser Supabase clients need to read these cookies, so they are not `HttpOnly`; changing that requires moving all authenticated browser access to the server.
+- Regular sign-out revokes the current session. **Sign out on all devices** under Settings revokes every refresh session. Already issued access tokens can remain valid until their short expiry.
+- This change does not grant privileges or implement MFA. X11 tracks requiring `aal2` for future curator and admin actions separately.
 
-### Why a full document navigation (#110, #112)
-A soft navigation (`router.push`, with or without `router.refresh`) sent users back to `/login` after a successful sign-in (#110). Before sign-in, the client holds state built for an anonymous visitor: server-rendered layouts such as the navbar, the App Router cache, and routes prefetched while signed out. A full document load discards that state and renders every segment with the new session cookie. Its cost is one document load per sign-in.
+## Staging and rollout
 
-`replace` is used instead of assigning `window.location.href` so `/login` is not kept in the history: the back button does not return to the login form.
-
-A server-side sign-in handler that sets the cookies and answers with a redirect was considered and not adopted (#112). Supabase Auth rate-limits sign-in requests by client IP address; requests sent from the server would all share the server's address, so a burst of failed attempts would block sign-in for every user. Avoiding this requires forwarding the end-user IP in the `Sb-Forwarded-For` header with a secret API key and enabling IP address forwarding in the Supabase project, which the gain of one document load does not justify.
-
-## Sign-up and email confirmation
-The form checks the hosted Auth password rules as the user types: at least eight characters and one lowercase letter, uppercase letter, digit and supported symbol. Supabase enforces the account policy when the form is submitted.
-
-After sign-up, `/sign-up-success` accepts a six-digit code from the confirmation email (#542). The sign-up form hands the email to the confirmation page in memory. A visitor can also enter the email manually or reopen the confirmation page after a sign-in attempt with an unconfirmed address. The optional `redirect` travels to the confirmation page and is validated there. The browser calls Supabase Auth directly to preserve its per-IP rate limits and uses a full navigation to the safe destination or `/` once Supabase returns a session. Supabase handles code expiry, single use and the resend limits.
-
-Sign-up and resend require no Supabase Auth redirect URL. An unconfirmed user who received a link before the switch can request a code from the confirmation page.
-
-### Confirmation email rollout (#542)
-
-1. Verify the flow on an isolated Supabase stack. The local CLI config enables email confirmation and uses [the signup template](../supabase/templates/signup-confirmation.html). Read the emails in Mailpit. Use the subject from `[auth.email.template.confirmation]` in [config.toml](../supabase/config.toml).
-2. Prepare the versioned **Confirm signup** subject and HTML in Supabase and check that email OTPs have six digits. Save the current subject and body for rollback. Staging and production share the hosted template.
-3. Deploy the confirmation page to production, then publish the prepared template in the same release. The previous confirmation links stop working when the new code goes live. For a rollback, restore the previous application release and the previous template together.
-4. Verify one sign-up in each language, opening the email on a second device and entering the code on the first. Check that a valid code opens the requested protected page, that a wrong, expired or used code leaves a fresh browser signed out, and that resend works after the provider's wait period.
-
-## Password reset
-
-`/forgot-password` requests a reset email through Supabase Auth with `/update-password` as the return path. The home and password update pages check the query string and the browser fragment for `error=access_denied` and `error_code=otp_expired`. When either contains both codes, the visitor is redirected to `/forgot-password?error=password-reset-link` in the active locale. The form explains that the link expired or is invalid and lets the visitor request a new one.
+1. Use an isolated Supabase project or branch for the preview. Check that it is not pointed at production before changing Auth settings. Keep email authentication and confirmation enabled.
+2. In Supabase Auth, paste [sign-in-code.html](../supabase/templates/sign-in-code.html) into the **Magic Link** template body. **Confirm signup** can keep its existing template if it already displays `{{ .Token }}`. The local stack uses [email-code.html](../supabase/templates/email-code.html) for signup. Set the email code length to six, expiry to 900 seconds and minimum send interval to 60 seconds. Apply these values separately to hosted projects. The code emails contain no sign-in link for email scanners to open.
+3. Verify Brevo SMTP, then test delivery to Gmail, Outlook and iCloud. The verification step must receive and accept the code for both an existing account and a new account. Check the email-send and verification limits against the Brevo quota before rollout.
+4. Keep the hosted session defaults and refresh token rotation enabled. Verify cookie attributes on both an OTP sign-in and a server refresh over HTTPS.
 
 ## Manual QA checklist
-Run on a preview or staging deployment after any change to the login form, the proxy, or the redirect helpers.
 
-- [ ] Signed out, open `/en/publish`: the browser lands on `/en/login?redirect=%2Fen%2Fpublish`. Repeat with `/fr/publish`.
-- [ ] Sign in with valid credentials: the browser lands on `/en/publish`, signed in, with no second visit to `/login`.
-- [ ] On `/en/publish` after sign-in, press back: the browser does not return to the login form.
-- [ ] The navbar shows the profile menu, not "Sign in", right after the redirect.
-- [ ] Repeat with `/dashboard` and `/my-parts`.
-- [ ] Open `/en/login` directly and sign in: the browser lands on `/`, which redirects to `/en`.
-- [ ] Sign in with a wrong password: an error is shown, the form is usable again, the URL is unchanged.
-- [ ] Open `/login?redirect=//evil.com`, `/login?redirect=https://evil.com` and `/login?redirect=/%5c%5cevil.com`, then sign in: the browser lands on `/` each time.
-- [ ] From `/login?redirect=%2Fpublish`, follow "Sign up": the sign-up URL keeps `redirect=%2Fpublish`.
-
-The redirect validation is covered by unit tests in `lib/utils/validation.test.ts`.
+- [ ] As an existing member, visit `/fr/publish` while signed out. Request a code and sign in: the app returns to `/fr/publish`, with the signed-in navbar and the same account. Repeat in English.
+- [ ] Start sign-up with a username and a mistyped email. Correct the address, verify the code and check that the profile has the chosen username. Repeat with a duplicate username, an expired code, and a resend.
+- [ ] A missing email account at login shows the same instructions without creating an account.
+- [ ] With an external or encoded unsafe `redirect`, a successful sign-in lands on the home page.
+- [ ] Close the browser after sign-in and reopen it the next day: a protected page opens without asking for a new code. Verify session refresh after the access token expires.
+- [ ] Sign in on two devices. A normal sign-out ends only one session. “Sign out on all devices” ends both as their access tokens expire.

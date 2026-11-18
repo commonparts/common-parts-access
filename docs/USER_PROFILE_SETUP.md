@@ -6,10 +6,10 @@ This implementation uses a PostgreSQL trigger to automatically create user profi
 
 ## How It Works
 
-1. **User signs up** with email, password, and username
+1. **User signs up** with an email code and username
 2. **Supabase creates auth user** in `auth.users` table
-3. **Database trigger fires automatically** and creates a profile in `user_profiles` table
-4. **Username is stored** in user metadata and then updated in the profile
+3. **Database trigger fires automatically** and creates a profile with a generated username in `user_profiles`
+4. **Chosen username is saved** after the user verifies their email
 5. **User can update their profile** after sign-up (via RLS policy)
 
 ## Setup Instructions
@@ -39,33 +39,16 @@ CREATE POLICY "Users can update own profile" ON user_profiles
 ### Step 3: Test the Sign-Up Flow
 
 1. Navigate to `/sign-up` in your application
-2. Fill in email, username, and password
-3. Submit the form
+2. Fill in your email and username
+3. Request an email code and verify it on the form
 4. Check your Supabase dashboard → `user_profiles` table
 5. You should see a new row with the username you entered
 
 ## How the Code Works
 
-### Sign-Up Process (`lib/supabase/queries/auth.client.ts`)
+### Sign-Up Process
 
-```typescript
-// 1. Check username availability
-checkUsernameAvailability(username)
-
-// 2. Create auth user with username in metadata
-supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { username }  // Stored in user metadata
-  }
-})
-
-// 3. Trigger automatically creates user_profile
-
-// 4. Update profile with username (via RLS)
-updateUserProfile(userId, { username })
-```
+The form requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The email template uses the stored interface locale. After verification, `completeEmailSignUp` updates the signed-in account's generated username under the existing profile RLS policy. An account that already has its own username keeps it. See [AUTH_FLOW.md](./AUTH_FLOW.md).
 
 ### Database Trigger Flow
 
@@ -90,8 +73,7 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 ## Troubleshooting
 
 ### "Username is already taken" error
-- The username check happens before sign-up
-- Try a different username
+- The database enforces uniqueness when the username is saved after email verification. Choose another username to finish signing up.
 
 ### Profile not created after sign-up
 1. Check if the trigger was created: Run in SQL Editor:
@@ -111,7 +93,7 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 ## Files Modified
 
 - `supabase/migrations/00000000000000_initial_schema.sql` - Database trigger (`handle_new_user`)
-- `lib/supabase/queries/auth.client.ts` - Updated signUp function
-- `lib/supabase/queries/users.ts` - User profile queries
+- `lib/supabase/queries/auth.client.ts` - Email code requests and verification
+- `lib/actions/account.ts` - Completing signup after verification
 - `types/supabase.ts` - Generated row types (`user_profiles`), see [Generated types](./DEV_STRATEGY.md#generated-types)
-- `components/auth/sign-up-form.tsx` - Username input field
+- `components/auth/email-auth-form.tsx` - Username input field

@@ -35,9 +35,9 @@ export default function PrivacyEn() {
         <ul>
           <li>Email address</li>
           <li>Username and display name (as provided by you)</li>
-          <li>Password (stored in hashed form - we never store your password in plain text)</li>
           <li>Profile information you choose to add (bio, avatar)</li>
         </ul>
+        <p>If you previously set a password for your account, Supabase may still retain a hash of it.</p>
 
         <h3>3.2 Content data</h3>
         <p>When you publish spare parts or other content to the platform, we collect:</p>
@@ -248,8 +248,7 @@ export default function PrivacyEn() {
         <h2>9. Security</h2>
         <p>
           Common Parts Access implements industry-standard security measures, including encrypted data transmission
-          (TLS), hashed password storage, and session-based authentication managed by Supabase. No system is fully
-          secure; we encourage you to use a strong, unique password for your account.
+          (TLS), sign-in with a code sent by email, and session management through Supabase. No system is fully secure.
         </p>
       </section>
 

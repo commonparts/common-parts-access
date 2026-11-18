@@ -1,4 +1,4 @@
-import { LayoutDashboard, LogOut, Trash2, UploadCloud } from "lucide-react";
+import { LayoutDashboard, LogOut, Settings, Trash2, UploadCloud } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type UserProfileMenuAction = "logout" | "deleteAccount";
@@ -7,7 +7,7 @@ interface UserProfileMenuLinkItem {
   key: string;
   type: "link";
   /** Key of the label in the `UserMenu` messages. */
-  label: "myParts" | "publish";
+  label: "myParts" | "publish" | "settings";
   href: string;
   icon: LucideIcon;
 }
@@ -50,6 +50,13 @@ export const USER_PROFILE_MENU_ITEMS: UserProfileMenuItem[] = [
   {
     key: "separator-account",
     type: "separator",
+  },
+  {
+    key: "settings",
+    type: "link",
+    label: "settings",
+    href: "/settings",
+    icon: Settings,
   },
   {
     key: "logout",
