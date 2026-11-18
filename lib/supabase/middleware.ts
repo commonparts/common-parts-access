@@ -3,6 +3,7 @@ import { hasLocale } from "next-intl";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 import { findPublicEnv } from "@/lib/public-env";
+import { authCookieOptions } from "@/lib/supabase/auth-cookies";
 import type { Database } from "@/types/supabase";
 
 /**
@@ -43,6 +44,7 @@ export async function updateSession(
     env.NEXT_PUBLIC_SUPABASE_URL,
     env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
     {
+      cookieOptions: authCookieOptions,
       cookies: {
         getAll() {
           return request.cookies.getAll();

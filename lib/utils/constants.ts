@@ -44,8 +44,9 @@ export const VALIDATION_LIMITS = {
   },
   USER: {
     USERNAME_MIN_LENGTH: 3,
-    USERNAME_MAX_LENGTH: 20,
-    PASSWORD_MIN_LENGTH: 8,
+    // Matches the check constraint on user_profiles.username.
+    USERNAME_MAX_LENGTH: 50,
+    EMAIL_CODE_LENGTH: 6,
     BIO_MAX_LENGTH: 500
   }
 } as const

@@ -129,6 +129,7 @@
     "open": "Ouvrir le menu du profil",
     "myParts": "Mes pièces",
     "publish": "Publier une pièce",
+    "settings": "Paramètres",
     "logout": "Se déconnecter",
     "deleteAccount": "Supprimer le compte",
     "signOutFailed": "La déconnexion a échoué. Veuillez réessayer."
@@ -978,77 +979,41 @@
     "printConfirmation": "Confirmation d’impression"
   },
   "AuthForms": {
-    "email": "E-mail",
-    "emailPlaceholder": "m@exemple.fr",
-    "password": "Mot de passe"
+    "email": "Adresse e-mail",
+    "emailPlaceholder": "nom@exemple.fr",
+    "username": "Nom d’utilisateur",
+    "usernameCharacters": "Utilisez uniquement des lettres, des chiffres, des tirets ou des tirets bas.",
+    "chooseUsername": "Votre adresse e-mail est confirmée. Choisissez un nom d’utilisateur pour terminer votre inscription.",
+    "finishSignUp": "Terminer l’inscription",
+    "finishingSignUp": "Enregistrement…",
+    "checkInbox": "Si un code a été envoyé à {email}, saisissez-le ci-dessous. Pensez à vérifier vos courriers indésirables.",
+    "code": "Code à {length} chiffres",
+    "send": "Envoyer un code",
+    "sending": "Envoi en cours…",
+    "verify": "Vérifier le code",
+    "verifying": "Vérification en cours…",
+    "resend": "Envoyer un nouveau code",
+    "changeEmail": "Changer d’adresse e-mail"
   },
   "AuthErrors": {
-    "invalidCredentials": "E-mail ou mot de passe incorrect",
-    "emailNotConfirmed": "Confirmez votre adresse e-mail avant de vous connecter.",
-    "userExists": "Un compte existe déjà pour cette adresse e-mail",
-    "usernameTaken": "Ce nom d’utilisateur est déjà pris",
-    "weakPassword": "Ce mot de passe ne répond pas aux exigences de sécurité. Choisissez-en un autre.",
-    "samePassword": "Le nouveau mot de passe doit être différent de l’actuel",
-    "invalidEmail": "Saisissez une adresse e-mail valide",
-    "invalidConfirmationCode": "Ce code est incorrect, a expiré ou a déjà été utilisé. Consultez le dernier e-mail reçu ou demandez un nouveau code.",
-    "rateLimited": "Trop de tentatives. Patientez quelques minutes avant de réessayer.",
+    "usernameTaken": "Ce nom d’utilisateur est déjà pris.",
+    "invalidEmail": "Saisissez une adresse e-mail valide.",
+    "emailNotAuthorized": "Cette adresse e-mail ne peut pas recevoir de code.",
+    "invalidCode": "Ce code est invalide ou a expiré. Vérifiez le code ou demandez-en un nouveau.",
+    "rateLimited": "Attendez une minute avant de réessayer.",
     "generic": "Une erreur est survenue. Veuillez réessayer."
   },
   "LoginForm": {
-    "title": "Connexion",
-    "continueSignUp": "Poursuivre l’inscription",
-    "description": "Saisissez votre e-mail ci-dessous pour vous connecter à votre compte",
-    "forgotPassword": "Mot de passe oublié ?",
-    "submitting": "Connexion…",
-    "submit": "Se connecter",
-    "noAccount": "Pas encore de compte ?",
-    "signUp": "S’inscrire"
+    "title": "Se connecter",
+    "description": "Saisissez votre adresse e-mail pour recevoir un code de connexion.",
+    "alternatePrompt": "Vous découvrez Common Parts ?",
+    "alternateAction": "Créer un compte"
   },
   "SignUpForm": {
-    "title": "Inscription",
-    "description": "Créer un compte",
-    "username": "Nom d’utilisateur",
-    "repeatPassword": "Confirmer le mot de passe",
-    "passwordRules": {
-      "length": "Au moins {min} caractères",
-      "lowercase": "Une lettre minuscule",
-      "uppercase": "Une lettre majuscule",
-      "digit": "Un chiffre",
-      "symbol": "Un symbole, comme !, @ ou #",
-      "met": "Critère respecté",
-      "unmet": "Critère à respecter"
-    },
-    "passwordRequirementsUnmet": "Respectez les critères restants pour le mot de passe.",
-    "passwordCompromised": "Ce mot de passe a été exposé dans une fuite de données. Choisissez-en un autre.",
-    "passwordsDiffer": "Les mots de passe ne correspondent pas",
-    "usernameRequired": "Le nom d’utilisateur est obligatoire",
-    "usernameTooShort": "Le nom d’utilisateur doit comporter au moins {min} caractères",
-    "usernameCharacters": "Le nom d’utilisateur ne peut contenir que des lettres, des chiffres, des tirets bas et des tirets",
-    "submitting": "Création de votre compte…",
-    "submit": "S’inscrire",
-    "haveAccount": "Vous avez déjà un compte ?",
-    "signIn": "Se connecter"
-  },
-  "ForgotPasswordForm": {
-    "rejectedLinkTitle": "Ce lien de réinitialisation a expiré ou est invalide",
-    "rejectedLinkDescription": "Saisissez votre adresse e-mail pour recevoir un nouveau lien.",
-    "resend": "Envoyer un nouveau lien",
-    "sentTitle": "Consultez vos e-mails",
-    "sentDescription": "Instructions de réinitialisation envoyées",
-    "sentBody": "Si vous vous êtes inscrit avec votre e-mail et un mot de passe, vous recevrez un e-mail de réinitialisation du mot de passe.",
-    "title": "Réinitialiser votre mot de passe",
-    "description": "Saisissez votre e-mail et nous vous enverrons un lien pour réinitialiser votre mot de passe",
-    "submitting": "Envoi…",
-    "submit": "Envoyer l’e-mail de réinitialisation",
-    "haveAccount": "Vous avez déjà un compte ?",
-    "signIn": "Se connecter"
-  },
-  "UpdatePasswordForm": {
-    "title": "Réinitialiser votre mot de passe",
-    "description": "Saisissez votre nouveau mot de passe ci-dessous.",
-    "password": "Nouveau mot de passe",
-    "submitting": "Enregistrement…",
-    "submit": "Enregistrer le nouveau mot de passe"
+    "title": "Créer un compte",
+    "description": "Choisissez un nom d’utilisateur et saisissez votre adresse e-mail pour recevoir un code de confirmation.",
+    "alternatePrompt": "Vous avez déjà un compte ?",
+    "alternateAction": "Se connecter"
   },
   "DeleteAccountPage": {
     "title": "Supprimer votre compte",
@@ -1081,21 +1046,16 @@
     "signIn": "Se reconnecter",
     "thanks": "Merci de participer à Common Parts Access. Nous sommes là dès que vous avez besoin de trouver ou de publier des pièces de réparation."
   },
-  "SignUpSuccessPage": {
-    "title": "Confirmez votre adresse e-mail",
-    "description": "Saisissez le code à six chiffres reçu dans l’e-mail de confirmation.",
-    "code": "Code de confirmation",
-    "codeFormat": "Saisissez les six chiffres de votre code de confirmation.",
-    "verify": "Vérifier le code",
-    "verifying": "Vérification…",
-    "resend": "Envoyer un nouveau code",
-    "resending": "Envoi…",
-    "resent": "Si une inscription est en attente pour cette adresse, vous recevrez un nouvel e-mail de confirmation."
-  },
   "SignOutPage": {
     "title": "Déconnexion en cours",
     "description": "Patientez pendant que nous fermons votre session. Si vous n’êtes pas redirigé, revenez à l’accueil.",
     "home": "Retour à l’accueil"
+  },
+  "SignOutEverywhere": {
+    "description": "Fermez vos sessions Common Parts sur tous vos appareils, y compris celui-ci.",
+    "action": "Se déconnecter de tous les appareils",
+    "pending": "Déconnexion en cours…",
+    "failure": "La déconnexion a échoué. Réessayez."
   },
   "DashboardPages": {
     "dashboard": {
@@ -1115,8 +1075,7 @@
     },
     "settings": {
       "title": "Paramètres",
-      "description": "Modifiez votre compte et vos préférences.",
-      "comingSoon": "La vue des paramètres arrive bientôt."
+      "description": "Modifiez votre compte et vos préférences."
     },
     "account": {
       "title": "Paramètres du compte",

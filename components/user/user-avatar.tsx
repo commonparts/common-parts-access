@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 
@@ -13,10 +14,17 @@ export function UserProfileMenu() {
 	const t = useTranslations("UserMenu");
 	const router = useRouter();
 	const name = useCurrentUserName();
+	const [signOutFailed, setSignOutFailed] = useState(false);
 
 	const handleLogout = async () => {
-		await signOut();
-		router.push("/logout-success");
+		setSignOutFailed(false);
+		try {
+			const { error } = await signOut();
+			if (error) throw error;
+			router.push("/logout-success");
+		} catch {
+			setSignOutFailed(true);
+		}
 	};
 
 	const handleDeleteAccount = () => {
@@ -83,6 +91,11 @@ export function UserProfileMenu() {
 						</DropdownMenuItem>
 					);
 				})}
+				{signOutFailed && (
+					<DropdownMenuLabel role="alert" className="normal-case text-status-errorText">
+						{t("signOutFailed")}
+					</DropdownMenuLabel>
+				)}
 			</DropdownMenuContent>
 		</DropdownMenu>
 	);

@@ -4,16 +4,25 @@
 # Local identifier used by the CLI (not the hosted project reference).
 project_id = "common-parts-access"
 
-# Local Auth sends the signup code to Mailpit. Publish the hosted template
-# when the confirmation page goes live (docs/AUTH_FLOW.md).
-[auth.email]
-enable_confirmations = true
-
-[auth.email.template.confirmation]
-subject = '{{ if eq .Data.locale "fr" }}Votre code de confirmation Common Parts Access{{ else }}Your Common Parts Access confirmation code{{ end }}'
-content_path = "./supabase/templates/signup-confirmation.html"
-
 # The database webhook authenticates with WEBHOOK_SECRET, checked in the function code.
 # The platform JWT check stays off: it only accepts the legacy JWT-based keys (#436).
 [functions.triage-feedback]
 verify_jwt = false
+
+# Auth settings for the local stack. Apply hosted settings separately (docs/AUTH_FLOW.md).
+[auth]
+enable_refresh_token_rotation = true
+
+[auth.email]
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 900
+max_frequency = "60s"
+
+[auth.email.template.confirmation]
+subject = '{{ if eq .Data.locale "fr" }}Votre code de confirmation Common Parts Access{{ else }}Your Common Parts Access confirmation code{{ end }}'
+content_path = "./supabase/templates/email-code.html"
+
+[auth.email.template.magic_link]
+subject = '{{ if eq .Data.locale "fr" }}Votre code de connexion Common Parts Access{{ else }}Your Common Parts Access sign-in code{{ end }}'
+content_path = "./supabase/templates/sign-in-code.html"
