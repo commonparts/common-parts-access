@@ -1,6 +1,6 @@
 # Sign-in and sessions
 
-Common Parts uses six-digit email codes through Supabase Auth for sign-in and sign-up. An existing member signs in with the same email address and keeps their account, profile and parts. During sign-up, the database trigger creates a profile with a generated username. The app saves the chosen username after email verification, so a visitor can correct their email address before verification and keep their choice. If the name becomes unavailable in the meantime, the visitor can choose another without requesting a new code. Only sign-up can create accounts. The login form shows the same inbox instructions for known and unknown addresses.
+Common Parts uses six-digit email codes through Supabase Auth for sign-in and sign-up. An existing member signs in with the same email address and keeps their account, profile and parts. During sign-up, the database trigger creates a profile with a generated username. The visitor can correct their email address before verification and keep their chosen username. The app saves that username after email verification. If the name is already taken, the visitor can choose another without requesting a new code. Only sign-up can create accounts. The login form shows the same inbox instructions for known and unknown addresses.
 
 After checking the code, Supabase writes the session cookies. The form uses `window.location.replace` to load the requested page with a fresh navbar and route cache (#110, #112). Code requests go directly from the browser to Supabase, which applies its rate limits without putting all users behind the application's server IP.
 
@@ -8,7 +8,7 @@ After checking the code, Supabase writes the session cookies. The form uses `win
 
 `proxy.ts` calls `updateSession` before locale routing, refreshing the session and checking the user with `getUser()`. In each locale, `/publish`, `/dashboard`, `/downloads`, `/my-parts`, `/notifications` and `/settings` require a user. A signed-out visitor goes to `/<locale>/login?redirect=<pathname>`; only the pathname is preserved. API routes use the server client and check authorization separately.
 
-The login and sign-up forms preserve a valid `redirect` when switching between them. `parseRedirectParam` and `isSafeRedirect` only accept same-site paths and reject absolute or protocol-relative URLs, whitespace, backslashes and control characters, including after URL decoding. The fallback is `/`, which resolves to the visitor's locale. The previous `/sign-up-success` page sends visitors to sign-in so they can request a fresh code and keep their destination.
+The login and sign-up forms preserve a valid `redirect` when switching between them. `parseRedirectParam` and `isSafeRedirect` only accept same-site paths and reject absolute or protocol-relative URLs, whitespace, backslashes and control characters, including after URL decoding. The fallback is `/`, which resolves to the visitor's locale.
 
 ## Session policy
 
