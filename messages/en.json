@@ -987,7 +987,7 @@
     "finishSignUp": "Finish signing up",
     "finishingSignUp": "Saving…",
     "checkInbox": "If a code was sent to {email}, enter it below. Check your spam folder if you don’t see the email.",
-    "code": "6-digit code",
+    "code": "{length}-digit code",
     "send": "Send a code",
     "sending": "Sending…",
     "verify": "Verify code",
