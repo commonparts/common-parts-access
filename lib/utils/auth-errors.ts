@@ -9,7 +9,6 @@ const AUTH_ERROR_MESSAGES = {
   email_address_invalid: 'invalidEmail',
   email_address_not_authorized: 'emailNotAuthorized',
   otp_expired: 'invalidCode',
-  captcha_failed: 'captcha',
   over_email_send_rate_limit: 'rateLimited',
   over_request_rate_limit: 'rateLimited',
 } as const

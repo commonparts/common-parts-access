@@ -6,9 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmailAuthForm } from "@/components/auth/email-auth-form";
 import fr from "@/messages/fr.json";
 
-const { signInWithOtp, verifyOtp, checkUsernameAvailability, searchParams } = vi.hoisted(() => ({
+const { signInWithOtp, verifyOtp, completeEmailSignUp, checkUsernameAvailability, searchParams } = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
   verifyOtp: vi.fn(),
+  completeEmailSignUp: vi.fn(),
   checkUsernameAvailability: vi.fn(),
   searchParams: vi.fn(),
 }));
@@ -21,6 +22,7 @@ vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({ auth: { signInWithOtp, verifyOtp } }),
 }));
 vi.mock("@/lib/supabase/queries/users", () => ({ checkUsernameAvailability }));
+vi.mock("@/lib/actions/account", () => ({ completeEmailSignUp }));
 
 describe("email authentication", () => {
   let container: HTMLElement;
@@ -52,6 +54,7 @@ describe("email authentication", () => {
     searchParams.mockReturnValue(new URLSearchParams("redirect=%2Ffr%2Fpublish"));
     signInWithOtp.mockReset().mockResolvedValue({ error: null });
     verifyOtp.mockReset();
+    completeEmailSignUp.mockReset();
     checkUsernameAvailability.mockReset().mockResolvedValue({ available: true, error: null });
     container = document.createElement("div");
     document.body.appendChild(container);
@@ -79,7 +82,7 @@ describe("email authentication", () => {
     expect(container.querySelector("[role=alert]")).toBeNull();
   });
 
-  it("passes a new account's profile data and allows resending to the same address without signing up again", async () => {
+  it("sends and resends a sign-up code without reserving the chosen username", async () => {
     await renderForm("sign-up");
     expect(container.querySelector("[type=password]")).toBeNull();
     await type("email", "qa@example.test");
@@ -93,7 +96,7 @@ describe("email authentication", () => {
       email: "qa@example.test",
       options: expect.objectContaining({
         shouldCreateUser: true,
-        data: { username: "qa-541", locale: "fr" },
+        data: { locale: "fr", signup_username_pending: true },
       }),
     });
 
@@ -104,6 +107,40 @@ describe("email authentication", () => {
       options: expect.objectContaining({ shouldCreateUser: false }),
     });
     expect(checkUsernameAvailability).toHaveBeenCalledExactlyOnceWith("qa-541");
+    expect(completeEmailSignUp).not.toHaveBeenCalled();
+  });
+
+  it("keeps the username after correcting the address and lets the user retry without verifying another code", async () => {
+    verifyOtp.mockResolvedValue({ data: { session: {} }, error: null });
+    completeEmailSignUp.mockResolvedValue({ ok: false, error: fr.AuthErrors.usernameTaken });
+    await renderForm("sign-up");
+    await type("email", "typo@example.test");
+    await type("username", "qa-541");
+    await submit();
+
+    const changeEmail = [...container.querySelectorAll("button")].find((button) => button.textContent === fr.AuthForms.changeEmail);
+    await act(async () => changeEmail?.click());
+    expect(container.querySelector<HTMLInputElement>("#username")?.value).toBe("qa-541");
+    await type("email", "qa@example.test");
+    await submit();
+    expect(signInWithOtp).toHaveBeenNthCalledWith(2, {
+      email: "qa@example.test",
+      options: { shouldCreateUser: true, data: { locale: "fr", signup_username_pending: true } },
+    });
+    expect(completeEmailSignUp).not.toHaveBeenCalled();
+
+    await type("email-code", "012345");
+    await submit();
+    expect(verifyOtp).toHaveBeenCalledExactlyOnceWith({
+      email: "qa@example.test", token: "012345", type: "email",
+    });
+    expect(completeEmailSignUp).toHaveBeenCalledExactlyOnceWith("qa-541");
+    expect(container.querySelector("[role=alert]")?.textContent).toBe(fr.AuthErrors.usernameTaken);
+
+    await type("username", "qa-542");
+    await submit();
+    expect(completeEmailSignUp).toHaveBeenNthCalledWith(2, "qa-542");
+    expect(verifyOtp).toHaveBeenCalledTimes(1);
   });
 
   it("requires six digits and keeps the form usable when Supabase rejects a code", async () => {

@@ -1,3 +1,4 @@
+-- APPLIED to production on 2026-11-18 as version 20261118071244
 -- Reject new password grants without invalidating existing sessions during rollout.
 create function public.reject_password_sessions(event jsonb)
 returns jsonb

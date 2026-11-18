@@ -8,8 +8,8 @@ This implementation uses a PostgreSQL trigger to automatically create user profi
 
 1. **User signs up** with an email code and username
 2. **Supabase creates auth user** in `auth.users` table
-3. **Database trigger fires automatically** and creates a profile in `user_profiles` table
-4. **Username is stored** in user metadata and copied to the profile by the trigger
+3. **Database trigger fires automatically** and creates a profile with a generated username in `user_profiles`
+4. **Chosen username is saved** after the user verifies their email
 5. **User can update their profile** after sign-up (via RLS policy)
 
 ## Setup Instructions
@@ -48,7 +48,7 @@ CREATE POLICY "Users can update own profile" ON user_profiles
 
 ### Sign-Up Process
 
-The form checks username availability, then requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The trigger copies the username metadata to the public profile; the email template uses the stored interface locale. See [AUTH_FLOW.md](./AUTH_FLOW.md).
+The form checks username availability, then requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The email template uses the stored interface locale. After verification, `completeEmailSignUp` updates the signed-in account's generated username under the existing profile RLS policy. An account that already has its own username keeps it. See [AUTH_FLOW.md](./AUTH_FLOW.md).
 
 ### Database Trigger Flow
 
@@ -73,7 +73,7 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 ## Troubleshooting
 
 ### "Username is already taken" error
-- The username check happens before sign-up
+- The form checks availability before sending the code. The database enforces uniqueness when the username is saved after verification.
 - Try a different username
 
 ### Profile not created after sign-up
@@ -94,7 +94,8 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 ## Files Modified
 
 - `supabase/migrations/00000000000000_initial_schema.sql` - Database trigger (`handle_new_user`)
-- `lib/supabase/queries/auth.client.ts` - Updated signUp function
+- `lib/supabase/queries/auth.client.ts` - Email code requests and verification
+- `lib/actions/account.ts` - Completing signup after verification
 - `lib/supabase/queries/users.ts` - User profile queries
 - `types/supabase.ts` - Generated row types (`user_profiles`), see [Generated types](./DEV_STRATEGY.md#generated-types)
-- `components/auth/sign-up-form.tsx` - Username input field
+- `components/auth/email-auth-form.tsx` - Username input field

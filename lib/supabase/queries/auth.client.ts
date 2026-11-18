@@ -9,7 +9,7 @@ interface NewAccount {
 }
 
 /** Only the explicit sign-up form can create an account. */
-export async function requestEmailCode(email: string, account?: NewAccount, captchaToken?: string) {
+export async function requestEmailCode(email: string, account?: NewAccount) {
   if (account) {
     const { available, error } = await checkUsernameAvailability(account.username);
     if (error) return { error };
@@ -20,8 +20,8 @@ export async function requestEmailCode(email: string, account?: NewAccount, capt
     email,
     options: {
       shouldCreateUser: Boolean(account),
-      data: account,
-      captchaToken,
+      // The profile keeps its generated username until the email is verified.
+      data: account ? { locale: account.locale, signup_username_pending: true } : undefined,
     },
   });
 

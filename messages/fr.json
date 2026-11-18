@@ -983,6 +983,9 @@
     "emailPlaceholder": "nom@exemple.fr",
     "username": "Nom d’utilisateur",
     "usernameCharacters": "Utilisez uniquement des lettres, des chiffres, des tirets ou des tirets bas.",
+    "chooseUsername": "Votre adresse e-mail est confirmée. Choisissez un nom d’utilisateur pour terminer votre inscription.",
+    "finishSignUp": "Terminer l’inscription",
+    "finishingSignUp": "Enregistrement…",
     "checkInbox": "Si un code a été envoyé à {email}, saisissez-le ci-dessous. Pensez à vérifier vos courriers indésirables.",
     "code": "Code à 6 chiffres",
     "send": "Envoyer un code",
@@ -997,7 +1000,6 @@
     "invalidEmail": "Saisissez une adresse e-mail valide.",
     "emailNotAuthorized": "Cette adresse e-mail ne peut pas recevoir de code.",
     "invalidCode": "Ce code est invalide ou a expiré. Vérifiez le code ou demandez-en un nouveau.",
-    "captcha": "La vérification de sécurité a échoué. Actualisez la page ou réessayez.",
     "rateLimited": "Attendez une minute avant de réessayer.",
     "generic": "Une erreur est survenue. Veuillez réessayer."
   },

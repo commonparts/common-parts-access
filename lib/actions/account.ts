@@ -8,9 +8,11 @@ import { AccountDeletionError, deleteAccount } from '@/lib/account/deletion'
 import { validate, type Result } from '@/lib/api/parse'
 import { getPublicEnv } from '@/lib/public-env'
 import { accountDeletionConfirmationSchema } from '@/lib/schemas/account'
+import { signUpUsername } from '@/lib/schemas/auth'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { authCookieOptions } from '@/lib/supabase/auth-cookies'
 import { createAccountDeletionSteps } from '@/lib/supabase/queries/account-deletion'
+import { claimSignUpUsername } from '@/lib/supabase/queries/auth.server'
 import { createClient } from '@/lib/supabase/server'
 
 /** Deletes the verified session's account after checking the localized confirmation. */
@@ -41,6 +43,27 @@ export async function deleteOwnAccount(input: z.input<typeof accountDeletionConf
     console.error('Account deletion failed', failure?.stage ?? 'unknown', { code, status: status ?? statusCode })
     return { ok: false, error: t('accountDeletionFailed') }
   }
+}
+
+/** Saves a new account's chosen username after the app verifies its email code. */
+export async function completeEmailSignUp(input: string): Promise<Result<null>> {
+  const username = await validate(signUpUsername, input)
+  if (!username.ok) return username
+
+  const supabase = await createClient()
+  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  if (authError || !user || !user.email_confirmed_at) {
+    const t = await getTranslations('Api')
+    return { ok: false, error: t('signInRequired') }
+  }
+  if (user.user_metadata.signup_username_pending === true) {
+    const { error } = await claimSignUpUsername(supabase, user.id, username.data)
+    if (error) {
+      const t = await getTranslations('AuthErrors')
+      return { ok: false, error: t(error.code === '23505' ? 'usernameTaken' : 'generic') }
+    }
+  }
+  return { ok: true, data: null }
 }
 
 function accountDeletionSteps() {

@@ -983,6 +983,9 @@
     "emailPlaceholder": "name@example.com",
     "username": "Username",
     "usernameCharacters": "Use only letters, numbers, hyphens and underscores.",
+    "chooseUsername": "Your email is verified. Choose a username to finish signing up.",
+    "finishSignUp": "Finish signing up",
+    "finishingSignUp": "Saving…",
     "checkInbox": "If a code was sent to {email}, enter it below. Check your spam folder if you don’t see the email.",
     "code": "6-digit code",
     "send": "Send a code",
@@ -997,7 +1000,6 @@
     "invalidEmail": "Enter a valid email address.",
     "emailNotAuthorized": "This email address can’t receive a code.",
     "invalidCode": "This code is invalid or has expired. Check the code or request a new one.",
-    "captcha": "The security check failed. Refresh the page or try again.",
     "rateLimited": "Please wait a minute before trying again.",
     "generic": "Something went wrong. Please try again."
   },
