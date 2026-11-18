@@ -1,34 +1,16 @@
-import { getTranslations } from "next-intl/server";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { AuthShell } from "@/components/layout/auth-shell";
-import { SignUpConfirmationForm } from "@/components/auth/sign-up-confirmation-form";
+import { getLocale } from "next-intl/server";
+import { redirect } from "@/i18n/navigation";
 import { parseRedirectParam } from "@/lib/utils/validation";
 
 export default async function Page({
   searchParams,
 }: {
   searchParams: Promise<{ redirect?: string | string[] }>;
-}): Promise<React.JSX.Element> {
-  const t = await getTranslations("SignUpSuccessPage");
-  const { redirect } = await searchParams;
-  const redirectPath = parseRedirectParam(typeof redirect === "string" ? redirect : null);
-  return (
-    <AuthShell>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-heading-sm">{t("title")}</CardTitle>
-          <CardDescription>{t("description")}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SignUpConfirmationForm redirectPath={redirectPath} />
-        </CardContent>
-      </Card>
-    </AuthShell>
-  );
+}) {
+  const { redirect: requested } = await searchParams;
+  const destination = parseRedirectParam(typeof requested === "string" ? requested : null);
+  redirect({
+    href: destination ? { pathname: "/login", query: { redirect: destination } } : "/login",
+    locale: await getLocale(),
+  });
 }

@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="{{ if eq .Data.locale "fr" }}fr{{ else }}en{{ end }}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ if eq .Data.locale "fr" }}Votre code de connexion{{ else }}Your sign-in code{{ end }}</title>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap");
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#F7F7F6;font-family:'IBM Plex Sans','Helvetica Neue',Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F7F6;padding:48px 24px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#FFFFFF;border:1px solid #E4E4E2;border-radius:12px;overflow:hidden;">
+          <tr>
+            <td style="padding:32px 40px 28px;border-bottom:1px solid #E4E4E2;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:10px;vertical-align:middle;">
+                    <img src="https://commonparts.org/assets/commonparts-symbol-color-32x32.png" alt="" width="24" height="24" style="display:block;">
+                  </td>
+                  <td style="vertical-align:middle;">
+                    <span style="font-size:16px;font-weight:600;color:#1A1A1A;letter-spacing:-0.01em;">Common Parts</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:40px 40px 24px;">
+              <h1 style="margin:0 0 8px;font-size:22px;font-weight:600;color:#1A1A1A;letter-spacing:-0.02em;line-height:1.3;">
+                {{ if eq .Data.locale "fr" }}Votre code de connexion{{ else }}Your sign-in code{{ end }}
+              </h1>
+              <p style="margin:0;font-size:15px;color:#666666;line-height:1.6;">
+                {{ if eq .Data.locale "fr" }}Saisissez ce code sur la page de connexion à Common Parts Access.{{ else }}Enter this code on the Common Parts Access sign-in page.{{ end }}
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px 32px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding:14px 24px;background-color:#F7F7F6;border:1px solid #E4E4E2;border-radius:8px;color:#2D6A4F;font-family:'IBM Plex Mono','Courier New',monospace;font-size:28px;font-weight:500;letter-spacing:0.12em;line-height:1.2;white-space:nowrap;">
+                    <strong style="font-weight:700;">{{ .Token }}</strong>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background-color:#E4E4E2;"></div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:24px 40px 32px;">
+              <p style="margin:0;font-size:12px;color:#666666;line-height:1.6;">
+                {{ if eq .Data.locale "fr" }}Si vous n’avez pas demandé ce code, ignorez cet e-mail.{{ else }}If you didn’t request this code, ignore this email.{{ end }}
+              </p>
+            </td>
+          </tr>
+        </table>
+
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;">
+          <tr>
+            <td style="padding:24px 40px;text-align:center;">
+              <p style="margin:0;font-size:11px;color:#AAAAAA;line-height:1.5;font-style:italic;">
+                Common Parts {{ if eq .Data.locale "fr" }}: Infrastructure pour les pièces de rechange numériques{{ else }}— Infrastructure for digital spare parts{{ end }}
+              </p>
+              <p style="margin:4px 0 0;font-size:11px;color:#CCCCCC;font-family:'IBM Plex Mono','Courier New',monospace;">commonparts.org</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
