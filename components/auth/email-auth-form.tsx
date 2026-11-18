@@ -53,8 +53,8 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
     setError(null);
     setPending("send");
     try {
-      const account = signingUp && !codeRequested ? { username, locale } : undefined;
-      const { error } = await requestEmailCode(address.data, account);
+      const signUpLocale = signingUp && !codeRequested ? locale : undefined;
+      const { error } = await requestEmailCode(address.data, signUpLocale);
       if (error) throw error;
       setEmail(address.data);
       setCode("");

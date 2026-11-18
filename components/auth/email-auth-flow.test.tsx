@@ -6,11 +6,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { EmailAuthForm } from "@/components/auth/email-auth-form";
 import fr from "@/messages/fr.json";
 
-const { signInWithOtp, verifyOtp, completeEmailSignUp, checkUsernameAvailability, searchParams } = vi.hoisted(() => ({
+const { signInWithOtp, verifyOtp, completeEmailSignUp, searchParams } = vi.hoisted(() => ({
   signInWithOtp: vi.fn(),
   verifyOtp: vi.fn(),
   completeEmailSignUp: vi.fn(),
-  checkUsernameAvailability: vi.fn(),
   searchParams: vi.fn(),
 }));
 
@@ -21,7 +20,6 @@ vi.mock("@/i18n/navigation", () => ({
 vi.mock("@/lib/supabase/client", () => ({
   createClient: () => ({ auth: { signInWithOtp, verifyOtp } }),
 }));
-vi.mock("@/lib/supabase/queries/users", () => ({ checkUsernameAvailability }));
 vi.mock("@/lib/actions/account", () => ({ completeEmailSignUp }));
 
 describe("email authentication", () => {
@@ -55,7 +53,6 @@ describe("email authentication", () => {
     signInWithOtp.mockReset().mockResolvedValue({ error: null });
     verifyOtp.mockReset();
     completeEmailSignUp.mockReset();
-    checkUsernameAvailability.mockReset().mockResolvedValue({ available: true, error: null });
     container = document.createElement("div");
     document.body.appendChild(container);
     root = createRoot(container);
@@ -106,7 +103,6 @@ describe("email authentication", () => {
       email: "qa@example.test",
       options: expect.objectContaining({ shouldCreateUser: false }),
     });
-    expect(checkUsernameAvailability).toHaveBeenCalledExactlyOnceWith("qa-541");
     expect(completeEmailSignUp).not.toHaveBeenCalled();
   });
 

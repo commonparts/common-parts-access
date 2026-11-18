@@ -225,5 +225,3 @@ Functions reviewed against the Supabase security advisor (#435):
 | `generate_slug(text)` | `public` (so `anon` and `authenticated`), `service_role` | Security invoker, run as the caller by the product slug trigger. Computes a slug from its argument and reads no table. |
 
 `update_category_path()`, `generate_slug(text)` and `set_product_slug()` run with `search_path = ''` and reference every object by its schema (#435), like the other functions the migrations define in `public`.
-
-Supabase Auth can call `reject_password_sessions(jsonb)` as a Custom Access Token hook. The function rejects new password sessions and preserves the claims for email codes and session refreshes. Only `supabase_auth_admin` is granted `EXECUTE` by the migration. See [AUTH_FLOW.md](./AUTH_FLOW.md) for activation.

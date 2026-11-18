@@ -5,7 +5,6 @@
 
 /** Supabase Auth error codes the forms explain, and their `AuthErrors` message. */
 const AUTH_ERROR_MESSAGES = {
-  username_taken: 'usernameTaken',
   email_address_invalid: 'invalidEmail',
   email_address_not_authorized: 'emailNotAuthorized',
   otp_expired: 'invalidCode',

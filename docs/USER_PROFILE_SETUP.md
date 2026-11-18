@@ -48,7 +48,7 @@ CREATE POLICY "Users can update own profile" ON user_profiles
 
 ### Sign-Up Process
 
-The form checks username availability, then requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The email template uses the stored interface locale. After verification, `completeEmailSignUp` updates the signed-in account's generated username under the existing profile RLS policy. An account that already has its own username keeps it. See [AUTH_FLOW.md](./AUTH_FLOW.md).
+The form requests an email code with `signInWithOtp` and `shouldCreateUser: true`. The email template uses the stored interface locale. After verification, `completeEmailSignUp` updates the signed-in account's generated username under the existing profile RLS policy. An account that already has its own username keeps it. See [AUTH_FLOW.md](./AUTH_FLOW.md).
 
 ### Database Trigger Flow
 
@@ -73,8 +73,7 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 ## Troubleshooting
 
 ### "Username is already taken" error
-- The form checks availability before sending the code. The database enforces uniqueness when the username is saved after verification.
-- Try a different username
+- The database enforces uniqueness when the username is saved after email verification. Choose another username to finish signing up.
 
 ### Profile not created after sign-up
 1. Check if the trigger was created: Run in SQL Editor:
@@ -96,6 +95,5 @@ INSERT INTO auth.users → TRIGGER fires → Creates user_profiles row
 - `supabase/migrations/00000000000000_initial_schema.sql` - Database trigger (`handle_new_user`)
 - `lib/supabase/queries/auth.client.ts` - Email code requests and verification
 - `lib/actions/account.ts` - Completing signup after verification
-- `lib/supabase/queries/users.ts` - User profile queries
 - `types/supabase.ts` - Generated row types (`user_profiles`), see [Generated types](./DEV_STRATEGY.md#generated-types)
 - `components/auth/email-auth-form.tsx` - Username input field

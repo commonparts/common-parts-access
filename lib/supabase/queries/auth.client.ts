@@ -1,32 +1,19 @@
-import { AuthError } from "@supabase/supabase-js";
 import type { Locale } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
-import { checkUsernameAvailability } from "@/lib/supabase/queries/users";
-
-interface NewAccount {
-  username: string;
-  locale: Locale;
-}
 
 /** Only the explicit sign-up form can create an account. */
-export async function requestEmailCode(email: string, account?: NewAccount) {
-  if (account) {
-    const { available, error } = await checkUsernameAvailability(account.username);
-    if (error) return { error };
-    if (!available) return { error: new AuthError("Username is already taken", 409, "username_taken") };
-  }
-
+export async function requestEmailCode(email: string, signUpLocale?: Locale) {
   const { error } = await createClient().auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: Boolean(account),
+      shouldCreateUser: Boolean(signUpLocale),
       // The profile keeps its generated username until the email is verified.
-      data: account ? { locale: account.locale, signup_username_pending: true } : undefined,
+      data: signUpLocale ? { locale: signUpLocale, signup_username_pending: true } : undefined,
     },
   });
 
   // Give the same response whether or not an address has an account.
-  return { error: error?.code === "otp_disabled" && !account ? null : error };
+  return { error: error?.code === "otp_disabled" && !signUpLocale ? null : error };
 }
 
 export async function verifyEmailCode(email: string, token: string) {

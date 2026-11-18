@@ -1148,7 +1148,6 @@ export type Database = {
         Args: { p_part_id: string; p_product_id: string }
         Returns: undefined
       }
-      reject_password_sessions: { Args: { event: Json }; Returns: Json }
       release_storage_ownership: {
         Args: { p_user_id: string }
         Returns: number
