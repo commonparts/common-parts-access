@@ -9,11 +9,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { completeEmailSignUp } from "@/lib/actions/account";
-import { emailCode, emailCodeAddress } from "@/lib/schemas/auth";
+import { emailCode, emailCodeAddress, USERNAME_PATTERN } from "@/lib/schemas/auth";
 import { requestEmailCode, verifyEmailCode } from "@/lib/supabase/queries/auth.client";
 import { authErrorKey } from "@/lib/utils/auth-errors";
 import { cn } from "@/lib/utils";
+import { VALIDATION_LIMITS } from "@/lib/utils/constants";
 import { parseRedirectParam } from "@/lib/utils/validation";
+
+const { USERNAME_MIN_LENGTH, USERNAME_MAX_LENGTH, EMAIL_CODE_LENGTH } = VALIDATION_LIMITS.USER;
 
 interface Props extends ComponentPropsWithoutRef<"div"> {
   mode: "login" | "sign-up";
@@ -120,14 +123,14 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
           <form method="post" className="grid gap-md" onSubmit={submit}>
             {codeRequested ? (
               <div className="grid gap-xs">
-                <Label htmlFor="email-code">{auth("code")}</Label>
+                <Label htmlFor="email-code">{auth("code", { length: EMAIL_CODE_LENGTH })}</Label>
                 <Input
                   ref={codeInput}
                   id="email-code"
                   autoComplete="one-time-code"
                   inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  maxLength={6}
+                  pattern={`[0-9]{${EMAIL_CODE_LENGTH}}`}
+                  maxLength={EMAIL_CODE_LENGTH}
                   required
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
@@ -157,9 +160,9 @@ export function EmailAuthForm({ mode, className, ...props }: Props) {
                   autoComplete="username"
                   required
                   disabled={pending !== null}
-                  minLength={3}
-                  maxLength={50}
-                  pattern={"[a-zA-Z0-9_\\-]+"}
+                  minLength={USERNAME_MIN_LENGTH}
+                  maxLength={USERNAME_MAX_LENGTH}
+                  pattern={USERNAME_PATTERN}
                   title={auth("usernameCharacters")}
                   value={username}
                   onChange={(event) => setUsername(event.target.value)}

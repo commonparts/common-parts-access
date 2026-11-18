@@ -987,7 +987,7 @@
     "finishSignUp": "Terminer l’inscription",
     "finishingSignUp": "Enregistrement…",
     "checkInbox": "Si un code a été envoyé à {email}, saisissez-le ci-dessous. Pensez à vérifier vos courriers indésirables.",
-    "code": "Code à 6 chiffres",
+    "code": "Code à {length} chiffres",
     "send": "Envoyer un code",
     "sending": "Envoi en cours…",
     "verify": "Vérifier le code",
