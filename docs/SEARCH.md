@@ -6,7 +6,7 @@ How visitors find a device and its parts by typing what they read on it: a brand
 
 | Surface | Route | Notes |
 |---|---|---|
-| Autocomplete | `SearchBar` (hero, navbar) → `GET /api/search?q=&locale=&limit=` | From 2 characters. Grouped suggestions (products, parts, brands) and a "see all results" footer. Keystrokes are never logged. |
+| Autocomplete | `SearchBar` (hero) → `GET /api/search?q=&locale=&limit=` | From 2 characters. Grouped suggestions (products, parts, brands) and a "see all results" footer. Keystrokes are never logged. |
 | Results page | `/search?q=&type=` | Server-rendered. Fetches the capped result groups once; the `type` chips (`all`, products, parts, brands) filter client-side. Part hits are rendered as standard part cards, hydrated by id and in rank order through the shared card query (`fetchPartCardsByIds()`, #380). `robots: noindex, follow`, and excluded from the sitemap. |
 | Unserved state | `/search` | When no full match with a published part answers the query (#452): logs the miss with its outcome, shows the zero-result block above the results (brand suggestion, "which product is it?" picker, part request), and groups the other results under "Close matches". |
 | Demand dashboard | `/dashboard/search-demand` | Curators only (#435). Most frequent misses, filterable by outcome, and the queue of pending references. |
