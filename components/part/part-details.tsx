@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 import { SOCIAL_FEATURES_ENABLED } from "@/lib/utils/feature-flags"
 import { isValidHttpUrl } from "@/lib/utils/validation"
 import { formatPrintSetting, splitPrintTime } from "@/lib/utils/formatters"
-import { sortImageUrls } from "@/lib/utils/images"
+import { getPartImageReferences, sortImageUrls } from "@/lib/utils/images"
 import { describePublication } from "@/lib/utils/publication"
 import type { PrintReportStats } from "@/lib/utils/print-reports"
 import type { PartPageFile } from "@/types/parts"
@@ -363,10 +363,7 @@ export function PartDetails({ slug, className }: PartDetailsProps) {
     return null
   }
 
-  const allImages = sortImageUrls([...new Set([
-    ...(part.thumbnailUrl ? [part.thumbnailUrl] : []),
-    ...part.images,
-  ].filter(Boolean))])
+  const allImages = getPartImageReferences(part.thumbnailUrl, sortImageUrls(part.images))
 
   // How the part entered the registry, in the reader's vocabulary (#301).
   const publication = describePublication(part.originType, part.fileHostingType)

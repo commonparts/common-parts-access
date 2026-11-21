@@ -99,6 +99,14 @@ Covered by `lib/upload/payload.test.ts` and `lib/schemas/drafts.test.ts`.
 
 Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated'` scoping in `queries/curation.ts`. That single filter is what keeps the flows apart: **original actions cannot mutate a curation draft, and elsewhere actions cannot mutate an upload draft**, in either direction and regardless of who owns the row.
 
+## Edit a published part
+
+The owner can open **Edit** from **My parts** to update the title, description, instructions and photos of a published part (#563). Photo selections apply when the owner saves. Removing the thumbnail promotes the first retained photo or, if all existing photos were removed, the first newly added photo. An empty gallery uses the placeholder.
+
+The browser uploads new photos directly to Storage. Each save attempt uses fresh paths in the `edit-thumbnails` folder. The save action validates the request, checks the session and calls `edit_published_part` to update the listing and its image registrations in one transaction. The function checks ownership and the revision opened in the form. A stale form asks the owner to reopen the editor.
+
+The browser removes the uploads for an attempt that the server confirms was rejected. If a tab closes or the response is lost, Supabase Cron cleans up unregistered uploads after 24 hours. The registration function accepts uploads younger than 24 hours. See [Storage maintenance](DEV_STRATEGY.md#part-edit-upload-expiry).
+
 ## API endpoints
 
 The reads below require an authenticated session (401 otherwise). Mutations use `savePublication` (`createOriginal` / `updateOriginal`) and `publishPublication` (`track: 'original'`) in `lib/actions/publish.ts`, with the shared schemas of `lib/schemas/publish.ts`. An action returns `{ ok: true, data }` or `{ ok: false, error }`, plus named `blockers` on a failed publication gate. The replaced POST/PATCH handlers and publish route are removed (#485).

@@ -22,7 +22,7 @@ export async function DELETE(
       return NextResponse.json({ error: t('invalidSlug') }, { status: 400 })
     }
 
-    await deletePart(slug, user.id)
+    await deletePart(supabase, slug)
     return NextResponse.json({ success: true })
   } catch (error) {
     if (error instanceof Error) {
