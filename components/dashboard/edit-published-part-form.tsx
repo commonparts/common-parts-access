@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { useTranslations } from 'next-intl'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,7 @@ import { PartThumbnail } from '@/components/part/part-thumbnail'
 import { FILE_TYPES } from '@/constants/app'
 import { Link, useRouter } from '@/i18n/navigation'
 import { editPublishedPart } from '@/lib/actions/part-edit'
-import { StorageUploadError, uploadFilesFromClient, type ClientUploadedFile } from '@/lib/storage/client-upload'
+import { cleanupUploadedFiles, StorageUploadError, uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { getFileExtension, PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import type { getPublishedPartForEdit } from '@/lib/supabase/queries/part-edit'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
@@ -36,8 +36,6 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
   const [files, setFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
-  // Keep successful uploads across a retry so a connection failure does not upload them again.
-  const uploaded = useRef(new Map<File, ClientUploadedFile>())
   const changed = removed.length > 0 || files.length > 0 ||
     details.title !== part.name || details.description !== part.description || details.instructions !== part.instructions
   const cover = part.images.find(({ reference }) => !removed.includes(reference))?.reference
@@ -69,13 +67,13 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
         return
       }
       try {
-        const pendingFiles = files.filter((file) => !uploaded.current.has(file))
-        if (pendingFiles.length > 0) {
-          const { thumbnails } = await uploadFilesFromClient({
-            userId, partId: part.id, modelFiles: [], thumbnails: pendingFiles,
+        // Each attempt has its own paths. A later conflict must never delete
+        // a photo from an earlier attempt that committed without a response.
+        const { thumbnails } = files.length > 0
+          ? await uploadFilesFromClient({
+            userId, partId: part.id, modelFiles: [], thumbnails: files, thumbnailFolder: 'edit-thumbnails',
           })
-          pendingFiles.forEach((file, index) => uploaded.current.set(file, thumbnails[index]))
-        }
+          : { thumbnails: [] }
 
         const result = await editPublishedPart({
           id: part.id,
@@ -84,9 +82,10 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
           description: details.description !== part.description ? details.description : undefined,
           instructions: details.instructions !== part.instructions ? details.instructions : undefined,
           removedImages: removed,
-          files: files.map((file) => uploaded.current.get(file)),
+          files: thumbnails,
         })
         if (!result.ok) {
+          if (result.discardUploads) await cleanupUploadedFiles(thumbnails)
           setError(result.error)
           return
         }

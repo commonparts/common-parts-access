@@ -389,6 +389,15 @@ The integration applies the migration files missing from the database's migratio
 
 A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
+### Part edit upload expiry
+
+Before applying the `expire_abandoned_part_edit_uploads` migration, configure these secrets in Supabase Vault on the project running the migration.
+
+- `part_edit_cleanup_project_url` holds the project API origin, including `https://`.
+- `part_edit_cleanup_storage_key` holds a dedicated server-side Supabase secret API key for the Storage request. Store the key in Vault and keep it out of the migration and repository.
+
+The migration schedules `expire-part-edit-uploads` to run hourly with Supabase Cron. Each run selects up to 100 unregistered part-edit uploads at least 24 hours old and calls the Storage API through the `http` extension. The job runs with the migration owner's database permissions. Cron run history reports SQL and Storage request failures. Objects still present after a failed request are eligible on the next run.
+
 ### Generated types
 
 `types/supabase.ts` is generated from the production schema by `npm run db:types` (the Supabase CLI, authenticated with `supabase login` or `SUPABASE_ACCESS_TOKEN`), or by the Supabase MCP `generate_typescript_types` (#483). It changes only with the schema. Every Supabase client is created with its `Database` type, so query results are inferred from the select string and a renamed or dropped column fails `tsc`. `types/database.ts` derives the row types from it (`Tables<'parts'>`) and only adds what the generator cannot express: the values of a text column restricted by a CHECK constraint (typed `string`) and the shapes of jsonb columns (typed `Json`), applied to a selected row by `narrowPartRow()` (`lib/supabase/rows.ts`).

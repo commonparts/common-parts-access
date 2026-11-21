@@ -29,12 +29,11 @@ export interface ClientUploadedFile {
  * Best-effort removal of uploaded storage objects, grouped by bucket.
  * Swallows errors so the original failure is never masked.
  */
-async function cleanupUploadedFiles(
+export async function cleanupUploadedFiles(
   files: { bucket: string; path: string }[],
 ): Promise<void> {
   if (files.length === 0) return
 
-  const supabase = createClient()
   const grouped = files.reduce<Record<string, string[]>>((acc, f) => {
     acc[f.bucket] = acc[f.bucket] || []
     acc[f.bucket].push(f.path)
@@ -42,6 +41,7 @@ async function cleanupUploadedFiles(
   }, {})
 
   try {
+    const supabase = createClient()
     await Promise.all(
       Object.entries(grouped).map(([bucket, paths]) =>
         supabase.storage.from(bucket).remove(paths),
@@ -74,10 +74,11 @@ async function uploadFileToStorage(params: {
   userId: string
   partId: string
   kind: 'model' | 'thumbnail'
+  thumbnailFolder?: 'thumbnails' | 'edit-thumbnails'
 }): Promise<ClientUploadedFile> {
   const extension = getFileExtension(params.file.name)
   const filename = uniqueFilename(params.file.name)
-  const folder = params.kind === 'thumbnail' ? 'thumbnails' : 'files'
+  const folder = params.kind === 'thumbnail' ? (params.thumbnailFolder ?? 'thumbnails') : 'files'
   const path = `${params.userId}/${params.partId}/${folder}/${filename}`
   const bucket = params.kind === 'thumbnail'
     ? STORAGE_BUCKETS.MODEL_THUMBNAILS
@@ -121,6 +122,7 @@ export async function uploadFilesFromClient(params: {
   partId: string
   modelFiles: File[]
   thumbnails: File[]
+  thumbnailFolder?: 'thumbnails' | 'edit-thumbnails'
   onProgress?: (progress: UploadProgress) => void
 }): Promise<{ modelFiles: ClientUploadedFile[]; thumbnails: ClientUploadedFile[] }> {
   const supabase = createClient()
@@ -166,6 +168,7 @@ export async function uploadFilesFromClient(params: {
         userId: params.userId,
         partId: params.partId,
         kind: 'thumbnail',
+        thumbnailFolder: params.thumbnailFolder,
       })
       uploaded.push(result)
       thumbnailResults.push(result)

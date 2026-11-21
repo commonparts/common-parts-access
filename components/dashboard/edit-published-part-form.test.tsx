@@ -6,13 +6,15 @@ import { expect, it, vi } from 'vitest'
 import { EditPublishedPartForm } from './edit-published-part-form'
 import fr from '@/messages/fr.json'
 
-const { save, upload, replace } = vi.hoisted(() => ({ save: vi.fn(), upload: vi.fn(), replace: vi.fn() }))
+const { save, upload, cleanup, replace } = vi.hoisted(() => ({
+  save: vi.fn(), upload: vi.fn(), cleanup: vi.fn(), replace: vi.fn(),
+}))
 vi.mock('@/lib/actions/part-edit', () => ({ editPublishedPart: save }))
-vi.mock('@/lib/storage/client-upload', () => ({ uploadFilesFromClient: upload }))
+vi.mock('@/lib/storage/client-upload', () => ({ uploadFilesFromClient: upload, cleanupUploadedFiles: cleanup }))
 vi.mock('@/components/part/part-thumbnail', () => ({ PartThumbnail: () => null }))
 vi.mock('@/i18n/navigation', () => ({ Link: () => null, useRouter: () => ({ replace }) }))
 
-it('submits removed and added photos together and reuses the upload on retry', async () => {
+it('cleans up the rejected upload and preserves an earlier upload with an unknown outcome', async () => {
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true)
   const container = document.createElement('div')
   const root = createRoot(container)
@@ -21,9 +23,14 @@ it('submits removed and added photos together and reuses the upload on retry', a
     images: [{ reference: 'model-thumbnails/cover.png', url: '/cover.png' }],
   }
   const file = new File(['image'], 'added.png', { type: 'image/png' })
-  const uploaded = { path: 'user-id/part-id/thumbnails/added.png', originalName: file.name }
-  upload.mockResolvedValue({ thumbnails: [uploaded] })
-  save.mockResolvedValueOnce({ ok: false, error: 'Réessayez.' }).mockResolvedValueOnce({ ok: true, data: null })
+  const [first, second, third] = [1, 2, 3].map((attempt) => ({
+    path: `user-id/part-id/edit-thumbnails/added-${attempt}.png`, originalName: file.name,
+  }))
+  upload.mockResolvedValueOnce({ thumbnails: [first] })
+    .mockResolvedValueOnce({ thumbnails: [second] }).mockResolvedValueOnce({ thumbnails: [third] })
+  save.mockResolvedValueOnce({ ok: false, error: 'Réessayez.' })
+    .mockResolvedValueOnce({ ok: false, error: 'La pièce a été modifiée.', discardUploads: true })
+    .mockResolvedValueOnce({ ok: true, data: null })
 
   try {
     await act(async () => root.render(
@@ -44,13 +51,21 @@ it('submits removed and added photos together and reuses the upload on retry', a
     const submit = () => act(async () => { form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })) })
     await submit()
     expect(container.querySelector('[role="alert"]')?.textContent).toBe('Réessayez.')
+    expect(cleanup).not.toHaveBeenCalled()
     expect(replace).not.toHaveBeenCalled()
 
     await submit()
-    expect(upload).toHaveBeenCalledExactlyOnceWith({ userId: 'user-id', partId: part.id, modelFiles: [], thumbnails: [file] })
+    expect(cleanup).toHaveBeenCalledExactlyOnceWith([second])
+    expect(replace).not.toHaveBeenCalled()
     expect(save).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      id: part.id, removedImages: [part.images[0].reference], files: [uploaded],
+      id: part.id, removedImages: [part.images[0].reference], files: [second],
     }))
+
+    await submit()
+    expect(upload).toHaveBeenCalledTimes(3)
+    expect(upload).toHaveBeenLastCalledWith({
+      userId: 'user-id', partId: part.id, modelFiles: [], thumbnails: [file], thumbnailFolder: 'edit-thumbnails',
+    })
     expect(replace).toHaveBeenCalledWith('/parts/clip')
   } finally {
     await act(async () => root.unmount())

@@ -13,15 +13,16 @@ security invoker
 set search_path = ''
 as $$
 declare
-  part public.parts%rowtype;
+  part record;
   caller_id uuid := auth.uid();
-  thumbnail_folder text := caller_id || '/' || p_part_id || '/thumbnails/';
+  thumbnail_folder text := caller_id || '/' || p_part_id || '/edit-thumbnails/';
   gallery text[];
   removed_paths text[] := '{}';
   registered_count integer;
   upload_count integer := jsonb_array_length(p_uploads);
 begin
-  select * into part from public.parts
+  select id, name, description, instructions, images, thumbnail_url, updated_at
+  into part from public.parts
   where id = p_part_id and user_id = caller_id and status = 'published'
   for update;
 
@@ -58,12 +59,12 @@ begin
     end if;
 
     -- Only remove paths actually detached from this part, including legacy URLs.
-    select array(select distinct regexp_replace(image,
-      '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', '')
+    select array(select split_part(regexp_replace(image,
+      '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1)
       from unnest(p_removed_images) as image
       where image ~ '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/'
-      except select regexp_replace(image,
-        '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', '')
+      except select split_part(regexp_replace(image,
+        '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1)
       from unnest(gallery) as image) into removed_paths;
 
     delete from public.part_files
@@ -76,6 +77,8 @@ begin
     join storage.objects as object on object.name = upload.path
     where object.bucket_id = 'model-thumbnails' and object.owner_id = caller_id::text
       and object.name = thumbnail_folder || split_part(object.name, '/', 4)
+      -- The scheduled storage cleanup starts at the same age.
+      and object.created_at > clock_timestamp() - interval '24 hours'
       and split_part(object.name, '/', 4) ~* '^[a-z0-9._-]+\.(jpg|jpeg|png|webp|gif)$'
       and (object.metadata->>'size')::bigint between 1 and 8388608
       and char_length(upload.original_name) between 1 and 255
@@ -116,3 +119,43 @@ $$;
 
 revoke all on function public.edit_published_part(uuid, text, jsonb, text[], jsonb) from public, anon;
 grant execute on function public.edit_published_part(uuid, text, jsonb, text[], jsonb) to authenticated;
+
+-- Snapshot the paths and delete the part while holding the edit lock.
+create function public.delete_part_with_media(p_slug text)
+returns table(file_category text, upload_path text)
+language plpgsql
+security invoker
+set search_path = ''
+as $$
+declare
+  part record;
+  caller_id uuid := auth.uid();
+begin
+  select id, images, thumbnail_url into part from public.parts
+  where slug = p_slug and user_id = caller_id
+  for update;
+
+  if not found then
+    if exists (select 1 from public.parts where slug = p_slug) then
+      raise exception 'Part belongs to another user' using errcode = '42501';
+    end if;
+    raise exception 'Part not found' using errcode = 'P0002';
+  end if;
+
+  return query
+    select files.file_category, files.upload_path from public.part_files as files
+    where files.part_id = part.id
+    union
+    select 'image'::text, media.path
+    from unnest(array_prepend(part.thumbnail_url, coalesce(part.images, '{}'))) as image
+    cross join lateral (select split_part(regexp_replace(image,
+      '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1) as path) as media
+    where image ~ '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/'
+      and starts_with(media.path, caller_id || '/' || part.id || '/');
+
+  delete from public.parts where id = part.id;
+end;
+$$;
+
+revoke all on function public.delete_part_with_media(text) from public, anon;
+grant execute on function public.delete_part_with_media(text) to authenticated;

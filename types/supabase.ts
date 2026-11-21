@@ -1081,6 +1081,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      delete_part_with_media: {
+        Args: { p_slug: string }
+        Returns: {
+          file_category: string
+          upload_path: string
+        }[]
+      }
       edit_published_part: {
         Args: {
           p_details: Json
