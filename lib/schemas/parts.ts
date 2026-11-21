@@ -2,6 +2,8 @@ import { z } from 'zod'
 import { MAX_FILENAME_LENGTH } from '@/constants/app'
 import { boundedIntParam, optionalUuidParam, pageParam, uuid } from '@/lib/schemas/common'
 import { SOURCE_CLICK_CONTEXTS } from '@/lib/utils/source-clicks'
+import { partDraftFields } from '@/lib/schemas/part-fields'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 
 /** Request schemas of the part endpoints (`/api/parts/**`). */
 
@@ -63,3 +65,14 @@ const registeredFileSchema = z.object({
 export function registerFilesSchema(maxFiles: number) {
   return z.object({ files: z.array(registeredFileSchema).min(1).max(maxFiles) })
 }
+
+export const editPublishedPartSchema = z.object({
+  id: uuid,
+  revision: z.union([z.literal(''), z.iso.datetime({ offset: true })]),
+  title: partDraftFields.title.optional(),
+  description: partDraftFields.description.optional(),
+  instructions: partDraftFields.instructions.optional(),
+  removedImages: z.array(z.string().min(1).max(2048)).max(100),
+  files: z.array(registeredFileSchema.pick({ path: true, originalName: true }))
+    .max(PART_UPLOAD_LIMITS.maxThumbnailFiles),
+})

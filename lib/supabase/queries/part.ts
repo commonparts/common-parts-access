@@ -2,13 +2,14 @@ import { getLocale } from 'next-intl/server';
 import { cache } from 'react';
 import { createClient } from '@/lib/supabase/server';
 import { STORAGE_BUCKETS } from '@/constants/app';
-import { extractBucketStoragePath } from '@/lib/storage/path-utils';
+import { extractBucketStoragePath, partFileBucket } from '@/lib/storage/path-utils';
 import { resolveStorageUrl } from '@/lib/storage/url';
 import { slugify } from '@/lib/utils/slug';
 import { VALIDATION_LIMITS } from '@/lib/utils/constants';
 import { distinctBrands } from '@/lib/utils/catalog';
 import { localizeCategory } from '@/lib/utils/locale';
 import { isValidHttpUrl } from '@/lib/utils/validation';
+import { getPartImageReferences } from '@/lib/utils/images';
 import { countPages, fetchPageOrFirst, pageRange } from '@/lib/utils/pagination';
 import type { PartStatus } from '@/types/database';
 import type {
@@ -491,7 +492,7 @@ export async function deletePart(slug: string, userId: string): Promise<void> {
 
   const { data: part, error: fetchError } = await supabase
     .from('parts')
-    .select('id, user_id, thumbnail_url, part_files(upload_path)')
+    .select('id, user_id, thumbnail_url, images, part_files(upload_path, file_category)')
     .eq('slug', slug)
     .single();
 
@@ -502,14 +503,22 @@ export async function deletePart(slug: string, userId: string): Promise<void> {
   if (!part) throw new Error('PART_NOT_FOUND');
   if (part.user_id !== userId) throw new Error('FORBIDDEN');
 
-  const filePaths = part.part_files
-    .map((f) => f.upload_path)
-    .filter(Boolean);
+  const pathsByBucket = new Map<string, Set<string>>();
+  for (const file of part.part_files) {
+    const bucket = partFileBucket(file.file_category);
+    if (!bucket || !file.upload_path) continue;
+    const paths = pathsByBucket.get(bucket) ?? new Set<string>();
+    paths.add(file.upload_path);
+    pathsByBucket.set(bucket, paths);
+  }
 
-  const thumbnailPath = extractBucketStoragePath(
-    part.thumbnail_url,
-    STORAGE_BUCKETS.MODEL_THUMBNAILS
-  );
+  const thumbnailBucket = STORAGE_BUCKETS.MODEL_THUMBNAILS;
+  const thumbnailPaths = pathsByBucket.get(thumbnailBucket) ?? new Set<string>();
+  for (const image of getPartImageReferences(part.thumbnail_url, part.images)) {
+    const path = extractBucketStoragePath(image, thumbnailBucket);
+    if (path?.startsWith(`${userId}/${part.id}/`)) thumbnailPaths.add(path);
+  }
+  if (thumbnailPaths.size > 0) pathsByBucket.set(thumbnailBucket, thumbnailPaths);
 
   const { error } = await supabase
     .from('parts')
@@ -520,21 +529,8 @@ export async function deletePart(slug: string, userId: string): Promise<void> {
   if (error) throw error;
 
   // Best-effort storage cleanup — failures are logged but never block the DB delete.
-  if (filePaths.length > 0) {
-    const { error: filesError } = await supabase.storage
-      .from(STORAGE_BUCKETS.MODEL_FILES)
-      .remove(filePaths);
-    if (filesError) {
-      console.error('Storage cleanup failed for model-files:', filesError);
-    }
-  }
-
-  if (thumbnailPath) {
-    const { error: thumbError } = await supabase.storage
-      .from(STORAGE_BUCKETS.MODEL_THUMBNAILS)
-      .remove([thumbnailPath]);
-    if (thumbError) {
-      console.error('Storage cleanup failed for thumbnail:', thumbError);
-    }
-  }
+  await Promise.allSettled(Array.from(pathsByBucket, async ([bucket, paths]) => {
+    const { error: cleanupError } = await supabase.storage.from(bucket).remove([...paths]);
+    if (cleanupError) console.error('Storage cleanup failed for part files:', cleanupError);
+  }));
 }

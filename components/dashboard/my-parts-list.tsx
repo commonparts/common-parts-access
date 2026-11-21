@@ -2,11 +2,12 @@
 
 import { useFormatter, useTranslations } from 'next-intl'
 import { useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { ConfirmationDialog } from '@/components/common/confirmation-dialog'
 import { PartThumbnail } from '@/components/part/part-thumbnail'
+import { Link } from '@/i18n/navigation'
 import type { MyPartListItem } from '@/types/parts'
 
 /** Rendered width of the square row thumbnail (the `2xl` spacing token, 64px). */
@@ -20,7 +21,7 @@ interface MyPartsListProps {
 
 /**
  * Client component for the "My parts" dashboard.
- * Renders a paginated list of the user's published parts with per-row delete actions.
+ * Renders a paginated list of the user's published parts with edit and delete actions.
  * Deletion is confirmed via a modal dialog before the API call is made.
  */
 export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsListProps) {
@@ -129,14 +130,22 @@ export function MyPartsList({ initialParts, hasNextPage, currentPage }: MyPartsL
                 </p>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t('deletePart', { name: part.name })}
-              onClick={() => setPendingDelete(part)}
-            >
-              <Trash2 />
-            </Button>
+            <div className="flex shrink-0 items-center gap-3xs">
+              <Button variant="outline" size="sm" asChild>
+                <Link href={`/my-parts/${part.slug}/edit`} aria-label={t('editPart', { name: part.name })}>
+                  <Pencil aria-hidden="true" />
+                  <span className="sr-only sm:not-sr-only">{t('edit')}</span>
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={t('deletePart', { name: part.name })}
+                onClick={() => setPendingDelete(part)}
+              >
+                <Trash2 />
+              </Button>
+            </div>
           </li>
         ))}
       </ul>

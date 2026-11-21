@@ -11,6 +11,11 @@ export function sortImageUrls(urls: string[]): string[] {
   })
 }
 
+/** The cover comes first, including when a legacy row stores it separately. */
+export function getPartImageReferences(thumbnail: string | null | undefined, images: string[] | null): string[] {
+  return [...new Set([thumbnail ?? '', ...(images ?? [])].filter(Boolean))]
+}
+
 /**
  * Merges a part's current thumbnail and gallery with newly registered image
  * URLs (deduplicated) and returns the canonical display order. The first
@@ -25,9 +30,10 @@ export function mergeImageUrls(
   const existingImages = Array.isArray(currentImages)
     ? currentImages.filter((img): img is string => typeof img === 'string')
     : []
-  const existingThumbnail =
-    typeof currentThumbnail === 'string' && currentThumbnail ? [currentThumbnail] : []
-  return sortImageUrls([...new Set([...existingThumbnail, ...existingImages, ...newUrls])])
+  return sortImageUrls(getPartImageReferences(
+    typeof currentThumbnail === 'string' ? currentThumbnail : null,
+    [...existingImages, ...newUrls],
+  ))
 }
 
 /**

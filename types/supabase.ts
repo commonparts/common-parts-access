@@ -1081,6 +1081,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      edit_published_part: {
+        Args: {
+          p_details: Json
+          p_part_id: string
+          p_removed_images: string[]
+          p_revision: string
+          p_uploads: Json
+        }
+        Returns: string[]
+      }
       fetch_brand_nav: {
         Args: { p_brand_id: string; p_locale?: string }
         Returns: Json
