@@ -1,5 +1,7 @@
 -- Update a published part and its image registrations in one transaction.
 -- Storage bytes are uploaded before this call and removed after it commits.
+--
+-- APPLIED to production on 2026-11-22 as version 20261122180440.
 create function public.edit_published_part(
   p_part_id uuid,
   p_revision text,
