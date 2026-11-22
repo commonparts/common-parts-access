@@ -389,10 +389,6 @@ The integration applies the migration files missing from the database's migratio
 
 A migration that creates a table in `public` enables RLS, adds its policies and grants the Data API roles their privileges in the same file: the schema gives `anon`, `authenticated` and `service_role` no privilege on new tables or sequences (#131). Primary keys are `uuid` or `identity`; a `serial` column also needs `USAGE` on its sequence for every role that inserts. See [Data API grants](./DATA_MODEL.md#data-api-grants).
 
-### Part edit upload expiry
-
-The Next.js server in Railway production runs the cleanup at startup and once an hour while the server is running. It uses the existing server-side Supabase client and `SUPABASE_SECRET_KEY`. Each run asks the `find_expired_part_edit_uploads` RPC for up to 100 unregistered part-edit uploads at least 24 hours old, then removes them through the Storage API. Failures appear in the application logs, and objects still present are eligible on the next run.
-
 ### Generated types
 
 `types/supabase.ts` is generated from the production schema by `npm run db:types` (the Supabase CLI, authenticated with `supabase login` or `SUPABASE_ACCESS_TOKEN`), or by the Supabase MCP `generate_typescript_types` (#483). It changes only with the schema. Every Supabase client is created with its `Database` type, so query results are inferred from the select string and a renamed or dropped column fails `tsc`. `types/database.ts` derives the row types from it (`Tables<'parts'>`) and only adds what the generator cannot express: the values of a text column restricted by a CHECK constraint (typed `string`) and the shapes of jsonb columns (typed `Json`), applied to a selected row by `narrowPartRow()` (`lib/supabase/rows.ts`).

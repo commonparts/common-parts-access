@@ -5,8 +5,7 @@ import { STORAGE_BUCKETS } from '@/constants/app'
 import type { editPublishedPartSchema } from '@/lib/schemas/parts'
 import { resolveStorageUrl } from '@/lib/storage/url'
 import { getPartImageReferences } from '@/lib/utils/images'
-import { createAdminClient } from '@/lib/supabase/admin'
-import type { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 
 type Client = Awaited<ReturnType<typeof createClient>>
 
@@ -57,15 +56,4 @@ export async function savePublishedPartEdit(supabase: Client, input: z.output<ty
   }
 
   return { saved: true as const }
-}
-
-/** Only the service role can look up expired uploads across parts. */
-export async function removeExpiredPartEditUploads(): Promise<void> {
-  const supabase = createAdminClient()
-  const { data: paths, error } = await supabase.rpc('find_expired_part_edit_uploads')
-  if (error) throw error
-  if (!paths?.length) return
-
-  const { error: cleanupError } = await supabase.storage.from(STORAGE_BUCKETS.MODEL_THUMBNAILS).remove(paths)
-  if (cleanupError) throw cleanupError
 }

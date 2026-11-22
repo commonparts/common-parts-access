@@ -24,7 +24,7 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
   }
   const file = new File(['image'], 'added.png', { type: 'image/png' })
   const [first, second, third] = [1, 2, 3].map((attempt) => ({
-    path: `user-id/part-id/edit-thumbnails/added-${attempt}.png`, originalName: file.name,
+    path: `user-id/part-id/thumbnails/added-${attempt}.png`, originalName: file.name,
   }))
   upload.mockResolvedValueOnce({ thumbnails: [first] })
     .mockResolvedValueOnce({ thumbnails: [second] }).mockResolvedValueOnce({ thumbnails: [third] })
@@ -64,7 +64,7 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
     await submit()
     expect(upload).toHaveBeenCalledTimes(3)
     expect(upload).toHaveBeenLastCalledWith({
-      userId: 'user-id', partId: part.id, modelFiles: [], thumbnails: [file], thumbnailFolder: 'edit-thumbnails',
+      userId: 'user-id', partId: part.id, modelFiles: [], thumbnails: [file],
     })
     expect(replace).toHaveBeenCalledWith('/parts/clip')
   } finally {

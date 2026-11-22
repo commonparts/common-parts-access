@@ -103,9 +103,9 @@ Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated
 
 The owner can open **Edit** from **My parts** to update the title, description, instructions and photos of a published part (#563). Photo selections apply when the owner saves. Removing the thumbnail promotes the first retained photo or, if all existing photos were removed, the first newly added photo. An empty gallery uses the placeholder.
 
-The browser uploads new photos directly to Storage. Each save attempt uses fresh paths in the `edit-thumbnails` folder. The save action validates the request, checks the session and calls `edit_published_part` to update the listing and its image registrations in one transaction. The function checks ownership and the revision opened in the form. A stale form asks the owner to reopen the editor.
+The browser uploads new photos directly to Storage. Each save attempt uses fresh paths for the new photos. The save action validates the request, checks the session and calls `edit_published_part` to update the listing and its image registrations in one transaction. The function checks ownership and the revision opened in the form. A stale form asks the owner to reopen the editor.
 
-The browser removes the uploads for an attempt that the server confirms was rejected. If a tab closes or the response is lost, the application’s hourly cleanup removes unregistered uploads at least 24 hours old. The registration function accepts uploads younger than 24 hours. See [Storage maintenance](DEV_STRATEGY.md#part-edit-upload-expiry).
+The browser removes the uploads for an attempt when the server confirms the rejection.
 
 ## API endpoints
 

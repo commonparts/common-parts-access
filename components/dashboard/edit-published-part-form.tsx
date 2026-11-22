@@ -71,7 +71,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
         // a photo from an earlier attempt that committed without a response.
         const { thumbnails } = files.length > 0
           ? await uploadFilesFromClient({
-            userId, partId: part.id, modelFiles: [], thumbnails: files, thumbnailFolder: 'edit-thumbnails',
+            userId, partId: part.id, modelFiles: [], thumbnails: files,
           })
           : { thumbnails: [] }
 

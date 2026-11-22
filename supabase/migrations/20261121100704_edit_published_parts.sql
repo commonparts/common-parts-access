@@ -15,7 +15,7 @@ as $$
 declare
   part record;
   caller_id uuid := auth.uid();
-  thumbnail_folder text := caller_id || '/' || p_part_id || '/edit-thumbnails/';
+  thumbnail_folder text := caller_id || '/' || p_part_id || '/thumbnails/';
   gallery text[];
   removed_paths text[] := '{}';
   registered_count integer;
@@ -77,8 +77,6 @@ begin
     join storage.objects as object on object.name = upload.path
     where object.bucket_id = 'model-thumbnails' and object.owner_id = caller_id::text
       and object.name = thumbnail_folder || split_part(object.name, '/', 4)
-      -- The scheduled storage cleanup starts at the same age.
-      and object.created_at > clock_timestamp() - interval '24 hours'
       and split_part(object.name, '/', 4) ~* '^[a-z0-9._-]+\.(jpg|jpeg|png|webp|gif)$'
       and (object.metadata->>'size')::bigint between 1 and 8388608
       and char_length(upload.original_name) between 1 and 255

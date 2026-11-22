@@ -1142,7 +1142,6 @@ export type Database = {
           raw_query: string
         }[]
       }
-      find_expired_part_edit_uploads: { Args: never; Returns: string[] }
       fold_search_text: { Args: { value: string }; Returns: string }
       generate_slug: { Args: { input: string }; Returns: string }
       localized_name: {
