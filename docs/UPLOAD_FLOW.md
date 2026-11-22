@@ -101,7 +101,7 @@ Every upload query is scoped `origin_type = 'original'`, mirroring the `'curated
 
 ## Edit a published part
 
-The owner can open **Edit** from **My parts** to update the title, description, instructions and photos of a published part (#563). Photo selections apply when the owner saves. Removing the thumbnail promotes the first retained photo or, if all existing photos were removed, the first newly added photo. An empty gallery uses the placeholder.
+The owner can open **Edit** from **My parts** to update the title, description, instructions and photos of a published part (#563). Photo selections apply when the owner saves. Each existing photo can be downloaded before saving a removal. Removing the thumbnail promotes the first retained photo or, if all existing photos were removed, the first newly added photo. An empty gallery uses the placeholder.
 
 The browser uploads new photos directly to Storage. Each save attempt uses fresh paths for the new photos. The save action validates the request, checks the session and calls `edit_published_part` to update the listing and its image registrations in one transaction. The function checks ownership and the revision opened in the form. A stale form asks the owner to reopen the editor.
 

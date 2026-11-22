@@ -41,6 +41,13 @@ export function resolveStorageUrls(pathsOrUrls: unknown): string[] {
     .map((entry) => resolveStorageUrl(entry))
 }
 
+/** Requests the original Supabase Storage object as an attachment. */
+export function storageDownloadUrl(url: string): string {
+  const downloadUrl = new URL(url)
+  downloadUrl.searchParams.set('download', '')
+  return downloadUrl.href
+}
+
 interface StoredPartMedia {
   thumbnail_url?: string | null
   images?: string[] | null

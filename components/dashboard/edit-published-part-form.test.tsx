@@ -21,7 +21,10 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
   const root = createRoot(container)
   const part = {
     id: 'part-id', slug: 'clip', name: 'Clip', description: 'Description existante', instructions: '', revision: '',
-    images: [{ reference: 'model-thumbnails/cover.png', url: '/cover.png' }],
+    images: [
+      { reference: 'model-thumbnails/cover.png', url: 'https://example.test/storage/v1/object/public/model-thumbnails/cover.png' },
+      { reference: 'model-thumbnails/side.png', url: 'https://example.test/storage/v1/object/public/model-thumbnails/side.png' },
+    ],
   }
   const file = new File(['image'], 'added.png', { type: 'image/png' })
   const [first, second, third] = [1, 2, 3].map((attempt) => ({
@@ -50,6 +53,10 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
       description.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await act(async () => remove.click())
+
+    const downloads = [...container.querySelectorAll<HTMLAnchorElement>('a[download]')]
+    expect(downloads.map((link) => link.href)).toEqual(part.images.map(({ url }) => `${url}?download=`))
+    expect(downloads[0].getAttribute('aria-label')).toBe('Télécharger Image 1')
 
     expect(input.labels?.[0]?.textContent).toBe('Ajouter des photos')
     const oversized = new File(['image'], 'too-large.png', { type: 'image/png' })

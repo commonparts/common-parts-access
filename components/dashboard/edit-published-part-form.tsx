@@ -2,6 +2,7 @@
 
 import { useState, useTransition, type ChangeEvent } from 'react'
 import { useTranslations } from 'next-intl'
+import { Download } from 'lucide-react'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -15,6 +16,7 @@ import { Link, useRouter } from '@/i18n/navigation'
 import { editPublishedPart } from '@/lib/actions/part-edit'
 import { cleanupUploadedFiles, StorageUploadError, uploadFilesFromClient } from '@/lib/storage/client-upload'
 import { getFileExtension, PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
+import { storageDownloadUrl } from '@/lib/storage/url'
 import type { getPublishedPartForEdit } from '@/lib/supabase/queries/part-edit'
 import { VALIDATION_LIMITS } from '@/lib/utils/constants'
 
@@ -36,6 +38,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
   const t = useTranslations('EditPublishedPart')
   const fields = useTranslations('Fields')
   const gallery = useTranslations('RegisteredImages')
+  const fileList = useTranslations('PartFileList')
   const router = useRouter()
   const initialDetails = { title: part.name, description: part.description, instructions: part.instructions }
   const [details, setDetails] = useState<Partial<typeof initialDetails>>({})
@@ -131,6 +134,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
                   const isRemoved = removed.includes(reference)
                   const action = isRemoved ? 'restore' : 'remove'
                   const label = gallery('image', { position: index + 1 })
+                  const downloadLabel = fileList('download', { name: label })
                   return (
                     <li key={reference} className="space-y-2xs">
                       <div className={`relative size-4xl overflow-hidden rounded-md border border-border-subtle ${isRemoved ? 'opacity-50' : ''}`}>
@@ -141,14 +145,21 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
                           </span>
                         )}
                       </div>
-                      <Button type="button" variant="ghost" size="sm"
-                        aria-label={t(`${action}Image`, { name: label })}
-                        onClick={() => {
-                          setRemoved(isRemoved ? removed.filter((image) => image !== reference) : [...removed, reference])
-                          setError(null)
-                        }}>
-                        {t(action)}
-                      </Button>
+                      <div className="flex w-4xl items-center justify-between">
+                        <Button type="button" variant="ghost" size="sm" className="px-2xs"
+                          aria-label={t(`${action}Image`, { name: label })}
+                          onClick={() => {
+                            setRemoved(isRemoved ? removed.filter((image) => image !== reference) : [...removed, reference])
+                            setError(null)
+                          }}>
+                          {t(action)}
+                        </Button>
+                        <Button asChild variant="ghost" size="icon" className="size-lg shrink-0 [&_svg]:size-sm">
+                          <a href={storageDownloadUrl(url)} title={downloadLabel} aria-label={downloadLabel} download>
+                            <Download aria-hidden="true" />
+                          </a>
+                        </Button>
+                      </div>
                     </li>
                   )
                 })}
