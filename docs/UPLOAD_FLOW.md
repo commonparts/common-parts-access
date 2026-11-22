@@ -105,7 +105,7 @@ The owner can open **Edit** from **My parts** to update the title, description, 
 
 The browser uploads new photos directly to Storage. Each save attempt uses fresh paths in the `edit-thumbnails` folder. The save action validates the request, checks the session and calls `edit_published_part` to update the listing and its image registrations in one transaction. The function checks ownership and the revision opened in the form. A stale form asks the owner to reopen the editor.
 
-The browser removes the uploads for an attempt that the server confirms was rejected. If a tab closes or the response is lost, Supabase Cron cleans up unregistered uploads after 24 hours. The registration function accepts uploads younger than 24 hours. See [Storage maintenance](DEV_STRATEGY.md#part-edit-upload-expiry).
+The browser removes the uploads for an attempt that the server confirms was rejected. If a tab closes or the response is lost, the application’s hourly cleanup removes unregistered uploads at least 24 hours old. The registration function accepts uploads younger than 24 hours. See [Storage maintenance](DEV_STRATEGY.md#part-edit-upload-expiry).
 
 ## API endpoints
 

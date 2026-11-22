@@ -391,12 +391,7 @@ A migration that creates a table in `public` enables RLS, adds its policies and 
 
 ### Part edit upload expiry
 
-Before applying the `expire_abandoned_part_edit_uploads` migration, configure these secrets in Supabase Vault on the project running the migration.
-
-- `part_edit_cleanup_project_url` holds the project API origin, including `https://`.
-- `part_edit_cleanup_storage_key` holds a dedicated server-side Supabase secret API key for the Storage request. Store the key in Vault and keep it out of the migration and repository.
-
-The migration schedules `expire-part-edit-uploads` to run hourly with Supabase Cron. Each run selects up to 100 unregistered part-edit uploads at least 24 hours old and calls the Storage API through the `http` extension. The job runs with the migration owner's database permissions. Cron run history reports SQL and Storage request failures. Objects still present after a failed request are eligible on the next run.
+The Next.js server in Railway production runs the cleanup at startup and once an hour while the server is running. It uses the existing server-side Supabase client and `SUPABASE_SECRET_KEY`. Each run asks the `find_expired_part_edit_uploads` RPC for up to 100 unregistered part-edit uploads at least 24 hours old, then removes them through the Storage API. Failures appear in the application logs, and objects still present are eligible on the next run.
 
 ### Generated types
 

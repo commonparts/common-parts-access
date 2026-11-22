@@ -38,6 +38,8 @@ const serverEnvSchema = publicEnvSchema.extend({
   THINGIVERSE_APP_TOKEN: optionalString,
   RAILWAY_API_TOKEN: optionalString,
   RAILWAY_PROJECT_ID: optionalString,
+  RAILWAY_ENVIRONMENT_NAME: optionalString,
+  NEXT_PHASE: optionalString,
   SUPPORT_SUPABASE_MONTHLY_EUR: optionalAmount,
   SUPPORT_LEETCHI_URL: optionalString.pipe(z.url({ protocol: /^https$/, hostname: /^(www\.)?leetchi\.com$/ }).optional()),
 })
