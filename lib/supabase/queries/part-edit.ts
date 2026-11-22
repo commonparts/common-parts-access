@@ -49,7 +49,7 @@ export async function savePublishedPartEdit(supabase: Client, input: z.output<ty
   if (data.length > 0) {
     try {
       const { error: cleanupError } = await supabase.storage.from(STORAGE_BUCKETS.MODEL_THUMBNAILS).remove(data)
-      if (cleanupError) console.error('Failed to clean up detached part images', cleanupError)
+      if (cleanupError) throw cleanupError
     } catch (error) {
       console.error('Failed to clean up detached part images', error)
     }

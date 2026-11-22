@@ -19,7 +19,7 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
   const container = document.createElement('div')
   const root = createRoot(container)
   const part = {
-    id: 'part-id', slug: 'clip', name: 'Clip', description: '', instructions: '', revision: '',
+    id: 'part-id', slug: 'clip', name: 'Clip', description: 'Description existante', instructions: '', revision: '',
     images: [{ reference: 'model-thumbnails/cover.png', url: '/cover.png' }],
   }
   const file = new File(['image'], 'added.png', { type: 'image/png' })
@@ -40,8 +40,14 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
     ))
     const remove = container.querySelector<HTMLButtonElement>('button[aria-label="Retirer Image 1"]')!
     const input = container.querySelector<HTMLInputElement>('input[type="file"]')!
+    const description = container.querySelector<HTMLTextAreaElement>('#part-description')!
     const form = container.querySelector<HTMLFormElement>('form')!
 
+    expect(description.value).toBe(part.description)
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set?.call(description, '')
+      description.dispatchEvent(new Event('input', { bubbles: true }))
+    })
     await act(async () => remove.click())
     Object.defineProperty(input, 'files', { value: [file] })
     await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
@@ -58,8 +64,9 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
     expect(cleanup).toHaveBeenCalledExactlyOnceWith([second])
     expect(replace).not.toHaveBeenCalled()
     expect(save).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      id: part.id, removedImages: [part.images[0].reference], files: [second],
+      id: part.id, description: '', removedImages: [part.images[0].reference], files: [second],
     }))
+    expect(save.mock.calls[1][0]).not.toHaveProperty('title')
 
     await submit()
     expect(upload).toHaveBeenCalledTimes(3)

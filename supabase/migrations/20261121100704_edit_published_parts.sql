@@ -16,12 +16,13 @@ declare
   part record;
   caller_id uuid := auth.uid();
   thumbnail_folder text := caller_id || '/' || p_part_id || '/thumbnails/';
+  thumbnail_path_pattern constant text := '^(?:https?://[^/]+/storage/v1/object/public/)?model-thumbnails/([^?]+)';
   gallery text[];
   removed_paths text[] := '{}';
   registered_count integer;
   upload_count integer := jsonb_array_length(p_uploads);
 begin
-  select id, name, description, instructions, images, thumbnail_url, updated_at
+  select images, thumbnail_url, updated_at
   into part from public.parts
   where id = p_part_id and user_id = caller_id and status = 'published'
   for update;
@@ -59,19 +60,16 @@ begin
     end if;
 
     -- Only remove paths actually detached from this part, including legacy URLs.
-    select array(select split_part(regexp_replace(image,
-      '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1)
-      from unnest(p_removed_images) as image
-      where image ~ '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/'
-      except select split_part(regexp_replace(image,
-        '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1)
-      from unnest(gallery) as image) into removed_paths;
+    removed_paths := array_remove(array(
+      select substring(image from thumbnail_path_pattern) from unnest(p_removed_images) as image
+      except select substring(image from thumbnail_path_pattern) from unnest(gallery) as image
+    ), null);
 
     delete from public.part_files
-    where part_id = part.id and file_category = 'image' and upload_path = any(removed_paths);
+    where part_id = p_part_id and file_category = 'image' and upload_path = any(removed_paths);
 
     insert into public.part_files (part_id, filename, original_filename, file_type, file_size, file_category, upload_path)
-    select part.id, split_part(object.name, '/', 4), upload.original_name,
+    select p_part_id, split_part(object.name, '/', 4), upload.original_name,
       lower(substring(object.name from '\.([^.]+)$')), (object.metadata->>'size')::bigint, 'image', object.name
     from jsonb_to_recordset(p_uploads) as upload(path text, original_name text)
     join storage.objects as object on object.name = upload.path
@@ -90,7 +88,7 @@ begin
       raise exception 'Invalid image upload' using errcode = '22023';
     end if;
 
-    if upload_count > 0 and (select sum(file_size) from public.part_files where part_id = part.id) > 314572800 then
+    if upload_count > 0 and (select sum(file_size) from public.part_files where part_id = p_part_id) > 314572800 then
       raise exception 'Part exceeds the total upload limit' using errcode = '22023';
     end if;
 
@@ -100,13 +98,13 @@ begin
   end if;
 
   update public.parts
-  set name = coalesce(p_details->>'title', part.name),
-    description = case when p_details ? 'description' then p_details->>'description' else part.description end,
-    instructions = case when p_details ? 'instructions' then p_details->>'instructions' else part.instructions end,
-    images = coalesce(gallery, part.images),
-    thumbnail_url = case when gallery is null then part.thumbnail_url else gallery[1] end,
+  set name = coalesce(p_details->>'title', name),
+    description = case when p_details ? 'description' then p_details->>'description' else description end,
+    instructions = case when p_details ? 'instructions' then p_details->>'instructions' else instructions end,
+    images = coalesce(gallery, images),
+    thumbnail_url = case when gallery is null then thumbnail_url else gallery[1] end,
     updated_at = clock_timestamp()
-  where id = part.id;
+  where id = p_part_id;
 
   -- The caller can clean up only objects in this part's folder. Storage RLS
   -- checks object ownership again when the caller deletes the bytes.
@@ -146,10 +144,9 @@ begin
     union
     select 'image'::text, media.path
     from unnest(array_prepend(part.thumbnail_url, coalesce(part.images, '{}'))) as image
-    cross join lateral (select split_part(regexp_replace(image,
-      '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/', ''), '?', 1) as path) as media
-    where image ~ '^(https?://[^/]+/storage/v1/object/public/)?model-thumbnails/'
-      and starts_with(media.path, caller_id || '/' || part.id || '/');
+    cross join lateral (select substring(image from
+      '^(?:https?://[^/]+/storage/v1/object/public/)?model-thumbnails/([^?]+)') as path) as media
+    where starts_with(media.path, caller_id || '/' || part.id || '/');
 
   delete from public.parts where id = part.id;
 end;

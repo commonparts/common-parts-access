@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, type ChangeEvent } from 'react'
 import { useTranslations } from 'next-intl'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
@@ -24,48 +24,47 @@ interface EditPublishedPartFormProps {
 
 const limits = VALIDATION_LIMITS.PART
 const { maxThumbnailFiles, maxThumbnailSize } = PART_UPLOAD_LIMITS
+const editableFields = [
+  { name: 'title', maxLength: limits.TITLE_MAX_LENGTH },
+  { name: 'description', maxLength: limits.DESCRIPTION_MAX_LENGTH, rows: 3 },
+  { name: 'instructions', maxLength: limits.INSTRUCTIONS_MAX_LENGTH, rows: 6 },
+] as const
 
+/** Edits published text and stages gallery changes until the owner saves. */
 export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormProps) {
   const t = useTranslations('EditPublishedPart')
   const fields = useTranslations('Fields')
   const gallery = useTranslations('RegisteredImages')
   const router = useRouter()
   const initialDetails = { title: part.name, description: part.description, instructions: part.instructions }
-  const [details, setDetails] = useState(initialDetails)
+  const [details, setDetails] = useState<Partial<typeof initialDetails>>({})
   const [removed, setRemoved] = useState<string[]>([])
   const [files, setFiles] = useState<File[]>([])
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
-  const changed = removed.length > 0 || files.length > 0 ||
-    details.title !== part.name || details.description !== part.description || details.instructions !== part.instructions
+  const changed = removed.length > 0 || files.length > 0 || Object.values(details).some((value) => value !== undefined)
   const cover = part.images.find(({ reference }) => !removed.includes(reference))?.reference
+  const remainingSlots = maxThumbnailFiles - part.images.length + removed.length - files.length
+  const photoLimitMessage = t('photoLimit', { count: maxThumbnailFiles })
 
-  function addPhotos(selection: FileList | null) {
-    const added = Array.from(selection ?? [])
-    if (added.length === 0) return
-
+  function addPhotos({ target }: ChangeEvent<HTMLInputElement>) {
+    const added = Array.from(target.files ?? [])
+    target.value = ''
+    if (!added.length) return
     const invalid = added.find((file) => file.size === 0 || file.size > maxThumbnailSize ||
       !FILE_TYPES.IMAGE_FILES.some((extension) => extension === getFileExtension(file.name)))
-    if (invalid) {
-      setError(t('invalidPhoto', { name: invalid.name, size: maxThumbnailSize / (1024 * 1024) }))
-      return
-    }
+    if (invalid) return setError(t('invalidPhoto', { name: invalid.name, size: maxThumbnailSize / (1024 * 1024) }))
+    if (added.length > remainingSlots) return setError(photoLimitMessage)
 
-    if (part.images.length - removed.length + files.length + added.length > maxThumbnailFiles) {
-      setError(t('photoLimit', { count: maxThumbnailFiles }))
-      return
-    }
     setError(null)
     setFiles([...files, ...added])
   }
 
+  /** Uploads a fresh batch before committing the text and gallery together. */
   function save() {
+    if (files.length && remainingSlots < 0) return setError(photoLimitMessage)
     setError(null)
     startTransition(async () => {
-      if (files.length > 0 && part.images.length - removed.length + files.length > maxThumbnailFiles) {
-        setError(t('photoLimit', { count: maxThumbnailFiles }))
-        return
-      }
       try {
         // Each attempt has its own paths. A later conflict must never delete
         // a photo from an earlier attempt that committed without a response.
@@ -78,9 +77,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
         const result = await editPublishedPart({
           id: part.id,
           revision: part.revision,
-          title: details.title !== part.name ? details.title : undefined,
-          description: details.description !== part.description ? details.description : undefined,
-          instructions: details.instructions !== part.instructions ? details.instructions : undefined,
+          ...details,
           removedImages: removed,
           files: thumbnails,
         })
@@ -102,24 +99,24 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
       <fieldset disabled={pending} className="space-y-md">
         <Card>
           <CardContent className="space-y-md">
-            <div className="space-y-2xs">
-              <Label htmlFor="part-title">{fields('title')}</Label>
-              <Input id="part-title" value={details.title} required minLength={limits.TITLE_MIN_LENGTH}
-                maxLength={limits.TITLE_MAX_LENGTH}
-                onChange={(event) => setDetails({ ...details, title: event.target.value })} />
-            </div>
-            <div className="space-y-2xs">
-              <Label htmlFor="part-description">{fields('description')}</Label>
-              <Textarea id="part-description" value={details.description} rows={3}
-                maxLength={limits.DESCRIPTION_MAX_LENGTH}
-                onChange={(event) => setDetails({ ...details, description: event.target.value })} />
-            </div>
-            <div className="space-y-2xs">
-              <Label htmlFor="part-instructions">{fields('instructions')}</Label>
-              <Textarea id="part-instructions" value={details.instructions} rows={6}
-                maxLength={limits.INSTRUCTIONS_MAX_LENGTH}
-                onChange={(event) => setDetails({ ...details, instructions: event.target.value })} />
-            </div>
+            {editableFields.map((field) => {
+              const { name, maxLength } = field
+              const props = {
+                id: `part-${name}`,
+                value: details[name] ?? initialDetails[name],
+                maxLength,
+                onChange: ({ target: { value } }: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+                  setDetails((current) => ({ ...current, [name]: value === initialDetails[name] ? undefined : value })),
+              }
+              return (
+                <div key={name} className="space-y-2xs">
+                  <Label htmlFor={props.id}>{fields(name)}</Label>
+                  {'rows' in field
+                    ? <Textarea {...props} rows={field.rows} />
+                    : <Input {...props} required minLength={limits.TITLE_MIN_LENGTH} />}
+                </div>
+              )
+            })}
           </CardContent>
         </Card>
 
@@ -130,6 +127,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
               <ul className="flex flex-wrap gap-sm">
                 {part.images.map(({ reference, url }, index) => {
                   const isRemoved = removed.includes(reference)
+                  const action = isRemoved ? 'restore' : 'remove'
                   const label = gallery('image', { position: index + 1 })
                   return (
                     <li key={reference} className="space-y-2xs">
@@ -142,12 +140,12 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
                         )}
                       </div>
                       <Button type="button" variant="ghost" size="sm"
-                        aria-label={t(isRemoved ? 'restoreImage' : 'removeImage', { name: label })}
+                        aria-label={t(`${action}Image`, { name: label })}
                         onClick={() => {
                           setRemoved(isRemoved ? removed.filter((image) => image !== reference) : [...removed, reference])
                           setError(null)
                         }}>
-                        {t(isRemoved ? 'restore' : 'remove')}
+                        {t(action)}
                       </Button>
                     </li>
                   )
@@ -158,12 +156,8 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
             <div className="space-y-2xs">
               <Label htmlFor="part-photos">{t('addPhotos')}</Label>
               <Input id="part-photos" type="file" accept={FILE_TYPES.IMAGE_FILES.join(',')} multiple
-                aria-describedby="part-photos-limit"
-                onChange={(event) => {
-                  addPhotos(event.target.files)
-                  event.target.value = ''
-                }} />
-              <p id="part-photos-limit" className="text-sm text-text-secondary">{t('photoLimit', { count: maxThumbnailFiles })}</p>
+                aria-describedby="part-photos-limit" onChange={addPhotos} />
+              <p id="part-photos-limit" className="text-sm text-text-secondary">{photoLimitMessage}</p>
             </div>
 
             {files.length > 0 && (
