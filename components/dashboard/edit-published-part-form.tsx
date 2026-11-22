@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl'
 import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { FileUploader } from '@/components/ui/file-uploader'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -47,13 +48,14 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
   const remainingSlots = maxThumbnailFiles - part.images.length + removed.length - files.length
   const photoLimitMessage = t('photoLimit', { count: maxThumbnailFiles })
 
-  function addPhotos({ target }: ChangeEvent<HTMLInputElement>) {
-    const added = Array.from(target.files ?? [])
-    target.value = ''
-    if (!added.length) return
-    const invalid = added.find((file) => file.size === 0 || file.size > maxThumbnailSize ||
+  function rejectPhoto(file: File) {
+    setError(t('invalidPhoto', { name: file.name, size: maxThumbnailSize / (1024 * 1024) }))
+  }
+
+  function addPhotos(added: File[]) {
+    const invalid = added.find((file) => file.size === 0 ||
       !FILE_TYPES.IMAGE_FILES.some((extension) => extension === getFileExtension(file.name)))
-    if (invalid) return setError(t('invalidPhoto', { name: invalid.name, size: maxThumbnailSize / (1024 * 1024) }))
+    if (invalid) return rejectPhoto(invalid)
     if (added.length > remainingSlots) return setError(photoLimitMessage)
 
     setError(null)
@@ -98,7 +100,7 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
     <form className="max-w-3xl space-y-md" onSubmit={(event) => { event.preventDefault(); save() }}>
       <fieldset disabled={pending} className="space-y-md">
         <Card>
-          <CardContent className="space-y-md">
+          <CardContent className="space-y-md pt-lg">
             {editableFields.map((field) => {
               const { name, maxLength } = field
               const props = {
@@ -155,8 +157,15 @@ export function EditPublishedPartForm({ part, userId }: EditPublishedPartFormPro
 
             <div className="space-y-2xs">
               <Label htmlFor="part-photos">{t('addPhotos')}</Label>
-              <Input id="part-photos" type="file" accept={FILE_TYPES.IMAGE_FILES.join(',')} multiple
-                aria-describedby="part-photos-limit" onChange={addPhotos} />
+              <FileUploader
+                id="part-photos"
+                aria-describedby="part-photos-limit"
+                accept={FILE_TYPES.IMAGE_FILES.join(',')}
+                maxSize={maxThumbnailSize}
+                disabled={pending}
+                onFilesSelect={addPhotos}
+                onFileTooLarge={rejectPhoto}
+              />
               <p id="part-photos-limit" className="text-sm text-text-secondary">{photoLimitMessage}</p>
             </div>
 

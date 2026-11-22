@@ -4,6 +4,7 @@ import { createRoot } from 'react-dom/client'
 import { NextIntlClientProvider } from 'next-intl'
 import { expect, it, vi } from 'vitest'
 import { EditPublishedPartForm } from './edit-published-part-form'
+import { PART_UPLOAD_LIMITS } from '@/lib/storage/file-validation'
 import fr from '@/messages/fr.json'
 
 const { save, upload, cleanup, replace } = vi.hoisted(() => ({
@@ -39,7 +40,7 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
       </NextIntlClientProvider>,
     ))
     const remove = container.querySelector<HTMLButtonElement>('button[aria-label="Retirer Image 1"]')!
-    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!
+    const input = container.querySelector<HTMLInputElement>('#part-photos')!
     const description = container.querySelector<HTMLTextAreaElement>('#part-description')!
     const form = container.querySelector<HTMLFormElement>('form')!
 
@@ -49,8 +50,18 @@ it('cleans up the rejected upload and preserves an earlier upload with an unknow
       description.dispatchEvent(new Event('input', { bubbles: true }))
     })
     await act(async () => remove.click())
+
+    expect(input.labels?.[0]?.textContent).toBe('Ajouter des photos')
+    const oversized = new File(['image'], 'too-large.png', { type: 'image/png' })
+    Object.defineProperty(oversized, 'size', { value: PART_UPLOAD_LIMITS.maxThumbnailSize + 1 })
+    const drop = new Event('drop', { bubbles: true, cancelable: true })
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: [oversized] } })
+    await act(async () => { input.parentElement!.dispatchEvent(drop) })
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain('too-large.png')
+
     Object.defineProperty(input, 'files', { value: [file] })
     await act(async () => input.dispatchEvent(new Event('change', { bubbles: true })))
+    expect(container.querySelector('[role="alert"]')).toBeNull()
     expect(upload).not.toHaveBeenCalled()
     expect(save).not.toHaveBeenCalled()
 
