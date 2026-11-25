@@ -3,7 +3,11 @@ import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface FileUploaderProps {
+  id?: string
+  "aria-describedby"?: string
   onFilesSelect: (files: File[]) => void
+  /** Rejects the selection and reports the first oversized file when supplied. */
+  onFileTooLarge?: (file: File) => void
   accept?: string
   multiple?: boolean
   maxSize?: number // in bytes
@@ -14,7 +18,10 @@ interface FileUploaderProps {
 }
 
 export function FileUploader({
+  id,
+  "aria-describedby": describedBy,
   onFilesSelect,
+  onFileTooLarge,
   accept = "*/*",
   multiple = true,
   maxSize = 10 * 1024 * 1024, // 10MB default
@@ -30,6 +37,16 @@ export function FileUploader({
   React.useEffect(() => {
     if (disabled) setIsDragOver(false)
   }, [disabled])
+
+  const selectFiles = (selection: FileList | null) => {
+    if (disabled) return
+    const files = Array.from(selection ?? [])
+    const oversized = onFileTooLarge && files.find((file) => file.size > maxSize)
+    if (oversized) return onFileTooLarge?.(oversized)
+
+    const accepted = files.filter((file) => file.size <= maxSize)
+    if (accepted.length) onFilesSelect(accepted)
+  }
 
   // preventDefault stays on every drag event even when disabled, so a file
   // dropped on a disabled zone is swallowed instead of opened by the browser.
@@ -47,29 +64,16 @@ export function FileUploader({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     setIsDragOver(false)
-    if (disabled) return
-
-    const files = Array.from(e.dataTransfer.files).filter(file => {
-      return file.size <= maxSize
-    })
-    
-    if (files.length > 0) {
-      onFilesSelect(files)
-    }
+    selectFiles(e.dataTransfer.files)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).filter(file => {
-      return file.size <= maxSize
-    })
-    
-    if (files.length > 0) {
-      onFilesSelect(files)
-    }
+    selectFiles(e.currentTarget.files)
+    e.currentTarget.value = ""
   }
 
-  const handleClick = () => {
-    if (disabled) return
+  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabled || e.target === fileInputRef.current) return
     fileInputRef.current?.click()
   }
 
@@ -77,7 +81,7 @@ export function FileUploader({
     <div
       aria-disabled={disabled || undefined}
       className={cn(
-        "rounded-lg border border-dashed border-border-subtle p-lg text-center shadow-none transition-colors",
+        "rounded-lg border border-dashed border-border-subtle p-lg text-center shadow-none transition-colors focus-within:ring-2 focus-within:ring-border-focus focus-within:ring-offset-2 focus-within:ring-offset-bg-surface",
         // A div has no :disabled state, so the design-system disabled tokens are applied directly.
         disabled
           ? "cursor-not-allowed bg-bg-disabled text-text-disabled **:text-text-disabled"
@@ -92,13 +96,15 @@ export function FileUploader({
       onClick={handleClick}
     >
       <input
+        id={id}
+        aria-describedby={describedBy}
         ref={fileInputRef}
         type="file"
         accept={accept}
         multiple={multiple}
         disabled={disabled}
         onChange={handleFileChange}
-        className="hidden"
+        className="sr-only"
       />
       
       {children || (

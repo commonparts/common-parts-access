@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveStorageUrl, resolveStorageUrls, withResolvedPartMedia } from './url'
+import { resolveStorageUrl, resolveStorageUrls, storageDownloadUrl, withResolvedPartMedia } from './url'
 
 const SUPABASE_URL = 'https://project.supabase.test'
 const PUBLIC_PREFIX = `${SUPABASE_URL}/storage/v1/object/public`
@@ -41,6 +41,11 @@ describe('resolveStorageUrls', () => {
     expect(resolveStorageUrls(null)).toEqual([])
     expect(resolveStorageUrls('model-thumbnails/a.png')).toEqual([])
   })
+})
+
+it('requests an attachment while preserving existing Storage URL parameters', () => {
+  const url = `${SUPABASE_URL}/storage/v1/object/sign/model-thumbnails/photo.jpg?token=test`
+  expect(storageDownloadUrl(url)).toBe(`${url}&download=`)
 })
 
 describe('withResolvedPartMedia', () => {

@@ -29,12 +29,11 @@ export interface ClientUploadedFile {
  * Best-effort removal of uploaded storage objects, grouped by bucket.
  * Swallows errors so the original failure is never masked.
  */
-async function cleanupUploadedFiles(
+export async function cleanupUploadedFiles(
   files: { bucket: string; path: string }[],
 ): Promise<void> {
   if (files.length === 0) return
 
-  const supabase = createClient()
   const grouped = files.reduce<Record<string, string[]>>((acc, f) => {
     acc[f.bucket] = acc[f.bucket] || []
     acc[f.bucket].push(f.path)
@@ -42,6 +41,7 @@ async function cleanupUploadedFiles(
   }, {})
 
   try {
+    const supabase = createClient()
     await Promise.all(
       Object.entries(grouped).map(([bucket, paths]) =>
         supabase.storage.from(bucket).remove(paths),
